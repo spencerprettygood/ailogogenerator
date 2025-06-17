@@ -1,5 +1,12 @@
 import type { DesignSpec } from '../types';
 
+export interface StageGInput {
+  variants: LogoVariants;
+  designSpec: DesignSpec;
+}
+
+export type StageGOutput = BrandGuidelines;
+
 export interface ColorPalette {
   name: string;
   hex: string;
