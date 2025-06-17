@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { ReadableStream } from 'web-streams-polyfill/ponyfill/es2018';
 import { distillRequirements } from '../../../lib/ai-pipeline/stages/stage-a-distillation';
 import { generateMoodboard } from '../../../lib/ai-pipeline/stages/stage-b-moodboard';
 import { selectDirection } from '../../../lib/ai-pipeline/stages/stage-c-selection';
