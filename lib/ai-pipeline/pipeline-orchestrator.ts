@@ -160,8 +160,8 @@ export class LogoGenerationPipeline {
         },
         faviconIcoUrl: '/api/download?file=favicon.ico',
         brandGuidelinesUrl: '/api/download?file=brand-guidelines.html',
-        downloadUrl: packageOutput?.package 
-          ? `/api/download?file=${packageOutput.package.fileName}` 
+        downloadUrl: packageOutput?.fileName
+          ? `/api/download?file=${packageOutput.fileName}`
           : undefined
       };
       
