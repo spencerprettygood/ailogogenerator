@@ -8,7 +8,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
 import { generateId } from 'ai';
 import { Header } from './header';
-import { ErrorBoundary } from './error-boundary';
+import ErrorBoundary from './error-boundary';
 import { ChatInterface } from './chat-interface';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';

@@ -1,7 +1,13 @@
-import type { DesignSpec, LogoVariants } from '@/lib/types';
+import type { DesignSpec } from '@/lib/types';
 
 export interface StageGInput {
-  variants: LogoVariants;
+  variants: {
+    primary: string;
+    monochrome: {
+      black: string;
+      white: string;
+    };
+  };
   designSpec: DesignSpec;
 }
 

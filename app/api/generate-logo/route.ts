@@ -75,9 +75,10 @@ export async function POST(request: Request) {
             guidelinesData = await generateBrandGuidelines({
               variants: {
                 primary: validSvg,
-                monochrome: variants.monochrome.black,
-                favicon: variants.favicon.svg,
-                pngVariants: pngBase64
+                monochrome: {
+                  black: variants.monochrome.black,
+                  white: variants.monochrome.white
+                }
               },
               designSpec
             });
