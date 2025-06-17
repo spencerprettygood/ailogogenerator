@@ -62,9 +62,9 @@ export class StreamProcessor {
       if (data.stage && data.progress !== undefined) {
         callbacks.onProgress({
           stage: data.stage,
-          progress: data.progress,
           stageProgress: data.progress,
           overallProgress: data.overallProgress || data.progress,
+          progress: data.progress, // Include progress property used by UI
           message: data.message || `Processing stage ${data.stage}...`
         });
       }

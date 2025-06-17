@@ -1,8 +1,12 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Removed parser property as it's not supported in the current Tailwind Config type
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}", // Adjusted to cover all relevant files in src
+    "./app/**/*.{js,ts,jsx,tsx,mdx}", // Added app directory
+    "./components/**/*.{js,ts,jsx,tsx,mdx}", // Added components directory
+    "./*.{js,ts,jsx,tsx,mdx}", // Added root directory files
   ],
   theme: {
     extend: {

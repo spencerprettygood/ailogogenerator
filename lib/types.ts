@@ -11,7 +11,13 @@ export interface Message {
   isLoading?: boolean;
   actions?: React.ReactNode;
   // Additional properties for chat functionality
-  progress?: GenerationProgress;
+  progress?: {
+    stage: string;
+    message: string;
+    progress: number; // Progress percentage 0-100
+    stageProgress?: number;
+    overallProgress?: number;
+  };
   assets?: GeneratedAssets;
 }
 
@@ -21,7 +27,7 @@ export interface LogoBrief {
   image_uploads?: File[];
   style?: string;
   colors?: string;
-  keywords?: string[];
+  keywords?: string[] | string;
 }
 
 export interface DesignSpec {
@@ -36,9 +42,8 @@ export interface DesignSpec {
 
 export interface SVGLogo {
   svgCode: string;
-  width?: number;
-  height?: number;
-  name?: string;
+  width: number;
+  height: number;
 }
 
 export interface GenerationProgress {
@@ -46,21 +51,15 @@ export interface GenerationProgress {
   stageProgress: number; // 0-100
   overallProgress: number; // 0-100
   message: string;
-  progress: number; // 0-100, used in the UI
+  progress: number; // 0-100, used by UI components
   estimatedTimeRemaining?: number; // seconds
 }
 
 export interface LogoGenerationState {
-  isLoading?: boolean;
-  error?: APIError | null;
-  progress?: number; // Overall progress 0-100
-  currentStage?: string | null; // Name of the current stage
   currentStageId: string | null;
-  stages: Stage[];
+  stages: Stage[]; // Use the Stage interface
   overallProgress: number; // 0-100
   estimatedTimeRemaining: number | null; // seconds
-  generatedLogoSvg?: string | null; // SVG code of the primary logo
-  assets?: LogoGenerationAssets | null;
 }
 
 export interface FileDownloadInfo {
@@ -115,6 +114,16 @@ export interface GenerationResult {
     message: string;
     details?: string;
   };
+  // Additional properties that were floating
+  content?: string;
+  imageUrl?: string;
+  isLoading?: boolean;
+  timestamp?: Date;
+  actions?: React.ReactNode;
+  // Additional properties for chat functionality
+  files?: File[];
+  progress?: GenerationProgress;
+  assets?: GeneratedAssets;
 }
 
 export interface ChatInterfaceProps {
@@ -135,12 +144,26 @@ export interface LogoGenerationOptions {
   includeGuidelines?: boolean;
 }
 
-// SVGLogo interface is already defined above
+export interface DesignSpec {
+  brand_name: string;
+  brand_description: string;
+  style_preferences: string;
+  color_palette: string;
+  imagery: string;
+  target_audience: string;
+  additional_requests: string;
+}
+
+export interface SVGLogo {
+  svgCode: string;
+  name: string;
+}
 
 export interface PNGVariant extends SVGLogo {
   width: number;
   height: number;
   url: string; // URL to the PNG file
+  buffer?: Blob | Buffer; // Raw PNG data, can be Blob in browser or Buffer on server
 }
 
 export interface Favicon extends PNGVariant {
@@ -190,7 +213,20 @@ export interface LogoGenerationAssets {
   individualFiles?: Array<{ name: string; url: string; type: string; size: number }>;
 }
 
-// LogoGenerationState interface is already defined above
+// This LogoGenerationState interface is already defined above
+export interface LogoGenerationStateExtended {
+  isLoading: boolean;
+  error: APIError | null;
+  progress: number; // Overall progress 0-100
+  currentStage: string | null; // Name of the current stage
+  estimatedTimeRemaining: number | null; // In seconds
+  generatedLogoSvg: string | null; // SVG code of the primary logo
+  assets: LogoGenerationAssets | null;
+  // These properties are already in LogoGenerationState
+  stages: Stage[];
+  currentStageId: string | null;
+  overallProgress: number; // 0-100
+}
 
 export interface LogoGenerationResult extends LogoGenerationAssets {
   success: boolean;
@@ -234,7 +270,7 @@ export interface DownloadableFile {
   name: string;
   url: string;
   type: string; // e.g., 'SVG', 'PNG', 'ZIP', 'HTML'
-  size?: number; // in bytes
+  size?: number; // in bytes, made optional to match FileDownloadInfo
   status?: 'pending' | 'downloading' | 'completed' | 'error';
   progress?: number; // 0-100 for downloading status
   isPrimary?: boolean; // e.g. the main SVG or ZIP

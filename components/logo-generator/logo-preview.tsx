@@ -23,7 +23,7 @@ export function LogoPreview({
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    let pngObjectUrl: string | null = null;
+    const pngObjectUrl: string | null = null; // Changed to const since it's not reassigned within the effect
 
     if (assets?.primaryLogoSVG?.svgCode) {
       setSvgDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(assets.primaryLogoSVG.svgCode)}`);
@@ -35,7 +35,13 @@ export function LogoPreview({
       // Check if it's a blob or a string
       const pngSource = typeof assets.pngVersions.size512 === 'string' 
         ? assets.pngVersions.size512
-        : URL.createObjectURL(assets.pngVersions.size512 as any);
+        : URL.createObjectURL(
+            // Type guard using runtime check rather than instanceof
+            // Using type predicates to avoid 'any'
+            typeof (assets.pngVersions.size512 as { type?: string })?.type === 'string' ? 
+              assets.pngVersions.size512 as Blob : 
+              new Blob([assets.pngVersions.size512 as Uint8Array], { type: 'image/png' })
+          );
       setPngDataUrl(pngSource);
     } else {
       setPngDataUrl(null);

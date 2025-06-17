@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateLogo } from '@/lib/ai-pipeline/pipeline-orchestrator';
+import { generateLogo, PipelineProgress } from '@/lib/ai-pipeline/pipeline-orchestrator';
 import { InputSanitizer, RateLimiter } from '@/lib/utils/security-utils';
 import { nanoid } from 'nanoid';
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         controller.enqueue(JSON.stringify(initialResponse) + '\n');
         
         // Set up progress callback
-        const progressCallback = (progress: any) => {
+        const progressCallback = (progress: PipelineProgress) => {
           try {
             controller.enqueue(JSON.stringify({ 
               type: 'progress',

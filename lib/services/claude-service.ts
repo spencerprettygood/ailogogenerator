@@ -1,4 +1,3 @@
-import { AIMessage, HumanMessage, SystemMessage } from '@anthropic-ai/sdk/messages';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface ClaudeRequestOptions {
@@ -43,23 +42,29 @@ class ClaudeService {
     } = options;
     
     try {
-      const messages = [];
-      
-      if (systemPrompt) {
-        messages.push(new SystemMessage(systemPrompt));
-      }
-      
-      messages.push(new HumanMessage(prompt));
+      // Create messages array in the format expected by Anthropic's API
+      const apiMessages = [
+        {
+          role: 'user' as const, // Explicitly type as 'user' literal type
+          content: prompt
+        }
+      ];
 
       const response = await this.anthropic.messages.create({
         model: model,
-        messages,
+        messages: apiMessages,
         max_tokens: maxTokens,
         temperature: temperature,
         stop_sequences: stopSequences,
+        system: systemPrompt, // Use the system parameter directly
       });
 
-      const content = response.content[0].text;
+      // Safely extract content, checking its structure first
+      const content = response.content && 
+                     response.content.length > 0 && 
+                     response.content[0].type === 'text' 
+                       ? response.content[0].text 
+                       : '';
       
       return {
         content,
