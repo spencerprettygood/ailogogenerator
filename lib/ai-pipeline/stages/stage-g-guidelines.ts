@@ -1,4 +1,4 @@
-import type { DesignSpec } from '../types';
+import type { DesignSpec, LogoVariants } from '@/lib/types';
 
 export interface StageGInput {
   variants: LogoVariants;
@@ -32,13 +32,6 @@ export interface BrandGuidelines {
     usage_examples: string;
     dos_and_donts: string;
   };
-}
-
-export interface LogoVariants {
-  primary: string; // SVG string
-  monochrome: string; // SVG string
-  favicon: string; // SVG string
-  pngVariants?: { [size: string]: string }; // base64 PNGs
 }
 
 // Utility: Extract HEX colors from SVG string
@@ -96,77 +89,92 @@ function getTypography(style: string): TypographySpec {
 
 // Main function: Generate Brand Guidelines
 export async function generateBrandGuidelines(
-  variants: LogoVariants,
-  designSpec: DesignSpec
-): Promise<BrandGuidelines> {
-  // 1. Color extraction
-  const allSvgs = [variants.primary, variants.monochrome, variants.favicon].join(' ');
-  const hexColors = extractHexColors(allSvgs);
-  const color_palette: ColorPalette[] = hexColors.map((hex, i) => ({
-    name: `Color ${i+1}`,
+  input: StageGInput
+): Promise<StageGOutput> {
+  const { variants, designSpec } = input;
+  const colors = extractHexColors(variants.primary);
+  const colorPalette: ColorPalette[] = colors.map(hex => ({
+    name: `Color ${hex}`,
     hex,
     rgb: hexToRgb(hex),
     cmyk: hexToCmyk(hex),
-    usage: i === 0 ? 'Primary' : 'Secondary',
+    usage: 'Primary brand color'
   }));
 
-  // 2. Typography
-  const typography = getTypography(Array.isArray(designSpec.stylePreferences) ? designSpec.stylePreferences.join(', ') : (designSpec.stylePreferences || ''));
+  const typography = getTypography(designSpec.style_preferences || '');
 
-  // 3. Sections
-  const brand_overview = `<h2>Brand Overview</h2><p><strong>${designSpec.brandName}</strong>: ${designSpec.slogan ? designSpec.slogan + '. ' : ''}${designSpec.industry ? 'Industry: ' + designSpec.industry + '. ' : ''}${designSpec.targetAudience ? 'Target: ' + designSpec.targetAudience + '. ' : ''}</p>`;
-  const logo_usage = `<h2>Logo Usage</h2><div><p>Use the primary logo for most applications. Monochrome for limited color or print. Favicon for web tabs.</p><div style="display:flex;gap:24px;align-items:center;"><div><div>Primary</div>${variants.primary}</div><div><div>Monochrome</div>${variants.monochrome}</div><div><div>Favicon</div>${variants.favicon}</div></div></div>`;
-  const color_palette_html = `<h2>Color Palette</h2><div style="display:flex;gap:16px;flex-wrap:wrap;">${color_palette.map(c => `<div style="border:1px solid #ccc;padding:8px;text-align:center;"><div style="width:48px;height:48px;background:${c.hex};margin:auto;border-radius:6px;"></div><div>${c.hex}</div><div>${c.rgb}</div><div>${c.cmyk}</div><div style="font-size:12px;color:#666;">${c.usage}</div></div>`).join('')}</div>`;
-  const typography_html = `<h2>Typography</h2><div><strong>Primary Font:</strong> ${typography.primary_font}<br/><strong>Secondary Font:</strong> ${typography.secondary_font}<br/><span style="font-size:12px;color:#666;">${typography.usage}</span></div>`;
-  const spacing_guidelines = `<h2>Logo Spacing & Sizing</h2><p>Maintain clear space around the logo equal to the height of the letter "${designSpec.brandName ? designSpec.brandName[0] : 'X'}". Minimum logo size: 32px height for digital, 10mm for print.</p>`;
-  const usage_examples = `<h2>Usage Examples</h2><ul><li>On white/light backgrounds</li><li>On brand color backgrounds</li><li>As app icon or favicon</li></ul>`;
-  const dos_and_donts = `<h2>Do's and Don'ts</h2><ul><li>Do: Use provided logo files only</li><li>Do: Maintain aspect ratio</li><li>Don't: Alter colors or proportions</li><li>Don't: Add effects or outlines</li></ul>`;
+  // Constructing the brand overview from the design spec
+  const brand_overview = `<h2>Brand Overview</h2><p><strong>${designSpec.brand_name}</strong>: ${designSpec.brand_description}. Our brand targets ${designSpec.target_audience}. The desired style is ${designSpec.style_preferences} with a focus on ${designSpec.imagery}.</p>`;
 
-  // 4. HTML Template
-  const html = `<!DOCTYPE html>
+  const logo_usage = `<h2>Logo Usage</h2><p>The primary logo should be used in most cases. The monochrome version is for single-color applications. The favicon is for browser tabs and app icons.</p>`;
+
+  const spacing_guidelines = `<h2>Logo Spacing & Sizing</h2><p>Maintain clear space around the logo equal to the height of the letter \"${designSpec.brand_name ? designSpec.brand_name[0] : 'A'}\". Minimum display size should be 24px in height.</p>`;
+
+  const usage_examples = `<h2>Usage Examples</h2><p>Place the logo on marketing materials, websites, and social media profiles. Ensure high contrast with the background.</p>`;
+
+  const dos_and_donts = `<h2>Do's and Don'ts</h2><ul><li>Do: Use the logo consistently.</li><li>Don't: Stretch, distort, or change the colors of the logo.</li></ul>`;
+
+  const html = `
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${designSpec.brandName} Brand Guidelines</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${designSpec.brand_name} Brand Guidelines</title>
   <style>
-    body { font-family: Inter, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
-    main { max-width: 800px; margin: 0 auto; padding: 32px; background: #fff; }
-    h1 { font-size: 2.2rem; margin-bottom: 0.5em; }
-    h2 { font-size: 1.3rem; margin-top: 2em; margin-bottom: 0.5em; }
-    ul { margin: 0 0 1em 1.5em; }
-    @media (max-width: 600px) {
-      main { padding: 8px; }
-      h1 { font-size: 1.3rem; }
-      h2 { font-size: 1.1rem; }
-    }
-    /* Print styles */
-    @media print {
-      body, main { background: #fff !important; color: #000 !important; }
-      a { color: #000 !important; text-decoration: underline; }
-    }
+    body { font-family: ${typography.secondary_font}; color: #333; margin: 0; padding: 0; }
+    .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+    h1, h2 { font-family: ${typography.primary_font}; }
+    h1 { color: ${colorPalette[0]?.hex || '#000'}; }
+    .logo-display { padding: 20px; border: 1px solid #eee; text-align: center; margin-bottom: 20px; }
+    .logo-display svg { max-width: 200px; max-height: 100px; }
+    .color-swatch { display: inline-block; width: 100px; height: 100px; margin: 10px; border: 1px solid #ccc; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
   </style>
 </head>
 <body>
-  <main>
-    <h1>${designSpec.brandName} Brand Guidelines</h1>
+  <div class="container">
+    <h1>${designSpec.brand_name} Brand Guidelines</h1>
+    
+    <div class="logo-display">
+      <h3>Primary Logo</h3>
+      ${variants.primary}
+    </div>
+    <div class="logo-display">
+      <h3>Monochrome Logo</h3>
+      ${variants.monochrome}
+    </div>
+
     ${brand_overview}
     ${logo_usage}
-    ${color_palette_html}
-    ${typography_html}
+
+    <h2>Color Palette</h2>
+    <table>
+      <tr><th>Swatch</th><th>Name</th><th>HEX</th><th>RGB</th><th>CMYK</th></tr>
+      ${colorPalette.map(c => `<tr><td><div class="color-swatch" style="background-color:${c.hex};"></div></td><td>${c.name}</td><td>${c.hex}</td><td>${c.rgb}</td><td>${c.cmyk}</td></tr>`).join('')}
+    </table>
+
+    <h2>Typography</h2>
+    <p>Primary Font: <strong>${typography.primary_font}</strong></p>
+    <p>Secondary Font: <strong>${typography.secondary_font}</strong></p>
+    <p>${typography.usage}</p>
+
     ${spacing_guidelines}
     ${usage_examples}
     ${dos_and_donts}
-  </main>
+
+  </div>
 </body>
-</html>`;
+</html>
+  `;
 
   return {
     html,
     sections: {
       brand_overview,
       logo_usage,
-      color_palette,
+      color_palette: colorPalette,
       typography,
       spacing_guidelines,
       usage_examples,

@@ -25,6 +25,15 @@ export interface MoodboardConcept {
   keywords: string[];
 }
 
+export type LogoConcept = MoodboardConcept;
+
+export interface LogoVariants {
+  primary: string; // SVG string
+  monochrome: string; // SVG string
+  favicon: string; // SVG string
+  pngVariants?: { [size: string]: string }; // base64 PNGs
+}
+
 export interface GenerationResult {
   success: boolean;
   message?: string;
