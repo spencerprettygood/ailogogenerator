@@ -73,11 +73,14 @@ export async function POST(request: Request) {
             // Convert PNG Buffers to base64 strings for guidelines
             const pngBase64 = bufferMapToBase64(variants.pngVariants);
             guidelinesData = await generateBrandGuidelines({
-              primary: validSvg,
-              monochrome: variants.monochrome.black,
-              favicon: variants.favicon.svg,
-              pngVariants: pngBase64
-            }, designSpec);
+              variants: {
+                primary: validSvg,
+                monochrome: variants.monochrome.black,
+                favicon: variants.favicon.svg,
+                pngVariants: pngBase64
+              },
+              designSpec
+            });
           }
           // Stage H
           controller.enqueue(encodeMessage({ stage: 'H', progress: 95, data: 'Packaging assets...' }));

@@ -51,7 +51,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border;
   }
   body {
     @apply bg-background text-foreground;
@@ -72,4 +72,3 @@
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
 }
-EOL < /dev/null
