@@ -1,16 +1,15 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Menu, Github, Twitter } from 'lucide-react';
+import { Sparkles, Github, Twitter, Sun, Moon } from 'lucide-react';
 
 interface HeaderProps {
-  onMenuToggle: () => void;
-  sidebarOpen: boolean;
+  onThemeToggle?: () => void;
 }
 
-export function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
+export function Header({ onThemeToggle }: HeaderProps) {
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -23,8 +22,17 @@ export function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          {onThemeToggle && (
+            <Button variant="ghost" size="icon" onClick={onThemeToggle} className="hidden md:flex">
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          )}
+          
           {/* Social Links */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <a
               href="https://github.com"
               target="_blank"
@@ -44,28 +52,6 @@ export function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
               </Button>
             </a>
           </div>
-
-          {/* Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="lg:hidden"
-            aria-label="Toggle menu"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-
-          {/* Desktop Sidebar Toggle */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onMenuToggle}
-            className="hidden lg:flex"
-            aria-label={sidebarOpen ? 'Hide panel' : 'Show panel'}
-          >
-            {sidebarOpen ? 'Hide Panel' : 'Show Panel'}
-          </Button>
         </div>
       </div>
     </header>

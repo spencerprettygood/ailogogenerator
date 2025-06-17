@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface FileUploadProps {
+interface FileUploadSimpleProps {
   onFilesChangeAction: (files: File[]) => void;
   maxFiles?: number;
   maxFileSizeMb?: number;
@@ -14,14 +14,14 @@ interface FileUploadProps {
   disabled?: boolean;
 }
 
-export function FileUpload({
+export function FileUploadSimple({
   onFilesChangeAction,
   maxFiles = 3,
   maxFileSizeMb = 10,
   acceptedFileTypes = ['image/jpeg', 'image/png', 'image/webp'],
   className,
   disabled = false,
-}: FileUploadProps) {
+}: FileUploadSimpleProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);

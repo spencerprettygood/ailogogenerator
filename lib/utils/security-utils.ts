@@ -35,7 +35,6 @@ export class InputSanitizer {
       has_event_handlers: /on\w+\s*=/i.test(svgContent),
       has_foreignObject: /<foreignObject/i.test(svgContent),
       has_use_element: /<use/i.test(svgContent),
-      has_data_urls: /data:[^,]*base64/i.test(svgContent),
       size_exceeds_limit: svgContent.length > 15360 // 15KB
     };
     
@@ -60,14 +59,6 @@ export class InputSanitizer {
       errors.push("SVG contains use elements which may reference external content.");
     }
     
-    if (security_checks.has_data_urls) {
-      errors.push("SVG contains data URLs which are not allowed.");
-    }
-    
-    if (security_checks.size_exceeds_limit) {
-      errors.push("SVG exceeds the maximum allowed size of 15KB.");
-    }
-    
     return {
       isValid: errors.length === 0,
       violations: security_checks,
@@ -84,15 +75,6 @@ export class InputSanitizer {
     
     // Remove external references
     cleaned = cleaned.replace(/href\s*=\s*["'][^"']*:\/\/[^"']*["']/gi, '');
-    
-    // Remove data URLs
-    cleaned = cleaned.replace(/data:[^,]*base64[^"']*/gi, '');
-    
-    // Remove foreignObject elements
-    cleaned = cleaned.replace(/<foreignObject\b[^<]*(?:(?!<\/foreignObject>)<[^<]*)*<\/foreignObject>/gi, '');
-    
-    // Remove use elements or at least external references in use elements
-    cleaned = cleaned.replace(/<use\b[^>]*xlink:href\s*=\s*["'][^"']*:\/\/[^"']*["'][^>]*>/gi, '');
     
     return cleaned;
   }
@@ -119,6 +101,24 @@ export class RateLimiter {
     const requestInfo = this.requests.get(identifier) || {
       count: 0,
       resetTime: now + windowMs
+    };
+    
+    if (now > requestInfo.resetTime) {
+      requestInfo.count = 1;
+      requestInfo.resetTime = now + windowMs;
+    } else if (requestInfo.count >= maxRequests) {
+      return {
+        allowed: false,
+        retryAfter: requestInfo.resetTime - now
+      };
+    } else {
+      requestInfo.count++;
+    }
+    
+    this.requests.set(identifier, requestInfo);
+    return { allowed: true };
+  }
+}
     };
     
     if (now > requestInfo.resetTime) {
