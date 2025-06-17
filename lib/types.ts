@@ -28,10 +28,20 @@ export interface MoodboardConcept {
 export type LogoConcept = MoodboardConcept;
 
 export interface LogoVariants {
-  primary: string; // SVG string
-  monochrome: string; // SVG string
-  favicon: string; // SVG string
-  pngVariants?: { [size: string]: string }; // base64 PNGs
+  monochrome: {
+    black: string;
+    white: string;
+  };
+  favicon: {
+    svg: string;
+    png32: Buffer;
+    ico: Buffer;
+  };
+  pngVariants: {
+    png256: Buffer;
+    png512: Buffer;
+    png1024: Buffer;
+  };
 }
 
 export interface GenerationResult {

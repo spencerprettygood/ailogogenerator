@@ -491,24 +491,15 @@ export class LogoGenerationPipeline {
     }
     
     const input: StageGInput = {
-      designSpec: stageAOutput.designSpec,
-      selectedConcept: stageCOutput.selection.selectedConcept,
-      svg: stageDOutput.result.svg,
-      monochromeBlack: stageFOutput.variants.monochrome.black,
-      monochromeWhite: stageFOutput.variants.monochrome.white,
-      brandName: stageAOutput.designSpec.brand_name
+      variants: stageFOutput.variants,
+      designSpec: stageAOutput.designSpec
     };
     
     const output = await generateBrandGuidelines(input);
     this.stageOutputs[stageName] = output;
-    
-    if (!output.success) {
-      throw new Error(`Stage G failed: ${output.error?.message}`);
-    }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
-    this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('G', 100, 87.5, 'Brand guidelines created');
     this.log('Completed Stage G: Brand Guidelines');
   }
@@ -537,7 +528,7 @@ export class LogoGenerationPipeline {
       throw new Error('Stage H requires output from Stage F');
     }
     
-    if (!stageGOutput || !stageGOutput.guidelines) {
+    if (!stageGOutput || !stageGOutput.html) {
       throw new Error('Stage H requires output from Stage G');
     }
     
@@ -550,7 +541,10 @@ export class LogoGenerationPipeline {
         svg: stageFOutput.variants.favicon.svg,
         ico: stageFOutput.variants.favicon.ico
       },
-      guidelines: stageGOutput.guidelines
+      guidelines: {
+        html: stageGOutput.html,
+        plainText: '' // Optionally generate plain text from HTML if needed
+      }
     };
     
     const output = await packageAssets(input);
