@@ -198,7 +198,7 @@ export async function packageAssets(
       fileName,
       processingTime,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const processingTime = Date.now() - startTime;
     console.error('[Stage H Error]', error);
     return {

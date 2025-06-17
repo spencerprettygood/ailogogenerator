@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '../ui/toaster';
 import { ChatInterface } from './chat-interface'; // Corrected import to named
 import ProgressTracker from './progress-tracker';
 import LogoDisplay from './logo-display';
@@ -11,7 +11,7 @@ import DownloadManager from './download-manager';
 import { Header } from './header';
 import { ErrorBoundary } from './error-boundary';
 import { useLogoGeneration } from '@/lib/hooks/use-logo-generation';
-import { useToast } from '@/lib/hooks/use-toast';
+import { useToast } from '../../lib/hooks/use-toast';
 import { 
   Message, 
   GenerationProgress, 

@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { distillRequirements } from '../../../lib/ai-pipeline/stages/stage-a-distillation';
 import { generateMoodboard } from '../../../lib/ai-pipeline/stages/stage-b-moodboard';
 import { selectDirection } from '../../../lib/ai-pipeline/stages/stage-c-selection';

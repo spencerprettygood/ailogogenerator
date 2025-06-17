@@ -1,7 +1,7 @@
 export interface FileValidationRule {
-  maxSize: number; // in bytes
-  allowedTypes: string[];
-  maxCount: number;
+  maxSize?: number; // in bytes
+  allowedTypes?: string[];
+  maxCount?: number;
 }
 
 export const imageValidationRules: FileValidationRule = {
@@ -18,16 +18,16 @@ export interface ValidationResult {
 export function validateFiles(files: File[], rules: FileValidationRule): ValidationResult {
   const errors: string[] = [];
   
-  if (files.length > rules.maxCount) {
+  if (rules.maxCount && files.length > rules.maxCount) {
     errors.push(`Maximum ${rules.maxCount} files allowed`);
   }
   
   for (const file of files) {
-    if (file.size > rules.maxSize) {
+    if (rules.maxSize && file.size > rules.maxSize) {
       errors.push(`File "${file.name}" is too large (max ${formatFileSize(rules.maxSize)})`);
     }
     
-    if (!rules.allowedTypes.includes(file.type)) {
+    if (rules.allowedTypes && !rules.allowedTypes.includes(file.type)) {
       errors.push(`File "${file.name}" has unsupported type (${file.type})`);
     }
   }

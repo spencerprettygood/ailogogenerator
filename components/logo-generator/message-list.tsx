@@ -30,7 +30,7 @@ export function MessageList({ messages }: MessageListProps) {
   return (
     <>
       {messages.map((message) => {
-        switch (message.type) {
+        switch (message.role) {
           case 'user':
             return <UserMessage key={message.id} message={message} />;
           case 'assistant':

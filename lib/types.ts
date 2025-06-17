@@ -284,3 +284,18 @@ export interface BackgroundSelectorProps {
   selectedBackground: string;
   onSelectBackgroundAction: (background: string) => void;
 }
+
+export interface FileValidationOptions {
+  maxCount?: number;
+  maxSize?: number; // in bytes
+  allowedTypes?: string[];
+}
+
+export interface FileUploadProps {
+  onFilesChange?: (files: File[]) => void;
+  maxFiles?: number;
+  maxFileSizeMb?: number;
+  acceptedFileTypes?: string[];
+  className?: string;
+  disabled?: boolean;
+}

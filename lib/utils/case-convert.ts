@@ -1,29 +1,31 @@
 // Utility functions for converting between camelCase and snake_case objects
 
-export function camelToSnake(obj: any): any {
+type AnyObject = Record<string, unknown>;
+
+export function camelToSnake<T>(obj: T): T {
   if (Array.isArray(obj)) {
-    return obj.map(camelToSnake);
-  } else if (obj && typeof obj === 'object') {
+    return obj.map(camelToSnake) as T;
+  } else if (obj && typeof obj === 'object' && !Buffer.isBuffer(obj)) {
     return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => [
+      Object.entries(obj as AnyObject).map(([k, v]) => [
         k.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`),
         camelToSnake(v)
       ])
-    );
+    ) as T;
   }
   return obj;
 }
 
-export function snakeToCamel(obj: any): any {
+export function snakeToCamel<T>(obj: T): T {
   if (Array.isArray(obj)) {
-    return obj.map(snakeToCamel);
-  } else if (obj && typeof obj === 'object') {
+    return obj.map(snakeToCamel) as T;
+  } else if (obj && typeof obj === 'object' && !Buffer.isBuffer(obj)) {
     return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => [
-        k.replace(/_([a-z])/g, (_, l) => l.toUpperCase()),
+      Object.entries(obj as AnyObject).map(([k, v]) => [
+        k.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
         snakeToCamel(v)
       ])
-    );
+    ) as T;
   }
   return obj;
 }
