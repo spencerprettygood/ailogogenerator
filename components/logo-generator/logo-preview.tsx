@@ -25,15 +25,18 @@ export function LogoPreview({
   useEffect(() => {
     let pngObjectUrl: string | null = null;
 
-    if (assets?.logo_svg) {
-      setSvgDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(assets.logo_svg)}`);
+    if (assets?.primaryLogoSVG?.svgCode) {
+      setSvgDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(assets.primaryLogoSVG.svgCode)}`);
     } else {
       setSvgDataUrl(null);
     }
 
-    if (assets?.png_exports?.png_512) {
-      pngObjectUrl = URL.createObjectURL(assets.png_exports.png_512);
-      setPngDataUrl(pngObjectUrl);
+    if (assets?.pngVersions?.size512) {
+      // Check if it's a blob or a string
+      const pngSource = typeof assets.pngVersions.size512 === 'string' 
+        ? assets.pngVersions.size512
+        : URL.createObjectURL(assets.pngVersions.size512 as any);
+      setPngDataUrl(pngSource);
     } else {
       setPngDataUrl(null);
     }
@@ -46,8 +49,8 @@ export function LogoPreview({
   }, [assets]);
 
   const displayUrl = svgDataUrl || pngDataUrl;
-  const canDownloadSvg = !!assets?.logo_svg;
-  const canDownloadPng = !!assets?.png_exports?.png_512;
+  const canDownloadSvg = !!assets?.primaryLogoSVG?.svgCode;
+  const canDownloadPng = !!assets?.pngVersions?.size512;
 
   if (!assets) {
     return (

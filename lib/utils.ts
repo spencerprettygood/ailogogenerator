@@ -13,8 +13,8 @@ export function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-export function formatBytes(bytes: number, decimals = 2) {
-  if (bytes === 0) return "0 Bytes";
+export function formatBytes(bytes: number | undefined, decimals = 2) {
+  if (bytes === undefined || bytes === 0) return "Unknown size";
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = [

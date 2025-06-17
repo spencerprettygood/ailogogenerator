@@ -63,6 +63,8 @@ export class StreamProcessor {
         callbacks.onProgress({
           stage: data.stage,
           progress: data.progress,
+          stageProgress: data.progress,
+          overallProgress: data.overallProgress || data.progress,
           message: data.message || `Processing stage ${data.stage}...`
         });
       }

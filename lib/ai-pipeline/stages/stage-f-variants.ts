@@ -4,6 +4,7 @@ import { DesignSpec } from './stage-a-distillation';
 
 // Types for Stage F
 export interface LogoVariants {
+  primary: string; // Original SVG content
   monochrome: {
     black: string; // SVG content
     white: string; // SVG content
@@ -415,6 +416,7 @@ Follow the requirements exactly as specified in your instructions.
     return {
       success: true,
       variants: {
+        primary: input.svg, // Add the original SVG as the primary logo
         monochrome: {
           black: blackVariant,
           white: whiteVariant

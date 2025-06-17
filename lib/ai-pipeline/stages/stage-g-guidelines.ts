@@ -148,8 +148,14 @@ export async function generateBrandGuidelines(
       ${variants.primary}
     </div>
     <div class="logo-display">
-      <h3>Monochrome Logo</h3>
-      ${variants.monochrome}
+      <h3>Monochrome Logo (Black)</h3>
+      ${variants.monochrome.black}
+    </div>
+    <div class="logo-display">
+      <h3>Monochrome Logo (White)</h3>
+      <div style="background-color: #333; padding: 10px;">
+        ${variants.monochrome.white}
+      </div>
     </div>
 
     ${brand_overview}

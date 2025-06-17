@@ -1,9 +1,27 @@
+// Message types
+export type MessageRole = 'system' | 'user' | 'assistant';
+
+export interface Message {
+  id: string;
+  role: MessageRole;
+  content: string;
+  timestamp: Date;
+  files?: File[];
+  imageUrl?: string;
+  isLoading?: boolean;
+  actions?: React.ReactNode;
+  // Additional properties for chat functionality
+  progress?: GenerationProgress;
+  assets?: GeneratedAssets;
+}
+
+// Logo generation types
 export interface LogoBrief {
   prompt: string;
-  style?: string;
-  colors?: string[];
-  keywords?: string[];
   image_uploads?: File[];
+  style?: string;
+  colors?: string;
+  keywords?: string[];
 }
 
 export interface DesignSpec {
@@ -16,37 +34,70 @@ export interface DesignSpec {
   additional_requests: string;
 }
 
-export interface MoodboardConcept {
-  conceptName: string;
-  description: string;
-  imageUrl: string;
-  colorPalette: string[];
-  fonts?: string[];
-  keywords: string[];
+export interface SVGLogo {
+  svgCode: string;
+  width?: number;
+  height?: number;
+  name?: string;
 }
 
-export type LogoConcept = MoodboardConcept;
+export interface GenerationProgress {
+  stage: string;
+  stageProgress: number; // 0-100
+  overallProgress: number; // 0-100
+  message: string;
+  progress: number; // 0-100, used in the UI
+  estimatedTimeRemaining?: number; // seconds
+}
 
-export interface LogoVariants {
-  monochrome: {
-    black: string;
-    white: string;
+export interface LogoGenerationState {
+  isLoading?: boolean;
+  error?: APIError | null;
+  progress?: number; // Overall progress 0-100
+  currentStage?: string | null; // Name of the current stage
+  currentStageId: string | null;
+  stages: Stage[];
+  overallProgress: number; // 0-100
+  estimatedTimeRemaining: number | null; // seconds
+  generatedLogoSvg?: string | null; // SVG code of the primary logo
+  assets?: LogoGenerationAssets | null;
+}
+
+export interface FileDownloadInfo {
+  id: string;
+  name: string;
+  type: string; // File type like 'SVG', 'PNG', 'ICO', 'HTML', 'ZIP'
+  url: string; // Download URL
+  size?: number; // File size in bytes
+  description?: string;
+  previewUrl?: string;
+  isPrimary?: boolean; // Whether this is the primary/main file
+  status?: 'pending' | 'downloading' | 'completed' | 'error';
+  progress?: number; // Download progress 0-100
+}
+
+export interface GeneratedAssets {
+  primaryLogoSVG?: SVGLogo;
+  monochromeSVGs?: {
+    black: SVGLogo;
+    white: SVGLogo;
   };
-  favicon: {
+  pngVersions?: {
+    size256: string;
+    size512: string;
+    size1024: string;
+  };
+  favicon?: {
+    ico: string;
     svg: string;
-    png32: Buffer;
-    ico: Buffer;
   };
-  pngVariants: {
-    png256: Buffer;
-    png512: Buffer;
-    png1024: Buffer;
-  };
+  brandGuidelines?: string;
+  individualFiles?: FileDownloadInfo[];
+  zipPackageUrl?: string;
 }
 
 export interface GenerationResult {
   success: boolean;
-  message?: string;
   logoSvg?: string;
   logoPngUrls?: {
     size256: string;
@@ -58,58 +109,12 @@ export interface GenerationResult {
     whiteSvg: string;
   };
   faviconIcoUrl?: string;
-  brandGuidelinesUrl?: string; // URL to HTML/PDF
-  downloadUrl?: string; // URL to ZIP package
+  brandGuidelinesUrl?: string;
+  downloadUrl?: string;
   error?: {
-    stage: string;
     message: string;
+    details?: string;
   };
-}
-
-export interface GenerationProgress {
-  stage: string;
-  progress: number;
-  message: string;
-  preview?: string;
-  // Additional properties for ProgressTracker compatibility
-  stages?: Stage[];
-  currentStageId?: string | null;
-  overallProgress?: number;
-  estimatedTimeRemaining?: number | null;
-}
-
-export interface GeneratedAssets {
-  logo_svg: string;
-  logo_mono_light: string;
-  logo_mono_dark: string;
-  favicon_svg: string;
-  png_exports: {
-    png_256: Blob;
-    png_512: Blob;
-    png_1024: Blob;
-  };
-  favicon_ico: Blob;
-  brand_guidelines: string;
-  // Additional properties for component compatibility
-  primaryLogoSVG?: SVGLogo;
-  individualFiles?: FileDownloadInfo[];
-  zipPackageUrl?: string;
-}
-
-export type MessageRole = 'user' | 'assistant' | 'system' | 'error';
-
-export interface Message {
-  id: string;
-  role: MessageRole;
-  content: string;
-  imageUrl?: string;
-  isLoading?: boolean;
-  timestamp: Date;
-  actions?: React.ReactNode;
-  // Additional properties for chat functionality
-  files?: File[];
-  progress?: GenerationProgress;
-  assets?: GeneratedAssets;
 }
 
 export interface ChatInterfaceProps {
@@ -130,20 +135,7 @@ export interface LogoGenerationOptions {
   includeGuidelines?: boolean;
 }
 
-export interface DesignSpec {
-  brand_name: string;
-  brand_description: string;
-  style_preferences: string;
-  color_palette: string;
-  imagery: string;
-  target_audience: string;
-  additional_requests: string;
-}
-
-export interface SVGLogo {
-  svgCode: string;
-  name: string;
-}
+// SVGLogo interface is already defined above
 
 export interface PNGVariant extends SVGLogo {
   width: number;
@@ -198,19 +190,7 @@ export interface LogoGenerationAssets {
   individualFiles?: Array<{ name: string; url: string; type: string; size: number }>;
 }
 
-export interface LogoGenerationState {
-  isLoading: boolean;
-  error: APIError | null;
-  progress: number; // Overall progress 0-100
-  currentStage: string | null; // Name of the current stage
-  estimatedTimeRemaining: number | null; // In seconds
-  generatedLogoSvg: string | null; // SVG code of the primary logo
-  assets: LogoGenerationAssets | null;
-  // New detailed progress state
-  stages: Stage[];
-  currentStageId: string | null;
-  overallProgress: number; // 0-100
-}
+// LogoGenerationState interface is already defined above
 
 export interface LogoGenerationResult extends LogoGenerationAssets {
   success: boolean;
@@ -246,17 +226,7 @@ export interface ValidatedFile extends File {
   errors?: string[];
 }
 
-// File download information type for assets
-export interface FileDownloadInfo {
-  id: string;
-  name: string;
-  type: string; // File type like 'SVG', 'PNG', 'ICO', 'HTML', 'ZIP'
-  size: number; // File size in bytes
-  url: string; // Download URL
-  isPrimary?: boolean; // Whether this is the primary/main file
-  status?: 'pending' | 'downloading' | 'completed' | 'error';
-  progress?: number; // Download progress 0-100
-}
+// FileDownloadInfo interface is already defined above
 
 // Types for Download Manager
 export interface DownloadableFile {
@@ -264,8 +234,8 @@ export interface DownloadableFile {
   name: string;
   url: string;
   type: string; // e.g., 'SVG', 'PNG', 'ZIP', 'HTML'
-  size: number; // in bytes
-  status?: 'pending' | 'downloading' | 'completed' | 'error'; // Made optional to match FileDownloadInfo
+  size?: number; // in bytes
+  status?: 'pending' | 'downloading' | 'completed' | 'error';
   progress?: number; // 0-100 for downloading status
   isPrimary?: boolean; // e.g. the main SVG or ZIP
 }
