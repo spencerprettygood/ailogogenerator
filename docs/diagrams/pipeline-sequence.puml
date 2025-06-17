@@ -1,0 +1,141 @@
+@startuml AI Logo Generator Pipeline
+
+actor User
+participant "UI" as UI
+participant "PipelineOrchestrator" as Orchestrator
+participant "RequirementsAgent" as ReqAgent
+participant "MoodboardAgent" as MoodAgent
+participant "SelectionAgent" as SelAgent
+participant "SVGGenerationAgent" as SVGAgent
+participant "SVGValidationAgent" as ValidAgent
+participant "VariantGenerationAgent" as VarAgent
+participant "GuidelineAgent" as GuideAgent
+participant "PackagingAgent" as PackAgent
+database "FileStorage" as Storage
+participant "ErrorHandler" as Error
+
+autonumber
+
+== Initialization ==
+User -> UI: Submit logo brief and optional reference images
+UI -> Orchestrator: Start logo generation pipeline
+
+== Stage A: Requirements Distillation ==
+Orchestrator -> ReqAgent: Extract design requirements
+activate ReqAgent
+ReqAgent -> ReqAgent: Analyze brief
+ReqAgent -> ReqAgent: Process reference images (if any)
+ReqAgent --> Orchestrator: Return structured design specifications
+deactivate ReqAgent
+Orchestrator -> Error: Validate JSON structure
+alt Valid Specifications
+    Error --> Orchestrator: Validation passed
+else Invalid Specifications
+    Error --> Orchestrator: Validation failed
+    Orchestrator -> ReqAgent: Retry with error context
+    ReqAgent --> Orchestrator: Return corrected specifications
+end
+
+== Stage B: Moodboard Generation ==
+Orchestrator -> MoodAgent: Generate concept options
+activate MoodAgent
+MoodAgent -> MoodAgent: Create 3 visual concepts
+MoodAgent --> Orchestrator: Return concept options
+deactivate MoodAgent
+
+== Stage C: Direction Selection ==
+Orchestrator -> SelAgent: Select best concept
+activate SelAgent
+SelAgent -> SelAgent: Score concepts against requirements
+SelAgent --> Orchestrator: Return selected concept with rationale
+deactivate SelAgent
+note right
+  User can optionally override 
+  the selected concept
+end note
+
+== Stage D: SVG Generation ==
+Orchestrator -> SVGAgent: Generate SVG logo
+activate SVGAgent
+SVGAgent -> SVGAgent: Create production-ready SVG
+SVGAgent --> Orchestrator: Return SVG code
+deactivate SVGAgent
+
+== Stage E: Validation & Repair ==
+Orchestrator -> ValidAgent: Validate SVG
+activate ValidAgent
+ValidAgent -> ValidAgent: Check syntax, security, accessibility
+alt Valid SVG
+    ValidAgent --> Orchestrator: Validation passed
+else Invalid SVG
+    ValidAgent -> ValidAgent: Attempt automatic repair
+    alt Repair Successful
+        ValidAgent --> Orchestrator: Return repaired SVG
+    else Repair Failed
+        ValidAgent --> Orchestrator: Return validation errors
+        Orchestrator -> SVGAgent: Regenerate with error context
+        SVGAgent --> Orchestrator: Return new SVG code
+        Orchestrator -> ValidAgent: Revalidate SVG
+        ValidAgent --> Orchestrator: Validation result
+    end
+end
+deactivate ValidAgent
+
+== Stage F: Variant Generation ==
+Orchestrator -> VarAgent: Generate logo variants
+activate VarAgent
+VarAgent -> VarAgent: Create monochrome versions
+VarAgent -> VarAgent: Generate simplified favicon
+VarAgent -> VarAgent: Create PNG exports
+VarAgent --> Orchestrator: Return variant assets
+deactivate VarAgent
+Orchestrator -> Storage: Store variant files
+
+== Stage G: Brand Guidelines ==
+Orchestrator -> GuideAgent: Generate brand guidelines
+activate GuideAgent
+GuideAgent -> GuideAgent: Create HTML brand guide
+GuideAgent --> Orchestrator: Return guidelines document
+deactivate GuideAgent
+Orchestrator -> Storage: Store guidelines
+
+== Stage H: Packaging & Delivery ==
+Orchestrator -> PackAgent: Package all assets
+activate PackAgent
+PackAgent -> Storage: Retrieve all generated assets
+PackAgent -> PackAgent: Create ZIP package
+PackAgent -> Storage: Store ZIP file
+PackAgent --> Orchestrator: Return download URL
+deactivate PackAgent
+Orchestrator --> UI: Return completed package URL
+UI --> User: Present download link and completion message
+
+== Error Handling (can occur at any stage) ==
+note across
+  Error handling can be triggered from any stage
+end note
+Orchestrator -> Error: Handle error
+activate Error
+Error -> Error: Classify error type
+alt User Input Error
+    Error --> Orchestrator: Return guidance for user
+    Orchestrator --> UI: Request user clarification
+    UI --> User: Display error with suggestions
+    User --> UI: Provide additional information
+    UI --> Orchestrator: Resume pipeline with new input
+else AI Generation Error
+    Error -> Error: Attempt fallback strategy
+    Error --> Orchestrator: Return fallback option
+    Orchestrator -> Orchestrator: Retry with fallback
+else Processing Error
+    Error -> Error: Apply retry with backoff
+    Error --> Orchestrator: Trigger retry
+    Orchestrator -> Orchestrator: Retry affected stage
+else System Error
+    Error --> Orchestrator: Return critical error
+    Orchestrator --> UI: Return error with support ID
+    UI --> User: Display system error message
+end
+deactivate Error
+
+@enduml
