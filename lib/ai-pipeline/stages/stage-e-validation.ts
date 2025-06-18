@@ -1,15 +1,23 @@
 import { optimize } from 'svgo';
+import { SVGValidator } from '../../utils/svg-validator';
 
 // Types for Stage E
 export interface SvgValidationResult {
   isValid: boolean;
   svg: string; // Original or optimized/repaired SVG
   warnings: string[];
+  errors?: string[];
   optimized: boolean;
   optimizationResults?: {
     originalSize: number;
     optimizedSize: number;
     reductionPercentage: number;
+  };
+  scores?: {
+    security: number;
+    accessibility: number;
+    optimization: number;
+    overall: number;
   };
 }
 
@@ -31,7 +39,7 @@ export interface StageEOutput {
   processingTime?: number;
 }
 
-// Configuration
+// Configuration - keeping this for backward compatibility
 const STAGE_E_CONFIG = {
   max_svg_size: 15 * 1024, // 15KB maximum size
   min_svg_size: 50, // Minimum reasonable size
@@ -55,86 +63,16 @@ const STAGE_E_CONFIG = {
   ]
 };
 
-// SVG validator class
+// SVG validator wrapper class that uses the enhanced SVGValidator from utils
 class SvgValidator {
-  static validate(svg: string): { isValid: boolean; warnings: string[] } {
-    const warnings: string[] = [];
-    
-    // Check if SVG is empty or not a string
-    if (!svg || typeof svg !== 'string') {
-      return { isValid: false, warnings: ['SVG is empty or not a string'] };
-    }
-    
-    // Check size
-    if (svg.length > STAGE_E_CONFIG.max_svg_size) {
-      warnings.push(`SVG exceeds maximum size of ${STAGE_E_CONFIG.max_svg_size / 1024}KB`);
-    }
-    
-    if (svg.length < STAGE_E_CONFIG.min_svg_size) {
-      warnings.push(`SVG is suspiciously small (${svg.length} bytes)`);
-    }
-    
-    // Basic structure checks
-    if (!svg.includes('<svg')) {
-      warnings.push('Missing <svg> element');
-      return { isValid: false, warnings };
-    }
-    
-    if (!svg.includes('viewBox') && !svg.includes('width') && !svg.includes('height')) {
-      warnings.push('Missing viewBox, width, or height attributes');
-    }
-    
-    // Check for disallowed elements
-    for (const element of STAGE_E_CONFIG.disallowed_elements) {
-      if (svg.toLowerCase().includes(`<${element.toLowerCase()}`)) {
-        warnings.push(`Contains disallowed element: ${element}`);
-      }
-    }
-    
-    // Check for disallowed attributes
-    for (const attr of STAGE_E_CONFIG.disallowed_attributes) {
-      const regex = new RegExp(`\\s${attr}\\s*=`, 'i');
-      if (regex.test(svg)) {
-        warnings.push(`Contains disallowed attribute: ${attr}`);
-      }
-    }
-    
-    // Check for disallowed protocols
-    for (const protocol of STAGE_E_CONFIG.disallowed_protocols) {
-      if (svg.toLowerCase().includes(protocol.toLowerCase())) {
-        warnings.push(`Contains disallowed protocol: ${protocol}`);
-      }
-    }
-    
-    // Check for unclosed tags
-    const openingTags = svg.match(/<[a-zA-Z][^>/]*>/g) || [];
-    const closingTags = svg.match(/<\/[a-zA-Z][^>]*>/g) || [];
-    const selfClosingTags = svg.match(/<[a-zA-Z][^>]*\/>/g) || [];
-    
-    if (openingTags.length - selfClosingTags.length !== closingTags.length) {
-      warnings.push('SVG may have unclosed tags');
-    }
-    
-    // Check for required attributes on svg root
-    if (!svg.match(/<svg[^>]*xmlns=["']http:\/\/www\.w3\.org\/2000\/svg["']/)) {
-      warnings.push('Missing xmlns attribute on svg element');
-    }
-    
-    // Check for accessibility
-    if (!svg.includes('<title>') && !svg.includes('<desc>')) {
-      warnings.push('Missing title or desc elements for accessibility');
-    }
-    
-    // Determine if valid
-    const criticalWarnings = warnings.filter(w => 
-      w.includes('disallowed') || 
-      w.includes('Missing <svg>') ||
-      w.includes('suspiciously small')
-    );
+  static validate(svg: string): { isValid: boolean; warnings: string[]; errors?: string[] } {
+    // Use the enhanced SVGValidator from utils
+    const validationResult = SVGValidator.validate(svg);
     
     return {
-      isValid: criticalWarnings.length === 0,
-      warnings
+      isValid: validationResult.isValid,
+      warnings: validationResult.warnings,
+      errors: validationResult.errors
     };
   }
 
@@ -143,6 +81,19 @@ class SvgValidator {
       throw new Error('Cannot repair empty or non-string SVG');
     }
 
+    // Use the enhanced SVGValidator repair functionality if available
+    try {
+      const repairResult = SVGValidator.repair(svg);
+      
+      // If repair worked, return the repaired SVG
+      if (repairResult.isRepaired && repairResult.remainingIssues.length === 0) {
+        return repairResult.svg;
+      }
+    } catch (error) {
+      console.warn('Advanced SVG repair failed, falling back to basic repair', error);
+    }
+
+    // Fall back to the original repair method for backward compatibility
     let repairedSvg = svg;
     
     // Add XML declaration if missing
@@ -231,6 +182,19 @@ class SvgValidator {
   }
 
   static optimizeSvg(svg: string): { svg: string; originalSize: number; optimizedSize: number } {
+    // First try to use the enhanced SVGValidator optimize functionality
+    try {
+      const optimizationResult = SVGValidator.optimize(svg);
+      return {
+        svg: optimizationResult.svg,
+        originalSize: optimizationResult.originalSize,
+        optimizedSize: optimizationResult.optimizedSize
+      };
+    } catch (error) {
+      console.warn('Advanced SVG optimization failed, falling back to SVGO', error);
+    }
+    
+    // Fall back to SVGO for backward compatibility
     const originalSize = svg.length;
     
     try {
@@ -276,28 +240,108 @@ export async function validateAndRepairSvg(
       throw new Error('Brand name is required for accessibility elements');
     }
     
-    // Initial validation
-    let { isValid, warnings } = SvgValidator.validate(input.svg);
+    // Initial validation using enhanced SVG validator
+    let validationResult = SvgValidator.validate(input.svg);
+    let { isValid, warnings, errors } = validationResult;
     let resultSvg = input.svg;
     let optimized = false;
     let optimizationResults;
+    let scores;
     
-    // Repair if requested and there are warnings
-    if (input.repair !== false && warnings.length > 0) {
-      resultSvg = SvgValidator.repairSvg(resultSvg, input.brandName);
+    // If the advanced SVGValidator from utils provided scores, use them
+    if ('securityScore' in validationResult && validationResult.securityScore !== undefined) {
+      scores = {
+        security: validationResult.securityScore,
+        accessibility: validationResult.accessibilityScore || 0,
+        optimization: validationResult.optimizationScore || 0,
+        overall: Math.round((
+          (validationResult.securityScore || 0) * 0.5 + 
+          (validationResult.accessibilityScore || 0) * 0.3 + 
+          (validationResult.optimizationScore || 0) * 0.2
+        ))
+      };
+    }
+    
+    // Repair if requested and there are warnings or errors
+    if (input.repair !== false && (warnings.length > 0 || (errors && errors.length > 0))) {
+      // Try using the more advanced SVGValidator.process method first
+      try {
+        if (typeof SVGValidator.process === 'function') {
+          const processResult = SVGValidator.process(resultSvg, { 
+            repair: true, 
+            optimize: input.optimize !== false 
+          });
+          
+          if (processResult.success) {
+            resultSvg = processResult.svg;
+            optimized = input.optimize !== false;
+            
+            // Calculate size reduction if optimized
+            if (optimized && processResult.optimization) {
+              optimizationResults = {
+                originalSize: processResult.optimization.originalSize,
+                optimizedSize: processResult.optimization.optimizedSize,
+                reductionPercentage: processResult.optimization.reductionPercent
+              };
+            }
+            
+            // Use the latest validation result
+            const revalidation = SvgValidator.validate(resultSvg);
+            isValid = revalidation.isValid;
+            warnings = revalidation.warnings;
+            errors = revalidation.errors;
+            
+            // Update scores if available
+            if ('securityScore' in revalidation && revalidation.securityScore !== undefined) {
+              scores = {
+                security: revalidation.securityScore,
+                accessibility: revalidation.accessibilityScore || 0,
+                optimization: revalidation.optimizationScore || 0,
+                overall: Math.round((
+                  (revalidation.securityScore || 0) * 0.5 + 
+                  (revalidation.accessibilityScore || 0) * 0.3 + 
+                  (revalidation.optimizationScore || 0) * 0.2
+                ))
+              };
+            }
+          }
+        }
+      } catch (processError) {
+        console.warn('Advanced SVG processing failed, falling back to basic methods', processError);
+      }
       
-      // Re-validate after repair
-      const revalidation = SvgValidator.validate(resultSvg);
-      isValid = revalidation.isValid;
-      warnings = revalidation.warnings;
-      
-      if (warnings.length > 0 && process.env.NODE_ENV === 'development') {
-        console.warn('SVG repair could not fix all issues:', warnings);
+      // If we haven't successfully processed the SVG yet, fall back to the basic methods
+      if (!isValid || warnings.length > 0 || (errors && errors.length > 0)) {
+        resultSvg = SvgValidator.repairSvg(resultSvg, input.brandName);
+        
+        // Re-validate after repair
+        const revalidation = SvgValidator.validate(resultSvg);
+        isValid = revalidation.isValid;
+        warnings = revalidation.warnings;
+        errors = revalidation.errors;
+        
+        if (warnings.length > 0 && process.env.NODE_ENV === 'development') {
+          console.warn('SVG repair could not fix all issues:', warnings);
+        }
+        
+        // Update scores if available after repair
+        if ('securityScore' in revalidation && revalidation.securityScore !== undefined) {
+          scores = {
+            security: revalidation.securityScore,
+            accessibility: revalidation.accessibilityScore || 0,
+            optimization: revalidation.optimizationScore || 0,
+            overall: Math.round((
+              (revalidation.securityScore || 0) * 0.5 + 
+              (revalidation.accessibilityScore || 0) * 0.3 + 
+              (revalidation.optimizationScore || 0) * 0.2
+            ))
+          };
+        }
       }
     }
     
-    // Optimize if requested
-    if (input.optimize !== false && isValid) {
+    // Optimize if requested and not already optimized
+    if (input.optimize !== false && isValid && !optimized) {
       const optimization = SvgValidator.optimizeSvg(resultSvg);
       resultSvg = optimization.svg;
       optimized = true;
@@ -321,6 +365,20 @@ export async function validateAndRepairSvg(
         optimized = false;
         optimizationResults = undefined;
         warnings.push('Optimization was reverted because it made the SVG invalid');
+      } else {
+        // Update scores if available after optimization
+        if ('securityScore' in revalidation && revalidation.securityScore !== undefined) {
+          scores = {
+            security: revalidation.securityScore,
+            accessibility: revalidation.accessibilityScore || 0,
+            optimization: revalidation.optimizationScore || 0,
+            overall: Math.round((
+              (revalidation.securityScore || 0) * 0.5 + 
+              (revalidation.accessibilityScore || 0) * 0.3 + 
+              (revalidation.optimizationScore || 0) * 0.2
+            ))
+          };
+        }
       }
     }
     
@@ -332,8 +390,10 @@ export async function validateAndRepairSvg(
         isValid,
         svg: resultSvg,
         warnings,
+        errors,
         optimized,
-        optimizationResults
+        optimizationResults,
+        scores
       },
       processingTime
     };
@@ -373,4 +433,12 @@ export const STAGE_E_METADATA = {
   disallowed_elements: STAGE_E_CONFIG.disallowed_elements,
   disallowed_attributes: STAGE_E_CONFIG.disallowed_attributes,
   max_svg_size: STAGE_E_CONFIG.max_svg_size,
+  features: {
+    security_scoring: true,
+    accessibility_scoring: true,
+    optimization_scoring: true,
+    enhanced_validation: true,
+    enhanced_repair: true,
+    svg_optimization: true
+  }
 };
