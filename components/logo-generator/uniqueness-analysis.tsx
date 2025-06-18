@@ -1,201 +1,152 @@
-'use client'
-
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { UniquenessAnalysisResult, CompetitorLogo } from '@/lib/types';
-import { AlertTriangle, CheckCircle, Info, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { UniquenessAnalysis as UniquenessAnalysisType } from '@/lib/types';
+import { AlertTriangle, Check } from 'lucide-react';
 
 interface UniquenessAnalysisProps {
-  analysis: UniquenessAnalysisResult;
-  className?: string;
+  analysis: UniquenessAnalysisType;
 }
 
-export function UniquenessAnalysis({ analysis, className = '' }: UniquenessAnalysisProps) {
-  const getSeverityColor = (severity: string): string => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-700 border-red-300';
-      case 'warning':
-        return 'bg-amber-100 text-amber-700 border-amber-300';
-      case 'info':
-      default:
-        return 'bg-blue-100 text-blue-700 border-blue-300';
-    }
+export const UniquenessAnalysis: React.FC<UniquenessAnalysisProps> = ({
+  analysis
+}) => {
+  // Get uniqueness level based on score
+  const getUniquenessLevel = (score: number) => {
+    if (score >= 85) return { label: 'Highly Unique', color: 'text-green-600 dark:text-green-500' };
+    if (score >= 70) return { label: 'Unique', color: 'text-blue-600 dark:text-blue-500' };
+    if (score >= 50) return { label: 'Moderately Unique', color: 'text-yellow-600 dark:text-yellow-500' };
+    return { label: 'Low Uniqueness', color: 'text-red-600 dark:text-red-500' };
   };
 
-  const getScoreColor = (score: number): string => {
-    if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-blue-600';
-    if (score >= 50) return 'text-amber-600';
-    return 'text-red-600';
+  // Calculate progress color based on score
+  const getProgressColor = (score: number) => {
+    if (score >= 85) return 'bg-green-600';
+    if (score >= 70) return 'bg-blue-600';
+    if (score >= 50) return 'bg-yellow-600';
+    return 'bg-red-600';
   };
 
-  const getSimilarityColor = (score: number): string => {
-    if (score >= 75) return 'text-red-600';
-    if (score >= 50) return 'text-amber-600';
-    if (score >= 25) return 'text-blue-600';
-    return 'text-green-600';
-  };
+  const uniquenessLevel = getUniquenessLevel(analysis.score);
+  const progressColor = getProgressColor(analysis.score);
 
-  // Round score to the nearest whole number
-  const uniquenessScore = Math.round(analysis.uniquenessScore);
-  
   return (
-    <div className={`bg-white rounded-lg shadow p-5 ${className}`}>
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-1 flex items-center">
-          <ThumbsUp className="w-5 h-5 mr-2" />
-          Logo Uniqueness Analysis
-        </h3>
-        <p className="text-gray-600 text-sm">
-          Analysis of your logo's uniqueness compared to industry competitors
-        </p>
-      </div>
-      
-      {/* Score and assessment */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-lg p-4">
-          <div>
-            <div className="text-center mb-1 text-sm font-medium text-gray-500">Uniqueness Score</div>
-            <div className={`text-4xl font-bold text-center ${getScoreColor(uniquenessScore)}`}>
-              {uniquenessScore}<span className="text-sm">/100</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 bg-gray-50 rounded-lg p-4">
-          <div className="text-sm font-medium text-gray-500 mb-1">Overall Assessment</div>
-          <p className="text-gray-700">
-            {analysis.analysis.overallAssessment}
-          </p>
-        </div>
-      </div>
-      
-      {/* Detailed analysis */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="border rounded-lg p-4">
-          <h4 className="font-medium mb-2 flex items-center">
-            <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-            Unique Elements
-          </h4>
-          <ul className="space-y-1">
-            {analysis.analysis.uniqueElements.map((element, i) => (
-              <li key={`unique-${i}`} className="text-sm text-gray-700 flex items-start">
-                <span className="text-green-500 mr-2">•</span>
-                {element}
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <div className="border rounded-lg p-4">
-          <h4 className="font-medium mb-2 flex items-center">
-            <AlertTriangle className="w-4 h-4 mr-2 text-amber-500" />
-            Potential Issues
-          </h4>
-          <ul className="space-y-1">
-            {analysis.analysis.potentialIssues.length > 0 ? (
-              analysis.analysis.potentialIssues.map((issue, i) => (
-                <li key={`issue-${i}`} className="text-sm text-gray-700 flex items-start">
-                  <span className="text-amber-500 mr-2">•</span>
-                  {issue}
-                </li>
-              ))
-            ) : (
-              <li className="text-sm text-gray-700">No significant issues detected</li>
-            )}
-          </ul>
-        </div>
-      </div>
-      
-      {/* Industry conventions and differentiators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="border rounded-lg p-4">
-          <h4 className="font-medium mb-2 flex items-center">
-            <Info className="w-4 h-4 mr-2 text-blue-500" />
-            Industry Conventions
-          </h4>
-          <ul className="space-y-1">
-            {analysis.analysis.industryConventions.map((convention, i) => (
-              <li key={`convention-${i}`} className="text-sm text-gray-700 flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
-                {convention}
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <div className="border rounded-lg p-4">
-          <h4 className="font-medium mb-2 flex items-center">
-            <ThumbsUp className="w-4 h-4 mr-2 text-indigo-500" />
-            Key Differentiators
-          </h4>
-          <ul className="space-y-1">
-            {analysis.analysis.differentiators.map((differentiator, i) => (
-              <li key={`differentiator-${i}`} className="text-sm text-gray-700 flex items-start">
-                <span className="text-indigo-500 mr-2">•</span>
-                {differentiator}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      
-      {/* Similar logos */}
-      {analysis.similarLogos.length > 0 && (
-        <div className="mb-6">
-          <h4 className="font-medium mb-3">Similar Logos in the Industry</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {analysis.similarLogos.map((logo) => (
-              <div key={logo.id} className="border rounded-lg p-3 bg-gray-50">
-                <div className="flex justify-between items-start mb-2">
-                  <h5 className="font-medium text-sm">{logo.companyName}</h5>
-                  <Badge variant="outline" className={getSimilarityColor(logo.similarityScore)}>
-                    {Math.round(logo.similarityScore)}% similar
-                  </Badge>
-                </div>
-                
-                <ul className="space-y-1 mt-2">
-                  {logo.similarElements.map((element, i) => (
-                    <li key={`similar-${logo.id}-${i}`} className="text-xs text-gray-600 flex items-start">
-                      <span className="text-gray-400 mr-1">•</span>
-                      {element}
-                    </li>
-                  ))}
-                </ul>
-                
-                {logo.imageUrl && (
-                  <div className="mt-2 flex justify-end">
-                    <a 
-                      href={logo.imageUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                    >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      View logo
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Recommendations */}
-      <div>
-        <h4 className="font-medium mb-3">Recommendations</h4>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Uniqueness Analysis</span>
+          <Badge className={uniquenessLevel.color}>
+            {uniquenessLevel.label}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Overall score */}
         <div className="space-y-2">
-          {analysis.recommendations.map((rec, i) => (
-            <div 
-              key={`rec-${i}`} 
-              className={`text-sm border rounded-lg p-3 ${getSeverityColor(rec.severity)}`}
-            >
-              {rec.text}
-            </div>
-          ))}
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">Overall Uniqueness Score</span>
+            <span className="text-sm font-bold">{analysis.score}/100</span>
+          </div>
+          <Progress value={analysis.score} className={progressColor} />
         </div>
-      </div>
-    </div>
+        
+        {/* Uniqueness factors */}
+        {analysis.uniquenessFactors && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Uniqueness Factors</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Shape</span>
+                  <span>{analysis.uniquenessFactors.shape}/100</span>
+                </div>
+                <Progress value={analysis.uniquenessFactors.shape} className={getProgressColor(analysis.uniquenessFactors.shape)} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Color</span>
+                  <span>{analysis.uniquenessFactors.color}/100</span>
+                </div>
+                <Progress value={analysis.uniquenessFactors.color} className={getProgressColor(analysis.uniquenessFactors.color)} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Style</span>
+                  <span>{analysis.uniquenessFactors.style}/100</span>
+                </div>
+                <Progress value={analysis.uniquenessFactors.style} className={getProgressColor(analysis.uniquenessFactors.style)} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Concept</span>
+                  <span>{analysis.uniquenessFactors.concept}/100</span>
+                </div>
+                <Progress value={analysis.uniquenessFactors.concept} className={getProgressColor(analysis.uniquenessFactors.concept)} />
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Industry distinctiveness */}
+        {analysis.industryDistinctiveness !== undefined && (
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Industry Distinctiveness</span>
+              <span className="text-sm font-medium">{analysis.industryDistinctiveness}/100</span>
+            </div>
+            <Progress value={analysis.industryDistinctiveness} className={getProgressColor(analysis.industryDistinctiveness)} />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              How unique your logo is compared to common design patterns in your industry.
+            </p>
+          </div>
+        )}
+        
+        {/* Similar logos */}
+        {analysis.similarLogos && analysis.similarLogos.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium flex items-center">
+              <AlertTriangle size={16} className="mr-1 text-yellow-500" />
+              Potential Similarities Found
+            </h4>
+            <div className="space-y-3">
+              {analysis.similarLogos.map((logo, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                  {logo.imageUrl && (
+                    <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded flex-shrink-0 flex items-center justify-center">
+                      <img src={logo.imageUrl} alt={logo.name} className="max-w-full max-h-full" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-medium text-sm">{logo.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {logo.similarity}% similarity
+                    </div>
+                    {logo.description && (
+                      <div className="text-xs mt-1">{logo.description}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Suggested changes */}
+        {analysis.suggestedChanges && analysis.suggestedChanges.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Suggested Improvements</h4>
+            <ul className="space-y-2">
+              {analysis.suggestedChanges.map((change, index) => (
+                <li key={index} className="text-sm flex items-start">
+                  <Check size={16} className="mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>{change}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};

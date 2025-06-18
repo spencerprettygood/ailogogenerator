@@ -1,200 +1,172 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '../ui/button';
-import { Card } from '../ui/card';
-import { Badge } from '../ui/badge';
+import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 
 interface AnimatedLogoDisplayProps {
   svgCode: string;
-  cssCode: string;
+  cssCode?: string;
   jsCode?: string;
   className?: string;
   showControls?: boolean;
-  autoPlay?: boolean;
-  loop?: boolean;
 }
 
-export function AnimatedLogoDisplay({
+export const AnimatedLogoDisplay: React.FC<AnimatedLogoDisplayProps> = ({
   svgCode,
   cssCode,
   jsCode,
   className = '',
-  showControls = true,
-  autoPlay = true,
-  loop = true
-}: AnimatedLogoDisplayProps) {
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [currentCss, setCurrentCss] = useState(cssCode);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Process SVG code to ensure it's a valid SVG
-  const processedSvg = svgCode.trim().startsWith('<svg')
-    ? svgCode
-    : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${svgCode}</svg>`;
-
-  // Generate the complete HTML for the iframe
-  const generateIframeContent = useCallback(() => {
-    const playingClass = isPlaying ? 'is-playing' : 'is-paused';
-    const loopClass = loop ? 'is-looping' : '';
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: transparent;
-          }
-
-          .animated-logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-          }
-
-          .animated-logo-container svg {
-            max-width: 100%;
-            max-height: 100%;
-          }
-
-          .is-paused * {
-            animation-play-state: paused !important;
-          }
-
-          ${currentCss}
-        </style>
-      </head>
-      <body>
-        <div class="animated-logo-container ${playingClass} ${loopClass}">
-          ${processedSvg}
-        </div>
-
-        ${jsCode ? `<script>${jsCode}</script>` : ''}
-      </body>
-      </html>
+  showControls = false
+}) => {
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Generate a unique ID for this animation instance
+  const animationId = React.useMemo(() => 
+    `animated-logo-${Math.random().toString(36).substring(2, 11)}`, 
+    []
+  );
+  
+  // Prepare the animated SVG with embedded CSS and JS
+  const prepareAnimatedSvg = () => {
+    // Add ID to the SVG element for targeting
+    let modifiedSvg = svgCode.replace('<svg', `<svg id="${animationId}"`);
+    
+    // Create a document fragment to hold the full HTML content
+    const fullContent = `
+      <style>
+        /* Container styles */
+        .animated-logo-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          height: 100%;
+        }
+        
+        /* SVG styles */
+        #${animationId} {
+          max-width: 100%;
+          max-height: 100%;
+        }
+        
+        /* Custom animation CSS */
+        ${cssCode || ''}
+        
+        /* Paused state */
+        .animation-paused #${animationId} * {
+          animation-play-state: paused !important;
+          transition: none !important;
+        }
+      </style>
+      
+      <div class="animated-logo-container ${isPaused ? 'animation-paused' : ''}">
+        ${modifiedSvg}
+      </div>
+      
+      <script>
+        // Execute when content is loaded
+        (function() {
+          // Custom animation JS
+          ${jsCode || ''}
+          
+          // Animation control functions
+          window.resetAnimation_${animationId} = function() {
+            const svg = document.getElementById('${animationId}');
+            if (svg) {
+              // Clone and replace to restart animations
+              const parent = svg.parentNode;
+              const clone = svg.cloneNode(true);
+              parent.replaceChild(clone, svg);
+            }
+          };
+        })();
+      </script>
     `;
-  }, [isPlaying, loop, processedSvg, currentCss, jsCode]);
-
-  // Update iframe content when props change
+    
+    return fullContent;
+  };
+  
+  // Toggle play/pause state
+  const togglePlayPause = () => {
+    setIsPaused(!isPaused);
+    setIsPlaying(!isPaused);
+  };
+  
+  // Reset animation
+  const resetAnimation = () => {
+    if (containerRef.current) {
+      // Execute the reset function defined in the embedded script
+      if (typeof window !== 'undefined' && window[`resetAnimation_${animationId}`]) {
+        window[`resetAnimation_${animationId}`]();
+      } else {
+        // Fallback: Replace the entire content to reset
+        const content = prepareAnimatedSvg();
+        containerRef.current.innerHTML = content;
+      }
+      
+      // Ensure playing state
+      setIsPaused(false);
+      setIsPlaying(true);
+    }
+  };
+  
+  // Set up animation on initial render
   useEffect(() => {
-    if (iframeRef.current) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(generateIframeContent());
-        doc.close();
+    if (containerRef.current) {
+      const content = prepareAnimatedSvg();
+      containerRef.current.innerHTML = content;
+    }
+    
+    // Execute any JS code that needs to run after the DOM is updated
+    if (jsCode && typeof window !== 'undefined') {
+      try {
+        // Use a safer approach than eval
+        const executeScript = new Function(jsCode);
+        executeScript();
+      } catch (error) {
+        console.error('Error executing animation JS:', error);
       }
     }
-  }, [svgCode, currentCss, jsCode, isPlaying, loop, generateIframeContent]);
-
-  // Toggle animation play state
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  // Restart animation
-  const restartAnimation = () => {
-    if (iframeRef.current) {
-      const tempCss = currentCss;
-      setCurrentCss('/* temp */');
-      setTimeout(() => {
-        setCurrentCss(tempCss);
-        setIsPlaying(true);
-      }, 10);
-    }
-  };
-
-  // Toggle loop
-  const toggleLoop = () => {
-    // This would need custom handling in the CSS
-    // For now, we'll just toggle the state
-    // A proper implementation would modify animation-iteration-count in the CSS
-    restartAnimation();
-  };
+    
+    // Clean up on unmount
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [svgCode, cssCode, jsCode, isPaused]);
 
   return (
-    <div className={`animated-logo-display ${className}`}>
-      <Card className="overflow-hidden">
-        <div className="relative">
-          <iframe
-            ref={iframeRef}
-            srcDoc={generateIframeContent()}
-            className="w-full aspect-square border-0"
-            title="Animated Logo"
-            sandbox="allow-scripts"
-          />
-          
-          {showControls && (
-            <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/20 backdrop-blur-sm">
-              <div className="flex justify-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={togglePlay}
-                  className="text-xs"
-                >
-                  {isPlaying ? 'Pause' : 'Play'}
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={restartAnimation}
-                  className="text-xs"
-                >
-                  Restart
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={toggleLoop}
-                  className="text-xs"
-                >
-                  {loop ? 'Loop: On' : 'Loop: Off'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+    <div className={`relative ${className}`}>
+      <div 
+        ref={containerRef} 
+        className="w-full h-full min-h-[200px]"
+      />
       
-      <div className="mt-2 flex justify-between items-center">
-        <Badge variant="outline" className="text-xs">
-          Animated SVG
-        </Badge>
-        
-        <div className="text-xs text-gray-500">
-          SVG + CSS Animation
+      {showControls && (
+        <div className="absolute bottom-2 right-2 flex space-x-2">
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="w-8 h-8 p-0 rounded-full" 
+            onClick={togglePlayPause}
+            title={isPaused ? "Play animation" : "Pause animation"}
+          >
+            {isPaused ? <Play size={14} /> : <Pause size={14} />}
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="w-8 h-8 p-0 rounded-full" 
+            onClick={resetAnimation}
+            title="Reset animation"
+          >
+            <RotateCcw size={14} />
+          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
-}
-
-// Export a preview component for showing small animated logo previews
-export function AnimatedLogoPreview({
-  svgCode,
-  cssCode,
-  jsCode,
-  className = ''
-}: Omit<AnimatedLogoDisplayProps, 'showControls' | 'autoPlay' | 'loop'>) {
-  return (
-    <AnimatedLogoDisplay
-      svgCode={svgCode}
-      cssCode={cssCode}
-      jsCode={jsCode}
-      className={`${className} w-24 h-24`}
-      showControls={false}
-      autoPlay={true}
-      loop={true}
-    />
-  );
-}
+};

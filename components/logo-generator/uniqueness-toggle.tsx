@@ -1,10 +1,7 @@
-'use client'
-
 import React from 'react';
-import { Fingerprint } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface UniquenessToggleProps {
   enabled: boolean;
@@ -12,31 +9,36 @@ interface UniquenessToggleProps {
   className?: string;
 }
 
-export function UniquenessToggle({ enabled, onToggle, className = '' }: UniquenessToggleProps) {
+export const UniquenessToggle: React.FC<UniquenessToggleProps> = ({
+  enabled,
+  onToggle,
+  className = ''
+}) => {
   return (
-    <Card className={`p-4 ${className}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-100 p-2 rounded-full">
-            <Fingerprint className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <Label htmlFor="uniqueness-analysis" className="font-medium text-sm">
-              Industry Uniqueness Analysis
-            </Label>
-            <p className="text-xs text-muted-foreground mt-1">
-              Analyze your logo against industry competitors to ensure uniqueness
-            </p>
-          </div>
-        </div>
+    <div className={`flex items-center justify-between ${className}`}>
+      <div className="flex items-center">
+        <span className="text-sm font-medium mr-2">Include uniqueness analysis</span>
         
-        <Switch
-          id="uniqueness-analysis"
-          checked={enabled}
-          onCheckedChange={onToggle}
-          aria-label="Enable uniqueness analysis"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <InfoCircledIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">
+                Analyzes your logo against common designs in your industry to ensure originality.
+                This helps prevent accidental similarity to existing brands.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
-    </Card>
+      
+      <Switch
+        checked={enabled}
+        onCheckedChange={onToggle}
+        aria-label="Toggle uniqueness analysis"
+      />
+    </div>
   );
-}
+};

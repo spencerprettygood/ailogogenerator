@@ -9,6 +9,7 @@ AI Logo Generator is an application that transforms natural language description
 - AI-powered SVG logo generation
 - Multiple logo variants (color, monochrome)
 - Brand guidelines document
+- Logo animation system with multiple effects
 - Real-time progress tracking
 - Complete asset package export
 
@@ -45,6 +46,7 @@ Stage E: Validation → Verify SVG security and quality
 Stage F: Variants → Generate monochrome/simplified versions
 Stage G: Guidelines → Create brand usage guidelines
 Stage H: Packaging → Bundle all assets for download
+Stage I: Animation → Apply selected animations to SVG logos
 ```
 
 Each stage is handled by specialized agents using Claude models optimized for specific tasks (Sonnet for creative generation, Haiku for fast analysis/validation).
@@ -166,6 +168,9 @@ yarn build
   /ai-pipeline        # Logo generation pipeline
     /stages           # Individual pipeline stages
     /validators       # Input/output validation
+  /animation          # Logo animation system
+    /providers        # Animation technology providers (SMIL, CSS, JS)
+    /utils            # Animation utility functions
   /services           # External service integrations
   /utils              # Utility functions
 
@@ -186,6 +191,18 @@ The logo generation process is divided into distinct stages, each with a specifi
 6. **Variant Generation**: Creates monochrome and simplified versions
 7. **Guidelines Creation**: Generates brand usage documentation
 8. **Packaging**: Bundles all assets for download
+9. **Animation**: Applies selected animations to SVG logos
+
+### Animation System
+
+The animation system enhances static SVG logos with dynamic animations using a provider-based architecture:
+
+1. **Multiple Animation Types**: Support for 18+ animation types (fade, zoom, draw, bounce, etc.)
+2. **Provider Architecture**: Pluggable providers for different animation technologies (SMIL, CSS, JS)
+3. **Cross-Browser Compatibility**: Automatic fallbacks for optimal browser support
+4. **Animation Triggers**: Support for load, scroll, hover, and click triggers
+
+For detailed documentation, see the [Animation System Documentation](/docs/ANIMATION_SYSTEM.md) and the [Animation Usage Guide](/docs/guides/ANIMATION_GUIDE.md)
 
 ### Agent System
 
@@ -199,6 +216,7 @@ The application uses a multi-agent architecture where specialized AI agents hand
 - **Variant Generation Agent**: Creates alternative versions
 - **Guidelines Agent**: Creates brand documentation
 - **Packaging Agent**: Prepares final deliverables
+- **Animation Agent**: Applies animations to SVG logos
 
 ## Contributing Guidelines
 
@@ -263,6 +281,8 @@ The application uses a multi-agent architecture where specialized AI agents hand
 
 - [Product Requirements Document](/Product_Requirements_Document.md)
 - [Technical Requirements Document](/Technical_Requirements_Document.md)
+- [Animation System Documentation](/docs/ANIMATION_SYSTEM.md)
+- [Animation Usage Guide](/docs/guides/ANIMATION_GUIDE.md)
 - [Claude Integration Guide](/claude.md)
 - [Development Roadmap](/Future_Development_Roadmap.md)
 - [API Documentation](/docs/api/index.html) (generated from code)

@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm ci --legacy-peer-deps && npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm ci --legacy-peer-deps",
+  "framework": "nextjs",
+  "nodejs": "18.x"
+}

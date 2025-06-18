@@ -14,12 +14,15 @@ import { SuggestionChips, DEFAULT_LOGO_SUGGESTIONS } from './suggestion-chips';
 import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
+import AnimationDownloadManager from './animation-download-manager';
 import ProgressTracker from './progress-tracker';
 import { SmartFollowUps } from './smart-follow-ups';
 import { DesignCitations } from './design-citations';
 import { IndustrySelector } from './industry-selector';
 import { MockupPreviewSystem } from './mockup-preview-system';
 import { AnimationSelector } from './animation-selector';
+import { AnimationCustomizer } from './animation-customizer';
+import { AnimationShowcase } from './animation-showcase';
 import { AnimatedLogoDisplay } from './animated-logo-display';
 import { UniquenessToggle } from './uniqueness-toggle';
 import { UniquenessAnalysis } from './uniqueness-analysis';
@@ -30,7 +33,8 @@ import {
   MessageRole, 
   LogoGenerationState, 
   SVGLogo,            
-  FileDownloadInfo    
+  FileDownloadInfo,
+  AnimationExportOptions
 } from '@/lib/types'; 
 import { Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
 import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
@@ -183,6 +187,55 @@ export function LogoGeneratorApp() {
       handleSubmit(lastUserMessage.content, lastUserMessage.files);
     }
   }, [messages, reset, handleSubmit]);
+  
+  const handleExportAnimation = useCallback(async (format: string, options?: AnimationExportOptions) => {
+    if (!hookAssets?.animatedSvg) {
+      toast({
+        title: "Animation Export Failed",
+        description: "No animated logo available for export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/export-animated-logo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          svg: hookAssets.animatedSvg,
+          css: hookAssets.animationCss,
+          js: hookAssets.animationJs,
+          format,
+          options
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to export animation');
+      }
+      
+      // If successful, redirect to the download URL
+      if (data.fileUrl) {
+        window.location.href = data.fileUrl;
+        
+        toast({
+          title: "Export Successful",
+          description: `Your animated logo has been exported in ${format.toUpperCase()} format.`
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Export Failed",
+        description: err instanceof Error ? err.message : "An unexpected error occurred during export",
+        variant: "destructive"
+      });
+    }
+  }, [hookAssets, toast]);
 
   const handleReset = useCallback(() => {
     reset();
@@ -247,10 +300,28 @@ export function LogoGeneratorApp() {
                 </div>
                 
                 {includeAnimations && (
-                  <AnimationSelector
-                    onSelectAnimation={setSelectedAnimationOptions}
-                    className="mt-4"
-                  />
+                  <div className="space-y-4">
+                    <AnimationSelector
+                      onSelectAnimation={setSelectedAnimationOptions}
+                      className="mt-4"
+                    />
+                    
+                    {/* Animation showcase button */}
+                    <div className="flex justify-center mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const showcaseElement = document.getElementById('animation-showcase');
+                          if (showcaseElement) {
+                            showcaseElement.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                      >
+                        Explore Animation Gallery
+                      </Button>
+                    </div>
+                  </div>
                 )}
                 
                 <UniquenessToggle
@@ -327,6 +398,20 @@ export function LogoGeneratorApp() {
                         onDownloadFileAction={(fileId: string) => console.log('Download file:', fileId)}
                         onDownloadAllAction={() => console.log('Download all')}
                       />
+                      
+                      {/* Animation Download Manager - shown only when animation is available */}
+                      {hookAssets.animatedSvg && (
+                        <div className="mt-4">
+                          <AnimationDownloadManager
+                            animatedSvg={hookAssets.animatedSvg}
+                            animationCss={hookAssets.animationCss}
+                            animationJs={hookAssets.animationJs}
+                            animationOptions={hookAssets.animationOptions}
+                            brandName={hookAssets.brandName || "Your Brand"}
+                            onExport={handleExportAnimation}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -361,6 +446,21 @@ export function LogoGeneratorApp() {
                         console.log(`Download mockup ${mockupId} in ${format} format`);
                         // You can implement additional download tracking here
                       }}
+                    />
+                  </div>
+                  
+                  {/* Animation Showcase Section */}
+                  <div id="animation-showcase" className="mt-8 border-t pt-6">
+                    <H3 className="mb-4">Animation Options</H3>
+                    <AnimationShowcase
+                      onSelectAnimation={(options) => {
+                        setSelectedAnimationOptions(options);
+                        toast({
+                          title: "Animation Selected",
+                          description: "Animation has been applied to your logo."
+                        });
+                      }}
+                      svgPreview={hookAssets.primaryLogoSVG?.svgCode || null}
                     />
                   </div>
                   

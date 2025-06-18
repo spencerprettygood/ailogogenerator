@@ -23,7 +23,8 @@ import {
   VariantGenerationAgent,
   GuidelineAgent,
   PackagingAgent,
-  IndustryAnalysisAgent
+  IndustryAnalysisAgent,
+  AnimationAgent
 } from './specialized';
 
 // Register all agent types
@@ -40,3 +41,4 @@ agentRegistry.register('variantGeneration', VariantGenerationAgent);
 agentRegistry.register('guideline', GuidelineAgent);
 agentRegistry.register('packaging', PackagingAgent);
 agentRegistry.register('industryAnalysis', IndustryAnalysisAgent);
+agentRegistry.register('animation', AnimationAgent);

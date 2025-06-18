@@ -1,18 +1,127 @@
-import { AnimationOptions, AnimationResponse, AnimatedSVGLogo, AnimationType, AnimationEasing, AnimationTrigger } from './types';
+import { AnimationOptions, AnimationResponse, AnimatedSVGLogo, AnimationType, AnimationEasing, AnimationTrigger, AnimationProvider } from './types';
 import { SVGLogo } from '../types';
+import { AnimationRegistry } from './animation-registry';
+import { getBestProviderForType, createAllProviders } from './providers';
 
 /**
  * Core service for applying animations to SVG logos
+ * 
+ * The SVGAnimationService provides a centralized way to apply animations to SVG logos
+ * using a provider-based architecture. It automatically selects the most appropriate
+ * animation provider based on the requested animation type and browser support.
+ * 
+ * The service supports multiple animation technologies:
+ * - SMIL: SVG's native animation capabilities
+ * - CSS: Standard CSS animations and transitions
+ * - JavaScript: Dynamic JS-based animations for complex effects
+ * 
+ * @example
+ * ```typescript
+ * // Apply a fade-in animation to an SVG
+ * const result = await SVGAnimationService.animateSVG(svgContent, {
+ *   type: AnimationType.FADE_IN,
+ *   timing: {
+ *     duration: 1000,
+ *     easing: AnimationEasing.EASE_IN_OUT
+ *   }
+ * });
+ * 
+ * // Use the animated SVG and associated CSS/JS
+ * const { animatedSvg, cssCode, jsCode } = result.result;
+ * ```
+ * 
+ * @see {@link AnimationProvider} for details on individual providers
+ * @see {@link AnimationOptions} for available animation options
  */
 export class SVGAnimationService {
   /**
-   * Applies animation to an SVG logo based on the provided options
+   * Animates an SVG using the appropriate provider based on the animation type
    * 
-   * @param svg The SVG logo to animate
-   * @param options Animation options
-   * @returns AnimationResponse containing the animated SVG
+   * This method is the main entry point for the animation system. It:
+   * 1. Registers all available animation providers if not already registered
+   * 2. Finds the best provider for the requested animation type
+   * 3. Uses the selected provider to apply the animation
+   * 4. Falls back to built-in methods if no provider supports the animation type
+   * 
+   * @param svg - The SVG content to animate (as a string)
+   * @param options - Animation configuration options
+   * @returns Promise resolving to an AnimationResponse containing the animated SVG and any required CSS/JS
+   * 
+   * @throws Will throw an error if the animation process fails
+   * 
+   * @example
+   * ```typescript
+   * const animationResult = await SVGAnimationService.animateSVG(svgString, {
+   *   type: AnimationType.DRAW,
+   *   timing: {
+   *     duration: 1500,
+   *     easing: AnimationEasing.EASE_OUT
+   *   }
+   * });
+   * ```
    */
   public static async animateSVG(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
+    const startTime = Date.now();
+    
+    try {
+      // Ensure all providers are registered
+      this.registerProviders();
+      
+      // Get the registry instance
+      const registry = AnimationRegistry.getInstance();
+      
+      // Find a provider that supports the requested animation type
+      let provider = registry.getDefaultProviderForType(options.type);
+      
+      // If no provider in registry, try to get the best provider based on browser capabilities
+      if (!provider) {
+        provider = getBestProviderForType(options.type);
+      }
+      
+      // If still no provider supports this animation, use the built-in methods as fallback
+      if (!provider) {
+        console.warn(`No registered provider found for animation type ${options.type}. Using fallback.`);
+        return this.animateSVGWithFallback(svg, options);
+      }
+      
+      // Use the provider to animate the SVG
+      const animatedLogo = await provider.animate(svg, options);
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        success: true,
+        result: animatedLogo,
+        processingTime
+      };
+      
+    } catch (error) {
+      console.error('Error animating SVG:', error);
+      return {
+        success: false,
+        error: {
+          message: 'Failed to animate SVG',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        processingTime: Date.now() - startTime
+      };
+    }
+  }
+  
+  /**
+   * Fallback method to animate SVGs using built-in implementations
+   * 
+   * This method is used when no registered provider supports the requested animation type.
+   * It implements basic versions of common animations directly within the service.
+   * 
+   * @param svg - The SVG content to animate
+   * @param options - Animation configuration options
+   * @returns Promise resolving to an AnimationResponse containing the animated SVG
+   * 
+   * @internal
+   * This is a fallback method and should not be called directly.
+   */
+  private static async animateSVGWithFallback(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
     const startTime = Date.now();
     
     try {
@@ -69,11 +178,11 @@ export class SVGAnimationService {
       };
       
     } catch (error) {
-      console.error('Error animating SVG:', error);
+      console.error('Error animating SVG with fallback method:', error);
       return {
         success: false,
         error: {
-          message: 'Failed to animate SVG',
+          message: 'Failed to animate SVG with fallback method',
           details: error instanceof Error ? error.message : String(error)
         },
         processingTime: Date.now() - startTime
@@ -371,6 +480,111 @@ export class SVGAnimationService {
 /**
  * Predefined animation templates that users can select from
  */
+
+  /**
+   * Register all available animation providers
+   */
+  private static registerProviders() {
+    const registry = AnimationRegistry.getInstance();
+    
+    // Only register providers if the registry is empty
+    if (registry.getAllProviders().length === 0) {
+      // Create all providers and register them
+      const providers = createAllProviders();
+      providers.forEach(provider => {
+        registry.registerProvider(provider);
+      });
+    }
+  }
+
+  /**
+   * Validate SVG before animation to ensure it's well-formed
+   * @param svg The SVG to validate
+   * @returns Validated SVG or throws an error if invalid
+   */
+  private static validateSVG(svg: string): string {
+    try {
+      // Simple validation to ensure the SVG is well-formed
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svg, 'image/svg+xml');
+      
+      // Check for parsing errors
+      const parserErrors = doc.getElementsByTagName('parsererror');
+      if (parserErrors.length > 0) {
+        throw new Error('Invalid SVG: Document contains parser errors');
+      }
+      
+      // Check that it has an SVG root element
+      const svgElement = doc.querySelector('svg');
+      if (!svgElement) {
+        throw new Error('Invalid SVG: Missing root <svg> element');
+      }
+      
+      // Ensure it has viewBox or width/height
+      if (!svgElement.hasAttribute('viewBox') && 
+          (!svgElement.hasAttribute('width') || !svgElement.hasAttribute('height'))) {
+        console.warn('SVG is missing viewBox or width/height attributes');
+        // Add a default viewBox if needed
+        svgElement.setAttribute('viewBox', '0 0 300 300');
+      }
+      
+      // Return the validated (and potentially fixed) SVG
+      return new XMLSerializer().serializeToString(doc);
+    } catch (error) {
+      console.error('SVG validation failed:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Optimize SVG for animation by removing unnecessary attributes and elements
+   * @param svg The SVG to optimize
+   * @returns Optimized SVG
+   */
+  private static optimizeSVG(svg: string): string {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svg, 'image/svg+xml');
+      
+      // Remove comments
+      const iterator = document.createNodeIterator(
+        doc, 
+        NodeFilter.SHOW_COMMENT, 
+        { acceptNode: () => NodeFilter.FILTER_ACCEPT }
+      );
+      
+      let node;
+      while (node = iterator.nextNode()) {
+        node.parentNode?.removeChild(node);
+      }
+      
+      // Remove empty groups
+      const emptyGroups = doc.querySelectorAll('g:empty');
+      emptyGroups.forEach(group => group.parentNode?.removeChild(group));
+      
+      // Remove unnecessary attributes from all elements
+      const allElements = doc.querySelectorAll('*');
+      const unnecessaryAttrs = [
+        'data-name', 'data-old-color', 'data-original', 
+        'xmlns:xlink', 'xml:space', 'enable-background'
+      ];
+      
+      allElements.forEach(el => {
+        unnecessaryAttrs.forEach(attr => {
+          if (el.hasAttribute(attr)) {
+            el.removeAttribute(attr);
+          }
+        });
+      });
+      
+      return new XMLSerializer().serializeToString(doc);
+    } catch (error) {
+      console.warn('SVG optimization failed, returning original:', error);
+      return svg;
+    }
+  }
+}
+
 export const animationTemplates = [
   {
     id: 'fade-in',

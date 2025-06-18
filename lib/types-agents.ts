@@ -1,3 +1,4 @@
+import { AnimationOptions } from './animation/types';
 import { DesignSpec, LogoBrief } from './types';
 
 // Base agent interfaces
@@ -67,7 +68,8 @@ export type AgentCapability =
   'guideline-creation' | 
   'asset-packaging' |
   'design-theory' |
-  'industry-analysis';
+  'industry-analysis' |
+  'animation-generation';
 
 // Agent message types
 export interface AgentMessage {
@@ -144,6 +146,8 @@ export interface SVGGenerationAgentInput extends AgentInput {
     colors: string;
     imagery: string;
   };
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
 }
 
 export interface DesignPrinciple {
@@ -206,6 +210,8 @@ export interface VariantGenerationAgentInput extends AgentInput {
   svg: string;
   designSpec: DesignSpec;
   brandName: string;
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
 }
 
 export interface VariantGenerationAgentOutput extends AgentOutput {
@@ -239,6 +245,11 @@ export interface VariantGenerationAgentOutput extends AgentOutput {
           size256: string;
           size512: string;
         };
+      };
+      animatedVariant?: {
+        svg: string;
+        css: string;
+        js?: string;
       };
     };
   };
@@ -275,13 +286,35 @@ export interface GuidelineAgentInput extends AgentInput {
         size512: string;
       };
     };
+    animatedVariant?: {
+      svg: string;
+      css: string;
+      js?: string;
+    };
   };
   designSpec: DesignSpec;
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
 }
 
 export interface GuidelineAgentOutput extends AgentOutput {
   result?: {
     html: string;
+  };
+}
+
+export interface AnimationAgentInput extends AgentInput {
+  svg: string;
+  designSpec: DesignSpec;
+  animationOptions: AnimationOptions;
+}
+
+export interface AnimationAgentOutput extends AgentOutput {
+  result?: {
+    animatedSvg: string;
+    cssCode: string;
+    jsCode?: string;
+    animationOptions: AnimationOptions;
   };
 }
 
@@ -304,6 +337,11 @@ export interface PackagingAgentInput extends AgentInput {
   guidelines: {
     html: string;
     plainText: string;
+  };
+  animatedVariant?: {
+    svg: string;
+    css: string;
+    js?: string;
   };
 }
 
