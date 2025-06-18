@@ -107,7 +107,30 @@ npm test -- lib/ai-pipeline/tests/pipeline-stages.test.ts
 
 # Run tests in watch mode
 npm test -- --watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
+
+### Documentation
+
+The project uses TypeDoc for API documentation generation from code comments.
+
+```bash
+# Generate documentation
+npm run docs
+
+# View documentation locally
+npm run docs:serve
+
+# Build and watch documentation during development
+npm run docs:watch
+```
+
+To access the documentation:
+1. Generate the docs using `npm run docs`
+2. Navigate to `docs/api/index.html` in your browser
+3. Or start a local server with `npm run docs:serve` and visit http://localhost:3000
 
 ### Debugging
 
@@ -183,8 +206,9 @@ The application uses a multi-agent architecture where specialized AI agents hand
 
 - Follow TypeScript best practices
 - Use functional components with hooks for React
-- Document public functions with JSDoc comments
+- Document public functions and interfaces with JSDoc comments
 - Use meaningful variable and function names
+- Follow the documentation templates in `docs/templates/`
 
 ### Git Workflow
 
@@ -241,6 +265,9 @@ The application uses a multi-agent architecture where specialized AI agents hand
 - [Technical Requirements Document](/Technical_Requirements_Document.md)
 - [Claude Integration Guide](/claude.md)
 - [Development Roadmap](/Future_Development_Roadmap.md)
+- [API Documentation](/docs/api/index.html) (generated from code)
+- [Architecture Decision Records](/docs/adr/)
+- [Documentation Guide](/docs/README.md)
 
 ### External Resources
 

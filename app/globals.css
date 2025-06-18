@@ -1,74 +1,247 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Monochrome palette */
+    --background: 0 0% 100%; /* white */
+    --foreground: 0 0% 5%; /* near black */
+    
+    /* Card colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 5%;
+    
+    /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --popover-foreground: 0 0% 5%;
+    
+    /* Accent color - vibrant red */
+    --accent: 5 100% 60%;
+    --accent-light: 5 100% 68%;
+    --accent-dark: 5 74% 48%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Primary uses accent color */
+    --primary: 5 100% 60%;
+    --primary-light: 5 100% 68%;
+    --primary-dark: 5 74% 48%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary as black */
+    --secondary: 0 0% 5%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted colors */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    
+    /* System colors */
+    --border: 0 0% 83%;
+    --input: 0 0% 90%;
+    --ring: 5 100% 60%;
+    
+    /* Destructive color */
+    --destructive: 5 100% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Radius and other variables */
     --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
   }
 }
 
 @layer base {
-  * {
-    @apply border;
-  }
+  /* Base styles */
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  /* Typography asymmetry */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold leading-tight tracking-tight;
+  }
+  
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    margin-left: -0.05em; /* Optical alignment */
+  }
+  
+  h2 {
+    @apply text-2xl md:text-3xl;
+    margin-left: -0.03em; /* Optical alignment */
+  }
+  
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+  
+  p {
+    @apply text-base leading-relaxed;
+    max-width: 65ch; /* Optimal reading length */
+  }
+  
+  /* Asymmetric link underlines */
+  a:not(.no-underline) {
+    @apply relative no-underline;
+    background-image: linear-gradient(to right, #FF4233, #FF4233);
+    background-position: 0 calc(100% - 0.05em);
+    background-repeat: no-repeat;
+    background-size: 100% 2px;
+    transition: background-size 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    padding-bottom: 0.15em;
+  }
+  
+  a:not(.no-underline):hover {
+    background-size: 30% 2px;
+    background-position: 0 calc(100% - 0.05em);
+  }
+  
+  /* Focus styles with offset outlines */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    outline-offset: 3px;
+  }
+  
+  /* Selection styling */
+  ::selection {
+    @apply bg-primary text-primary-foreground;
+  }
+  
+  /* Asymmetric scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 6px; /* Different height for horizontal scrollbar */
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded-full;
+    border-right: 2px solid transparent; /* Offset to one side */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+}
+
+@layer utilities {
+  /* Asymmetric spacing utility classes */
+  .space-asymmetric > * + * {
+    margin-top: 1.25rem;
+    margin-left: 0.5rem;
+  }
+  
+  /* Offset border utility */
+  .border-offset-r {
+    @apply relative;
+    box-shadow: 3px 0 0 0 theme('colors.accent.DEFAULT');
+  }
+  
+  .border-offset-b {
+    @apply relative;
+    box-shadow: 0 3px 0 0 theme('colors.accent.DEFAULT');
+  }
+  
+  .border-offset-rb {
+    @apply relative;
+    box-shadow: 3px 3px 0 0 theme('colors.accent.DEFAULT');
+  }
+  
+  /* Uneven padding utility */
+  .p-uneven {
+    padding: 0.75rem 1.25rem 1rem 0.875rem;
+  }
+  
+  /* Text stroke effect */
+  .text-stroke {
+    -webkit-text-stroke: 1px theme('colors.foreground');
+    color: transparent;
+  }
+  
+  .text-stroke-accent {
+    -webkit-text-stroke: 1px theme('colors.accent.DEFAULT');
+    color: transparent;
+  }
+  
+  /* Accent clip path for asymmetric designs */
+  .clip-asymmetric-1 {
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
+  }
+  
+  .clip-asymmetric-2 {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 15% 100%, 0 85%);
+  }
+  
+  .clip-asymmetric-3 {
+    clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 100%, 0 100%);
+  }
+  
+  /* Asymmetric gradient backgrounds */
+  .bg-asymmetric-gradient-1 {
+    background: linear-gradient(115deg, white 0%, white 60%, rgba(255, 66, 51, 0.1) 60%, rgba(255, 66, 51, 0.1) 100%);
+  }
+  
+  .bg-asymmetric-gradient-2 {
+    background: linear-gradient(245deg, white 0%, white 70%, rgba(255, 66, 51, 0.08) 70%, rgba(255, 66, 51, 0.08) 100%);
   }
 }
 
 @layer components {
-  .gradient-heading {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+  /* Asymmetric button */
+  .btn-asymmetric {
+    @apply relative inline-flex items-center justify-center 
+           px-4 py-2 overflow-hidden
+           bg-white text-foreground font-medium 
+           transition-all duration-standard ease-asymmetric;
+    box-shadow: 3px 3px 0 0 theme('colors.accent.DEFAULT');
+    transform: translate(-1px, -1px);
   }
   
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  .btn-asymmetric:hover {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0 0 theme('colors.accent.DEFAULT');
   }
   
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  .btn-asymmetric:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  
+  /* Accent button */
+  .btn-accent {
+    @apply relative inline-flex items-center justify-center 
+           px-4 py-2
+           bg-accent text-accent-foreground font-medium 
+           transition-all duration-standard ease-asymmetric;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+  }
+  
+  .btn-accent:hover {
+    @apply bg-accent-dark;
+    transform: translateY(-2px);
+  }
+  
+  .btn-accent:active {
+    transform: translateY(0);
+  }
+  
+  /* Card with asymmetric design */
+  .card-asymmetric {
+    @apply bg-white p-4 relative overflow-hidden;
+    box-shadow: theme('boxShadow.asymmetric-md');
+    border-radius: 8px 2px 8px 2px;
+  }
+  
+  .card-asymmetric::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background-color: theme('colors.accent.DEFAULT');
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
   }
 }

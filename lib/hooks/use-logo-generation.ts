@@ -3,8 +3,15 @@ import { logoAPI } from '../api'; // Adjusted import path
 import { streamProcessor } from '../streaming'; // Adjusted import path
 import { GenerationProgress, GeneratedAssets } from '../types';
 
+export interface LogoGenerationOptions {
+  industry?: string;
+  includeAnimations?: boolean;
+  animationOptions?: any; // Will be properly typed when imported
+  includeUniquenessAnalysis?: boolean;
+}
+
 export interface UseLogoGenerationReturn {
-  generateLogo: (brief: string, files?: File[]) => Promise<void>;
+  generateLogo: (brief: string, files?: File[], options?: LogoGenerationOptions) => Promise<void>;
   isGenerating: boolean;
   progress: GenerationProgress | null;
   preview: string | null;
@@ -12,6 +19,7 @@ export interface UseLogoGenerationReturn {
   sessionId: string | null;
   error: Error | null;
   reset: () => void;
+  fromCache: boolean;
 }
 
 export function useLogoGeneration(): UseLogoGenerationReturn {
@@ -21,8 +29,9 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
   const [assets, setAssets] = useState<GeneratedAssets | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [fromCache, setFromCache] = useState(false);
 
-  const generateLogo = useCallback(async (brief: string, files?: File[]) => {
+  const generateLogo = useCallback(async (brief: string, files?: File[], options?: LogoGenerationOptions) => {
     setIsGenerating(true);
     setError(null);
     setProgress(null);
@@ -31,7 +40,7 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
     setSessionId(null);
 
     try {
-      const stream = await logoAPI.generateLogo(brief, files);
+      const stream = await logoAPI.generateLogo(brief, files, options);
       
       await streamProcessor.processStream(stream, {
         onProgress: setProgress,
@@ -44,6 +53,20 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
         onError: (streamError) => {
           setError(streamError);
           setIsGenerating(false);
+        },
+        onCache: (isCached) => {
+          setFromCache(isCached);
+          // If from cache, immediately set progress to 100%
+          if (isCached) {
+            setProgress({
+              currentStage: 'cached',
+              stageProgress: 100,
+              overallProgress: 100,
+              statusMessage: 'Retrieved from cache'
+            });
+          } else {
+            setFromCache(false);
+          }
         }
       });
     } catch (err) {
@@ -59,6 +82,7 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
     setAssets(null);
     setSessionId(null);
     setError(null);
+    setFromCache(false);
   }, []);
 
   return {
@@ -69,6 +93,7 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
     assets,
     sessionId,
     error,
-    reset
+    reset,
+    fromCache
   };
 }

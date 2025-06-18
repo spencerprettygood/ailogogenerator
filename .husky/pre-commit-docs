@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Check if any TypeScript files in lib/ were changed
+if git diff --cached --name-only | grep -q "^lib/.*\.ts$"; then
+  echo "🔍 Checking documentation for changed files..."
+  
+  # Generate temporary documentation to see if it would succeed
+  npm run docs > /dev/null 2>&1 || {
+    echo "❌ Documentation generation failed. Please fix JSDoc comments in your code."
+    echo "💡 Run 'npm run docs' to see the full error message."
+    echo "💡 Ensure all public APIs are properly documented with JSDoc comments."
+    exit 1
+  }
+  
+  echo "✅ Documentation generation successful."
+fi
+
+exit 0

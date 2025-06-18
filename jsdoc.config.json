@@ -1,0 +1,49 @@
+{
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "source": {
+    "include": ["lib", "app", "components"],
+    "includePattern": "\\.tsx?$",
+    "excludePattern": "(node_modules/|docs|__tests__|.test.ts)"
+  },
+  "plugins": [
+    "plugins/markdown",
+    "node_modules/better-docs/typescript"
+  ],
+  "opts": {
+    "destination": "./docs/api",
+    "recurse": true,
+    "readme": "README.md",
+    "template": "node_modules/better-docs"
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "search": true,
+    "better-docs": {
+      "name": "AI Logo Generator Documentation",
+      "title": "AI Logo Generator",
+      "hideGenerator": true,
+      "navLinks": [
+        {
+          "label": "GitHub",
+          "href": "https://github.com/yourusername/ailogogenerator"
+        },
+        {
+          "label": "Documentation",
+          "href": "/docs"
+        }
+      ]
+    }
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true,
+    "idInHeadings": true
+  },
+  "typescript": {
+    "moduleRoot": "."
+  }
+}

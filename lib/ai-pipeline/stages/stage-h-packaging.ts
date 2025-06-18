@@ -17,6 +17,22 @@ export interface StageHInput {
     png512: Buffer;
     png1024: Buffer;
   };
+  // Enhanced variants
+  transparentPngVariants?: {
+    png256: Buffer;
+    png512: Buffer;
+    png1024: Buffer;
+  };
+  monochromePngVariants?: {
+    black: {
+      png256: Buffer;
+      png512: Buffer;
+    };
+    white: {
+      png256: Buffer;
+      png512: Buffer;
+    };
+  };
   monochrome: {
     black: string; // SVG content
     white: string; // SVG content
@@ -24,6 +40,7 @@ export interface StageHInput {
   favicon: {
     svg: string; // SVG content
     ico: Buffer;
+    png32?: Buffer; // 32x32 PNG
   };
   guidelines: {
     html: string;
@@ -64,6 +81,13 @@ This package contains the complete brand assets for {BRAND_NAME}, generated with
 - \`logo-256.png\` - 256x256 pixel raster version
 - \`logo-512.png\` - 512x512 pixel raster version
 - \`logo-1024.png\` - 1024x1024 pixel raster version
+- \`transparent/logo-256.png\` - 256x256 pixel with transparency
+- \`transparent/logo-512.png\` - 512x512 pixel with transparency
+- \`transparent/logo-1024.png\` - 1024x1024 pixel with transparency
+- \`monochrome/logo-black-256.png\` - Black monochrome 256x256 pixel
+- \`monochrome/logo-black-512.png\` - Black monochrome 512x512 pixel
+- \`monochrome/logo-white-256.png\` - White monochrome 256x256 pixel
+- \`monochrome/logo-white-512.png\` - White monochrome 512x512 pixel
 
 ### Favicon
 - \`favicon.ico\` - ICO format for website favicon
@@ -113,6 +137,34 @@ class StageHValidator {
     
     if (!input.pngVariants.png1024 || !Buffer.isBuffer(input.pngVariants.png1024)) {
       throw new Error('PNG 1024x1024 variant is required and must be a Buffer');
+    }
+    
+    // Validate enhanced variants if present
+    if (input.transparentPngVariants) {
+      if (!Buffer.isBuffer(input.transparentPngVariants.png256)) {
+        throw new Error('Transparent PNG 256x256 variant must be a Buffer');
+      }
+      if (!Buffer.isBuffer(input.transparentPngVariants.png512)) {
+        throw new Error('Transparent PNG 512x512 variant must be a Buffer');
+      }
+      if (!Buffer.isBuffer(input.transparentPngVariants.png1024)) {
+        throw new Error('Transparent PNG 1024x1024 variant must be a Buffer');
+      }
+    }
+    
+    if (input.monochromePngVariants) {
+      if (!Buffer.isBuffer(input.monochromePngVariants.black.png256)) {
+        throw new Error('Black monochrome PNG 256x256 variant must be a Buffer');
+      }
+      if (!Buffer.isBuffer(input.monochromePngVariants.black.png512)) {
+        throw new Error('Black monochrome PNG 512x512 variant must be a Buffer');
+      }
+      if (!Buffer.isBuffer(input.monochromePngVariants.white.png256)) {
+        throw new Error('White monochrome PNG 256x256 variant must be a Buffer');
+      }
+      if (!Buffer.isBuffer(input.monochromePngVariants.white.png512)) {
+        throw new Error('White monochrome PNG 512x512 variant must be a Buffer');
+      }
     }
     
     if (!input.monochrome) {
@@ -175,8 +227,31 @@ export async function packageAssets(
         png1024: input.pngVariants.png1024,
       },
       faviconIco: input.favicon.ico,
+      faviconPng: input.favicon.png32,
       guidelinesHtml: input.guidelines.html,
     };
+    
+    // Add enhanced variants if available
+    if (input.transparentPngVariants) {
+      packageData.transparentPngExports = {
+        png256: input.transparentPngVariants.png256,
+        png512: input.transparentPngVariants.png512,
+        png1024: input.transparentPngVariants.png1024,
+      };
+    }
+    
+    if (input.monochromePngVariants) {
+      packageData.monochromePngExports = {
+        black: {
+          png256: input.monochromePngVariants.black.png256,
+          png512: input.monochromePngVariants.black.png512,
+        },
+        white: {
+          png256: input.monochromePngVariants.white.png256,
+          png512: input.monochromePngVariants.white.png512,
+        }
+      };
+    }
 
     const zipBuffer = await createLogoPackage(packageData);
     

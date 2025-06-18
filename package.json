@@ -3,23 +3,37 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run '__tests__/.*\\.test\\.ts'",
+    "test:integration": "vitest run 'app/api/.*\\.test\\.ts'",
+    "test:e2e": "./test-runner.sh --all",
+    "test:ci": "vitest run --coverage && tsc --noEmit",
+    "prepare": "husky install || echo 'Skipping husky install'",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
+    "docs:serve": "npx serve docs/api",
+    "docs:build": "npm run docs",
+    "audit:fix": "npm audit fix"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
     "@anthropic-ai/sdk": "^0.54.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@types/react-dropzone": "^5.1.0",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-tabs": "^1.0.4",
     "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "file-saver": "^2.0.5",
+    "framer-motion": "^12.18.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.516.0",
     "next": "15.3.3",
@@ -29,24 +43,63 @@
     "sharp": "^0.34.2",
     "svgo": "^3.3.2",
     "tailwind-merge": "^3.3.1",
+    "zod": "^3.25.67",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/file-saver": "^2.0.7",
     "@types/jszip": "^3.4.1",
     "@types/node": "^20.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-dropzone": "^5.1.0",
     "@types/sharp": "^0.32.0",
     "@types/svgo": "^3.0.0",
     "@vitest/coverage-v8": "^1.4.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.0",
     "tailwindcss": "^4",
+    "typedoc": "^0.25.7",
+    "typedoc-plugin-markdown": "^4.6.4",
+    "typedoc-plugin-mermaid": "^1.12.0",
     "typescript": "^5",
     "vitest": "^1.4.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "typedoc": {
+    "entryPoints": [
+      "./lib",
+      "./app",
+      "./components"
+    ],
+    "entryPointStrategy": "expand",
+    "out": "docs/api",
+    "theme": "default",
+    "excludePrivate": false,
+    "excludeProtected": false,
+    "excludeExternals": true,
+    "includeVersion": true,
+    "disableSources": false,
+    "categorizeByGroup": true,
+    "searchInComments": true
   }
 }

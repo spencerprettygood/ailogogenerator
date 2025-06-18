@@ -7,6 +7,7 @@ import {
   RequirementsAgentInput, 
   RequirementsAgentOutput 
 } from '../../types-agents';
+import { detectIndustry } from '../../industry-templates';
 
 /**
  * RequirementsAgent - Analyzes user brief to extract structured design requirements
@@ -38,7 +39,8 @@ IMPORTANT: You MUST return your analysis as valid JSON in the following format:
   "color_palette": "preferred colors or color meanings",
   "imagery": "icons, symbols, or visual elements to include",
   "target_audience": "who the brand targets",
-  "additional_requests": "any other specific requests from the brief"
+  "additional_requests": "any other specific requests from the brief",
+  "industry": "the primary industry category for the brand (e.g., technology, finance, healthcare, retail, etc.)"
 }
 
 Every field in the JSON is REQUIRED, even if you have to make reasonable inferences from the brief.
@@ -89,7 +91,8 @@ Your entire response must be valid JSON that can be parsed directly.`;
         'color_palette',
         'imagery',
         'target_audience',
-        'additional_requests'
+        'additional_requests',
+        'industry'
       ];
       
       const missingFields = requiredFields.filter(field => !designSpec[field as keyof DesignSpec]);
@@ -102,6 +105,20 @@ Your entire response must be valid JSON that can be parsed directly.`;
             details: { designSpec, missingFields }
           }
         };
+      }
+      
+      // Automatically detect industry and add confidence score if not already set
+      if (!designSpec.industry_confidence && designSpec.industry && designSpec.brand_description) {
+        const detectionResult = detectIndustry(designSpec.brand_description);
+        
+        // If the model-provided industry is one of our supported industries, use it with a high confidence
+        // Otherwise, use our detection result
+        if (detectionResult.primaryIndustry === designSpec.industry) {
+          designSpec.industry_confidence = Math.max(detectionResult.confidenceScore, 0.85);
+        } else {
+          // Keep the model's industry choice but add a moderate confidence score
+          designSpec.industry_confidence = 0.7;
+        }
       }
       
       // If everything is valid, return the processed result

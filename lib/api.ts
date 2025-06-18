@@ -1,4 +1,5 @@
 // This file will contain functions for interacting with the backend API.
+import { LogoGenerationOptions } from './hooks/use-logo-generation';
 
 // Example function (to be implemented)
 // export async function generateLogoAPI(brief: any): Promise<any> {
@@ -24,7 +25,8 @@ export class LogoGeneratorAPI {
 
   async generateLogo(
     brief: string,
-    files?: File[]
+    files?: File[],
+    options?: LogoGenerationOptions
   ): Promise<ReadableStream<Uint8Array>> {
     const formData = new FormData();
     formData.append('brief', brief);
@@ -33,6 +35,20 @@ export class LogoGeneratorAPI {
       files.forEach((file, index) => {
         formData.append(`file_${index}`, file);
       });
+    }
+    
+    // Add industry if specified
+    if (options?.industry) {
+      formData.append('industry', options.industry);
+    }
+    
+    // Add animation options if specified
+    if (options?.includeAnimations) {
+      formData.append('includeAnimations', 'true');
+      
+      if (options.animationOptions) {
+        formData.append('animationOptions', JSON.stringify(options.animationOptions));
+      }
     }
 
     const response = await fetch(`${this.baseUrl}/api/generate-logo`, {

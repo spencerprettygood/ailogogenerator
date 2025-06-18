@@ -15,10 +15,15 @@ import {
   MoodboardAgent,
   SelectionAgent,
   SVGGenerationAgent,
+  EnhancedSVGGenerationAgent,
+  IndustryTemplateSVGAgent,
   SVGValidationAgent,
+  SVGDesignValidationAgent,
+  SVGAccessibilityAgent,
   VariantGenerationAgent,
   GuidelineAgent,
-  PackagingAgent
+  PackagingAgent,
+  IndustryAnalysisAgent
 } from './specialized';
 
 // Register all agent types
@@ -26,7 +31,12 @@ agentRegistry.register('requirements', RequirementsAgent);
 agentRegistry.register('moodboard', MoodboardAgent);
 agentRegistry.register('selection', SelectionAgent);
 agentRegistry.register('svgGeneration', SVGGenerationAgent);
+agentRegistry.register('enhancedSvgGeneration', EnhancedSVGGenerationAgent);
+agentRegistry.register('industryTemplateSvg', IndustryTemplateSVGAgent);
 agentRegistry.register('svgValidation', SVGValidationAgent);
+agentRegistry.register('svgDesignValidation', SVGDesignValidationAgent);
+agentRegistry.register('svgAccessibility', SVGAccessibilityAgent);
 agentRegistry.register('variantGeneration', VariantGenerationAgent);
 agentRegistry.register('guideline', GuidelineAgent);
 agentRegistry.register('packaging', PackagingAgent);
+agentRegistry.register('industryAnalysis', IndustryAnalysisAgent);

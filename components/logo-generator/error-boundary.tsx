@@ -56,17 +56,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <div className="flex gap-2">
                 <Button 
                   onClick={() => window.location.reload()}
-                  className="flex-1"
+                  className="w-full"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Page
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => this.setState({ hasError: false })}
-                  className="flex-1"
-                >
-                  Try Again
                 </Button>
               </div>
             </CardContent>

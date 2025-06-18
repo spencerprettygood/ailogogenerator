@@ -6,7 +6,11 @@ import { validateAndRepairSvg, StageEInput } from './stages/stage-e-validation';
 import { generateVariants, StageFInput, StageFOutput } from './stages/stage-f-variants';
 import { generateBrandGuidelines, StageGInput, StageGOutput } from './stages/stage-g-guidelines';
 import { packageAssets, StageHInput, StageHOutput } from './stages/stage-h-packaging';
+import { animateLogo, StageIInput, StageIOutput } from './stages/stage-i-animation';
+import { analyzeLogoUniqueness, UniquenessAnalysisInput, UniquenessAnalysisOutput } from './stages/stage-uniqueness-analysis';
 import { LogoBrief, GenerationResult } from '../types';
+
+import { AnimationOptions } from '../animation/types';
 
 // Types for pipeline
 export interface PipelineOptions {
@@ -14,6 +18,9 @@ export interface PipelineOptions {
   skipStages?: string[];
   debugMode?: boolean;
   manualConceptSelection?: number;
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
+  includeUniquenessAnalysis?: boolean;
 }
 
 export interface PipelineProgress {
@@ -114,6 +121,13 @@ export class LogoGenerationPipeline {
         this.log('Skipping Stage E: SVG Validation & Repair');
       }
 
+      // Uniqueness Analysis (Optional)
+      if (this.options.includeUniquenessAnalysis && !this.isStageSkipped('Uniqueness')) {
+        await this.executeUniquenessAnalysis();
+      } else {
+        this.log('Skipping Uniqueness Analysis');
+      }
+
       // Stage F: Variant Generation
       if (!this.isStageSkipped('F')) {
         await this.executeStageF();
@@ -134,6 +148,13 @@ export class LogoGenerationPipeline {
       } else {
         this.log('Skipping Stage H: Packaging & Delivery');
       }
+      
+      // Stage I: Animation
+      if (this.options.includeAnimations && !this.isStageSkipped('I')) {
+        await this.executeStageI();
+      } else {
+        this.log('Skipping Stage I: Animation');
+      }
 
       // Create final result
       const totalExecutionTime = Date.now() - startTime;
@@ -142,27 +163,58 @@ export class LogoGenerationPipeline {
       // Update final progress
       this.updateProgress('complete', 100, 100, 'Logo generation complete');
       
+      const stageAOutput = this.stageOutputs.stageA as StageAOutput;
       const packageOutput = this.stageOutputs.stageH as StageHOutput;
       const svgOutput = this.stageOutputs.stageD as StageDOutput;
       const variantsOutput = this.stageOutputs.stageF as StageFOutput;
+      const animationOutput = this.stageOutputs.stageI as StageIOutput;
+      const uniquenessOutput = this.stageOutputs.stageUniqueness as UniquenessAnalysisOutput;
       
       const result: GenerationResult = {
         success: true,
+        brandName: stageAOutput?.designSpec?.brand_name,
         logoSvg: svgOutput?.result?.svg,
         logoPngUrls: {
           size256: '/api/download?file=logo-256.png',
           size512: '/api/download?file=logo-512.png',
           size1024: '/api/download?file=logo-1024.png'
         },
+        // Enhanced variant URLs
+        transparentPngUrls: {
+          size256: '/api/download?file=transparent/logo-256.png',
+          size512: '/api/download?file=transparent/logo-512.png',
+          size1024: '/api/download?file=transparent/logo-1024.png'
+        },
+        monochromePngUrls: {
+          black: {
+            size256: '/api/download?file=monochrome/logo-black-256.png',
+            size512: '/api/download?file=monochrome/logo-black-512.png'
+          },
+          white: {
+            size256: '/api/download?file=monochrome/logo-white-256.png',
+            size512: '/api/download?file=monochrome/logo-white-512.png'
+          }
+        },
         monochromeVariants: {
           blackSvg: variantsOutput?.variants?.monochrome.black || '',
           whiteSvg: variantsOutput?.variants?.monochrome.white || ''
         },
-        faviconIcoUrl: '/api/download?file=favicon.ico',
+        faviconUrls: {
+          ico: '/api/download?file=favicon.ico',
+          png: '/api/download?file=favicon.png',
+          svg: '/api/download?file=favicon.svg'
+        },
         brandGuidelinesUrl: '/api/download?file=brand-guidelines.html',
         downloadUrl: packageOutput?.fileName
           ? `/api/download?file=${packageOutput.fileName}`
-          : undefined
+          : undefined,
+        // Add animated SVG if available
+        animatedSvg: animationOutput?.result?.animatedSVG?.animatedSvg,
+        animationCss: animationOutput?.result?.cssCode,
+        animationJs: animationOutput?.result?.jsCode,
+        
+        // Include uniqueness analysis results if available
+        uniquenessAnalysis: uniquenessOutput?.result
       };
       
       return {
@@ -491,7 +543,15 @@ export class LogoGenerationPipeline {
     }
     
     const input: StageGInput = {
-      variants: stageFOutput.variants,
+      variants: {
+        primary: stageDOutput.result.svg,
+        monochrome: stageFOutput.variants.monochrome,
+        // Include enhanced variants for better brand guidelines
+        favicon: stageFOutput.variants.favicon,
+        pngVariants: stageFOutput.variants.pngVariants,
+        transparentPngVariants: stageFOutput.variants.transparentPngVariants,
+        monochromePngVariants: stageFOutput.variants.monochromePngVariants
+      },
       designSpec: stageAOutput.designSpec
     };
     
@@ -539,13 +599,23 @@ export class LogoGenerationPipeline {
       monochrome: stageFOutput.variants.monochrome,
       favicon: {
         svg: stageFOutput.variants.favicon.svg,
-        ico: stageFOutput.variants.favicon.ico
+        ico: stageFOutput.variants.favicon.ico,
+        png32: stageFOutput.variants.favicon.png32
       },
       guidelines: {
         html: stageGOutput.html,
         plainText: '' // Optionally generate plain text from HTML if needed
       }
     };
+    
+    // Add enhanced variants if available in the output
+    if (stageFOutput.variants.transparentPngVariants) {
+      input.transparentPngVariants = stageFOutput.variants.transparentPngVariants;
+    }
+    
+    if (stageFOutput.variants.monochromePngVariants) {
+      input.monochromePngVariants = stageFOutput.variants.monochromePngVariants;
+    }
     
     const output = await packageAssets(input);
     this.stageOutputs[stageName] = output;
@@ -558,6 +628,82 @@ export class LogoGenerationPipeline {
     
     this.updateProgress('H', 100, 100, 'Assets packaged and ready for delivery');
     this.log('Completed Stage H: Packaging & Delivery');
+  }
+
+  private async executeStageI(): Promise<void> {
+    const stageName = 'stageI';
+    const stageStartTime = Date.now();
+    
+    this.updateProgress('I', 0, 90, 'Adding animations to logo...');
+    this.log('Starting Stage I: Animation');
+    
+    const stageAOutput = this.stageOutputs.stageA as StageAOutput;
+    const stageDOutput = this.stageOutputs.stageD as StageDOutput;
+    
+    if (!stageAOutput || !stageAOutput.designSpec) {
+      throw new Error('Stage I requires output from Stage A');
+    }
+    
+    if (!stageDOutput || !stageDOutput.result) {
+      throw new Error('Stage I requires output from Stage D');
+    }
+    
+    const input: StageIInput = {
+      svg: stageDOutput.result.svg,
+      brandName: stageAOutput.designSpec.brand_name,
+      animationOptions: this.options.animationOptions,
+      autoSelectAnimation: !this.options.animationOptions // Auto-select if no specific options provided
+    };
+    
+    const output = await animateLogo(input);
+    this.stageOutputs[stageName] = output;
+    
+    if (!output.success) {
+      throw new Error(`Stage I failed: ${output.error?.message}`);
+    }
+    
+    this.executionTime[stageName] = Date.now() - stageStartTime;
+    
+    this.updateProgress('I', 100, 100, 'Logo animation added successfully');
+    this.log('Completed Stage I: Animation');
+  }
+  
+  private async executeUniquenessAnalysis(): Promise<void> {
+    const stageName = 'stageUniqueness';
+    const stageStartTime = Date.now();
+    
+    this.updateProgress('Uniqueness', 0, 50, 'Analyzing logo uniqueness...');
+    this.log('Starting Uniqueness Analysis');
+    
+    const stageAOutput = this.stageOutputs.stageA as StageAOutput;
+    const stageDOutput = this.stageOutputs.stageD as StageDOutput;
+    
+    if (!stageAOutput || !stageAOutput.designSpec) {
+      throw new Error('Uniqueness Analysis requires output from Stage A');
+    }
+    
+    if (!stageDOutput || !stageDOutput.result) {
+      throw new Error('Uniqueness Analysis requires output from Stage D');
+    }
+    
+    const input: UniquenessAnalysisInput = {
+      svg: stageDOutput.result.svg,
+      designSpec: stageAOutput.designSpec,
+      industry: stageAOutput.designSpec.industry
+    };
+    
+    const output = await analyzeLogoUniqueness(input);
+    this.stageOutputs[stageName] = output;
+    
+    if (!output.success) {
+      throw new Error(`Uniqueness Analysis failed: ${output.error?.message}`);
+    }
+    
+    this.executionTime[stageName] = Date.now() - stageStartTime;
+    this.tokensUsed[stageName] = output.tokensUsed || 0;
+    
+    this.updateProgress('Uniqueness', 100, 50, 'Logo uniqueness analysis completed');
+    this.log('Completed Uniqueness Analysis');
   }
 
   // Helper methods

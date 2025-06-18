@@ -5,6 +5,7 @@ export interface StreamingCallbacks {
   onPreview: (svgContent: string) => void;
   onComplete: (assets: GeneratedAssets, sessionId: string) => void;
   onError: (error: Error) => void;
+  onCache?: (isCached: boolean) => void;
 }
 
 export class StreamProcessor {
@@ -55,25 +56,42 @@ export class StreamProcessor {
       const data = JSON.parse(line);
       
       if (data.error) {
-        callbacks.onError(new Error(data.error));
+        callbacks.onError(new Error(data.error.message || data.error));
         return;
       }
       
-      if (data.stage && data.progress !== undefined) {
+      // Handle cache status
+      if (data.type === 'cache' && callbacks.onCache) {
+        callbacks.onCache(data.cached === true);
+      }
+      
+      // Handle progress updates
+      if (data.type === 'progress' && data.progress) {
         callbacks.onProgress({
-          stage: data.stage,
-          stageProgress: data.progress,
-          overallProgress: data.overallProgress || data.progress,
-          progress: data.progress, // Include progress property used by UI
-          message: data.message || `Processing stage ${data.stage}...`
+          currentStage: data.progress.currentStage,
+          stageProgress: data.progress.stageProgress,
+          overallProgress: data.progress.overallProgress,
+          statusMessage: data.progress.statusMessage,
+          // Backward compatibility
+          stage: data.progress.currentStage,
+          progress: data.progress.stageProgress,
+          message: data.progress.statusMessage
         });
       }
       
-      if (data.preview) {
+      // Handle SVG preview
+      if (data.type === 'svg_preview' && data.previewSvg) {
+        callbacks.onPreview(data.previewSvg);
+      } else if (data.preview) {
+        // Backward compatibility
         callbacks.onPreview(data.preview);
       }
       
-      if (data.complete && data.assets) {
+      // Handle result
+      if (data.type === 'result' && data.result) {
+        callbacks.onComplete(data.result, data.result.sessionId);
+      } else if (data.complete && data.assets) {
+        // Backward compatibility
         callbacks.onComplete(data.assets, data.sessionId);
       }
       

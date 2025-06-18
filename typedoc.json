@@ -1,0 +1,38 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./lib", "./app", "./components"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "name": "AI Logo Generator API Documentation",
+  "includeVersion": true,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "excludeInternal": true,
+  "excludeNotDocumented": false,
+  "disableSources": false,
+  "readme": "README.md",
+  "githubPages": true,
+  "categorizeByGroup": true,
+  "searchInComments": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/yourusername/ailogogenerator",
+    "Documentation": "/docs"
+  },
+  "sidebarLinks": {
+    "Project Guidelines": "/docs/guidelines.md",
+    "Architecture": "/docs/architecture.md"
+  },
+  "sort": ["static-first", "alphabetical"],
+  "visibilityFilters": {
+    "protected": true,
+    "private": true,
+    "inherited": true,
+    "external": true
+  },
+  "theme": "default",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-mermaid"],
+  "darkHighlightTheme": "dark-plus",
+  "lightHighlightTheme": "light-plus",
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"]
+}

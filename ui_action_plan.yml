@@ -1,0 +1,224 @@
+plan:
+  title: "UI System Overhaul - Monochrome + Accent Design System"
+  description: "Convert the existing UI to a monochrome + #FF4233 accent design system with asymmetric principles"
+  
+tasks:
+  # Foundation Tasks
+  - id: "F-001"
+    title: "Update color system in Tailwind config"
+    description: "Replace the existing color palette with monochrome + #FF4233 accent"
+    estimate: 1.5
+    priority: "high"
+    rice_score: 80
+    acceptance_criteria:
+      - "Primary/accent color changed to #FF4233"
+      - "Secondary colors set to monochrome values (#0F0F0F, #1A1A1A, etc.)"
+      - "Border colors updated to #333333 (active) and #666666 (inactive)"
+      - "All color variables in globals.css updated to match"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "F-002"
+    title: "Implement typography system"
+    description: "Update typography with Raleway 200 for headings and Arimo for body"
+    estimate: 2
+    priority: "high"
+    rice_score: 75
+    acceptance_criteria:
+      - "Raleway 200 weight set for all headings"
+      - "Letter-spacing set to +5-10% for headings"
+      - "Arimo implemented for body text at 12px base size"
+      - "Typography scale follows 12px/24px system"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "F-003"
+    title: "Create asymmetric utility classes"
+    description: "Develop utility classes for asymmetric design elements"
+    estimate: 3
+    priority: "high"
+    rice_score: 70
+    acceptance_criteria:
+      - "Uneven spacing utilities created"
+      - "Asymmetric border radius utilities added"
+      - "Off-center shadow utilities implemented"
+      - "Clip path utilities for asymmetric shapes created"
+    owner: "TBD"
+    status: "completed"
+    
+  # Component Updates
+  - id: "C-001"
+    title: "Refactor Button component"
+    description: "Update Button component to support asymmetric design principles"
+    estimate: 2
+    priority: "high"
+    rice_score: 65
+    acceptance_criteria:
+      - "Default variant uses thin border with accent on hover"
+      - "Accent variant uses #FF4233 with clipped corner"
+      - "Asymmetric variant added with offset shadow"
+      - "Focus states use accent color (#FF4233)"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "C-002"
+    title: "Refactor Badge component"
+    description: "Update Badge component with asymmetric styling"
+    estimate: 1
+    priority: "medium"
+    rice_score: 50
+    acceptance_criteria:
+      - "Default shape changed from rounded-full to asymmetric"
+      - "Accent variant uses #FF4233"
+      - "Asymmetric variant added with uneven corners"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "C-003"
+    title: "Refactor Card component"
+    description: "Update Card component with asymmetric design principles"
+    estimate: 2
+    priority: "medium"
+    rice_score: 45
+    acceptance_criteria:
+      - "Asymmetric shadow and borders implemented"
+      - "Accent corner decoration option added"
+      - "Uneven padding applied"
+    owner: "TBD"
+    status: "pending"
+    
+  - id: "C-004"
+    title: "Update Header component"
+    description: "Refactor the Header to use asymmetric design"
+    estimate: 1.5
+    priority: "high"
+    rice_score: 60
+    acceptance_criteria:
+      - "Accent color applied to logo"
+      - "Asymmetric border added to bottom"
+      - "Uneven spacing between elements"
+    owner: "TBD"
+    status: "completed"
+    
+  # Application Components
+  - id: "A-001"
+    title: "Update LogoGeneratorApp layout"
+    description: "Apply asymmetric design principles to the main app layout"
+    estimate: 3
+    priority: "high"
+    rice_score: 70
+    acceptance_criteria:
+      - "Layout changed to asymmetric with deliberate irregularity"
+      - "Chat interface moved from center to asymmetric position"
+      - "Negative space used as active element"
+      - "Accent color limited to primary actions and highlights"
+    owner: "TBD"
+    status: "pending"
+    
+  - id: "A-002"
+    title: "Update ProgressTracker component"
+    description: "Refactor the progress tracker with accent color and asymmetric design"
+    estimate: 2
+    priority: "medium"
+    rice_score: 40
+    acceptance_criteria:
+      - "Progress indicators updated to use accent color"
+      - "Asymmetric styling applied to progress bars"
+      - "Uneven spacing between steps"
+    owner: "TBD"
+    status: "pending"
+    
+  - id: "A-003"
+    title: "Update FileUpload component"
+    description: "Apply asymmetric design to file upload area"
+    estimate: 1.5
+    priority: "medium"
+    rice_score: 35
+    acceptance_criteria:
+      - "Asymmetric borders and shadows applied"
+      - "Accent color used for active states and highlights"
+      - "Dropzone restyled with offset elements"
+    owner: "TBD"
+    status: "pending"
+    
+  # Testing & Quality
+  - id: "T-001"
+    title: "Implement visual regression testing"
+    description: "Set up Playwright for visual regression testing"
+    estimate: 4
+    priority: "high"
+    rice_score: 60
+    acceptance_criteria:
+      - "Playwright configuration created"
+      - "Visual tests for key components written"
+      - "CI workflow for visual testing set up"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "T-002"
+    title: "Implement accessibility testing"
+    description: "Add automated accessibility testing with Axe"
+    estimate: 3
+    priority: "high"
+    rice_score: 55
+    acceptance_criteria:
+      - "Axe integration set up with Playwright"
+      - "Accessibility tests cover all major pages"
+      - "CI workflow for accessibility testing configured"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "T-003"
+    title: "Set up Lighthouse performance budgets"
+    description: "Configure Lighthouse CI with performance budgets"
+    estimate: 2
+    priority: "medium"
+    rice_score: 40
+    acceptance_criteria:
+      - "Lighthouse budget file created"
+      - "CI workflow for Lighthouse tests configured"
+      - "Performance score targets set to ≥90"
+    owner: "TBD"
+    status: "completed"
+    
+  # Documentation
+  - id: "D-001"
+    title: "Create design system documentation"
+    description: "Document the design system in Markdown"
+    estimate: 3
+    priority: "high"
+    rice_score: 50
+    acceptance_criteria:
+      - "Color system documented"
+      - "Typography system documented"
+      - "Component variants documented"
+      - "Usage guidelines included"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "D-002"
+    title: "Create accent usage register"
+    description: "Document all approved uses of the accent color"
+    estimate: 1
+    priority: "medium"
+    rice_score: 30
+    acceptance_criteria:
+      - "All approved accent color uses listed"
+      - "Component-specific usage documented"
+      - "Prohibited usage described"
+    owner: "TBD"
+    status: "completed"
+    
+  - id: "D-003"
+    title: "Create UI audit report"
+    description: "Document the current state and violations"
+    estimate: 2
+    priority: "high"
+    rice_score: 45
+    acceptance_criteria:
+      - "Component inventory completed"
+      - "CSS/JS dependency graph created"
+      - "Spacing/typography deviations documented"
+      - "API endpoint matrix created"
+    owner: "TBD"
+    status: "completed"

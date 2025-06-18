@@ -28,6 +28,9 @@ export interface LogoBrief {
   style?: string;
   colors?: string;
   keywords?: string[] | string;
+  industry?: string;
+  includeAnimations?: boolean;
+  animationOptions?: any; // Will be typed properly when imported
 }
 
 export interface DesignSpec {
@@ -38,6 +41,8 @@ export interface DesignSpec {
   imagery: string;
   target_audience: string;
   additional_requests: string;
+  industry?: string; // Industry category for specialized design templates
+  industry_confidence?: number; // Confidence score for industry detection (0-1)
 }
 
 export interface SVGLogo {
@@ -47,12 +52,19 @@ export interface SVGLogo {
 }
 
 export interface GenerationProgress {
-  stage: string;
+  // Enhanced fields
+  currentStage: string;
   stageProgress: number; // 0-100
   overallProgress: number; // 0-100
-  message: string;
-  progress: number; // 0-100, used by UI components
+  statusMessage: string;
   estimatedTimeRemaining?: number; // seconds
+  elapsedTime?: number; // seconds
+  reliability?: number; // 0-1 indicating reliability of time estimate
+  
+  // Legacy fields for backward compatibility
+  stage?: string;
+  message?: string;
+  progress?: number; // 0-100, used by UI components
 }
 
 export interface LogoGenerationState {
@@ -86,30 +98,109 @@ export interface GeneratedAssets {
     size512: string;
     size1024: string;
   };
+  // Enhanced versions
+  transparentPngVersions?: {
+    size256: string;
+    size512: string;
+    size1024: string;
+  };
+  monochromePngVersions?: {
+    black: {
+      size256: string;
+      size512: string;
+    };
+    white: {
+      size256: string;
+      size512: string;
+    };
+  };
   favicon?: {
     ico: string;
+    png?: string;
     svg: string;
+  };
+  // Animation assets
+  animatedSvg?: {
+    svg: string;
+    css: string;
+    js?: string;
+    previewUrl?: string;
   };
   brandGuidelines?: string;
   individualFiles?: FileDownloadInfo[];
   zipPackageUrl?: string;
+  // Uniqueness analysis
+  uniquenessAnalysis?: UniquenessAnalysisResult;
+}
+
+// Uniqueness analysis types
+export interface CompetitorLogo {
+  id: string;
+  companyName: string;
+  similarityScore: number; // 0-100
+  similarElements: string[];
+  imageUrl?: string;
+}
+
+export interface UniquenessAnalysisResult {
+  uniquenessScore: number; // 0-100
+  analysis: {
+    overallAssessment: string;
+    uniqueElements: string[];
+    potentialIssues: string[];
+    industryConventions: string[];
+    differentiators: string[];
+  };
+  similarLogos: CompetitorLogo[];
+  recommendations: {
+    text: string;
+    severity: 'info' | 'warning' | 'critical';
+  }[];
 }
 
 export interface GenerationResult {
   success: boolean;
+  brandName?: string;
   logoSvg?: string;
   logoPngUrls?: {
     size256: string;
     size512: string;
     size1024: string;
   };
+  // Enhanced variant URLs
+  transparentPngUrls?: {
+    size256: string;
+    size512: string;
+    size1024: string;
+  };
+  monochromePngUrls?: {
+    black: {
+      size256: string;
+      size512: string;
+    };
+    white: {
+      size256: string;
+      size512: string;
+    };
+  };
   monochromeVariants?: {
     blackSvg: string;
     whiteSvg: string;
   };
-  faviconIcoUrl?: string;
+  faviconUrls?: {
+    ico: string;
+    png: string;
+    svg: string;
+  };
+  faviconIcoUrl?: string; // For backward compatibility
   brandGuidelinesUrl?: string;
   downloadUrl?: string;
+  // Animation properties
+  animatedSvg?: string;
+  animationCss?: string;
+  animationJs?: string;
+  // Uniqueness analysis
+  uniquenessAnalysis?: UniquenessAnalysisResult;
   error?: {
     message: string;
     details?: string;
@@ -142,6 +233,10 @@ export interface LogoGenerationOptions {
   targetAudience?: string;
   referenceImages?: File[];
   includeGuidelines?: boolean;
+  includeAnimations?: boolean;
+  animationType?: string;
+  animationOptions?: any; // Will be typed properly when imported
+  industry?: string; // Specific industry category
 }
 
 export interface DesignSpec {
@@ -152,6 +247,8 @@ export interface DesignSpec {
   imagery: string;
   target_audience: string;
   additional_requests: string;
+  industry?: string; // Industry category for specialized design templates
+  industry_confidence?: number; // Confidence score for industry detection (0-1)
 }
 
 export interface SVGLogo {
@@ -176,14 +273,24 @@ export interface BrandGuidelines {
 }
 
 // Defines a single stage in the logo generation pipeline
-export interface Stage {
-  id: string; // e.g., "distillation", "moodboard", "generation"
+export interface LogoStage {
+  id: string; // e.g., "stage-a", "stage-b", etc.
   name: string; // User-friendly name, e.g., "Understanding Your Brief"
   status: 'pending' | 'in-progress' | 'completed' | 'error' | 'skipped';
-  estimatedDuration: number; // in seconds
-  elapsedTime?: number; // in seconds, for the current or completed stage
+  estimatedDuration: number; // in milliseconds
+  elapsedTime?: number; // in milliseconds, for the current or completed stage
   progress?: number; // 0-100, for the 'in-progress' stage
   details?: string; // Optional details or error messages
+  order: number; // Order in the pipeline (0-based)
+  allowParallel?: boolean; // Whether this stage can run in parallel with others
+  isCritical?: boolean; // Whether this stage is critical for the final result
+  previewType?: 'svg' | 'image' | 'html' | 'text'; // Type of preview this stage can generate
+}
+
+// For backward compatibility
+export interface Stage extends Omit<LogoStage, 'estimatedDuration' | 'elapsedTime' | 'order' | 'allowParallel' | 'isCritical' | 'previewType'> {
+  estimatedDuration: number; // in seconds
+  elapsedTime?: number; // in seconds, for the current or completed stage
 }
 
 // Props for the individual stage item component
@@ -296,6 +403,7 @@ export interface LogoDisplayProps {
   availableBackgrounds?: string[]; // Array of color strings or class names
   initialBackground?: string;
   className?: string;
+  onCustomize?: (customizedSvgCode: string) => void;
 }
 
 export interface VariantSwitcherProps {
@@ -323,4 +431,117 @@ export interface FileUploadProps {
   acceptedFileTypes?: string[];
   className?: string;
   disabled?: boolean;
+}
+
+/**
+ * Stage preview data interface
+ */
+export interface StagePreview {
+  stageId: string;
+  content: string;
+  contentType: 'svg' | 'png' | 'html' | 'text';
+  timestamp: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+/**
+ * Pipeline progress information
+ */
+export interface PipelineProgress {
+  currentStage: string;
+  stageProgress: number; // 0-100
+  overallProgress: number; // 0-100
+  statusMessage: string;
+}
+
+/**
+ * Streaming update types for the enhanced streaming implementation
+ */
+export enum StreamUpdateType {
+  START = 'start',
+  PROGRESS = 'progress',
+  PREVIEW = 'preview',
+  STAGE_COMPLETE = 'stage_complete',
+  RESULT = 'result',
+  ERROR = 'error',
+  WARNING = 'warning',
+  INFO = 'info',
+  CACHE = 'cache',
+  HEARTBEAT = 'heartbeat',
+  END = 'end'
+}
+
+// Mockup Preview System Types
+export enum MockupType {
+  BUSINESS_CARD = 'business_card',
+  WEBSITE = 'website',
+  TSHIRT = 'tshirt',
+  STOREFRONT = 'storefront',
+  SOCIAL_MEDIA = 'social_media',
+  MOBILE_APP = 'mobile_app',
+  LETTERHEAD = 'letterhead',
+  BILLBOARD = 'billboard',
+  PACKAGING = 'packaging'
+}
+
+export interface MockupTemplate {
+  id: string;
+  type: MockupType;
+  name: string;
+  description: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  placeholderUrl?: string;
+  aspectRatio: number; // width/height
+  logoPlacement: {
+    x: number; // percentage (0-100)
+    y: number; // percentage (0-100)
+    width: number; // percentage of mockup width
+    height: number; // percentage of mockup height
+    rotation?: number; // degrees
+    preserveAspectRatio: boolean;
+  };
+  colorVariants?: string[]; // List of background colors or themes available
+  textPlaceholders?: Array<{
+    id: string;
+    name: string;
+    default: string;
+    x: number; // percentage
+    y: number; // percentage
+    maxWidth: number; // percentage
+    fontSize: number; // in pixels or relative units
+    color: string;
+    fontFamily?: string;
+  }>;
+}
+
+export interface MockupPreviewProps {
+  logo: string | SVGLogo; // SVG code or SVGLogo object
+  template: MockupTemplate;
+  customText?: Record<string, string>; // Key is textPlaceholder.id, value is custom text
+  selectedColorVariant?: string;
+  brandName?: string;
+  className?: string;
+  onDownload?: () => void;
+}
+
+export interface MockupSelectorProps {
+  templates: MockupTemplate[];
+  selectedTemplateId: string | null;
+  onSelectTemplate: (templateId: string) => void;
+  logo: string | SVGLogo;
+  brandName?: string;
+  className?: string;
+}
+
+export interface MockupPreviewSystemProps {
+  logo: string | SVGLogo;
+  brandName?: string;
+  templates?: MockupTemplate[];
+  className?: string;
+  onDownload?: (mockupId: string, format: 'png' | 'jpg') => void;
+  initialTemplateId?: string;
 }

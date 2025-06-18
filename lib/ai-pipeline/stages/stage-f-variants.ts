@@ -19,6 +19,22 @@ export interface LogoVariants {
     png512: Buffer; // 512x512 PNG
     png1024: Buffer; // 1024x1024 PNG
   };
+  // Add enhanced variants
+  transparentPngVariants: {
+    png256: Buffer; // 256x256 PNG with transparency
+    png512: Buffer; // 512x512 PNG with transparency
+    png1024: Buffer; // 1024x1024 PNG with transparency
+  };
+  monochromePngVariants: {
+    black: {
+      png256: Buffer;
+      png512: Buffer;
+    };
+    white: {
+      png256: Buffer;
+      png512: Buffer;
+    };
+  };
 }
 
 export interface StageFInput {
@@ -143,39 +159,84 @@ class StageFValidator {
   }
 }
 
-// SVG to PNG converter
+// SVG to PNG converter with enhanced options
 class SvgConverter {
-  static async svgToPng(svg: string, size: number): Promise<Buffer> {
+  static async svgToPng(svg: string, size: number, options: {
+    background?: string | { r: number; g: number; b: number; alpha: number };
+    quality?: number;
+  } = {}): Promise<Buffer> {
     try {
-      // Convert SVG to PNG using sharp
-      return await sharp(Buffer.from(svg))
-        .resize(size, size)
-        .png({ quality: STAGE_F_CONFIG.png_quality })
+      // Set defaults
+      const quality = options.quality || STAGE_F_CONFIG.png_quality;
+      
+      // Create Sharp instance
+      let sharpInstance = sharp(Buffer.from(svg))
+        .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } });
+      
+      // Apply background if specified
+      if (options.background) {
+        sharpInstance = sharpInstance.flatten({ background: options.background });
+      }
+      
+      // Generate PNG
+      return await sharpInstance
+        .png({ quality })
         .toBuffer();
     } catch (error) {
       throw new Error(`Failed to convert SVG to PNG at size ${size}: ${(error as Error).message}`);
     }
   }
 
-  static async createIco(favicon32Buffer: Buffer): Promise<Buffer> {
+  static async createIco(svgSource: string): Promise<Buffer> {
     try {
-      // For ICO format we'll use the 32x32 PNG since most modern browsers support PNG-based ICOs
-      // For a full implementation, we would create multiple sizes and package them into a proper ICO
-      // This is a simplified version that works for most cases
+      // Create ICO format with multiple sizes (16x16, 32x32, 48x48)
+      // For a proper ICO, we would generate all these sizes and combine them
+      // This is a simplified version that uses Sharp to create a 32x32 PNG
+      // and returns it as the ICO (most modern browsers support PNG-based ICO files)
       
-      // In a production environment, you'd want to use a library like "ico-converter" 
-      // to properly package multiple sizes into an ICO file
+      // First, create a 32x32 PNG from the SVG
+      const png32 = await this.svgToPng(svgSource, 32);
       
-      // For this implementation, we'll just use the 32x32 PNG as is
-      // A proper ICO would contain 16x16, 32x32, and 48x48 versions
+      // For a full implementation with multiple sizes, we would:
+      // 1. Generate PNG files at 16x16, 32x32, and 48x48 sizes
+      // 2. Use a library like 'ico-converter' to combine them into a proper ICO file
+      // 3. Return the combined ICO buffer
       
-      return favicon32Buffer;
+      // For this implementation, we'll return the 32x32 PNG as the ICO
+      return png32;
       
-      // In a full implementation with a proper ICO library:
+      // In a complete implementation:
       // const ico = require('ico-converter');
-      // return await ico.fromPNG(favicon32Buffer, [16, 32, 48]);
+      // const png16 = await this.svgToPng(svgSource, 16);
+      // const png48 = await this.svgToPng(svgSource, 48);
+      // return await ico.fromPNGs([png16, png32, png48], [16, 32, 48]);
     } catch (error) {
       throw new Error(`Failed to create ICO file: ${(error as Error).message}`);
+    }
+  }
+
+  // Create multiple PNG variants at once (for efficiency)
+  static async createPngVariants(svg: string, sizes: number[] = STAGE_F_CONFIG.png_sizes, options: {
+    background?: string | { r: number; g: number; b: number; alpha: number };
+    quality?: number;
+  } = {}): Promise<Record<string, Buffer>> {
+    try {
+      // Generate all PNGs in parallel for efficiency
+      const promises = sizes.map(size => 
+        this.svgToPng(svg, size, options).then(buffer => ({ size, buffer }))
+      );
+      
+      const results = await Promise.all(promises);
+      
+      // Convert to record with size as key
+      const variants: Record<string, Buffer> = {};
+      results.forEach(({ size, buffer }) => {
+        variants[`png${size}`] = buffer;
+      });
+      
+      return variants;
+    } catch (error) {
+      throw new Error(`Failed to create PNG variants: ${(error as Error).message}`);
     }
   }
 }
@@ -403,13 +464,43 @@ Follow the requirements exactly as specified in your instructions.
       faviconVariant = MonochromeGenerator.createSimpleFavicon(input.svg);
     }
     
-    // Generate PNG variants
-    const favicon32Buffer = await SvgConverter.svgToPng(faviconVariant, 32);
-    const ico = await SvgConverter.createIco(favicon32Buffer);
-    
-    const png256 = await SvgConverter.svgToPng(input.svg, 256);
-    const png512 = await SvgConverter.svgToPng(input.svg, 512);
-    const png1024 = await SvgConverter.svgToPng(input.svg, 1024);
+    // Generate all PNG variants in parallel for better performance
+    const [
+      standardPngVariants,
+      transparentPngVariants,
+      blackPng256,
+      blackPng512,
+      whitePng256,
+      whitePng512,
+      favicon32Buffer,
+      ico
+    ] = await Promise.all([
+      // Standard PNG variants with white background
+      SvgConverter.createPngVariants(input.svg, [256, 512, 1024], { 
+        background: { r: 255, g: 255, b: 255, alpha: 1 } 
+      }),
+      
+      // Transparent PNG variants
+      SvgConverter.createPngVariants(input.svg, [256, 512, 1024]),
+      
+      // Black monochrome PNG variants
+      SvgConverter.svgToPng(blackVariant, 256),
+      SvgConverter.svgToPng(blackVariant, 512),
+      
+      // White monochrome PNG variants (with dark background for visibility)
+      SvgConverter.svgToPng(whiteVariant, 256, { 
+        background: { r: 50, g: 50, b: 50, alpha: 1 } 
+      }),
+      SvgConverter.svgToPng(whiteVariant, 512, { 
+        background: { r: 50, g: 50, b: 50, alpha: 1 } 
+      }),
+      
+      // Favicon PNG
+      SvgConverter.svgToPng(faviconVariant, 32),
+      
+      // ICO file
+      SvgConverter.createIco(faviconVariant)
+    ]);
     
     const processingTime = Date.now() - startTime;
 
@@ -427,9 +518,25 @@ Follow the requirements exactly as specified in your instructions.
           ico
         },
         pngVariants: {
-          png256,
-          png512,
-          png1024
+          png256: standardPngVariants.png256,
+          png512: standardPngVariants.png512,
+          png1024: standardPngVariants.png1024
+        },
+        // Enhanced variants
+        transparentPngVariants: {
+          png256: transparentPngVariants.png256,
+          png512: transparentPngVariants.png512,
+          png1024: transparentPngVariants.png1024
+        },
+        monochromePngVariants: {
+          black: {
+            png256: blackPng256,
+            png512: blackPng512
+          },
+          white: {
+            png256: whitePng256,
+            png512: whitePng512
+          }
         }
       },
       tokensUsed,

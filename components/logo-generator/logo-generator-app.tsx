@@ -17,6 +17,12 @@ import DownloadManager from './download-manager';
 import ProgressTracker from './progress-tracker';
 import { SmartFollowUps } from './smart-follow-ups';
 import { DesignCitations } from './design-citations';
+import { IndustrySelector } from './industry-selector';
+import { MockupPreviewSystem } from './mockup-preview-system';
+import { AnimationSelector } from './animation-selector';
+import { AnimatedLogoDisplay } from './animated-logo-display';
+import { UniquenessToggle } from './uniqueness-toggle';
+import { UniquenessAnalysis } from './uniqueness-analysis';
 import { 
   Message, 
   GenerationProgress, 
@@ -27,11 +33,13 @@ import {
   FileDownloadInfo    
 } from '@/lib/types'; 
 import { Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
+import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
 
 interface AppMessage extends Message {
   type?: MessageRole;
   progress?: GenerationProgress;
   assets?: GeneratedAssets & { 
+    brandName?: string;
     primaryLogoSVG?: SVGLogo; 
     individualFiles?: FileDownloadInfo[]; 
     zipPackageUrl?: string; 
@@ -44,7 +52,12 @@ type HookProgressData = Partial<LogoGenerationState>;
 
 export function LogoGeneratorApp() {
   const [messages, setMessages] = useState<AppMessage[]>([]);
-  // We don't need sidebarOpen state for Perplexity style
+  const [detectedIndustry, setDetectedIndustry] = useState<string>('general');
+  const [industryConfidence, setIndustryConfidence] = useState<number>(0);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('general');
+  const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
+  const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<any>(null);
+  const [includeUniquenessAnalysis, setIncludeUniquenessAnalysis] = useState<boolean>(false);
   
   const { toast } = useToast();
   const {
@@ -59,6 +72,10 @@ export function LogoGeneratorApp() {
   } = useLogoGeneration();
 
   const handleSubmit = useCallback(async (content: string, files?: File[]) => {
+    // Reset industry detection for new generation
+    setDetectedIndustry('general');
+    setIndustryConfidence(0);
+    
     const userMessage: AppMessage = {
       id: generateId(),
       role: 'user',
@@ -79,7 +96,13 @@ export function LogoGeneratorApp() {
     setMessages(prev => [...prev, systemMessage]);
 
     try {
-      await generateLogo(content, files);
+      // Include selected industry, animation options, and uniqueness analysis in the generation
+      await generateLogo(content, files, {
+        industry: selectedIndustry,
+        includeAnimations: includeAnimations,
+        animationOptions: selectedAnimationOptions,
+        includeUniquenessAnalysis: includeUniquenessAnalysis
+      });
     } catch (err) {
       toast({
         title: "Generation Failed",
@@ -87,7 +110,7 @@ export function LogoGeneratorApp() {
         variant: "destructive"
       });
     }
-  }, [generateLogo, toast]);
+  }, [generateLogo, toast, selectedIndustry, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis]);
 
   const handleSuggestionSelect = useCallback((prompt: string) => {
     handleSubmit(prompt);
@@ -183,10 +206,10 @@ export function LogoGeneratorApp() {
               </div>
               
               <div className="space-y-2">
-                <h1 className="text-3xl font-bold">AI Logo Generator</h1>
-                <p className="text-muted-foreground max-w-xl mx-auto">
+                <H1 className="text-center">AI Logo Generator</H1>
+                <LargeText className="text-muted-foreground max-w-xl mx-auto">
                   Describe your brand and get a professionally designed logo in seconds. Add colors, style preferences, or upload reference images for inspiration.
-                </p>
+                </LargeText>
               </div>
             </div>
           )}
@@ -200,11 +223,48 @@ export function LogoGeneratorApp() {
           
           {/* Suggestion chips - shown only when no messages */}
           {messages.length === 0 && (
-            <SuggestionChips
-              suggestions={DEFAULT_LOGO_SUGGESTIONS}
-              onSelectSuggestion={handleSuggestionSelect}
-              className="mt-6"
-            />
+            <>
+              <div className="max-w-xl mx-auto mt-6 mb-4">
+                <IndustrySelector
+                  detectedIndustry={detectedIndustry}
+                  detectedConfidence={industryConfidence}
+                  onSelectIndustry={setSelectedIndustry}
+                />
+              </div>
+              
+              <div className="max-w-xl mx-auto mt-6 mb-4 space-y-4">
+                <div className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="includeAnimations"
+                    checked={includeAnimations}
+                    onChange={(e) => setIncludeAnimations(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="includeAnimations" className="text-sm font-medium">
+                    Include animations for digital use
+                  </label>
+                </div>
+                
+                {includeAnimations && (
+                  <AnimationSelector
+                    onSelectAnimation={setSelectedAnimationOptions}
+                    className="mt-4"
+                  />
+                )}
+                
+                <UniquenessToggle
+                  enabled={includeUniquenessAnalysis}
+                  onToggle={setIncludeUniquenessAnalysis}
+                  className="mt-4"
+                />
+              </div>
+              <SuggestionChips
+                suggestions={DEFAULT_LOGO_SUGGESTIONS}
+                onSelectSuggestion={handleSuggestionSelect}
+                className="mt-6"
+              />
+            </>
           )}
           
           {/* Response area */}
@@ -221,7 +281,7 @@ export function LogoGeneratorApp() {
               {hookAssets && sessionId && (
                 <div className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">Your Logo Package</h2>
+                    <H2>Your Logo Package</H2>
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -236,11 +296,26 @@ export function LogoGeneratorApp() {
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Logo display */}
                     <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center">
-                      <LogoDisplay
-                        svgCode={hookAssets.primaryLogoSVG?.svgCode || null}
-                        variants={hookAssets.primaryLogoSVG ? [{ id: 'primary', name: 'Primary', svgCode: hookAssets.primaryLogoSVG.svgCode }] : []}
-                        className="max-w-full"
-                      />
+                      {hookAssets.animatedSvg && hookAssets.animationCss ? (
+                        <div className="space-y-4">
+                          <AnimatedLogoDisplay
+                            svgCode={hookAssets.animatedSvg}
+                            cssCode={hookAssets.animationCss}
+                            jsCode={hookAssets.animationJs}
+                            className="max-w-full"
+                            showControls={true}
+                          />
+                          <div className="text-xs text-center text-muted-foreground">
+                            Animated SVG logo (for digital use)
+                          </div>
+                        </div>
+                      ) : (
+                        <LogoDisplay
+                          svgCode={hookAssets.primaryLogoSVG?.svgCode || null}
+                          variants={hookAssets.primaryLogoSVG ? [{ id: 'primary', name: 'Primary', svgCode: hookAssets.primaryLogoSVG.svgCode }] : []}
+                          className="max-w-full"
+                        />
+                      )}
                     </div>
                     
                     {/* Download manager */}
@@ -248,7 +323,7 @@ export function LogoGeneratorApp() {
                       <DownloadManager
                         files={hookAssets.individualFiles || []} 
                         packageUrl={hookAssets.zipPackageUrl}
-                        brandName="Your Brand"
+                        brandName={hookAssets.brandName || "Your Brand"}
                         onDownloadFileAction={(fileId: string) => console.log('Download file:', fileId)}
                         onDownloadAllAction={() => console.log('Download all')}
                       />
@@ -259,7 +334,7 @@ export function LogoGeneratorApp() {
                   <div className="grid md:grid-cols-2 gap-6 mt-8">
                     <SmartFollowUps 
                       onSelectFollowUp={handleSubmit}
-                      brandName="Your Brand"
+                      brandName={hookAssets.brandName || "Your Brand"}
                       styleType="modern"
                       colorPalette="blue"
                     />
@@ -267,38 +342,60 @@ export function LogoGeneratorApp() {
                     <DesignCitations />
                   </div>
                   
+                  {/* Uniqueness Analysis */}
+                  {hookAssets.uniquenessAnalysis && (
+                    <div className="mt-8 border-t pt-6">
+                      <UniquenessAnalysis 
+                        analysis={hookAssets.uniquenessAnalysis} 
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Mockup Preview System */}
+                  <div className="mt-8 border-t pt-6">
+                    <H3 className="mb-4">Visualize Your Logo</H3>
+                    <MockupPreviewSystem 
+                      logo={hookAssets.primaryLogoSVG?.svgCode || ''}
+                      brandName={hookAssets.brandName || 'Your Brand'}
+                      onDownload={(mockupId, format) => {
+                        console.log(`Download mockup ${mockupId} in ${format} format`);
+                        // You can implement additional download tracking here
+                      }}
+                    />
+                  </div>
+                  
                   {/* What's next? */}
                   <div className="mt-8 border-t pt-6">
-                    <h3 className="text-lg font-medium mb-3">What's next?</h3>
+                    <H3 className="mb-3">What's next?</H3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <h4 className="font-medium flex items-center">
+                        <H4 className="flex items-center m-0">
                           Download your assets
                           <ArrowRight className="h-4 w-4 ml-2" />
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        </H4>
+                        <Paragraph className="text-sm text-muted-foreground mt-1">
                           Get all logo variants in SVG, PNG, and ICO formats.
-                        </p>
+                        </Paragraph>
                       </Card>
                       
                       <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <h4 className="font-medium flex items-center">
+                        <H4 className="flex items-center m-0">
                           Try variations
                           <ArrowRight className="h-4 w-4 ml-2" />
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        </H4>
+                        <Paragraph className="text-sm text-muted-foreground mt-1">
                           Explore different styles, colors, and layouts.
-                        </p>
+                        </Paragraph>
                       </Card>
                       
                       <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <h4 className="font-medium flex items-center">
+                        <H4 className="flex items-center m-0">
                           Create brand guidelines
                           <ArrowRight className="h-4 w-4 ml-2" />
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        </H4>
+                        <Paragraph className="text-sm text-muted-foreground mt-1">
                           Get a complete brand package with usage guidelines.
-                        </p>
+                        </Paragraph>
                       </Card>
                     </div>
                   </div>

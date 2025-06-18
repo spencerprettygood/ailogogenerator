@@ -1,0 +1,9 @@
+echo "Running pre-commit hooks..."
+
+# Run lint-staged for code quality checks
+npx lint-staged
+
+# Run documentation check
+"$(dirname -- "$0")/pre-commit-docs"
+
+echo "Pre-commit hooks finished."
