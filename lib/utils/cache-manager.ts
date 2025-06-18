@@ -15,8 +15,8 @@
  * @copyright 2024
  */
 
-import { createHash } from 'node:crypto';
 import { GenerationResult, LogoBrief, PipelineProgress } from '../types';
+import { Logger } from './logger';
 
 /**
  * @interface CacheItem
@@ -107,6 +107,7 @@ export class CacheManager {
   private static instance: CacheManager;
   private cache: Map<string, CacheItem<unknown>> = new Map();
   private config: CacheConfig;
+  private logger: Logger;
   private counts: Record<CacheType, number> = {
     generation: 0,
     intermediate: 0,
@@ -123,6 +124,8 @@ export class CacheManager {
    * automatic cleanup process to remove expired items periodically.
    */
   private constructor() {
+    this.logger = new Logger('CacheManager');
+    
     // Default configuration
     this.config = {
       enabled: process.env.ENABLE_CACHING !== 'false',
@@ -139,6 +142,11 @@ export class CacheManager {
         progress: 500,
       }
     };
+    
+    this.logger.info('CacheManager initialized', {
+      enabled: this.config.enabled,
+      maxSizes: this.config.maxSize
+    });
     
     // Start the cleanup interval
     setInterval(() => this.cleanup(), 5 * 60 * 1000); // Run cleanup every 5 minutes
@@ -245,21 +253,33 @@ export class CacheManager {
    * const key = cacheManager.getCacheKey(brief);
    * // Returns something like: "8f7d6c5e4b3a2910..."
    */
-  public getCacheKey(brief: LogoBrief): string {
-    // Create a string representation of the brief
-    const briefString = JSON.stringify({
-      prompt: brief.prompt,
-      // For images, we just store the file names and sizes for the key
-      image_uploads: brief.image_uploads?.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      }))
-    });
+  public async getCacheKey(brief: LogoBrief): Promise<string> {
+    this.logger.debug('Generating cache key for brief');
     
-    // Create a hash of the brief
-    return createHash('sha256').update(briefString).digest('hex');
+    try {
+      // Create a string representation of the brief
+      const briefString = JSON.stringify({
+        prompt: brief.prompt,
+        // For images, we just store the file names and sizes for the key
+        image_uploads: brief.image_uploads?.map((file: File) => ({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        }))
+      });
+      
+      // Create a hash of the brief using browser-compatible approach
+      const hash = await this.generateHash(briefString);
+      this.logger.debug('Generated cache key successfully', { keyLength: hash.length });
+      return hash;
+    } catch (error) {
+      this.logger.error('Failed to generate cache key', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      // Fallback to timestamp-based key in case of crypto failures
+      return `fallback_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    }
   }
   
   /**
@@ -382,8 +402,8 @@ export class CacheManager {
    * const result = await generateLogo(brief);
    * cacheManager.cacheGenerationResult(brief, result);
    */
-  public cacheGenerationResult(brief: LogoBrief, result: GenerationResult): string {
-    const key = this.getCacheKey(brief);
+  public async cacheGenerationResult(brief: LogoBrief, result: GenerationResult): Promise<string> {
+    const key = await this.getCacheKey(brief);
     return this.set(key, result, 'generation', { 
       brandName: result.brandName,
       timestamp: Date.now()
@@ -467,8 +487,8 @@ export class CacheManager {
    *   // Generate new result
    * }
    */
-  public getGenerationResult(brief: LogoBrief): GenerationResult | null {
-    const key = this.getCacheKey(brief);
+  public async getGenerationResult(brief: LogoBrief): Promise<GenerationResult | null> {
+    const key = await this.getCacheKey(brief);
     return this.get<GenerationResult>(key, 'generation');
   }
   
@@ -607,20 +627,100 @@ export class CacheManager {
    * @returns {void}
    */
   private cleanup(): void {
+    if (!this.config.enabled) {
+      return;
+    }
+    
+    this.logger.debug('Starting cache cleanup');
+    
     const now = Date.now();
     let cleaned = 0;
+    const typeCleanupCounts: Record<CacheType, number> = {
+      generation: 0,
+      intermediate: 0,
+      asset: 0,
+      progress: 0
+    };
     
     for (const [key, item] of this.cache.entries()) {
       if (now > item.expiresAt) {
         this.cache.delete(key);
         this.counts[item.type]--;
+        typeCleanupCounts[item.type]++;
         cleaned++;
       }
     }
     
-    if (cleaned > 0 && this.config.enabled) {
-      console.log(`[CacheManager] Cleaned up ${cleaned} expired items`);
+    if (cleaned > 0) {
+      this.logger.info(`Cleaned up ${cleaned} expired cache items`, {
+        totalCleaned: cleaned,
+        byType: typeCleanupCounts,
+        remainingItems: {
+          total: this.cache.size,
+          byType: { ...this.counts }
+        }
+      });
+    } else {
+      this.logger.debug('No expired cache items found during cleanup');
     }
+  }
+  
+  /**
+   * Generates a hash using the Web Crypto API or falls back to a simple hash for environments without it
+   * Uses browser-compatible approach that works in both Node.js and browser environments
+   * 
+   * @private
+   * @param {string} str - The string to hash
+   * @returns {string} A hex hash string
+   */
+  private async generateHash(str: string): Promise<string> {
+    this.logger.debug('Generating hash', { inputLength: str.length });
+    
+    // Try to use the Web Crypto API if available (works in modern browsers and Node.js)
+    if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
+      try {
+        this.logger.debug('Using Web Crypto API for hashing');
+        const msgUint8 = new TextEncoder().encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hexHash;
+      } catch (error) {
+        // Log error and fall back to simple hash if crypto API fails
+        this.logger.warn('Web Crypto API failed, using fallback hash', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        return this.simpleHash(str);
+      }
+    }
+    
+    // Fallback for environments without Web Crypto API
+    this.logger.debug('Web Crypto API not available, using fallback hash');
+    return this.simpleHash(str);
+  }
+  
+  /**
+   * Simple hash function for fallback when crypto API is not available
+   * This is a basic implementation of the djb2 algorithm
+   * 
+   * @private
+   * @param {string} str - The string to hash
+   * @returns {string} A hex hash string
+   */
+  private simpleHash(str: string): string {
+    let hash = 5381; // djb2 hash starting value
+    
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) + hash) + char; // hash * 33 + char
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Add some randomness to avoid collisions in the fallback
+    const randomSuffix = Math.floor(Math.random() * 1000000).toString(16).padStart(6, '0');
+    
+    // Convert to hex string and ensure it's positive
+    return (hash >>> 0).toString(16).padStart(8, '0') + randomSuffix;
   }
   
   /**

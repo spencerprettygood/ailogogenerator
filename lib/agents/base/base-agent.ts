@@ -10,6 +10,7 @@ import {
   AgentStatus 
 } from '../../types-agents';
 import { claudeService } from '../../services/claude-service';
+import { withRetry } from '../../retry';
 
 /**
  * Abstract base agent class that provides common functionality for all agents
@@ -144,7 +145,6 @@ export abstract class BaseAgent implements Agent {
    * Call the Claude API with retry logic
    */
   private async callWithRetry(prompt: string, systemPrompt: string) {
-    let lastError: Error | null = null;
     const { maxRetries, initialDelay, backoffMultiplier, maxDelay } = this.config.retryConfig || {
       maxRetries: 3,
       initialDelay: 1000,
@@ -152,8 +152,17 @@ export abstract class BaseAgent implements Agent {
       maxDelay: 10000
     };
     
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
+    // Setup retry configuration
+    const retryConfig = {
+      maxAttempts: maxRetries,
+      baseDelay: initialDelay,
+      backoffFactor: backoffMultiplier,
+      maxDelay: maxDelay
+    };
+    
+    // Use the withRetry utility
+    try {
+      return await withRetry(async () => {
         // Use specialized API call based on agent capabilities
         if (this.capabilities.includes('svg-generation')) {
           return await claudeService.generateSVG(prompt, systemPrompt);
@@ -171,23 +180,12 @@ export abstract class BaseAgent implements Agent {
             stopSequences: this.config.stopSequences
           });
         }
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        this.metrics.retryCount++;
-        
-        // If we've exhausted our retries, throw the last error
-        if (attempt === maxRetries) throw lastError;
-        
-        // Calculate backoff delay
-        const delay = Math.min(initialDelay * Math.pow(backoffMultiplier, attempt), maxDelay);
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      }, retryConfig);
+    } catch (error) {
+      // Increment retry count in metrics
+      this.metrics.retryCount = retryConfig.maxAttempts - 1;
+      throw error;
     }
-    
-    // This should never be reached due to the throw in the loop, but TypeScript needs it
-    throw new Error('Retry attempts exhausted');
   }
   
   /**

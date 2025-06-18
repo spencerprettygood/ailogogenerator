@@ -264,14 +264,6 @@ vercel --prod
 ANTHROPIC_API_KEY=production_key
 ```
 
-### Docker
-```dockerfile
-FROM node:18-alpine
-COPY . .
-RUN npm ci --only=production
-CMD ["npm", "start"]
-```
-
 ## 📈 Performance Metrics
 
 ### Target Benchmarks

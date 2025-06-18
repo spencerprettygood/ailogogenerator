@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { withRetry } from '../../retry';
 
 // Types for Stage A - as per user prompt for this stage
 export interface DesignSpec {
@@ -215,39 +216,7 @@ class JSONValidator {
   }
 }
 
-// Retry utility with exponential backoff
-class RetryHandler {
-  static async withRetry<T>(
-    operation: () => Promise<T>,
-    maxRetries: number = STAGE_A_CONFIG.max_retries,
-    baseDelay: number = STAGE_A_CONFIG.retry_delay
-  ): Promise<T> {
-    let lastError: Error = new Error('Retry operation failed.'); // Initialize with a default error
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error as Error;
-        
-        // Don't retry client-side validation errors
-        if (error instanceof Error && (
-            error.message.includes('Invalid input:') || 
-            error.message.includes('Brief is too short')
-            )) {
-          throw error; 
-        }
-
-        if (attempt < maxRetries - 1) {
-          const delay = baseDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, Math.min(delay, 10000))); // Cap delay
-        }
-      }
-    }
-    // Ensure the template literal uses backticks correctly
-    throw new Error(`Stage A: All AI call attempts failed. Last error: ${lastError.message}`);
-  }
-}
+// Using the centralized retry utility from lib/retry.ts
 
 // Main distillation function
 export async function distillRequirements(
@@ -279,8 +248,15 @@ export async function distillRequirements(
         .join('\n')}`;
     }
 
-    // Call Claude API with retry logic
-    const completion = await RetryHandler.withRetry(async () => {
+    // Call Claude API with retry logic using the centralized retry utility
+    const retryConfig = {
+      maxAttempts: STAGE_A_CONFIG.max_retries,
+      baseDelay: STAGE_A_CONFIG.retry_delay,
+      backoffFactor: 2,
+      maxDelay: 10000
+    };
+    
+    const completion = await withRetry(async () => {
       const response = await anthropic.messages.create({
         model: STAGE_A_CONFIG.model,
         max_tokens: STAGE_A_CONFIG.max_tokens,
@@ -305,7 +281,7 @@ export async function distillRequirements(
         content: textContent.text,
         usage: response.usage,
       };
-    });
+    }, retryConfig);
 
     // Validate and parse the JSON response
     const designSpec = JSONValidator.validateDesignSpec(completion.content);

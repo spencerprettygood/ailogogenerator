@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_MOCKUP_TEMPLATES, getTemplateById } from '@/lib/mockups/template-data';
 import { generateMockupSvg } from '@/lib/mockups/mockup-generator';
-import { securityUtils } from '@/lib/utils/security-utils';
-import sharp from 'sharp';
+import securityUtils from '@/lib/utils/security-utils';
+
+// Use Node.js runtime since we need sharp for image processing
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize the SVG
-    const sanitizedSvg = securityUtils.sanitizeSvg(logoSvg);
+    const sanitizedSvg = securityUtils.cleanSVG(logoSvg);
 
     // Generate the mockup SVG
     const mockupSvg = generateMockupSvg(

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnimationExportOptions } from '@/lib/types';
 import { storeFile } from '@/lib/utils/file-storage';
+// Import sharp but only use it in GIF/MP4 handlers that are currently disabled
 import * as sharp from 'sharp';
 
+// Keep edge runtime since we're not actively using Node.js features in current implementation
+// If GIF/MP4 export is enabled in the future, this should be changed to 'nodejs'
 export const runtime = 'edge';
 
 /**

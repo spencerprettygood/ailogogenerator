@@ -387,49 +387,83 @@ export class PerformanceMonitor {
   public recordMemoryUsage(metadata?: Record<string, any>): string {
     if (!this.enabled) return '';
     
-    // Check if we're in a Node.js environment with process.memoryUsage
-    if (typeof process === 'undefined' || !process.memoryUsage) {
-      // Use browser memory API if available
-      if (typeof performance !== 'undefined' && performance.memory) {
-        const memory = performance.memory as any;
-        
-        const memoryMetric: Partial<MemoryMetric> = {
-          id: this.generateId(),
-          name: 'Browser Memory Usage',
-          category: 'memory',
-          value: memory.usedJSHeapSize,
-          unit: 'bytes',
-          timestamp: Date.now(),
-          heapUsed: memory.usedJSHeapSize,
-          heapTotal: memory.totalJSHeapSize,
-          metadata
+    // Avoid using process.memoryUsage in Edge Runtime
+    const isEdgeRuntime = typeof process !== 'undefined' && 
+                         process.env && 
+                         process.env.NEXT_RUNTIME === 'edge';
+    
+    // Generate a unique ID for this metric
+    const metricId = this.generateId();
+    
+    try {
+      // Create a basic memory metric structure that works in all environments
+      const memoryMetric: Partial<MemoryMetric> = {
+        id: metricId,
+        name: 'Memory Usage',
+        category: 'memory',
+        unit: 'bytes',
+        timestamp: Date.now(),
+        metadata: {
+          ...metadata,
+          environment: isEdgeRuntime ? 'edge' : (typeof window !== 'undefined' ? 'browser' : 'node')
+        },
+        // Set default values
+        value: 0,
+        heapUsed: 0,
+        heapTotal: 0,
+        external: 0,
+        rss: 0
+      };
+      
+      // Try to get memory info based on environment without using restricted APIs
+      if (typeof window !== 'undefined' && window.performance && (window.performance as any).memory) {
+        // Browser environment with performance.memory API (Chrome)
+        try {
+          const browserMemory = (window.performance as any).memory;
+          memoryMetric.value = browserMemory.usedJSHeapSize || 0;
+          memoryMetric.heapUsed = browserMemory.usedJSHeapSize || 0;
+          memoryMetric.heapTotal = browserMemory.totalJSHeapSize || 0;
+        } catch (browserMemError) {
+          // Silently continue with default values if browser memory API fails
+          memoryMetric.metadata = {
+            ...memoryMetric.metadata,
+            memoryApiError: 'Browser memory API access failed'
+          };
+        }
+      } else if (!isEdgeRuntime && typeof process !== 'undefined' && typeof process.memoryUsage === 'function') {
+        // Only try to use process.memoryUsage in non-Edge Node.js environments
+        try {
+          const nodeMemory = process.memoryUsage();
+          memoryMetric.value = nodeMemory.heapUsed;
+          memoryMetric.heapUsed = nodeMemory.heapUsed;
+          memoryMetric.heapTotal = nodeMemory.heapTotal;
+          memoryMetric.external = nodeMemory.external;
+          memoryMetric.rss = nodeMemory.rss;
+        } catch (nodeMemError) {
+          // Fallback for restricted environments
+          memoryMetric.metadata = {
+            ...memoryMetric.metadata,
+            memoryApiError: 'Node.js memory API access failed'
+          };
+        }
+      } else {
+        // Edge Runtime or environment where memory APIs are not available
+        memoryMetric.metadata = {
+          ...memoryMetric.metadata,
+          note: isEdgeRuntime 
+            ? 'Memory metrics not available in Edge Runtime' 
+            : 'Memory metrics not available in this environment'
         };
-        
-        this.addMetric(memoryMetric as MemoryMetric);
-        return memoryMetric.id as string;
       }
       
-      return '';
+      // Add the metric to our store
+      this.addMetric(memoryMetric as MemoryMetric);
+      return metricId;
+    } catch (error) {
+      // Silent fallback for any unexpected errors
+      console.warn('Failed to record memory usage:', error);
+      return metricId; // Still return the ID even if there was an error
     }
-    
-    const memory = process.memoryUsage();
-    
-    const memoryMetric: MemoryMetric = {
-      id: this.generateId(),
-      name: 'Memory Usage',
-      category: 'memory',
-      value: memory.heapUsed,
-      unit: 'bytes',
-      timestamp: Date.now(),
-      heapUsed: memory.heapUsed,
-      heapTotal: memory.heapTotal,
-      external: memory.external,
-      rss: memory.rss,
-      metadata
-    };
-    
-    this.addMetric(memoryMetric);
-    return memoryMetric.id;
   }
   
   /**

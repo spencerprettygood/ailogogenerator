@@ -1,725 +1,707 @@
-import { AnimationOptions, AnimationResponse, AnimatedSVGLogo, AnimationType, AnimationEasing, AnimationTrigger, AnimationProvider } from './types';
-import { SVGLogo } from '../types';
+/**
+ * Animation Service
+ * 
+ * This module provides the main service for applying animations to SVG logos.
+ * It coordinates between different animation providers and manages the animation process.
+ * 
+ * Key responsibilities:
+ * - Registering and managing animation providers
+ * - Selecting the appropriate provider for a given animation type
+ * - Applying animations to SVGs using the selected provider
+ * - Handling errors and providing fallbacks
+ * - Optimizing and sanitizing SVGs for animation
+ * - Providing animation templates and presets
+ */
+
+import { 
+  AnimationProvider, 
+  AnimationType, 
+  AnimationOptions,
+  AnimationResponse,
+  AnimatedSVGLogo,
+  AnimationEasing,
+  AnimationTemplate,
+  AnimationTrigger
+} from './types';
 import { AnimationRegistry } from './animation-registry';
-import { getBestProviderForType, createAllProviders } from './providers';
+import { sanitizeSVG, optimizeSVG, validateSVG } from './utils/svg-sanitizer';
+import { Logger } from '../utils/logger';
+import { withRetry } from '../retry';
 
 /**
- * Core service for applying animations to SVG logos
- * 
- * The SVGAnimationService provides a centralized way to apply animations to SVG logos
- * using a provider-based architecture. It automatically selects the most appropriate
- * animation provider based on the requested animation type and browser support.
- * 
- * The service supports multiple animation technologies:
- * - SMIL: SVG's native animation capabilities
- * - CSS: Standard CSS animations and transitions
- * - JavaScript: Dynamic JS-based animations for complex effects
- * 
- * @example
- * ```typescript
- * // Apply a fade-in animation to an SVG
- * const result = await SVGAnimationService.animateSVG(svgContent, {
- *   type: AnimationType.FADE_IN,
- *   timing: {
- *     duration: 1000,
- *     easing: AnimationEasing.EASE_IN_OUT
- *   }
- * });
- * 
- * // Use the animated SVG and associated CSS/JS
- * const { animatedSvg, cssCode, jsCode } = result.result;
- * ```
- * 
- * @see {@link AnimationProvider} for details on individual providers
- * @see {@link AnimationOptions} for available animation options
+ * Default animation options used when specific options are not provided
  */
-export class SVGAnimationService {
-  /**
-   * Animates an SVG using the appropriate provider based on the animation type
-   * 
-   * This method is the main entry point for the animation system. It:
-   * 1. Registers all available animation providers if not already registered
-   * 2. Finds the best provider for the requested animation type
-   * 3. Uses the selected provider to apply the animation
-   * 4. Falls back to built-in methods if no provider supports the animation type
-   * 
-   * @param svg - The SVG content to animate (as a string)
-   * @param options - Animation configuration options
-   * @returns Promise resolving to an AnimationResponse containing the animated SVG and any required CSS/JS
-   * 
-   * @throws Will throw an error if the animation process fails
-   * 
-   * @example
-   * ```typescript
-   * const animationResult = await SVGAnimationService.animateSVG(svgString, {
-   *   type: AnimationType.DRAW,
-   *   timing: {
-   *     duration: 1500,
-   *     easing: AnimationEasing.EASE_OUT
-   *   }
-   * });
-   * ```
-   */
-  public static async animateSVG(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
-    const startTime = Date.now();
-    
-    try {
-      // Ensure all providers are registered
-      this.registerProviders();
-      
-      // Get the registry instance
-      const registry = AnimationRegistry.getInstance();
-      
-      // Find a provider that supports the requested animation type
-      let provider = registry.getDefaultProviderForType(options.type);
-      
-      // If no provider in registry, try to get the best provider based on browser capabilities
-      if (!provider) {
-        provider = getBestProviderForType(options.type);
-      }
-      
-      // If still no provider supports this animation, use the built-in methods as fallback
-      if (!provider) {
-        console.warn(`No registered provider found for animation type ${options.type}. Using fallback.`);
-        return this.animateSVGWithFallback(svg, options);
-      }
-      
-      // Use the provider to animate the SVG
-      const animatedLogo = await provider.animate(svg, options);
-      
-      const processingTime = Date.now() - startTime;
-      
-      return {
-        success: true,
-        result: animatedLogo,
-        processingTime
-      };
-      
-    } catch (error) {
-      console.error('Error animating SVG:', error);
-      return {
-        success: false,
-        error: {
-          message: 'Failed to animate SVG',
-          details: error instanceof Error ? error.message : String(error)
-        },
-        processingTime: Date.now() - startTime
-      };
-    }
+const DEFAULT_ANIMATION_OPTIONS: Partial<AnimationOptions> = {
+  timing: {
+    duration: 1000,
+    delay: 0,
+    easing: AnimationEasing.EASE_OUT,
+    iterations: 1
   }
-  
-  /**
-   * Fallback method to animate SVGs using built-in implementations
-   * 
-   * This method is used when no registered provider supports the requested animation type.
-   * It implements basic versions of common animations directly within the service.
-   * 
-   * @param svg - The SVG content to animate
-   * @param options - Animation configuration options
-   * @returns Promise resolving to an AnimationResponse containing the animated SVG
-   * 
-   * @internal
-   * This is a fallback method and should not be called directly.
-   */
-  private static async animateSVGWithFallback(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
-    const startTime = Date.now();
-    
-    try {
-      // Parse the SVG
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
-      
-      // Apply animation based on animation type
-      let animatedSvg = svg;
-      let cssCode = '';
-      let jsCode = '';
-      
-      switch (options.type) {
-        case AnimationType.FADE_IN:
-          ({ animatedSvg, cssCode } = this.applyFadeInAnimation(svg, options));
-          break;
-        case AnimationType.ZOOM_IN:
-          ({ animatedSvg, cssCode } = this.applyZoomInAnimation(svg, options));
-          break;
-        case AnimationType.DRAW:
-          ({ animatedSvg, cssCode } = this.applyDrawAnimation(svg, options));
-          break;
-        case AnimationType.SPIN:
-          ({ animatedSvg, cssCode } = this.applySpinAnimation(svg, options));
-          break;
-        case AnimationType.SEQUENTIAL:
-          ({ animatedSvg, cssCode } = this.applySequentialAnimation(svg, options));
-          break;
-        case AnimationType.MORPH:
-          ({ animatedSvg, cssCode, jsCode } = this.applyMorphAnimation(svg, options));
-          break;
-        case AnimationType.CUSTOM:
-          ({ animatedSvg, cssCode, jsCode } = this.applyCustomAnimation(svg, options));
-          break;
-        default:
-          // Apply a default animation if type is not recognized
-          ({ animatedSvg, cssCode } = this.applyFadeInAnimation(svg, options));
-      }
-      
-      const result: AnimatedSVGLogo = {
-        originalSvg: svg,
-        animatedSvg,
-        animationOptions: options,
-        cssCode,
-        jsCode
-      };
-      
-      const processingTime = Date.now() - startTime;
-      
-      return {
-        success: true,
-        result,
-        processingTime
-      };
-      
-    } catch (error) {
-      console.error('Error animating SVG with fallback method:', error);
-      return {
-        success: false,
-        error: {
-          message: 'Failed to animate SVG with fallback method',
-          details: error instanceof Error ? error.message : String(error)
-        },
-        processingTime: Date.now() - startTime
-      };
-    }
-  }
-  
-  /**
-   * Applies a fade-in animation to the SVG
-   */
-  private static applyFadeInAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    
-    // Add animation class to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg fade-in"`);
-    
-    // Generate CSS for the animation
-    const cssCode = `
-      .animated-svg.fade-in {
-        opacity: 0;
-        animation: fadeIn ${timing.duration}ms ${timing.easing || AnimationEasing.EASE_IN_OUT} ${timing.delay || 0}ms forwards;
-      }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-    `;
-    
-    return { animatedSvg, cssCode };
-  }
-  
-  /**
-   * Applies a zoom-in animation to the SVG
-   */
-  private static applyZoomInAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    const transformOrigin = options.transformOrigin || 'center center';
-    
-    // Add animation class to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg zoom-in"`);
-    
-    // Generate CSS for the animation
-    const cssCode = `
-      .animated-svg.zoom-in {
-        opacity: 0;
-        transform: scale(0.5);
-        transform-origin: ${transformOrigin};
-        animation: zoomIn ${timing.duration}ms ${timing.easing || AnimationEasing.EASE_OUT} ${timing.delay || 0}ms forwards;
-      }
-      
-      @keyframes zoomIn {
-        from {
-          opacity: 0;
-          transform: scale(0.5);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-    `;
-    
-    return { animatedSvg, cssCode };
-  }
-  
-  /**
-   * Applies a drawing animation to the SVG paths
-   */
-  private static applyDrawAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    
-    // Add animation class to the SVG element
-    let animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg draw-animation"`);
-    
-    // Add stroke-dasharray and stroke-dashoffset attributes to all path elements
-    const parser = new DOMParser();
-    const svgDoc = parser.parseFromString(animatedSvg, 'image/svg+xml');
-    
-    const paths = svgDoc.querySelectorAll('path');
-    paths.forEach((path, index) => {
-      path.classList.add('draw-path');
-      path.setAttribute('data-index', index.toString());
-    });
-    
-    // Serialize back to string
-    animatedSvg = new XMLSerializer().serializeToString(svgDoc);
-    
-    // Generate CSS for the animation
-    const staggerDelay = options.stagger || 100;
-    const cssCode = `
-      .animated-svg.draw-animation .draw-path {
-        stroke-dasharray: 1000;
-        stroke-dashoffset: 1000;
-        fill-opacity: 0;
-      }
-      
-      ${Array.from(paths).map((_, index) => `
-      .animated-svg.draw-animation .draw-path[data-index="${index}"] {
-        animation: drawPath ${timing.duration}ms ${timing.easing || AnimationEasing.EASE_IN_OUT} ${timing.delay + (index * staggerDelay)}ms forwards;
-      }
-      `).join('\n')}
-      
-      @keyframes drawPath {
-        to {
-          stroke-dashoffset: 0;
-          fill-opacity: 1;
-        }
-      }
-    `;
-    
-    return { animatedSvg, cssCode };
-  }
-  
-  /**
-   * Applies a spinning animation to the SVG
-   */
-  private static applySpinAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    const transformOrigin = options.transformOrigin || 'center center';
-    const iterations = timing.iterations || 1;
-    
-    // Add animation class to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg spin-animation"`);
-    
-    // Generate CSS for the animation
-    const cssCode = `
-      .animated-svg.spin-animation {
-        transform-origin: ${transformOrigin};
-        animation: spin ${timing.duration}ms ${timing.easing || AnimationEasing.EASE_IN_OUT} ${timing.delay || 0}ms ${iterations === Infinity ? 'infinite' : iterations} ${timing.direction || 'normal'};
-      }
-      
-      @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-    `;
-    
-    return { animatedSvg, cssCode };
-  }
-  
-  /**
-   * Applies a sequential animation to elements in the SVG
-   */
-  private static applySequentialAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    const staggerDelay = options.stagger || 200;
-    
-    // Add animation class to the SVG element
-    let animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg sequential-animation"`);
-    
-    // Parse the SVG to identify elements
-    const parser = new DOMParser();
-    const svgDoc = parser.parseFromString(animatedSvg, 'image/svg+xml');
-    
-    // Get elements to animate
-    let elements: Element[] = [];
-    if (options.sequenceOrder && options.sequenceOrder.length > 0) {
-      // Animate elements in the specified order
-      elements = options.sequenceOrder
-        .map(id => svgDoc.getElementById(id))
-        .filter(el => el !== null) as Element[];
-    } else {
-      // Animate all direct children of the SVG
-      elements = Array.from(svgDoc.querySelector('svg')?.children || []);
-    }
-    
-    // Add animation classes to elements
-    elements.forEach((el, index) => {
-      el.classList.add('sequential-item');
-      el.setAttribute('data-index', index.toString());
-    });
-    
-    // Serialize back to string
-    animatedSvg = new XMLSerializer().serializeToString(svgDoc);
-    
-    // Generate CSS for the animation
-    const cssCode = `
-      .animated-svg.sequential-animation .sequential-item {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      
-      ${elements.map((_, index) => `
-      .animated-svg.sequential-animation .sequential-item[data-index="${index}"] {
-        animation: sequentialFadeIn ${timing.duration}ms ${timing.easing || AnimationEasing.EASE_OUT} ${timing.delay + (index * staggerDelay)}ms forwards;
-      }
-      `).join('\n')}
-      
-      @keyframes sequentialFadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `;
-    
-    return { animatedSvg, cssCode };
-  }
-  
-  /**
-   * Applies a morphing animation to SVG paths (requires SMIL or JavaScript)
-   */
-  private static applyMorphAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string; jsCode: string } {
-    const { timing } = options;
-    const uniqueId = this.generateUniqueId();
-    
-    // Add animation class to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg morph-animation"`);
-    
-    // Generate CSS for styling
-    const cssCode = `
-      .animated-svg.morph-animation {
-        /* Base styling for the morphing SVG */
-      }
-    `;
-    
-    // For morphing, we need JavaScript (GSAP or similar)
-    const jsCode = `
-      // This example uses GSAP MorphSVG plugin for morphing
-      // Note: This requires the GSAP library and MorphSVG plugin to be loaded
-      document.addEventListener('DOMContentLoaded', function() {
-        if (typeof gsap !== 'undefined' && gsap.plugins?.MorphSVG) {
-          const svg = document.getElementById('${uniqueId}');
-          const paths = svg.querySelectorAll('path');
-          
-          if (paths.length >= 2) {
-            const firstPath = paths[0];
-            const secondPath = paths[1];
-            
-            gsap.to(firstPath, {
-              morphSVG: secondPath,
-              duration: ${timing.duration / 1000},
-              delay: ${(timing.delay || 0) / 1000},
-              ease: "${timing.easing || 'power2.inOut'}",
-              yoyo: true,
-              repeat: ${timing.iterations === Infinity ? -1 : (timing.iterations || 1) - 1}
-            });
-          }
-        } else {
-          console.warn('GSAP or MorphSVG plugin not loaded. Morphing animation will not work.');
-        }
-      });
-    `;
-    
-    return { animatedSvg, cssCode, jsCode };
-  }
-  
-  /**
-   * Applies a custom animation using provided keyframes and CSS
-   */
-  private static applyCustomAnimation(svg: string, options: AnimationOptions): { animatedSvg: string; cssCode: string; jsCode: string } {
-    const uniqueId = this.generateUniqueId();
-    
-    // Add animation class to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg custom-animation"`);
-    
-    // Use custom CSS if provided, otherwise use a simple fade-in
-    const cssCode = options.customCSS || `
-      .animated-svg.custom-animation {
-        animation: customAnimation ${options.timing.duration}ms ${options.timing.easing || AnimationEasing.EASE} ${options.timing.delay || 0}ms forwards;
-      }
-      
-      @keyframes customAnimation {
-        ${options.customKeyframes || `
-        from { opacity: 0; }
-        to { opacity: 1; }
-        `}
-      }
-    `;
-    
-    // Custom JS code if provided
-    const jsCode = options.jsCode || '';
-    
-    return { animatedSvg, cssCode, jsCode };
-  }
-  
-  /**
-   * Generates a unique ID for the animated SVG
-   */
-  private static generateUniqueId(): string {
-    return `animated-svg-${Math.random().toString(36).substring(2, 11)}`;
-  }
+};
+
+/**
+ * Error codes for animation failures
+ */
+export enum AnimationErrorCode {
+  INVALID_INPUT = 'invalid_input',
+  PROVIDER_NOT_FOUND = 'provider_not_found',
+  PROVIDER_FAILED = 'provider_failed',
+  SANITIZATION_FAILED = 'sanitization_failed',
+  OPTIMIZATION_FAILED = 'optimization_failed',
+  UNEXPECTED_ERROR = 'unexpected_error'
 }
 
 /**
- * Predefined animation templates that users can select from
+ * SVG Animation Service
+ * 
+ * Main service for applying animations to SVG logos.
  */
-
+export class SVGAnimationService {
+  private registry: AnimationRegistry;
+  private logger: Logger;
+  
   /**
-   * Register all available animation providers
+   * Create a new SVGAnimationService
    */
-  private static registerProviders() {
-    const registry = AnimationRegistry.getInstance();
-    
-    // Only register providers if the registry is empty
-    if (registry.getAllProviders().length === 0) {
-      // Create all providers and register them
-      const providers = createAllProviders();
-      providers.forEach(provider => {
-        registry.registerProvider(provider);
-      });
-    }
+  constructor() {
+    this.registry = AnimationRegistry.getInstance();
+    this.logger = new Logger('SVGAnimationService');
+    this.logger.info('SVG Animation Service initialized');
   }
-
+  
   /**
-   * Validate SVG before animation to ensure it's well-formed
-   * @param svg The SVG to validate
-   * @returns Validated SVG or throws an error if invalid
+   * Register an animation provider with the service
+   * 
+   * @param provider - The animation provider to register
    */
-  private static validateSVG(svg: string): string {
+  public registerProvider(provider: AnimationProvider): void {
     try {
-      // Simple validation to ensure the SVG is well-formed
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      
-      // Check for parsing errors
-      const parserErrors = doc.getElementsByTagName('parsererror');
-      if (parserErrors.length > 0) {
-        throw new Error('Invalid SVG: Document contains parser errors');
-      }
-      
-      // Check that it has an SVG root element
-      const svgElement = doc.querySelector('svg');
-      if (!svgElement) {
-        throw new Error('Invalid SVG: Missing root <svg> element');
-      }
-      
-      // Ensure it has viewBox or width/height
-      if (!svgElement.hasAttribute('viewBox') && 
-          (!svgElement.hasAttribute('width') || !svgElement.hasAttribute('height'))) {
-        console.warn('SVG is missing viewBox or width/height attributes');
-        // Add a default viewBox if needed
-        svgElement.setAttribute('viewBox', '0 0 300 300');
-      }
-      
-      // Return the validated (and potentially fixed) SVG
-      return new XMLSerializer().serializeToString(doc);
+      this.registry.registerProvider(provider);
+      this.logger.info(`Provider registered: ${provider.id}`, {
+        providerName: provider.name,
+        supportedTypes: provider.supportedAnimationTypes
+      });
     } catch (error) {
-      console.error('SVG validation failed:', error);
+      this.logger.error(`Failed to register provider: ${provider.id}`, {
+        providerName: provider.name,
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
   }
   
   /**
-   * Optimize SVG for animation by removing unnecessary attributes and elements
-   * @param svg The SVG to optimize
-   * @returns Optimized SVG
+   * Get all registered animation providers
+   * 
+   * @returns Array of all registered providers
    */
-  private static optimizeSVG(svg: string): string {
+  public getProviders(): AnimationProvider[] {
+    const providers = this.registry.getAllProviders();
+    this.logger.debug(`Retrieved ${providers.length} providers`);
+    return providers;
+  }
+  
+  /**
+   * Animate an SVG with the specified animation options
+   * 
+   * @param svg - The SVG content to animate
+   * @param options - Animation options to apply
+   * @returns Promise resolving to an AnimationResponse
+   */
+  public async animateSVG(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
+    const startTime = performance.now();
+    const animationId = `anim_${Date.now().toString(36)}`;
+    
+    this.logger.info(`Starting animation process [${animationId}]`, {
+      animationType: options.type,
+      animationId
+    });
+    
     try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      
-      // Remove comments
-      const iterator = document.createNodeIterator(
-        doc, 
-        NodeFilter.SHOW_COMMENT, 
-        { acceptNode: () => NodeFilter.FILTER_ACCEPT }
-      );
-      
-      let node;
-      while (node = iterator.nextNode()) {
-        node.parentNode?.removeChild(node);
+      // Validate input
+      if (!svg || svg.trim() === '') {
+        this.logger.error(`Empty SVG content provided [${animationId}]`);
+        return {
+          success: false,
+          error: {
+            message: 'Empty SVG content provided',
+            details: 'The SVG content must not be empty',
+            code: AnimationErrorCode.INVALID_INPUT
+          },
+          processingTime: performance.now() - startTime
+        };
       }
       
-      // Remove empty groups
-      const emptyGroups = doc.querySelectorAll('g:empty');
-      emptyGroups.forEach(group => group.parentNode?.removeChild(group));
-      
-      // Remove unnecessary attributes from all elements
-      const allElements = doc.querySelectorAll('*');
-      const unnecessaryAttrs = [
-        'data-name', 'data-old-color', 'data-original', 
-        'xmlns:xlink', 'xml:space', 'enable-background'
-      ];
-      
-      allElements.forEach(el => {
-        unnecessaryAttrs.forEach(attr => {
-          if (el.hasAttribute(attr)) {
-            el.removeAttribute(attr);
-          }
+      // Validate SVG structure
+      const validationResult = validateSVG(svg);
+      if (!validationResult.isValid) {
+        this.logger.error(`Invalid SVG structure [${animationId}]`, {
+          error: validationResult.error,
+          animationId
         });
+        return {
+          success: false,
+          error: {
+            message: 'Invalid SVG structure',
+            details: validationResult.error || 'The SVG content is not properly structured',
+            code: AnimationErrorCode.INVALID_INPUT
+          },
+          processingTime: performance.now() - startTime
+        };
+      }
+      
+      // Merge with default options
+      const mergedOptions = this.mergeWithDefaultOptions(options);
+      
+      this.logger.debug(`Sanitizing and optimizing SVG [${animationId}]`);
+      
+      // Sanitize and optimize SVG with proper error handling
+      let sanitizedSVG: string;
+      try {
+        sanitizedSVG = sanitizeSVG(svg);
+      } catch (error) {
+        this.logger.error(`SVG sanitization failed [${animationId}]`, {
+          error: error instanceof Error ? error.message : String(error),
+          animationId
+        });
+        return {
+          success: false,
+          error: {
+            message: 'Failed to sanitize SVG',
+            details: error instanceof Error ? error.message : String(error),
+            code: AnimationErrorCode.SANITIZATION_FAILED
+          },
+          processingTime: performance.now() - startTime
+        };
+      }
+      
+      let optimizedSVG: string;
+      try {
+        optimizedSVG = optimizeSVG(sanitizedSVG);
+      } catch (error) {
+        this.logger.error(`SVG optimization failed [${animationId}]`, {
+          error: error instanceof Error ? error.message : String(error),
+          animationId
+        });
+        return {
+          success: false,
+          error: {
+            message: 'Failed to optimize SVG',
+            details: error instanceof Error ? error.message : String(error),
+            code: AnimationErrorCode.OPTIMIZATION_FAILED
+          },
+          processingTime: performance.now() - startTime
+        };
+      }
+      
+      // Get the best provider for this animation type
+      const provider = this.getBestProviderForAnimation(mergedOptions.type);
+      
+      if (!provider) {
+        this.logger.warn(`No provider found for animation type: ${mergedOptions.type}, using fallback [${animationId}]`);
+        
+        // If no provider is available, use fallback implementation
+        try {
+          const fallbackResult = await this.applyFallbackAnimation(optimizedSVG, mergedOptions, animationId);
+          
+          this.logger.info(`Applied fallback animation successfully [${animationId}]`, {
+            animationType: mergedOptions.type,
+            processingTime: performance.now() - startTime,
+            animationId
+          });
+          
+          return {
+            success: true,
+            result: fallbackResult,
+            processingTime: performance.now() - startTime
+          };
+        } catch (error) {
+          this.logger.error(`Fallback animation failed [${animationId}]`, {
+            error: error instanceof Error ? error.message : String(error),
+            animationId
+          });
+          
+          return {
+            success: false,
+            error: {
+              message: 'Fallback animation failed',
+              details: error instanceof Error ? error.message : String(error),
+              code: AnimationErrorCode.UNEXPECTED_ERROR
+            },
+            processingTime: performance.now() - startTime
+          };
+        }
+      }
+      
+      this.logger.info(`Using provider ${provider.id} for animation type ${mergedOptions.type} [${animationId}]`);
+      
+      // Apply animation using the selected provider with retry logic
+      try {
+        const animatedSVG = await withRetry(
+          () => provider.animate(optimizedSVG, mergedOptions),
+          {
+            maxAttempts: 2,
+            baseDelay: 500,
+            backoffFactor: 1.5,
+            maxDelay: 2000
+          }
+        );
+        
+        // Calculate processing time
+        const processingTime = performance.now() - startTime;
+        
+        this.logger.info(`Animation completed successfully [${animationId}]`, {
+          animationType: mergedOptions.type,
+          provider: provider.id,
+          processingTime,
+          animationId
+        });
+        
+        return {
+          success: true,
+          result: animatedSVG,
+          processingTime
+        };
+      } catch (error) {
+        this.logger.error(`Provider ${provider.id} failed to apply animation [${animationId}]`, {
+          error: error instanceof Error ? error.message : String(error),
+          provider: provider.id,
+          animationType: mergedOptions.type,
+          animationId
+        });
+        
+        return {
+          success: false,
+          error: {
+            message: `Provider ${provider.id} failed to apply animation`,
+            details: error instanceof Error ? error.message : String(error),
+            code: AnimationErrorCode.PROVIDER_FAILED
+          },
+          processingTime: performance.now() - startTime
+        };
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Unexpected error during animation process [${animationId}]`, {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        animationType: options.type,
+        animationId
       });
       
-      return new XMLSerializer().serializeToString(doc);
-    } catch (error) {
-      console.warn('SVG optimization failed, returning original:', error);
-      return svg;
+      return {
+        success: false,
+        error: {
+          message: 'Failed to animate SVG due to an unexpected error',
+          details: errorMessage,
+          code: AnimationErrorCode.UNEXPECTED_ERROR
+        },
+        processingTime: performance.now() - startTime
+      };
     }
+  }
+  
+  /**
+   * Get the best provider for the specified animation type
+   * 
+   * @param animationType - The animation type to find a provider for
+   * @returns The best provider for the animation type, or undefined if none found
+   */
+  private getBestProviderForAnimation(animationType: AnimationType): AnimationProvider | undefined {
+    const provider = this.registry.getBestProviderForType(animationType);
+    
+    if (provider) {
+      this.logger.debug(`Selected provider ${provider.id} for animation type ${animationType}`);
+    } else {
+      this.logger.debug(`No provider found for animation type ${animationType}`);
+    }
+    
+    return provider;
+  }
+  
+  /**
+   * Apply a fallback animation when no provider is available
+   * 
+   * @param svg - The SVG content to animate
+   * @param options - Animation options to apply
+   * @param animationId - Unique identifier for this animation operation
+   * @returns Promise resolving to an AnimatedSVGLogo
+   */
+  private async applyFallbackAnimation(
+    svg: string, 
+    options: AnimationOptions, 
+    animationId: string
+  ): Promise<AnimatedSVGLogo> {
+    this.logger.info(`Applying fallback animation for type: ${options.type} [${animationId}]`);
+    
+    // Basic CSS animation as fallback
+    const cssAnimationId = `anim_${Math.random().toString(36).slice(2, 11)}`;
+    let cssCode = '';
+    let animatedSvg = svg;
+    
+    // Extract the root SVG element
+    const svgMatch = svg.match(/<svg[^>]*>/);
+    if (!svgMatch) {
+      this.logger.error(`Invalid SVG: No SVG element found in fallback animation [${animationId}]`);
+      throw new Error('Invalid SVG: No SVG element found');
+    }
+    
+    try {
+      const svgOpen = svgMatch[0];
+      const svgWithClass = svgOpen.replace(/(<svg[^>]*)>/, `$1 class="${cssAnimationId}">`);
+      animatedSvg = svg.replace(svgOpen, svgWithClass);
+      
+      this.logger.debug(`Added animation class ${cssAnimationId} to SVG [${animationId}]`);
+      
+      // Generate basic CSS based on animation type
+      switch (options.type) {
+        case AnimationType.FADE_IN:
+          cssCode = this.generateFadeInCss(cssAnimationId, options);
+          break;
+          
+        case AnimationType.ZOOM_IN:
+          cssCode = this.generateZoomInCss(cssAnimationId, options);
+          break;
+          
+        case AnimationType.SPIN:
+          cssCode = this.generateSpinCss(cssAnimationId, options);
+          break;
+          
+        case AnimationType.PULSE:
+          cssCode = this.generatePulseCss(cssAnimationId, options);
+          break;
+          
+        default:
+          // Default to fade-in for unsupported types
+          this.logger.debug(`Using default fade-in for unsupported type ${options.type} [${animationId}]`);
+          cssCode = this.generateDefaultCss(cssAnimationId, options);
+          break;
+      }
+      
+      this.logger.debug(`Generated CSS for fallback animation [${animationId}]`);
+      
+      return {
+        originalSvg: svg,
+        animatedSvg,
+        cssCode,
+        animationOptions: options
+      };
+    } catch (error) {
+      this.logger.error(`Error in fallback animation generation [${animationId}]`, {
+        error: error instanceof Error ? error.message : String(error),
+        animationType: options.type,
+        animationId
+      });
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate CSS for fade-in animation
+   */
+  private generateFadeInCss(animationId: string, options: AnimationOptions): string {
+    return `
+      @keyframes ${animationId}_fade_in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .${animationId} {
+        opacity: 0;
+        animation: ${animationId}_fade_in ${options.timing.duration}ms ${options.timing.easing || 'ease-out'};
+        animation-fill-mode: forwards;
+        animation-delay: ${options.timing.delay || 0}ms;
+      }
+    `;
+  }
+  
+  /**
+   * Generate CSS for zoom-in animation
+   */
+  private generateZoomInCss(animationId: string, options: AnimationOptions): string {
+    return `
+      @keyframes ${animationId}_zoom_in {
+        from { transform: scale(0.5); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .${animationId} {
+        opacity: 0;
+        transform-origin: center center;
+        animation: ${animationId}_zoom_in ${options.timing.duration}ms ${options.timing.easing || 'ease-out'};
+        animation-fill-mode: forwards;
+        animation-delay: ${options.timing.delay || 0}ms;
+      }
+    `;
+  }
+  
+  /**
+   * Generate CSS for spin animation
+   */
+  private generateSpinCss(animationId: string, options: AnimationOptions): string {
+    return `
+      @keyframes ${animationId}_spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .${animationId} {
+        transform-origin: center center;
+        animation: ${animationId}_spin ${options.timing.duration}ms ${options.timing.easing || 'linear'};
+        animation-fill-mode: forwards;
+        animation-delay: ${options.timing.delay || 0}ms;
+        animation-iteration-count: ${options.timing.iterations || 1};
+      }
+    `;
+  }
+  
+  /**
+   * Generate CSS for pulse animation
+   */
+  private generatePulseCss(animationId: string, options: AnimationOptions): string {
+    return `
+      @keyframes ${animationId}_pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      .${animationId} {
+        transform-origin: center center;
+        animation: ${animationId}_pulse ${options.timing.duration}ms ${options.timing.easing || 'ease-in-out'};
+        animation-fill-mode: forwards;
+        animation-delay: ${options.timing.delay || 0}ms;
+        animation-iteration-count: ${options.timing.iterations || 'infinite'};
+      }
+    `;
+  }
+  
+  /**
+   * Generate CSS for default animation (fade-in)
+   */
+  private generateDefaultCss(animationId: string, options: AnimationOptions): string {
+    return `
+      @keyframes ${animationId}_default {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .${animationId} {
+        opacity: 0;
+        animation: ${animationId}_default ${options.timing.duration}ms ${options.timing.easing || 'ease-out'};
+        animation-fill-mode: forwards;
+        animation-delay: ${options.timing.delay || 0}ms;
+      }
+    `;
+  }
+  
+  /**
+   * Merge provided animation options with defaults
+   * 
+   * @param options - The animation options to merge
+   * @returns Complete animation options with defaults applied
+   */
+  private mergeWithDefaultOptions(options: AnimationOptions): AnimationOptions {
+    return {
+      ...DEFAULT_ANIMATION_OPTIONS,
+      ...options,
+      timing: {
+        ...DEFAULT_ANIMATION_OPTIONS.timing,
+        ...options.timing
+      }
+    } as AnimationOptions;
   }
 }
 
-export const animationTemplates = [
+/**
+ * Pre-defined animation templates for common animation effects
+ */
+export const animationTemplates: AnimationTemplate[] = [
   {
     id: 'fade-in',
     name: 'Fade In',
-    description: 'Simple fade-in animation',
+    description: 'Gradually increases opacity from transparent to fully visible',
+    previewUrl: '/assets/animations/fade-in.gif',
     defaultOptions: {
       type: AnimationType.FADE_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      },
-      trigger: AnimationTrigger.LOAD
-    },
-    compatibleWithLayers: true,
-    compatibleWithText: true
-  },
-  {
-    id: 'zoom-in',
-    name: 'Zoom In',
-    description: 'Logo scales up from the center',
-    defaultOptions: {
-      type: AnimationType.ZOOM_IN,
-      timing: {
-        duration: 1200,
-        easing: AnimationEasing.EASE_OUT
-      },
-      trigger: AnimationTrigger.LOAD
-    },
-    compatibleWithLayers: true,
-    compatibleWithText: true
-  },
-  {
-    id: 'draw',
-    name: 'Draw Effect',
-    description: 'Animated line drawing effect',
-    defaultOptions: {
-      type: AnimationType.DRAW,
-      timing: {
-        duration: 1500,
-        easing: AnimationEasing.EASE_IN_OUT
-      },
-      trigger: AnimationTrigger.LOAD
-    },
-    compatibleWithLayers: true,
-    compatibleWithText: false
-  },
-  {
-    id: 'spin',
-    name: 'Spin',
-    description: 'Logo spins around its center',
-    defaultOptions: {
-      type: AnimationType.SPIN,
-      timing: {
-        duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT,
+        delay: 0,
+        easing: AnimationEasing.EASE_OUT,
         iterations: 1
       },
       trigger: AnimationTrigger.LOAD
     },
     compatibleWithLayers: true,
-    compatibleWithText: true
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/fade-in.png'
   },
   {
-    id: 'sequential',
-    name: 'Sequential Reveal',
-    description: 'Elements appear one after another',
+    id: 'zoom-in',
+    name: 'Zoom In',
+    description: 'Scales up from a smaller size while fading in',
+    previewUrl: '/assets/animations/zoom-in.gif',
     defaultOptions: {
-      type: AnimationType.SEQUENTIAL,
+      type: AnimationType.ZOOM_IN,
       timing: {
-        duration: 800,
-        easing: AnimationEasing.EASE_OUT
+        duration: 1200,
+        delay: 0,
+        easing: AnimationEasing.EASE_OUT,
+        iterations: 1
       },
-      stagger: 200,
       trigger: AnimationTrigger.LOAD
     },
     compatibleWithLayers: true,
-    compatibleWithText: true
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/zoom-in.png'
   },
   {
-    id: 'morph',
-    name: 'Morph',
-    description: 'Elements morph from one shape to another',
+    id: 'draw',
+    name: 'Draw',
+    description: 'Simulates drawing the logo one stroke at a time',
+    previewUrl: '/assets/animations/draw.gif',
     defaultOptions: {
-      type: AnimationType.MORPH,
+      type: AnimationType.DRAW,
       timing: {
-        duration: 1500,
+        duration: 2000,
+        delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
         iterations: 1
       },
       trigger: AnimationTrigger.LOAD
     },
     compatibleWithLayers: false,
-    compatibleWithText: false
+    compatibleWithText: false,
+    thumbnailUrl: '/assets/animations/thumbnails/draw.png'
   },
   {
-    id: 'bounce',
-    name: 'Bounce',
-    description: 'Logo bounces into view',
+    id: 'spin',
+    name: 'Spin',
+    description: 'Rotates the logo around its center',
+    previewUrl: '/assets/animations/spin.gif',
     defaultOptions: {
-      type: AnimationType.CUSTOM,
+      type: AnimationType.SPIN,
       timing: {
-        duration: 1000,
-        easing: AnimationEasing.BOUNCE,
+        duration: 1500,
+        delay: 0,
+        easing: AnimationEasing.EASE_IN_OUT,
         iterations: 1
       },
-      trigger: AnimationTrigger.LOAD,
-      customKeyframes: `
-        0% { transform: translateY(-50px); opacity: 0; }
-        60% { transform: translateY(10px); opacity: 1; }
-        80% { transform: translateY(-5px); }
-        100% { transform: translateY(0); }
-      `
+      trigger: AnimationTrigger.LOAD
     },
     compatibleWithLayers: true,
-    compatibleWithText: true
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/spin.png'
   },
   {
     id: 'pulse',
     name: 'Pulse',
-    description: 'Logo pulses in and out',
+    description: 'Gentle pulsing effect that draws attention',
+    previewUrl: '/assets/animations/pulse.gif',
     defaultOptions: {
-      type: AnimationType.CUSTOM,
+      type: AnimationType.PULSE,
       timing: {
         duration: 1500,
+        delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: Infinity
+        iterations: 'infinite'
       },
-      trigger: AnimationTrigger.LOAD,
-      customKeyframes: `
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-      `
+      trigger: AnimationTrigger.LOAD
     },
     compatibleWithLayers: true,
-    compatibleWithText: true
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/pulse.png'
+  },
+  {
+    id: 'bounce',
+    name: 'Bounce',
+    description: 'Playful bouncing motion',
+    previewUrl: '/assets/animations/bounce.gif',
+    defaultOptions: {
+      type: AnimationType.BOUNCE,
+      timing: {
+        duration: 1000,
+        delay: 0,
+        easing: AnimationEasing.BOUNCE,
+        iterations: 1
+      },
+      trigger: AnimationTrigger.LOAD
+    },
+    compatibleWithLayers: true,
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/bounce.png'
+  },
+  {
+    id: 'sequential',
+    name: 'Sequential',
+    description: 'Elements appear one after another',
+    previewUrl: '/assets/animations/sequential.gif',
+    defaultOptions: {
+      type: AnimationType.SEQUENTIAL,
+      timing: {
+        duration: 500,
+        delay: 0,
+        easing: AnimationEasing.EASE_OUT,
+        iterations: 1
+      },
+      trigger: AnimationTrigger.LOAD,
+      stagger: 150
+    },
+    compatibleWithLayers: true,
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/sequential.png'
+  },
+  {
+    id: 'morph',
+    name: 'Morph',
+    description: 'Shape transformation effect',
+    previewUrl: '/assets/animations/morph.gif',
+    defaultOptions: {
+      type: AnimationType.MORPH,
+      timing: {
+        duration: 1800,
+        delay: 0,
+        easing: AnimationEasing.EASE_IN_OUT,
+        iterations: 1
+      },
+      trigger: AnimationTrigger.LOAD
+    },
+    compatibleWithLayers: false,
+    compatibleWithText: false,
+    thumbnailUrl: '/assets/animations/thumbnails/morph.png'
+  },
+  {
+    id: 'hover-pulse',
+    name: 'Hover Pulse',
+    description: 'Pulse effect when hovering over the logo',
+    previewUrl: '/assets/animations/hover-pulse.gif',
+    defaultOptions: {
+      type: AnimationType.PULSE,
+      timing: {
+        duration: 800,
+        delay: 0,
+        easing: AnimationEasing.EASE_IN_OUT,
+        iterations: 'infinite'
+      },
+      trigger: AnimationTrigger.HOVER
+    },
+    compatibleWithLayers: true,
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/hover-pulse.png'
+  },
+  {
+    id: 'click-spin',
+    name: 'Click Spin',
+    description: 'Spins once when clicked',
+    previewUrl: '/assets/animations/click-spin.gif',
+    defaultOptions: {
+      type: AnimationType.SPIN,
+      timing: {
+        duration: 1000,
+        delay: 0,
+        easing: AnimationEasing.EASE_IN_OUT,
+        iterations: 1
+      },
+      trigger: AnimationTrigger.CLICK
+    },
+    compatibleWithLayers: true,
+    compatibleWithText: true,
+    thumbnailUrl: '/assets/animations/thumbnails/click-spin.png'
   }
 ];

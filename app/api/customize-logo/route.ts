@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { secureAndOptimizeSvg } from '@/lib/utils/security-utils';
 
-export const config = {
-  runtime: 'edge',
-};
+// Use Node.js runtime since we need sharp for image processing
+export const runtime = 'nodejs';
 
 /**
  * API endpoint for customizing an SVG logo

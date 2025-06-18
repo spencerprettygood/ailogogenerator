@@ -1,0 +1,24 @@
+{
+  "name": "@ailogogenerator/design-system",
+  "version": "0.1.0",
+  "description": "AI Logo Generator Design System",
+  "main": "index.ts",
+  "types": "index.ts",
+  "files": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.css",
+    "tailwind.config.ts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "tailwindcss": "^4"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}

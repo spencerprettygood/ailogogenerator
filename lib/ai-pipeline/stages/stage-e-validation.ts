@@ -241,7 +241,7 @@ export async function validateAndRepairSvg(
     }
     
     // Initial validation using enhanced SVG validator
-    let validationResult = SvgValidator.validate(input.svg);
+    const validationResult = SvgValidator.validate(input.svg);
     let { isValid, warnings, errors } = validationResult;
     let resultSvg = input.svg;
     let optimized = false;

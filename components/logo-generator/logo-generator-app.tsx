@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, createContext, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
@@ -53,6 +53,47 @@ interface AppMessage extends Message {
 
 // Type for progress data from the hook, aligning with LogoGenerationState
 type HookProgressData = Partial<LogoGenerationState>;
+
+// Create Logo Generator Context
+interface LogoGeneratorContextType {
+  messages: AppMessage[];
+  isGenerating: boolean;
+  progress: GenerationProgress | null;
+  preview: string | null;
+  assets: GeneratedAssets | null;
+  error: Error | null;
+  handleSubmit: (content: string, files?: File[]) => Promise<void>;
+  handleSuggestionSelect: (prompt: string) => void;
+  handleRetry: () => void;
+  handleReset: () => void;
+  handleExportAnimation: (format: string, options?: AnimationExportOptions) => Promise<void>;
+  detectedIndustry: string;
+  selectedIndustry: string;
+  setSelectedIndustry: (industry: string) => void;
+  includeAnimations: boolean;
+  setIncludeAnimations: (include: boolean) => void;
+  selectedAnimationOptions: any;
+  setSelectedAnimationOptions: (options: any) => void;
+  includeUniquenessAnalysis: boolean;
+  setIncludeUniquenessAnalysis: (include: boolean) => void;
+  progressForTracker: {
+    stages: any[];
+    currentStageId: string | null;
+    overallProgress: number;
+    estimatedTimeRemaining: number | null;
+  } | null;
+}
+
+const LogoGeneratorContext = createContext<LogoGeneratorContextType | null>(null);
+
+// Hook to use Logo Generator Context
+export const useLogoGeneratorContext = () => {
+  const context = useContext(LogoGeneratorContext);
+  if (!context) {
+    throw new Error('useLogoGeneratorContext must be used within a LogoGeneratorProvider');
+  }
+  return context;
+};
 
 export function LogoGeneratorApp() {
   const [messages, setMessages] = useState<AppMessage[]>([]);
@@ -242,15 +283,52 @@ export function LogoGeneratorApp() {
     setMessages([]);
   }, [reset]);
 
-  // Cast hookProgress to HookProgressData for ProgressTracker props
-  const progressForTracker = hookProgress as HookProgressData | undefined;
+  // Process hookProgress to ensure it has the right structure for the ProgressTracker
+  const progressForTracker = useMemo(() => {
+    if (!hookProgress) return null;
+    
+    // Ensure the progress data has the correct structure
+    return {
+      stages: Array.isArray(hookProgress.stages) ? hookProgress.stages : [],
+      currentStageId: hookProgress.currentStage || null,
+      overallProgress: typeof hookProgress.overallProgress === 'number' ? hookProgress.overallProgress : 0,
+      estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number' ? 
+        hookProgress.estimatedTimeRemaining : null
+    };
+  }, [hookProgress]);
+
+  // Create context value
+  const contextValue: LogoGeneratorContextType = {
+    messages,
+    isGenerating,
+    progress: hookProgress as GenerationProgress | null,
+    preview,
+    assets: hookAssets,
+    error,
+    handleSubmit,
+    handleSuggestionSelect,
+    handleRetry,
+    handleReset,
+    handleExportAnimation,
+    detectedIndustry,
+    selectedIndustry,
+    setSelectedIndustry,
+    includeAnimations,
+    setIncludeAnimations,
+    selectedAnimationOptions,
+    setSelectedAnimationOptions,
+    includeUniquenessAnalysis,
+    setIncludeUniquenessAnalysis,
+    progressForTracker
+  };
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        
-        <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <LogoGeneratorContext.Provider value={contextValue}>
+        <div className="min-h-screen bg-background flex flex-col">
+          <Header />
+          
+          <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 space-y-8">
           {/* Welcome card - shown only when no messages */}
           {messages.length === 0 && (
             <div className="max-w-3xl mx-auto text-center space-y-6">
@@ -517,6 +595,12 @@ export function LogoGeneratorApp() {
         
         <Toaster />
       </div>
+      </LogoGeneratorContext.Provider>
     </ErrorBoundary>
   );
+}
+
+// Create a separate provider component for better code organization
+export function LogoGeneratorProvider({ children }: { children: React.ReactNode }) {
+  return <LogoGeneratorApp>{children}</LogoGeneratorApp>;
 }

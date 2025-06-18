@@ -12,16 +12,24 @@ import LogoDisplay from './logo-display';
 import ProgressTracker from './progress-tracker';
 import { Info, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
 
+interface ProgressStage {
+  id: string;
+  label: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  progress: number;
+}
+
 interface StreamingResponseProps {
   messages: Message[];
   isGenerating: boolean;
   previewSvg?: string | null;
   progressData?: {
-    stages: any[];
+    stages: ProgressStage[];
     currentStageId: string | null;
     overallProgress: number;
     estimatedTimeRemaining: number | null;
-  };
+  } | null;
   className?: string;
 }
 
@@ -60,17 +68,19 @@ export function StreamingResponse({
   const lastUserMessage = [...messages]
     .reverse()
     .find(message => message.role === 'user');
+  // Support files property if present (for AppMessage compatibility)
+  type MessageWithFiles = Message & { files?: File[] };
+  const lastUserFiles = (lastUserMessage as MessageWithFiles)?.files || [];
   
   // Get all response messages after the last user message
-  const responseMessages = messages.length > 0 
+  const responseMessages = messages.length > 0 && lastUserMessage 
     ? messages.filter((_, index) => 
-        index > messages.findIndex(m => m.id === lastUserMessage?.id)
+        index > messages.findIndex(m => m.id === lastUserMessage.id)
       )
-    : [];
+    : messages; // If there's no user message, show all messages
     
-  // Get current stage info
+  // Get current stage info with safety checks
   const currentStage = progressData?.currentStageId || null;
-  const currentStageProgress = progressData?.stages.find(s => s.id === currentStage);
   
   // Toggle stage info display
   const toggleStageInfo = (stageId: string) => {
@@ -95,9 +105,9 @@ export function StreamingResponse({
           <div className="text-sm text-muted-foreground mb-1">Your query</div>
           <div className="font-medium">
             {lastUserMessage.content}
-            {lastUserMessage.files && lastUserMessage.files.length > 0 && (
+            {lastUserFiles.length > 0 && (
               <span className="text-sm text-muted-foreground ml-2">
-                (+ {lastUserMessage.files.length} image{lastUserMessage.files.length !== 1 ? 's' : ''})
+                (+ {lastUserFiles.length} image{lastUserFiles.length !== 1 ? 's' : ''})
               </span>
             )}
           </div>
@@ -122,7 +132,7 @@ export function StreamingResponse({
       )}
       
       {/* Enhanced progress tracker with stages explanation */}
-      {progressData && (progressData.stages.length > 0 || isGenerating) && (
+      {progressData && progressData.stages && (progressData.stages.length > 0 || isGenerating) && (
         <Card className="border overflow-hidden">
           {/* Compact progress view */}
           <div className="p-4 bg-card">
@@ -207,22 +217,22 @@ export function StreamingResponse({
                           a logo that perfectly matches your brand identity.</p>
                       )}
                       {currentStage === "B" && (
-                        <p>Creating multiple design concepts based on your requirements. We're exploring 
+                        <p>Creating multiple design concepts based on your requirements. We&apos;re exploring 
                           different visual approaches, color schemes, and style directions to find the perfect
                           representation of your brand.</p>
                       )}
                       {currentStage === "C" && (
                         <p>Evaluating all design concepts against your requirements to select the most 
-                          effective direction. We're analyzing each option for brand alignment, 
+                          effective direction. We&apos;re analyzing each option for brand alignment, 
                           visual impact, and versatility.</p>
                       )}
                       {currentStage === "D" && (
-                        <p>Creating your custom SVG logo with precision vector graphics. We're crafting 
+                        <p>Creating your custom SVG logo with precision vector graphics. We&apos;re crafting 
                           every element with attention to detail, ensuring perfect shapes, 
                           proportions, and visual harmony.</p>
                       )}
                       {currentStage === "E" && (
-                        <p>Optimizing your logo for performance and versatility. We're ensuring clean 
+                        <p>Optimizing your logo for performance and versatility. We&apos;re ensuring clean 
                           vector paths, proper scaling behavior, and technical quality for 
                           all usage scenarios.</p>
                       )}

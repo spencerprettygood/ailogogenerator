@@ -75,7 +75,7 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
 
   // Update element position
   const updateElementWithPosition = () => {
-    let updatedElement = { ...element };
+    const updatedElement = { ...element };
     const { attributes } = element;
     
     // Update position based on element type

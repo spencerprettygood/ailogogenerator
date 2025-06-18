@@ -7,7 +7,7 @@ import { Send, Sparkles, Upload, X } from 'lucide-react';
 import { FileUploadSimple } from './file-upload-simple';
 
 interface PerplexitySearchProps {
-  onSubmit: (prompt: string, files?: File[]) => void;
+  onSubmitAction: (prompt: string, files?: File[]) => void;
   isGenerating: boolean;
   className?: string;
   placeholder?: string;
@@ -15,7 +15,7 @@ interface PerplexitySearchProps {
 }
 
 export function PerplexitySearch({
-  onSubmit,
+  onSubmitAction,
   isGenerating,
   className = '',
   placeholder = 'Describe your perfect logo...',
@@ -45,7 +45,7 @@ export function PerplexitySearch({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim() || files.length > 0) {
-      onSubmit(prompt, files);
+      onSubmitAction(prompt, files);
       setPrompt('');
       setFiles([]);
       setShowFileUpload(false);
@@ -153,7 +153,7 @@ export function PerplexitySearch({
               {/* File Upload Toggle */}
               <Button
                 type="button"
-                variant={showFileUpload ? "default" : "ghost"}
+                variant={showFileUpload ? "secondary" : "ghost"}
                 size="sm"
                 className={`h-10 w-10 p-0 ${compact ? 'h-8 w-8' : ''}`}
                 onClick={() => setShowFileUpload(!showFileUpload)}
@@ -165,6 +165,7 @@ export function PerplexitySearch({
               {/* Submit Button */}
               <Button 
                 type="submit" 
+                variant="primary"
                 disabled={!prompt.trim() && files.length === 0 || isGenerating}
                 className={`
                   h-10 px-6 rounded-xl font-medium transition-all duration-200

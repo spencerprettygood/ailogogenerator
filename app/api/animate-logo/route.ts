@@ -1,156 +1,186 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SVGAnimationService } from '@/lib/animation/animation-service';
-import { AnimationOptions, AnimationType, AnimationEasing, AnimationTrigger } from '@/lib/animation/types';
-import { sanitizeSVGForAnimation, isAnimatable } from '@/lib/animation/utils/svg-sanitizer';
-import { SVGValidator } from '@/lib/utils/svg-validator';
+import { defaultAnimationService } from '../../../lib/animation';
+import { AnimationOptions, AnimationType, AnimationEasing } from '../../../lib/animation/types';
+import { Logger } from '../../../lib/utils/logger';
+import { AnimationErrorCode } from '../../../lib/animation/animation-service';
 
-export const config = {
-  runtime: 'edge',
-  regions: ['iad1', 'sfo1', 'lhr1'], // Deploy to multiple regions for lower latency
+// Enable Edge runtime for this API route since it doesn't use Node.js-specific features
+export const runtime = 'edge';
+
+// Create a logger instance for this API route
+const logger = new Logger('API:AnimateLogo');
+
+/**
+ * Map animation error codes to HTTP status codes
+ */
+const errorToStatusCode = {
+  [AnimationErrorCode.INVALID_INPUT]: 400,
+  [AnimationErrorCode.PROVIDER_NOT_FOUND]: 404,
+  [AnimationErrorCode.PROVIDER_FAILED]: 500,
+  [AnimationErrorCode.SANITIZATION_FAILED]: 422,
+  [AnimationErrorCode.OPTIMIZATION_FAILED]: 422,
+  [AnimationErrorCode.UNEXPECTED_ERROR]: 500
 };
 
 /**
- * API route for animating SVG logos
+ * API handler for animating SVG logos
  * 
- * Request Body:
- * - svg: SVG content to animate
- * - animationType: Type of animation to apply (from AnimationType enum)
- * - options: Additional animation options
- * 
- * Response:
- * - animatedSvg: SVG with animation applied
- * - cssCode: CSS code for the animation (if needed)
- * - jsCode: JavaScript code for the animation (if needed)
+ * This endpoint accepts an SVG and animation options, and returns the
+ * animated SVG along with any necessary CSS or JS code.
  */
 export async function POST(request: NextRequest) {
+  const requestId = `req_${Date.now().toString(36)}`;
+  
+  logger.info(`Processing animation request [${requestId}]`, {
+    method: 'POST',
+    path: '/api/animate-logo',
+    requestId
+  });
+  
   try {
     // Parse request body
-    const { svg, animationType, options = {} } = await request.json();
-    
-    // Validate required parameters
-    if (!svg) {
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      logger.warn(`Invalid JSON in request body [${requestId}]`, {
+        error: error instanceof Error ? error.message : 'Parse error',
+        requestId
+      });
+      
       return NextResponse.json(
-        { error: 'Missing required parameter: svg' },
+        { success: false, error: 'Invalid request format: Expected JSON' },
         { status: 400 }
       );
     }
     
-    if (!animationType) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: animationType' },
-        { status: 400 }
-      );
-    }
-    
-    // Validate animation type
-    if (!Object.values(AnimationType).includes(animationType as AnimationType)) {
+    // Check for required SVG content
+    if (!body.svg) {
+      logger.warn(`Missing SVG content in request [${requestId}]`);
+      
       return NextResponse.json(
         { 
-          error: 'Invalid animation type',
-          validTypes: Object.values(AnimationType)
+          success: false, 
+          error: 'Missing SVG content',
+          details: 'The request must include an "svg" field with valid SVG content'
         },
         { status: 400 }
       );
     }
     
-    // Validate and sanitize SVG content
-    const validationResult = SVGValidator.validate(svg);
-    if (!validationResult.isValid) {
+    // Validate SVG length
+    if (typeof body.svg !== 'string' || body.svg.length > 1024 * 100) { // 100KB max
+      logger.warn(`Invalid SVG content: too large or not a string [${requestId}]`, {
+        contentType: typeof body.svg,
+        contentLength: typeof body.svg === 'string' ? body.svg.length : 'N/A',
+        requestId
+      });
+      
       return NextResponse.json(
         { 
-          error: 'Invalid SVG content', 
-          details: validationResult.errors 
+          success: false, 
+          error: 'Invalid SVG content',
+          details: 'SVG content must be a string less than 100KB'
         },
         { status: 400 }
       );
     }
     
-    // Check if SVG is animatable
-    const animatableCheck = isAnimatable(svg);
-    if (!animatableCheck.animatable) {
-      return NextResponse.json(
-        { 
-          error: 'SVG is not animatable', 
-          issues: animatableCheck.issues 
-        },
-        { status: 400 }
-      );
-    }
-    
-    // If SVG has issues but is still animatable, include warnings in the response
-    const warnings = animatableCheck.issues.length > 0 ? animatableCheck.issues : undefined;
-    
-    // Sanitize SVG for animation
-    const sanitizeResult = sanitizeSVGForAnimation(svg);
-    if (sanitizeResult.errors.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Error sanitizing SVG',
-          details: sanitizeResult.errors
-        },
-        { status: 400 }
-      );
-    }
-    
-    // Use the sanitized SVG
-    const sanitizedSvg = sanitizeResult.svg;
-    
-    // Parse animation options
-    const animationOptions: AnimationOptions = {
-      type: animationType as AnimationType,
+    // Get animation options, with defaults if not provided
+    const animationOptions: AnimationOptions = body.animationOptions || {
+      type: AnimationType.FADE_IN,
       timing: {
-        duration: options.duration || 1000,
-        delay: options.delay || 0,
-        easing: (options.easing as AnimationEasing) || AnimationEasing.EASE_IN_OUT,
-        iterations: options.iterations || 1,
-        direction: options.direction || 'normal'
-      },
-      trigger: (options.trigger as AnimationTrigger) || AnimationTrigger.LOAD,
-      ...options
+        duration: 1000,
+        easing: AnimationEasing.EASE_OUT,
+        delay: 0,
+        iterations: 1
+      }
     };
     
-    // Apply animation to SVG
-    const result = await SVGAnimationService.animateSVG(sanitizedSvg, animationOptions);
-    
-    if (!result.success) {
+    // Validate animation type
+    if (!Object.values(AnimationType).includes(animationOptions.type)) {
+      logger.warn(`Invalid animation type [${requestId}]`, {
+        type: animationOptions.type,
+        requestId
+      });
+      
       return NextResponse.json(
         { 
-          error: 'Failed to animate SVG',
-          details: result.error?.message || 'Unknown error'
+          success: false, 
+          error: 'Invalid animation type',
+          details: `Animation type must be one of: ${Object.values(AnimationType).join(', ')}`
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
     
-    // Return animated SVG
+    logger.info(`Animating SVG with type ${animationOptions.type} [${requestId}]`, {
+      animationType: animationOptions.type,
+      svgLength: body.svg.length,
+      requestId
+    });
+    
+    // Apply animation
+    const result = await defaultAnimationService.animateSVG(body.svg, animationOptions);
+    
+    if (!result.success) {
+      const errorCode = result.error?.code as AnimationErrorCode || AnimationErrorCode.UNEXPECTED_ERROR;
+      const statusCode = errorToStatusCode[errorCode] || 500;
+      
+      logger.error(`Animation failed [${requestId}]`, {
+        error: result.error,
+        errorCode,
+        statusCode,
+        requestId
+      });
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: result.error?.message || 'Failed to animate SVG',
+          details: result.error?.details,
+          code: errorCode
+        },
+        { status: statusCode }
+      );
+    }
+    
+    // Return successful response with animated SVG and CSS/JS
+    logger.info(`Animation successful [${requestId}]`, {
+      processingTime: result.processingTime,
+      animationType: animationOptions.type,
+      requestId
+    });
+    
     return NextResponse.json({
-      animatedSvg: result.result?.animatedSvg,
-      cssCode: result.result?.cssCode,
-      jsCode: result.result?.jsCode,
-      warnings,
-      processingTime: result.processingTime
+      success: true,
+      result: {
+        animatedSvg: result.result?.animatedSvg,
+        cssCode: result.result?.cssCode,
+        jsCode: result.result?.jsCode,
+        animationOptions: result.result?.animationOptions
+      },
+      processingTime: result.processingTime,
+      requestId
     });
     
   } catch (error) {
-    console.error('Error animating SVG:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    logger.error(`Unexpected error in animation API [${requestId}]`, {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      requestId
+    });
     
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        success: false, 
+        error: errorMessage,
+        code: AnimationErrorCode.UNEXPECTED_ERROR,
+        requestId
       },
       { status: 500 }
     );
   }
-}
-
-/**
- * GET handler to return supported animation types
- */
-export async function GET() {
-  return NextResponse.json({
-    supportedAnimationTypes: Object.values(AnimationType),
-    supportedEasingFunctions: Object.values(AnimationEasing),
-    supportedTriggers: Object.values(AnimationTrigger)
-  });
 }

@@ -1,4 +1,4 @@
-import { MockupTemplate, MockupType } from '../types';
+import { MockupTemplate, MockupType } from './mockup-types';
 
 // Default mockup templates for the system
 export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [

@@ -1,224 +1,212 @@
-plan:
-  title: "UI System Overhaul - Monochrome + Accent Design System"
-  description: "Convert the existing UI to a monochrome + #FF4233 accent design system with asymmetric principles"
-  
+# UI Action Plan for AI Logo Generator
+
+# This YAML file defines the specific tasks, priorities, and acceptance criteria
+# for implementing the UI architecture improvements identified in the audit.
+
+# Priority is calculated using RICE scoring (Reach, Impact, Confidence, Effort)
+# Rice Score = (Reach * Impact * Confidence) / Effort
+# Each factor is scored on a scale of 1-10
+
+# Schema:
+# - id: Unique identifier for the task
+#   description: Detailed description of what needs to be done
+#   category: UI | CSS | Typography | Components | Security | Testing
+#   owner: TBD (to be assigned)
+#   estimate_hours: Estimated time to complete in hours
+#   rice_score: Calculated priority score
+#   acceptance_criteria: List of measurable outcomes that must be met
+#   dependencies: List of task IDs that must be completed first
+
 tasks:
-  # Foundation Tasks
-  - id: "F-001"
-    title: "Update color system in Tailwind config"
-    description: "Replace the existing color palette with monochrome + #FF4233 accent"
-    estimate: 1.5
-    priority: "high"
-    rice_score: 80
+  # IMMEDIATE SECURITY ISSUES
+  - id: SEC-001
+    description: "Remove API keys from version control and implement secure environment variable handling"
+    category: Security
+    owner: TBD
+    estimate_hours: 4
+    rice_score: 343 # (7*9*9)/2 - High impact, critical security issue
     acceptance_criteria:
-      - "Primary/accent color changed to #FF4233"
-      - "Secondary colors set to monochrome values (#0F0F0F, #1A1A1A, etc.)"
-      - "Border colors updated to #333333 (active) and #666666 (inactive)"
-      - "All color variables in globals.css updated to match"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "F-002"
-    title: "Implement typography system"
-    description: "Update typography with Raleway 200 for headings and Arimo for body"
-    estimate: 2
-    priority: "high"
-    rice_score: 75
+      - All API keys removed from .env.local and added to .gitignore
+      - Environment variable validation implemented in application startup
+      - Documentation created for local development setup
+      - CI/CD pipeline updated to handle secrets securely
+    dependencies: []
+
+  # CSS FRAMEWORK CONSOLIDATION
+  - id: CSS-001
+    description: "Consolidate duplicate CSS frameworks into single Tailwind implementation"
+    category: CSS
+    owner: TBD
+    estimate_hours: 8
+    rice_score: 270 # (9*6*8)/2 - High impact, affects all components
     acceptance_criteria:
-      - "Raleway 200 weight set for all headings"
-      - "Letter-spacing set to +5-10% for headings"
-      - "Arimo implemented for body text at 12px base size"
-      - "Typography scale follows 12px/24px system"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "F-003"
-    title: "Create asymmetric utility classes"
-    description: "Develop utility classes for asymmetric design elements"
-    estimate: 3
-    priority: "high"
-    rice_score: 70
+      - Remove duplicate globals.css file from src/app
+      - Migrate all custom CSS into Tailwind config
+      - Convert typography.css to Tailwind config
+      - Convert asymmetric-utils.css to Tailwind config
+      - No direct CSS files outside of globals.css
+    dependencies: []
+
+  - id: CSS-002
+    description: "Create unified color token system with proper HSL/HEX standardization"
+    category: CSS
+    owner: TBD
+    estimate_hours: 6
+    rice_score: 240 # (8*6*8)/2 - High visual impact
     acceptance_criteria:
-      - "Uneven spacing utilities created"
-      - "Asymmetric border radius utilities added"
-      - "Off-center shadow utilities implemented"
-      - "Clip path utilities for asymmetric shapes created"
-    owner: "TBD"
-    status: "completed"
-    
-  # Component Updates
-  - id: "C-001"
-    title: "Refactor Button component"
-    description: "Update Button component to support asymmetric design principles"
-    estimate: 2
-    priority: "high"
-    rice_score: 65
+      - Single source of truth for all color definitions
+      - All color values standardized to HSL format
+      - Accent color consistently defined as #ff4233
+      - Color token documentation created
+      - All hardcoded color values replaced with tokens
+    dependencies: [CSS-001]
+
+  # DARK MODE IMPLEMENTATION
+  - id: DARK-001
+    description: "Implement complete dark mode support across all components"
+    category: UI
+    owner: TBD
+    estimate_hours: 12
+    rice_score: 192 # (8*6*8)/3 - Higher effort, high impact
     acceptance_criteria:
-      - "Default variant uses thin border with accent on hover"
-      - "Accent variant uses #FF4233 with clipped corner"
-      - "Asymmetric variant added with offset shadow"
-      - "Focus states use accent color (#FF4233)"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "C-002"
-    title: "Refactor Badge component"
-    description: "Update Badge component with asymmetric styling"
-    estimate: 1
-    priority: "medium"
-    rice_score: 50
+      - Dark mode class properly implemented in layout
+      - System preference detection for theme
+      - All components support dark mode variants
+      - Toggle functionality works across application
+      - Dark mode color scheme meets WCAG 2.1 AA contrast requirements
+    dependencies: [CSS-002]
+
+  # TYPOGRAPHY SYSTEM
+  - id: TYPE-001
+    description: "Implement unified typography system with proper weights and spacing"
+    category: Typography
+    owner: TBD
+    estimate_hours: 8
+    rice_score: 216 # (9*6*8)/2 - High visual impact
     acceptance_criteria:
-      - "Default shape changed from rounded-full to asymmetric"
-      - "Accent variant uses #FF4233"
-      - "Asymmetric variant added with uneven corners"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "C-003"
-    title: "Refactor Card component"
-    description: "Update Card component with asymmetric design principles"
-    estimate: 2
-    priority: "medium"
-    rice_score: 45
+      - Headings use Raleway 200 weight consistently
+      - Letter-spacing applied according to spec (+5-10%)
+      - Base text size set to 12px as per specification
+      - Typography component properly implements all styles
+      - Text balance and optical alignment implemented
+    dependencies: [CSS-001]
+
+  # COMPONENT LIBRARY
+  - id: COMP-001
+    description: "Create core button component aligned with design specification"
+    category: Components
+    owner: TBD
+    estimate_hours: 4
+    rice_score: 180 # (9*5*8)/2 - High visibility component
     acceptance_criteria:
-      - "Asymmetric shadow and borders implemented"
-      - "Accent corner decoration option added"
-      - "Uneven padding applied"
-    owner: "TBD"
-    status: "pending"
-    
-  - id: "C-004"
-    title: "Update Header component"
-    description: "Refactor the Header to use asymmetric design"
-    estimate: 1.5
-    priority: "high"
-    rice_score: 60
+      - Implements thin-outline + accent text for primary actions
+      - Supports asymmetric styling
+      - Dark mode variant implemented
+      - Proper hover/focus states
+      - Accessibility compliance (focus indicators, contrast)
+    dependencies: [CSS-002, TYPE-001]
+
+  - id: COMP-002
+    description: "Refactor card component with asymmetric design principles"
+    category: Components
+    owner: TBD
+    estimate_hours: 3
+    rice_score: 160 # (8*5*8)/2 - High visibility component
     acceptance_criteria:
-      - "Accent color applied to logo"
-      - "Asymmetric border added to bottom"
-      - "Uneven spacing between elements"
-    owner: "TBD"
-    status: "completed"
-    
-  # Application Components
-  - id: "A-001"
-    title: "Update LogoGeneratorApp layout"
-    description: "Apply asymmetric design principles to the main app layout"
-    estimate: 3
-    priority: "high"
-    rice_score: 70
+      - Implements off-center focal points
+      - Uses negative space as active element
+      - Supports asymmetric shadows
+      - Dark mode variant implemented
+      - Proper animation on hover/focus
+    dependencies: [CSS-002]
+
+  # SPACING SYSTEM
+  - id: SPACE-001
+    description: "Implement 4pt grid spacing system and refactor padding/margins"
+    category: CSS
+    owner: TBD
+    estimate_hours: 10
+    rice_score: 144 # (9*4*8)/3 - High effort, high visibility
     acceptance_criteria:
-      - "Layout changed to asymmetric with deliberate irregularity"
-      - "Chat interface moved from center to asymmetric position"
-      - "Negative space used as active element"
-      - "Accent color limited to primary actions and highlights"
-    owner: "TBD"
-    status: "pending"
-    
-  - id: "A-002"
-    title: "Update ProgressTracker component"
-    description: "Refactor the progress tracker with accent color and asymmetric design"
-    estimate: 2
-    priority: "medium"
-    rice_score: 40
+      - All spacing values based on 4pt grid (4px, 8px, 12px, etc.)
+      - Custom uneven spacing values removed
+      - Component padding standardized
+      - Margin utilities aligned to grid
+      - Documentation created for spacing system
+    dependencies: [CSS-001]
+
+  # MOCK DATA REPLACEMENT
+  - id: API-001
+    description: "Replace mock implementations with proper API integrations"
+    category: UI
+    owner: TBD
+    estimate_hours: 14
+    rice_score: 126 # (7*6*9)/4 - High effort, critical functionality
     acceptance_criteria:
-      - "Progress indicators updated to use accent color"
-      - "Asymmetric styling applied to progress bars"
-      - "Uneven spacing between steps"
-    owner: "TBD"
-    status: "pending"
-    
-  - id: "A-003"
-    title: "Update FileUpload component"
-    description: "Apply asymmetric design to file upload area"
-    estimate: 1.5
-    priority: "medium"
-    rice_score: 35
+      - All mockup-related mocks replaced with API calls
+      - Animation mocks connected to real services
+      - Test implementations removed from production code
+      - Proper error handling for API failures
+      - Loading states implemented for all API calls
+    dependencies: [SEC-001]
+
+  # TESTING INFRASTRUCTURE
+  - id: TEST-001
+    description: "Implement visual regression testing with Chromatic"
+    category: Testing
+    owner: TBD
+    estimate_hours: 8
+    rice_score: 120 # (6*5*8)/2 - Important for quality
     acceptance_criteria:
-      - "Asymmetric borders and shadows applied"
-      - "Accent color used for active states and highlights"
-      - "Dropzone restyled with offset elements"
-    owner: "TBD"
-    status: "pending"
-    
-  # Testing & Quality
-  - id: "T-001"
-    title: "Implement visual regression testing"
-    description: "Set up Playwright for visual regression testing"
-    estimate: 4
-    priority: "high"
-    rice_score: 60
+      - Chromatic setup in CI pipeline
+      - Baseline snapshots for all core components
+      - Visual regression tests for light/dark mode
+      - Automated PR checks for visual changes
+      - Documentation for running visual tests locally
+    dependencies: [COMP-001, COMP-002]
+
+  - id: TEST-002
+    description: "Implement accessibility testing with axe-core"
+    category: Testing
+    owner: TBD
+    estimate_hours: 6
+    rice_score: 120 # (6*5*8)/2 - Important for quality
     acceptance_criteria:
-      - "Playwright configuration created"
-      - "Visual tests for key components written"
-      - "CI workflow for visual testing set up"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "T-002"
-    title: "Implement accessibility testing"
-    description: "Add automated accessibility testing with Axe"
-    estimate: 3
-    priority: "high"
-    rice_score: 55
+      - axe-core integration in test suite
+      - WCAG 2.1 AA compliance checks
+      - Color contrast tests for all components
+      - Keyboard navigation tests
+      - Screen reader compatibility tests
+    dependencies: [COMP-001, COMP-002]
+
+  # DOCUMENTATION
+  - id: DOC-001
+    description: "Create comprehensive design system documentation"
+    category: Documentation
+    owner: TBD
+    estimate_hours: 10
+    rice_score: 96 # (8*4*6)/2 - Important for maintenance
     acceptance_criteria:
-      - "Axe integration set up with Playwright"
-      - "Accessibility tests cover all major pages"
-      - "CI workflow for accessibility testing configured"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "T-003"
-    title: "Set up Lighthouse performance budgets"
-    description: "Configure Lighthouse CI with performance budgets"
-    estimate: 2
-    priority: "medium"
-    rice_score: 40
+      - Color token documentation
+      - Typography system documentation
+      - Component usage guidelines
+      - Accessibility guidelines
+      - Asymmetric design principles
+      - Accent color usage register
+    dependencies: [CSS-002, TYPE-001, COMP-001, COMP-002]
+
+  # STORYBOOK IMPLEMENTATION
+  - id: STORY-001
+    description: "Set up Storybook for component development and documentation"
+    category: Documentation
+    owner: TBD
+    estimate_hours: 12
+    rice_score: 80 # (8*4*5)/2 - Important for development
     acceptance_criteria:
-      - "Lighthouse budget file created"
-      - "CI workflow for Lighthouse tests configured"
-      - "Performance score targets set to ≥90"
-    owner: "TBD"
-    status: "completed"
-    
-  # Documentation
-  - id: "D-001"
-    title: "Create design system documentation"
-    description: "Document the design system in Markdown"
-    estimate: 3
-    priority: "high"
-    rice_score: 50
-    acceptance_criteria:
-      - "Color system documented"
-      - "Typography system documented"
-      - "Component variants documented"
-      - "Usage guidelines included"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "D-002"
-    title: "Create accent usage register"
-    description: "Document all approved uses of the accent color"
-    estimate: 1
-    priority: "medium"
-    rice_score: 30
-    acceptance_criteria:
-      - "All approved accent color uses listed"
-      - "Component-specific usage documented"
-      - "Prohibited usage described"
-    owner: "TBD"
-    status: "completed"
-    
-  - id: "D-003"
-    title: "Create UI audit report"
-    description: "Document the current state and violations"
-    estimate: 2
-    priority: "high"
-    rice_score: 45
-    acceptance_criteria:
-      - "Component inventory completed"
-      - "CSS/JS dependency graph created"
-      - "Spacing/typography deviations documented"
-      - "API endpoint matrix created"
-    owner: "TBD"
-    status: "completed"
+      - Storybook installed and configured
+      - Core UI components documented
+      - Interactive examples for all variants
+      - Dark mode toggle in Storybook
+      - Accessibility addon integration
+      - Deployed Storybook instance
+    dependencies: [COMP-001, COMP-002, TYPE-001]

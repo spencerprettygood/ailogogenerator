@@ -1,5 +1,5 @@
 import { BaseAgent } from '../base/base-agent';
-import { retry } from '../../retry';
+import { withRetry } from '../../retry';
 import { 
   AgentCapability, 
   AgentConfig, 
@@ -32,7 +32,7 @@ export class IndustryAnalysisAgent extends BaseAgent {
   protected async preparePrompt(input: IndustryAnalysisAgentInput): Promise<string> {
     const { brandName, industry, designSpec, svg } = input;
 
-    let prompt = `
+    const prompt = `
 # Industry Logo Analysis Task
 
 ## Context
@@ -106,8 +106,15 @@ Provide your analysis in JSON format with the following structure:
       
       const prompt = await this.preparePrompt(typedInput);
       
-      const executeWithRetry = retry(this.executePrompt.bind(this), this.config.retryConfig);
-      const response = await executeWithRetry(prompt);
+      const response = await withRetry(
+        () => this.executePrompt(prompt),
+        {
+          maxAttempts: this.config.retryConfig?.maxAttempts || 3,
+          baseDelay: this.config.retryConfig?.baseDelay || 1000,
+          backoffFactor: this.config.retryConfig?.backoffFactor || 1.5,
+          maxDelay: this.config.retryConfig?.maxDelay || 5000
+        }
+      );
 
       // Extract JSON from response
       const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || 

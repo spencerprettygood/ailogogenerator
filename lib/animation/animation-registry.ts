@@ -1,19 +1,34 @@
-import { AnimationType, AnimationProvider } from './types';
+/**
+ * Animation Registry
+ * 
+ * This module provides a centralized registry for animation providers.
+ * It implements the singleton pattern to ensure a single registry instance
+ * is used throughout the application.
+ * 
+ * The registry is responsible for:
+ * - Registering animation providers
+ * - Retrieving providers by ID or animation type
+ * - Managing the lifecycle of providers
+ */
+
+import { AnimationProvider, AnimationType } from './types';
 
 /**
- * Registry for animation providers that can be used to animate SVGs
- * Follows the singleton pattern
+ * Animation Registry for managing animation providers
  */
 export class AnimationRegistry {
   private static instance: AnimationRegistry;
-  private providers: AnimationProvider[] = [];
-  private defaultProviders: Map<AnimationType, AnimationProvider> = new Map();
-
-  private constructor() {}
-
+  private providers: Map<string, AnimationProvider> = new Map();
+  
+  /**
+   * Private constructor to enforce singleton pattern
+   */
+  private constructor() {
+    // Initialize registry
+  }
+  
   /**
    * Get the singleton instance of the registry
-   * @returns AnimationRegistry instance
    */
   public static getInstance(): AnimationRegistry {
     if (!AnimationRegistry.instance) {
@@ -21,101 +36,124 @@ export class AnimationRegistry {
     }
     return AnimationRegistry.instance;
   }
-
+  
   /**
-   * Register an animation provider
-   * @param provider The provider to register
+   * Register a new animation provider
+   * 
+   * @param provider - The animation provider to register
+   * @throws Error if a provider with the same ID is already registered
    */
   public registerProvider(provider: AnimationProvider): void {
-    // Check if provider is already registered
-    if (this.providers.some(p => p.id === provider.id)) {
-      console.warn(`Provider with id ${provider.id} is already registered`);
-      return;
+    if (this.providers.has(provider.id)) {
+      console.warn(`Provider with ID '${provider.id}' is already registered. Overwriting.`);
     }
-    
-    this.providers.push(provider);
-    
-    // Register as default provider for supported animation types if not already set
-    provider.supportedAnimationTypes.forEach(type => {
-      if (!this.defaultProviders.has(type)) {
-        this.defaultProviders.set(type, provider);
-      }
-    });
+    this.providers.set(provider.id, provider);
   }
-
+  
   /**
-   * Set a provider as the default for an animation type
-   * @param type Animation type
-   * @param providerId Provider ID
+   * Unregister an animation provider
+   * 
+   * @param providerId - The ID of the provider to unregister
+   * @returns true if the provider was found and unregistered, false otherwise
    */
-  public setDefaultProviderForType(type: AnimationType, providerId: string): void {
-    const provider = this.providers.find(p => p.id === providerId);
-    
-    if (!provider) {
-      throw new Error(`Provider with id ${providerId} is not registered`);
-    }
-    
-    if (!provider.supportsAnimationType(type)) {
-      throw new Error(`Provider with id ${providerId} does not support animation type ${type}`);
-    }
-    
-    this.defaultProviders.set(type, provider);
+  public unregisterProvider(providerId: string): boolean {
+    return this.providers.delete(providerId);
   }
-
+  
   /**
-   * Get the default provider for an animation type
-   * @param type Animation type
-   * @returns The default provider for the animation type, or null if none is set
+   * Get an animation provider by ID
+   * 
+   * @param providerId - The ID of the provider to retrieve
+   * @returns The animation provider or undefined if not found
    */
-  public getDefaultProviderForType(type: AnimationType): AnimationProvider | null {
-    return this.defaultProviders.get(type) || null;
+  public getProviderById(providerId: string): AnimationProvider | undefined {
+    return this.providers.get(providerId);
   }
-
+  
   /**
-   * Get all providers that support an animation type
-   * @param type Animation type
-   * @returns Array of providers that support the animation type
-   */
-  public getProvidersForType(type: AnimationType): AnimationProvider[] {
-    return this.providers.filter(p => p.supportsAnimationType(type));
-  }
-
-  /**
-   * Get all registered providers
+   * Get all registered animation providers
+   * 
    * @returns Array of all registered providers
    */
   public getAllProviders(): AnimationProvider[] {
-    return [...this.providers];
+    return Array.from(this.providers.values());
   }
-
+  
   /**
-   * Unregister a provider
-   * @param providerId Provider ID
+   * Find a provider that supports the given animation type
+   * 
+   * @param animationType - The animation type to find a provider for
+   * @returns The first provider that supports the animation type, or undefined if none found
    */
-  public unregisterProvider(providerId: string): void {
-    const index = this.providers.findIndex(p => p.id === providerId);
+  public getProviderForType(animationType: AnimationType): AnimationProvider | undefined {
+    for (const provider of this.providers.values()) {
+      if (provider.supportsAnimationType(animationType)) {
+        return provider;
+      }
+    }
+    return undefined;
+  }
+  
+  /**
+   * Find the best provider for the given animation type based on browser capabilities
+   * 
+   * @param animationType - The animation type to find a provider for
+   * @returns The most suitable provider for the animation type, or undefined if none found
+   */
+  public getBestProviderForType(animationType: AnimationType): AnimationProvider | undefined {
+    const supportingProviders = Array.from(this.providers.values())
+      .filter(provider => provider.supportsAnimationType(animationType));
     
-    if (index === -1) {
-      console.warn(`Provider with id ${providerId} is not registered`);
-      return;
+    if (supportingProviders.length === 0) {
+      return undefined;
     }
     
-    const provider = this.providers[index];
-    this.providers.splice(index, 1);
-    
-    // Remove as default provider for any animation types
-    provider.supportedAnimationTypes.forEach(type => {
-      if (this.defaultProviders.get(type)?.id === providerId) {
-        this.defaultProviders.delete(type);
-      }
-    });
+    // Prioritize providers based on animation type
+    // This can be extended with more sophisticated logic
+    switch (animationType) {
+      case AnimationType.DRAW:
+      case AnimationType.MORPH:
+        // SMIL is better for path-based animations
+        const smilProvider = supportingProviders.find(p => p.id === 'smil');
+        return smilProvider || supportingProviders[0];
+        
+      case AnimationType.SEQUENTIAL:
+      case AnimationType.TYPEWRITER:
+      case AnimationType.CUSTOM:
+        // JS is better for complex animations
+        const jsProvider = supportingProviders.find(p => p.id === 'js');
+        return jsProvider || supportingProviders[0];
+        
+      default:
+        // CSS is better for basic animations (fade, zoom, etc.)
+        const cssProvider = supportingProviders.find(p => p.id === 'css');
+        return cssProvider || supportingProviders[0];
+    }
   }
-
+  
   /**
-   * Reset the registry (useful for testing)
+   * Clear all registered providers
    */
-  public reset(): void {
-    this.providers = [];
-    this.defaultProviders.clear();
+  public clearProviders(): void {
+    this.providers.clear();
+  }
+  
+  /**
+   * Check if a provider is registered
+   * 
+   * @param providerId - The ID of the provider to check
+   * @returns true if the provider is registered, false otherwise
+   */
+  public hasProvider(providerId: string): boolean {
+    return this.providers.has(providerId);
+  }
+  
+  /**
+   * Get the number of registered providers
+   * 
+   * @returns The number of registered providers
+   */
+  public getProviderCount(): number {
+    return this.providers.size;
   }
 }

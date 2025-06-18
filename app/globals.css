@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "@tailwindcss/postcss";
 
 @layer base {
   :root {
@@ -20,10 +20,8 @@
     --accent-dark: 5 74% 48%;
     --accent-foreground: 0 0% 100%;
     
-    /* Primary uses accent color */
-    --primary: 5 100% 60%;
-    --primary-light: 5 100% 68%;
-    --primary-dark: 5 74% 48%;
+    /* Primary uses accent color for text only */
+    --primary: 0 0% 5%;
     --primary-foreground: 0 0% 100%;
     
     /* Secondary as black */
@@ -46,6 +44,47 @@
     /* Radius and other variables */
     --radius: 0.5rem;
   }
+
+  .dark {
+    /* Inverted monochrome palette for dark mode */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 100%;
+    
+    /* Card colors */
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 100%;
+    
+    /* Popover colors */
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 100%;
+    
+    /* Accent color slightly lighter for dark mode */
+    --accent: 5 100% 65%;
+    --accent-light: 5 100% 75%;
+    --accent-dark: 5 74% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Primary colors */
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 5%;
+    
+    /* Secondary colors */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted colors */
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    
+    /* System colors */
+    --border: 0 0% 25%;
+    --input: 0 0% 15%;
+    --ring: 5 100% 65%;
+    
+    /* Destructive color */
+    --destructive: 5 100% 65%;
+    --destructive-foreground: 0 0% 100%;
+  }
 }
 
 @layer base {
@@ -57,7 +96,7 @@
 
   /* Typography asymmetry */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold leading-tight tracking-tight;
+    @apply font-thin font-heading leading-tight tracking-wider;
   }
   
   h1 {
@@ -75,18 +114,17 @@
   }
   
   p {
-    @apply text-base leading-relaxed;
+    @apply text-base leading-relaxed font-body;
     max-width: 65ch; /* Optimal reading length */
   }
   
   /* Asymmetric link underlines */
   a:not(.no-underline) {
-    @apply relative no-underline;
-    background-image: linear-gradient(to right, #FF4233, #FF4233);
+    @apply relative no-underline transition-all;
+    background-image: linear-gradient(to right, hsl(var(--accent)), hsl(var(--accent)));
     background-position: 0 calc(100% - 0.05em);
     background-repeat: no-repeat;
     background-size: 100% 2px;
-    transition: background-size 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     padding-bottom: 0.15em;
   }
   
@@ -97,13 +135,13 @@
   
   /* Focus styles with offset outlines */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
     outline-offset: 3px;
   }
   
   /* Selection styling */
   ::selection {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-accent text-accent-foreground;
   }
   
   /* Asymmetric scrollbar */
@@ -124,6 +162,119 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-500;
   }
+
+  /* Font definitions */
+  .font-heading {
+    font-family: var(--font-raleway);
+  }
+
+  .font-body {
+    font-family: var(--font-arimo);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* Asymmetric button */
+  .btn-asymmetric {
+    @apply relative inline-flex items-center justify-center 
+           px-4 py-2 overflow-hidden
+           bg-white text-foreground font-medium 
+           transition-all duration-300;
+    box-shadow: 3px 3px 0 0 hsl(var(--accent));
+    transform: translate(-1px, -1px);
+  }
+  
+  .btn-asymmetric:hover {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0 0 hsl(var(--accent));
+  }
+  
+  .btn-asymmetric:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  
+  /* Card with asymmetric design */
+  .card-asymmetric {
+    @apply bg-card p-4 relative overflow-hidden shadow-md;
+    border-radius: 8px 2px 8px 2px;
+  }
+  
+  .card-asymmetric::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background-color: hsl(var(--accent));
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+
+  /* Transparent grid background for logo display */
+  .bg-grid {
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: -1px -1px;
+  }
+  
+  .dark .bg-grid {
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  }
+
+  /* Typography styles */
+  .heading-1 {
+    @apply font-heading font-thin text-3xl md:text-4xl lg:text-5xl tracking-widest leading-tight;
+  }
+  
+  .heading-2 {
+    @apply font-heading font-thin text-2xl md:text-3xl tracking-wider leading-tight;
+  }
+  
+  .heading-3 {
+    @apply font-heading font-thin text-xl md:text-2xl tracking-wider leading-snug;
+  }
+  
+  .heading-4 {
+    @apply font-heading font-thin text-lg md:text-xl tracking-wider leading-snug;
+  }
+  
+  .body-large {
+    @apply font-body text-md leading-relaxed;
+  }
+  
+  .body-normal {
+    @apply font-body text-base leading-relaxed;
+  }
+  
+  .body-small {
+    @apply font-body text-sm leading-normal;
+  }
+  
+  .caption {
+    @apply font-body text-xs leading-normal tracking-wide;
+  }
+
+  /* Additional components from src/app/globals.css */
+  .gradient-heading {
+    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
 }
 
 @layer utilities {
@@ -136,17 +287,17 @@
   /* Offset border utility */
   .border-offset-r {
     @apply relative;
-    box-shadow: 3px 0 0 0 theme('colors.accent.DEFAULT');
+    box-shadow: 3px 0 0 0 hsl(var(--accent));
   }
   
   .border-offset-b {
     @apply relative;
-    box-shadow: 0 3px 0 0 theme('colors.accent.DEFAULT');
+    box-shadow: 0 3px 0 0 hsl(var(--accent));
   }
   
   .border-offset-rb {
     @apply relative;
-    box-shadow: 3px 3px 0 0 theme('colors.accent.DEFAULT');
+    box-shadow: 3px 3px 0 0 hsl(var(--accent));
   }
   
   /* Uneven padding utility */
@@ -156,16 +307,33 @@
   
   /* Text stroke effect */
   .text-stroke {
-    -webkit-text-stroke: 1px theme('colors.foreground');
+    -webkit-text-stroke: 1px hsl(var(--foreground));
     color: transparent;
   }
   
   .text-stroke-accent {
-    -webkit-text-stroke: 1px theme('colors.accent.DEFAULT');
+    -webkit-text-stroke: 1px hsl(var(--accent));
     color: transparent;
   }
   
-  /* Accent clip path for asymmetric designs */
+  /* Asymmetric gradient backgrounds */
+  .bg-asymmetric-gradient-1 {
+    background: linear-gradient(115deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--background)) 60%, 
+      hsl(var(--accent) / 0.1) 60%, 
+      hsl(var(--accent) / 0.1) 100%);
+  }
+  
+  .bg-asymmetric-gradient-2 {
+    background: linear-gradient(245deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--background)) 70%, 
+      hsl(var(--accent) / 0.08) 70%, 
+      hsl(var(--accent) / 0.08) 100%);
+  }
+
+  /* Clip path utilities */
   .clip-asymmetric-1 {
     clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
   }
@@ -176,72 +344,5 @@
   
   .clip-asymmetric-3 {
     clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 100%, 0 100%);
-  }
-  
-  /* Asymmetric gradient backgrounds */
-  .bg-asymmetric-gradient-1 {
-    background: linear-gradient(115deg, white 0%, white 60%, rgba(255, 66, 51, 0.1) 60%, rgba(255, 66, 51, 0.1) 100%);
-  }
-  
-  .bg-asymmetric-gradient-2 {
-    background: linear-gradient(245deg, white 0%, white 70%, rgba(255, 66, 51, 0.08) 70%, rgba(255, 66, 51, 0.08) 100%);
-  }
-}
-
-@layer components {
-  /* Asymmetric button */
-  .btn-asymmetric {
-    @apply relative inline-flex items-center justify-center 
-           px-4 py-2 overflow-hidden
-           bg-white text-foreground font-medium 
-           transition-all duration-standard ease-asymmetric;
-    box-shadow: 3px 3px 0 0 theme('colors.accent.DEFAULT');
-    transform: translate(-1px, -1px);
-  }
-  
-  .btn-asymmetric:hover {
-    transform: translate(0, 0);
-    box-shadow: 1px 1px 0 0 theme('colors.accent.DEFAULT');
-  }
-  
-  .btn-asymmetric:active {
-    transform: translate(2px, 2px);
-    box-shadow: none;
-  }
-  
-  /* Accent button */
-  .btn-accent {
-    @apply relative inline-flex items-center justify-center 
-           px-4 py-2
-           bg-accent text-accent-foreground font-medium 
-           transition-all duration-standard ease-asymmetric;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
-  }
-  
-  .btn-accent:hover {
-    @apply bg-accent-dark;
-    transform: translateY(-2px);
-  }
-  
-  .btn-accent:active {
-    transform: translateY(0);
-  }
-  
-  /* Card with asymmetric design */
-  .card-asymmetric {
-    @apply bg-white p-4 relative overflow-hidden;
-    box-shadow: theme('boxShadow.asymmetric-md');
-    border-radius: 8px 2px 8px 2px;
-  }
-  
-  .card-asymmetric::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background-color: theme('colors.accent.DEFAULT');
-    clip-path: polygon(0 0, 100% 0, 100% 100%);
   }
 }

@@ -4,6 +4,29 @@ export interface SecurityValidationResult {
   errors: string[];
 }
 
+// Export the InputSanitizer as the default object for compatibility
+const securityUtils = {
+  sanitizeBrief: (input: string) => InputSanitizer.sanitizeBrief(input),
+  validateSVG: (svg: string) => InputSanitizer.validateSVG(svg),
+  cleanSVG: (svg: string) => InputSanitizer.cleanSVG(svg)
+};
+
+export default securityUtils;
+
+// Function for optimizing and securing SVG content
+export function secureAndOptimizeSvg(svg: string): string {
+  // First clean the SVG for security
+  const cleanedSvg = InputSanitizer.cleanSVG(svg);
+  
+  // Perform basic optimization (removing comments, etc.)
+  const optimizedSvg = cleanedSvg
+    .replace(/<!--[\s\S]*?-->/g, '') // Remove comments
+    .replace(/\s+/g, ' ') // Collapse whitespace
+    .replace(/>\s+</g, '><'); // Remove whitespace between tags
+    
+  return optimizedSvg;
+}
+
 export class InputSanitizer {
   static sanitizeBrief(input: string): string {
     // Remove potential injection patterns

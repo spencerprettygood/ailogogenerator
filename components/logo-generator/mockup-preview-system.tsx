@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  MockupPreviewSystemProps, 
-  MockupTemplate, 
-  SVGLogo, 
-  MockupType 
-} from '@/lib/types';
+import { SVGLogo } from '@/lib/types';
+import { MockupType, MockupTemplate } from '@/lib/mockups/mockup-types';
+import { MockupPreviewSystemProps } from '@/lib/types-mockups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MockupSelector } from './mockup-selector';

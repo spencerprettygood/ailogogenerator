@@ -1,4 +1,8 @@
 /**
- * Animation utilities exports
+ * Animation Utilities Index
+ * 
+ * This file exports all utility functions related to SVG animation.
+ * Centralizing exports here makes imports cleaner in other modules.
  */
-export * from './animation-utils';
+
+export * from './svg-sanitizer';

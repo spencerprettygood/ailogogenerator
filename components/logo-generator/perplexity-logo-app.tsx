@@ -41,6 +41,7 @@ export function PerplexityLogoApp() {
     progress,
     preview,
     assets,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     sessionId,
     error,
     reset
@@ -156,7 +157,7 @@ export function PerplexityLogoApp() {
                   className="w-full max-w-2xl"
                 >
                   <PerplexitySearch
-                    onSubmit={handleSearch}
+                    onSearch={handleSearch}
                     isGenerating={isGenerating}
                     placeholder="Describe your brand, industry, and style preferences..."
                     className="shadow-lg border-2 border-primary/20 focus-within:border-primary/40 transition-colors"
@@ -217,8 +218,8 @@ export function PerplexityLogoApp() {
                   previewSvg={preview}
                   progressData={progress ? {
                     stages: [],
-                    currentStageId: progress.currentStage || null,
-                    overallProgress: progress.overallProgress || 0,
+                    currentStageId: progress.stage || null,
+                    overallProgress: progress.progress || 0,
                     estimatedTimeRemaining: null
                   } : undefined}
                 />
@@ -236,7 +237,7 @@ export function PerplexityLogoApp() {
                     </div>
                     
                     <LogoDisplay
-                      svgCode={preview}
+                      svgContent={preview}
                       variants={[]}
                       className="mb-8"
                     />
@@ -265,8 +266,8 @@ export function PerplexityLogoApp() {
                   <Card className="p-6">
                     <ProgressTracker
                       stages={[]}
-                      currentStageId={progress.currentStage || null}
-                      overallProgress={progress.overallProgress || 0}
+                      currentStageId={progress.stage || null}
+                      overallProgress={progress.progress || 0}
                       estimatedRemainingTime={null}
                     />
                   </Card>
@@ -284,7 +285,7 @@ export function PerplexityLogoApp() {
             >
               <Card className="p-3 shadow-lg border-2 border-primary/20">
                 <PerplexitySearch
-                  onSubmit={handleSearch}
+                  onSearch={handleSearch}
                   isGenerating={isGenerating}
                   placeholder="Try another logo..."
                   className="min-w-[400px]"

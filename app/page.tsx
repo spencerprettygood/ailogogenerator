@@ -1,12 +1,7 @@
-'use client'
-
+// Server Component - Don't use 'use client' here
 import React from 'react';
-import { LogoGeneratorApp } from '@/components/logo-generator/logo-generator-app';
+import ClientHomePage from '@/components/client-home';
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <LogoGeneratorApp />
-    </div>
-  );
+  return <ClientHomePage />;
 }

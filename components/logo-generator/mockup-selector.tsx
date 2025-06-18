@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { MockupSelectorProps, MockupType, SVGLogo } from '@/lib/types';
+import { SVGLogo } from '@/lib/types';
+import { MockupType } from '@/lib/mockups/mockup-types';
+import { MockupSelectorProps } from '@/lib/types-mockups';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

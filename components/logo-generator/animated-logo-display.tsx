@@ -1,172 +1,164 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
 
 interface AnimatedLogoDisplayProps {
-  svgCode: string;
+  svgCode?: string;
   cssCode?: string;
   jsCode?: string;
   className?: string;
   showControls?: boolean;
 }
 
-export const AnimatedLogoDisplay: React.FC<AnimatedLogoDisplayProps> = ({
+/**
+ * Component to display an animated SVG logo with playback controls
+ * 
+ * This component renders an animated SVG logo using an inline approach
+ * where the SVG, CSS, and JS are combined directly in the DOM.
+ * It also provides optional play/pause/restart controls.
+ */
+export function AnimatedLogoDisplay({
   svgCode,
   cssCode,
   jsCode,
   className = '',
-  showControls = false
-}) => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
+  showControls = true
+}: AnimatedLogoDisplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   
-  // Generate a unique ID for this animation instance
-  const animationId = React.useMemo(() => 
-    `animated-logo-${Math.random().toString(36).substring(2, 11)}`, 
-    []
-  );
-  
-  // Prepare the animated SVG with embedded CSS and JS
-  const prepareAnimatedSvg = () => {
-    // Add ID to the SVG element for targeting
-    let modifiedSvg = svgCode.replace('<svg', `<svg id="${animationId}"`);
-    
-    // Create a document fragment to hold the full HTML content
-    const fullContent = `
-      <style>
-        /* Container styles */
-        .animated-logo-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 100%;
-          height: 100%;
-        }
-        
-        /* SVG styles */
-        #${animationId} {
-          max-width: 100%;
-          max-height: 100%;
-        }
-        
-        /* Custom animation CSS */
-        ${cssCode || ''}
-        
-        /* Paused state */
-        .animation-paused #${animationId} * {
-          animation-play-state: paused !important;
-          transition: none !important;
-        }
-      </style>
-      
-      <div class="animated-logo-container ${isPaused ? 'animation-paused' : ''}">
-        ${modifiedSvg}
-      </div>
-      
-      <script>
-        // Execute when content is loaded
-        (function() {
-          // Custom animation JS
-          ${jsCode || ''}
-          
-          // Animation control functions
-          window.resetAnimation_${animationId} = function() {
-            const svg = document.getElementById('${animationId}');
-            if (svg) {
-              // Clone and replace to restart animations
-              const parent = svg.parentNode;
-              const clone = svg.cloneNode(true);
-              parent.replaceChild(clone, svg);
-            }
-          };
-        })();
-      </script>
-    `;
-    
-    return fullContent;
-  };
-  
-  // Toggle play/pause state
-  const togglePlayPause = () => {
-    setIsPaused(!isPaused);
-    setIsPlaying(!isPaused);
-  };
-  
-  // Reset animation
-  const resetAnimation = () => {
-    if (containerRef.current) {
-      // Execute the reset function defined in the embedded script
-      if (typeof window !== 'undefined' && window[`resetAnimation_${animationId}`]) {
-        window[`resetAnimation_${animationId}`]();
-      } else {
-        // Fallback: Replace the entire content to reset
-        const content = prepareAnimatedSvg();
-        containerRef.current.innerHTML = content;
-      }
-      
-      // Ensure playing state
-      setIsPaused(false);
-      setIsPlaying(true);
-    }
-  };
-  
-  // Set up animation on initial render
+  // Apply animation to the container when props change
   useEffect(() => {
-    if (containerRef.current) {
-      const content = prepareAnimatedSvg();
-      containerRef.current.innerHTML = content;
+    if (!containerRef.current || !svgCode) return;
+    
+    // Clear previous content
+    containerRef.current.innerHTML = '';
+    setHasLoaded(false);
+    
+    // Create the animated SVG container
+    const svgContainer = document.createElement('div');
+    svgContainer.className = 'svg-container';
+    
+    // Add CSS if provided
+    if (cssCode) {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = cssCode;
+      svgContainer.appendChild(styleElement);
     }
     
-    // Execute any JS code that needs to run after the DOM is updated
-    if (jsCode && typeof window !== 'undefined') {
+    // Add SVG content
+    svgContainer.insertAdjacentHTML('beforeend', svgCode);
+    
+    // Add to DOM
+    containerRef.current.appendChild(svgContainer);
+    
+    // Add JavaScript if provided
+    if (jsCode) {
       try {
         // Use a safer approach than eval
-        const executeScript = new Function(jsCode);
-        executeScript();
+        const executeJS = new Function('container', jsCode);
+        executeJS(svgContainer);
       } catch (error) {
         console.error('Error executing animation JS:', error);
       }
     }
     
-    // Clean up on unmount
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+    setHasLoaded(true);
+    setIsPlaying(true);
+  }, [svgCode, cssCode, jsCode]);
+  
+  // Toggle play/pause state
+  const togglePlayPause = () => {
+    if (!containerRef.current) return;
+    
+    const svgElement = containerRef.current.querySelector('svg');
+    if (!svgElement) return;
+    
+    if (isPlaying) {
+      // Pause animations
+      const animatedElements = containerRef.current.querySelectorAll('*');
+      animatedElements.forEach((el: Element) => {
+        if (el instanceof HTMLElement || el instanceof SVGElement) {
+          (el as any).style.animationPlayState = 'paused';
+        }
+      });
+    } else {
+      // Resume animations
+      const animatedElements = containerRef.current.querySelectorAll('*');
+      animatedElements.forEach((el: Element) => {
+        if (el instanceof HTMLElement || el instanceof SVGElement) {
+          (el as any).style.animationPlayState = 'running';
+        }
+      });
+    }
+    
+    setIsPlaying(!isPlaying);
+  };
+  
+  // Restart animation
+  const restartAnimation = () => {
+    if (!containerRef.current || !svgCode) return;
+    
+    // Easiest way to restart: remove and reapply the SVG content
+    containerRef.current.innerHTML = '';
+    
+    // Recreate the animation
+    const svgContainer = document.createElement('div');
+    svgContainer.className = 'svg-container';
+    
+    // Add CSS
+    if (cssCode) {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = cssCode;
+      svgContainer.appendChild(styleElement);
+    }
+    
+    // Add SVG
+    svgContainer.insertAdjacentHTML('beforeend', svgCode);
+    containerRef.current.appendChild(svgContainer);
+    
+    // Add JS
+    if (jsCode) {
+      try {
+        const executeJS = new Function('container', jsCode);
+        executeJS(svgContainer);
+      } catch (error) {
+        console.error('Error executing animation JS:', error);
       }
-    };
-  }, [svgCode, cssCode, jsCode, isPaused]);
-
+    }
+    
+    setIsPlaying(true);
+  };
+  
   return (
-    <div className={`relative ${className}`}>
+    <div className={`animated-logo-display ${className}`}>
       <div 
         ref={containerRef} 
-        className="w-full h-full min-h-[200px]"
-      />
+        className="relative bg-white rounded-lg shadow-sm flex items-center justify-center"
+        style={{ minHeight: '200px' }}
+      >
+        {!svgCode && (
+          <div className="text-gray-400">No animated logo available</div>
+        )}
+      </div>
       
-      {showControls && (
-        <div className="absolute bottom-2 right-2 flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="w-8 h-8 p-0 rounded-full" 
+      {showControls && svgCode && hasLoaded && (
+        <div className="flex justify-center mt-3 space-x-2">
+          <button 
+            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm"
             onClick={togglePlayPause}
-            title={isPaused ? "Play animation" : "Pause animation"}
           >
-            {isPaused ? <Play size={14} /> : <Pause size={14} />}
-          </Button>
-          
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="w-8 h-8 p-0 rounded-full" 
-            onClick={resetAnimation}
-            title="Reset animation"
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <button 
+            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm"
+            onClick={restartAnimation}
           >
-            <RotateCcw size={14} />
-          </Button>
+            Restart
+          </button>
         </div>
       )}
     </div>
   );
-};
+}

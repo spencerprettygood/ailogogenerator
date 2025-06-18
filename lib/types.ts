@@ -1,4 +1,33 @@
 import { AnimationOptions } from "./animation/types";
+// Re-export MockupType from mockup-types.ts for backward compatibility
+export { MockupType } from "./mockups/mockup-types";
+
+// Pipeline progress interface
+export interface PipelineProgress {
+  currentStage: PipelineStage;
+  stageProgress: number; // 0-100
+  overallProgress: number; // 0-100
+  statusMessage: string;
+  startTime?: number;
+  estimatedTimeRemaining?: number; // in seconds
+}
+
+// Logo brief interface for logo generation requests
+export interface LogoBrief {
+  prompt: string;
+  image_uploads?: File[];
+  preferences?: LogoGenerationPreferences;
+}
+
+// Complete generation result
+export interface GenerationResult {
+  brandName: string;
+  sessionId: string;
+  assets: GeneratedAssets;
+  completionTime: number; // milliseconds
+  uniquenessScore?: number; // 0-100
+  designNotes?: string;
+}
 
 // General types for messages
 export enum MessageRole {
