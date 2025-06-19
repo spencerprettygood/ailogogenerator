@@ -1,4 +1,9 @@
-@import "@tailwindcss/postcss";
+@import "tailwindcss";
+
+/* Reset minimal CSS styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 
 @layer base {
   :root {

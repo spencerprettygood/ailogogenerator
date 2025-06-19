@@ -1,5 +1,6 @@
+'use client'
+
 import './globals.css';
-import type { Metadata } from 'next';
 import { Raleway, Arimo, IBM_Plex_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 
@@ -27,13 +28,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap'
 });
 
-export const metadata: Metadata = {
-  title: 'AI Logo Generator',
-  description: 'Generate professional-quality logos with AI',
-  icons: {
-    icon: '/favicon.ico',
-  },
-};
+// Metadata moved to separate export to avoid 'use client' conflicts
 
 export default function RootLayout({
   children,

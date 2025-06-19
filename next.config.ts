@@ -1,5 +1,15 @@
+import { createWebpackConfig } from './lib/webpack-config';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Telemetry system replaces OpenTelemetry
+  // External packages for server components
+  serverExternalPackages: ['sharp'],
+  
+  // Modern experimental features
+  experimental: {
+    // Add any Next.js 15 experimental features here
+  },
   reactStrictMode: true,
   
   // Specify asset handling for images and other static files
@@ -53,22 +63,17 @@ const nextConfig = {
     ];
   },
   
-  // Webpack configuration for better handling of modules
-  webpack: (config) => {
+  // Webpack configuration with telemetry support
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     // Handle SVG files with SVGR
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
     
-    // Handle polyfills and client-side only packages
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      child_process: false,
-    };
+    // Apply our custom webpack configuration with telemetry
+    config = createWebpackConfig(config, { isServer });
     
     return config;
   },

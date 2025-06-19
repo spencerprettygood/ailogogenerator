@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
 import { useToast } from "@/lib/hooks/use-toast";
 import { Toaster } from '@/components/ui/toaster';
-import { generateId } from 'ai';
+import { generateId } from '@/lib/ai-utils';
 import { Send, Sparkles } from 'lucide-react';
 
 interface ChatMessage {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Github, Twitter, Sun, Moon } from 'lucide-react';
+import { Sparkles, Sun, Moon } from 'lucide-react';
 import { H5 } from '@/components/ui/typography';
 
 interface HeaderProps {
@@ -36,29 +36,7 @@ export function Header({ onThemeToggle }: HeaderProps) {
             </Button>
           )}
           
-          {/* Social Links with asymmetric spacing */}
-          <div className="flex items-center" style={{ gap: '7px' }}>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover-scale-skew"
-            >
-              <Button variant="ghost" size="icon" aria-label="GitHub">
-                <Github className="h-4 w-4" />
-              </Button>
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover-scale-skew"
-            >
-              <Button variant="ghost" size="icon" aria-label="Twitter">
-                <Twitter className="h-4 w-4" />
-              </Button>
-            </a>
-          </div>
+          {/* No social links */}
         </div>
       </div>
     </header>

@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { performanceMonitor } from '../utils/performance-monitor';
+import { telemetry } from '../telemetry';
 
 /**
  * @interface ResponseWithMetrics
@@ -138,6 +139,7 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
   }
   
   // Record API call metrics
+  // Record metrics in both systems for completeness
   performanceMonitor.recordAPICall({
     endpoint,
     method: request.method,
@@ -151,6 +153,24 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
       query: Object.fromEntries(url.searchParams.entries()),
       contentType: response.headers.get('content-type') || 'unknown'
     }
+  });
+  
+  // Also record in our telemetry system
+  telemetry.recordEvent('api_call', {
+    endpoint,
+    method: request.method,
+    duration: endTime - startTime,
+    statusCode: response.status,
+    path: url.pathname,
+    contentType: response.headers.get('content-type') || 'unknown'
+  });
+  
+  // Add timing metrics
+  telemetry.recordMetric({
+    name: `api_${request.method.toLowerCase()}_duration`,
+    value: endTime - startTime,
+    timestamp: endTime,
+    type: 'histogram'
   });
 }
 

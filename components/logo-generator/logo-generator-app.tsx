@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from "@/lib/hooks/use-toast";
 import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
-import { generateId } from 'ai';
+import { generateId } from '@/lib/ai-utils';
 import { Header } from './header';
 import ErrorBoundary from './error-boundary';
 import { SearchInterfaceEnhanced } from './search-interface-enhanced';
@@ -36,7 +36,7 @@ import {
   FileDownloadInfo,
   AnimationExportOptions
 } from '@/lib/types'; 
-import { Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
+import { RefreshCw, ArrowRight } from 'lucide-react';
 import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
 
 interface AppMessage extends Message {
@@ -332,9 +332,7 @@ export function LogoGeneratorApp() {
           {/* Welcome card - shown only when no messages */}
           {messages.length === 0 && (
             <div className="max-w-3xl mx-auto text-center space-y-6">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <Sparkles className="h-10 w-10 text-primary" />
-              </div>
+              {/* No sparkles icon */}
               
               <div className="space-y-2">
                 <H1 className="text-center">AI Logo Generator</H1>

@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText } from '@/lib/ai-utils';
 import { anthropic } from '@ai-sdk/anthropic';
 
 export const runtime = 'edge';

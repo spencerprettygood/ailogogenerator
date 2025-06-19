@@ -1,7 +1,12 @@
-// Server Component - Don't use 'use client' here
+'use client'
+
 import React from 'react';
-import ClientHomePage from '@/components/client-home';
+import { LogoGeneratorApp } from '@/components/logo-generator/logo-generator-app';
+import { usePageTracking } from '@/lib/telemetry';
 
 export default function HomePage() {
-  return <ClientHomePage />;
+  // Track page views
+  usePageTracking('home', { source: 'direct' });
+  
+  return <LogoGeneratorApp />;
 }
