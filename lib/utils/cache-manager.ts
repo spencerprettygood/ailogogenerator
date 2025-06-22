@@ -480,7 +480,7 @@ export class CacheManager {
    * 
    * @example
    * // Check if we already have a result for this brief
-   * const cachedResult = cacheManager.getGenerationResult(userBrief);
+   * const cachedResult = await cacheManager.getGenerationResult(userBrief);
    * if (cachedResult) {
    *   return cachedResult; // Use cached result
    * } else {
@@ -488,8 +488,30 @@ export class CacheManager {
    * }
    */
   public async getGenerationResult(brief: LogoBrief): Promise<GenerationResult | null> {
-    const key = await this.getCacheKey(brief);
-    return this.get<GenerationResult>(key, 'generation');
+    if (!this.config.enabled) {
+      return null;
+    }
+    
+    try {
+      // Generate cache key
+      const key = await this.getCacheKey(brief);
+      
+      // Fetch from cache
+      const cachedData = this.get<GenerationResult>(key, 'generation');
+      
+      if (cachedData) {
+        this.logger.debug('Cache hit: generation result found', { cacheKey: key });
+      } else {
+        this.logger.debug('Cache miss: no generation result found', { cacheKey: key });
+      }
+      
+      return cachedData;
+    } catch (error) {
+      this.logger.error('Error retrieving generation result from cache', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
   }
   
   /**
@@ -676,27 +698,38 @@ export class CacheManager {
   private async generateHash(str: string): Promise<string> {
     this.logger.debug('Generating hash', { inputLength: str.length });
     
-    // Try to use the Web Crypto API if available (works in modern browsers and Node.js)
-    if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
-      try {
-        this.logger.debug('Using Web Crypto API for hashing');
-        const msgUint8 = new TextEncoder().encode(str);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        return hexHash;
-      } catch (error) {
-        // Log error and fall back to simple hash if crypto API fails
-        this.logger.warn('Web Crypto API failed, using fallback hash', {
-          error: error instanceof Error ? error.message : String(error)
-        });
-        return this.simpleHash(str);
+    try {
+      // Try to use the Web Crypto API if available (works in modern browsers and Node.js)
+      if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
+        try {
+          this.logger.debug('Using Web Crypto API for hashing');
+          const msgUint8 = new TextEncoder().encode(str);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          return hexHash;
+        } catch (error) {
+          // Log error and fall back to simple hash if crypto API fails
+          this.logger.warn('Web Crypto API failed, using fallback hash', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+          return this.simpleHash(str);
+        }
       }
+      
+      // Fallback for environments without Web Crypto API
+      this.logger.debug('Web Crypto API not available, using fallback hash');
+      return this.simpleHash(str);
+    } catch (error) {
+      // If any error occurs in the hash generation, return a deterministic fallback
+      this.logger.error('Hash generation failed completely', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      
+      // Create a basic hash from string length and first few characters
+      const basicHash = `fallback_${str.length}_${str.slice(0, 20).replace(/\W/g, '')}`;
+      return basicHash;
     }
-    
-    // Fallback for environments without Web Crypto API
-    this.logger.debug('Web Crypto API not available, using fallback hash');
-    return this.simpleHash(str);
   }
   
   /**

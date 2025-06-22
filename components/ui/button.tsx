@@ -60,6 +60,16 @@ const buttonVariants = cva(
           "text-accent underline-offset-4 hover:underline",
           "p-0 h-auto",
         ],
+        
+        // Default and outline (for compatibility)
+        default: [
+          "bg-foreground text-background",
+          "hover:bg-foreground/90",
+        ],
+        
+        outline: [
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+        ],
       },
       size: {
         default: "px-4 py-2 text-base",

@@ -97,7 +97,7 @@ export function SearchInterfaceEnhanced({
       const lastWord = words[words.length - 1];
       
       // If the last word has at least 2 characters, show suggestions
-      if (lastWord.length >= 2) {
+      if (lastWord && lastWord.length >= 2) {
         const termSuggestions = LOGO_DESIGN_TERMS.filter(term => 
           term.toLowerCase().startsWith(lastWord) && term.toLowerCase() !== lastWord
         );

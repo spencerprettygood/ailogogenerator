@@ -50,9 +50,13 @@ export function EnhancedTypingIndicator({
   }, [isPaused, designThoughts.length]);
   
   const getIcon = () => {
+    // Default icon if no stage is provided
     if (!stage) return <Sparkles className="h-4 w-4 text-primary" />;
     
-    switch (stage) {
+    // Ensure stage is a string
+    const stageStr = String(stage);
+    
+    switch (stageStr) {
       case 'A':
       case 'B':
       case 'C':
@@ -66,7 +70,8 @@ export function EnhancedTypingIndicator({
     }
   };
   
-  const displayMessage = message || 'Generating your logo...';
+  // Ensure message is a string
+  const displayMessage = typeof message === 'string' ? message : 'Generating your logo...';
   
   return (
     <div className={`flex justify-start ${className}`}>

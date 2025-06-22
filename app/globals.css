@@ -95,37 +95,80 @@
 @layer base {
   /* Base styles */
   body {
-    @apply bg-background text-foreground antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
   /* Typography asymmetry */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-thin font-heading leading-tight tracking-wider;
+    font-weight: 100;
+    font-family: var(--font-raleway);
+    line-height: 1.1;
+    letter-spacing: 0.05em;
   }
   
   h1 {
-    @apply text-3xl md:text-4xl lg:text-5xl;
+    font-size: 1.875rem; /* text-3xl */
+    line-height: 2.25rem;
     margin-left: -0.05em; /* Optical alignment */
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 2.25rem; /* md:text-4xl */
+      line-height: 2.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h1 {
+      font-size: 3rem; /* lg:text-5xl */
+      line-height: 1;
+    }
   }
   
   h2 {
-    @apply text-2xl md:text-3xl;
+    font-size: 1.5rem; /* text-2xl */
+    line-height: 2rem;
     margin-left: -0.03em; /* Optical alignment */
+  }
+
+  @media (min-width: 768px) {
+    h2 {
+      font-size: 1.875rem; /* md:text-3xl */
+      line-height: 2.25rem;
+    }
   }
   
   h3 {
-    @apply text-xl md:text-2xl;
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1.75rem;
+  }
+
+  @media (min-width: 768px) {
+    h3 {
+      font-size: 1.5rem; /* md:text-2xl */
+      line-height: 2rem;
+    }
   }
   
   p {
-    @apply text-base leading-relaxed font-body;
+    font-size: 1rem; /* text-base */
+    line-height: 1.625; /* leading-relaxed */
+    font-family: var(--font-arimo); /* font-body */
     max-width: 65ch; /* Optimal reading length */
   }
   
   /* Asymmetric link underlines */
   a:not(.no-underline) {
-    @apply relative no-underline transition-all;
+    position: relative;
+    text-decoration: none;
+    transition-property: all;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     background-image: linear-gradient(to right, hsl(var(--accent)), hsl(var(--accent)));
     background-position: 0 calc(100% - 0.05em);
     background-repeat: no-repeat;
@@ -140,13 +183,15 @@
   
   /* Focus styles with offset outlines */
   :focus-visible {
-    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--accent)), 0 0 0 4px hsl(var(--background));
     outline-offset: 3px;
   }
   
   /* Selection styling */
   ::selection {
-    @apply bg-accent text-accent-foreground;
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
   }
   
   /* Asymmetric scrollbar */
@@ -156,16 +201,17 @@
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background-color: hsl(var(--muted));
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full;
-    border-right: 2px solid transparent; /* Offset to one side */
+    background-color: #9ca3af; /* Tailwind bg-gray-400 */
+    border-radius: 9999px; /* Tailwind rounded-full */
+    border-inline-end: 2px solid transparent; /* Offset to one side */
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+    background-color: #6b7280; /* Tailwind bg-gray-500 */
   }
 
   /* Font definitions */
@@ -185,10 +231,20 @@
 @layer components {
   /* Asymmetric button */
   .btn-asymmetric {
-    @apply relative inline-flex items-center justify-center 
-           px-4 py-2 overflow-hidden
-           bg-white text-foreground font-medium 
-           transition-all duration-300;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    overflow: hidden;
+    background-color: #fff;
+    color: hsl(var(--foreground));
+    font-weight: 500;
+    transition-property: all;
+    transition-duration: 300ms;
     box-shadow: 3px 3px 0 0 hsl(var(--accent));
     transform: translate(-1px, -1px);
   }
@@ -205,7 +261,11 @@
   
   /* Card with asymmetric design */
   .card-asymmetric {
-    @apply bg-card p-4 relative overflow-hidden shadow-md;
+    background-color: hsl(var(--card));
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
     border-radius: 8px 2px 8px 2px;
   }
   
@@ -237,48 +297,114 @@
 
   /* Typography styles */
   .heading-1 {
-    @apply font-heading font-thin text-3xl md:text-4xl lg:text-5xl tracking-widest leading-tight;
+    font-family: var(--font-raleway);
+    font-weight: 100;
+    font-size: 1.875rem; /* text-3xl */
+    line-height: 2.25rem; /* leading-tight */
+    letter-spacing: 0.1em; /* tracking-widest */
+  }
+  @media (min-width: 768px) {
+    .heading-1 {
+      font-size: 2.25rem; /* md:text-4xl */
+      line-height: 2.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .heading-1 {
+      font-size: 3rem; /* lg:text-5xl */
+      line-height: 1;
+    }
   }
   
   .heading-2 {
-    @apply font-heading font-thin text-2xl md:text-3xl tracking-wider leading-tight;
+    font-family: var(--font-raleway);
+    font-weight: 100;
+    font-size: 1.5rem; /* text-2xl */
+    line-height: 2rem; /* leading-tight */
+    letter-spacing: 0.05em; /* tracking-wider */
+  }
+  @media (min-width: 768px) {
+    .heading-2 {
+      font-size: 1.875rem; /* md:text-3xl */
+      line-height: 2.25rem;
+    }
   }
   
   .heading-3 {
-    @apply font-heading font-thin text-xl md:text-2xl tracking-wider leading-snug;
+    font-family: var(--font-raleway);
+    font-weight: 100;
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1.75rem; /* leading-snug */
+    letter-spacing: 0.05em; /* tracking-wider */
+  }
+  @media (min-width: 768px) {
+    .heading-3 {
+      font-size: 1.5rem; /* md:text-2xl */
+      line-height: 2rem;
+    }
   }
   
   .heading-4 {
-    @apply font-heading font-thin text-lg md:text-xl tracking-wider leading-snug;
+    font-family: var(--font-raleway);
+    font-weight: 100;
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.75rem; /* leading-snug */
+    letter-spacing: 0.05em; /* tracking-wider */
+  }
+  @media (min-width: 768px) {
+    .heading-4 {
+      font-size: 1.25rem; /* md:text-xl */
+      line-height: 1.75rem;
+    }
   }
   
   .body-large {
-    @apply font-body text-md leading-relaxed;
+    font-family: var(--font-arimo);
+    font-size: 1.125rem; /* text-md */
+    line-height: 1.625; /* leading-relaxed */
   }
   
   .body-normal {
-    @apply font-body text-base leading-relaxed;
+    font-family: var(--font-arimo);
+    font-size: 1rem; /* text-base */
+    line-height: 1.625; /* leading-relaxed */
   }
   
   .body-small {
-    @apply font-body text-sm leading-normal;
+    font-family: var(--font-arimo);
+    font-size: 0.875rem; /* text-sm */
+    line-height: 1.5; /* leading-normal */
   }
   
   .caption {
-    @apply font-body text-xs leading-normal tracking-wide;
+    font-family: var(--font-arimo);
+    font-size: 0.75rem; /* text-xs */
+    line-height: 1.5; /* leading-normal */
+    letter-spacing: 0.05em; /* tracking-wide */
   }
 
   /* Additional components from src/app/globals.css */
   .gradient-heading {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, hsl(var(--primary)), #60a5fa); /* #60a5fa is Tailwind's blue-400 */
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    transition-property: all;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+    transform: translateY(-0.25rem);
   }
   
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+    outline-offset: 2px;
   }
 }
 
@@ -291,17 +417,17 @@
   
   /* Offset border utility */
   .border-offset-r {
-    @apply relative;
+    position: relative;
     box-shadow: 3px 0 0 0 hsl(var(--accent));
   }
   
   .border-offset-b {
-    @apply relative;
+    position: relative;
     box-shadow: 0 3px 0 0 hsl(var(--accent));
   }
   
   .border-offset-rb {
-    @apply relative;
+    position: relative;
     box-shadow: 3px 3px 0 0 hsl(var(--accent));
   }
   
@@ -349,5 +475,90 @@
   
   .clip-asymmetric-3 {
     clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 100%, 0 100%);
+  }
+  
+  /* Perplexity UI Animations and Effects */
+  .animate-in {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+  
+  .fade-in {
+    animation-name: fadeIn;
+  }
+  
+  .slide-in-from-bottom {
+    animation-name: slideInFromBottom;
+  }
+  
+  .slide-in-from-right {
+    animation-name: slideInFromRight;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideInFromBottom {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+  
+  /* Pulse animation for indicators */
+  .pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { streamText } from '@/lib/ai-utils';
+import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 
 export const runtime = 'edge';
@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await streamText({
-    model: anthropic('claude-3-5-sonnet-20240620'),
+    model: anthropic('claude-3-5-sonnet-latest'),
     messages,
     system: `You are a friendly and creative AI logo designer. 
     Your goal is to have a natural conversation with the user to understand their needs. 
@@ -17,5 +17,5 @@ export async function POST(req: Request) {
     To trigger the generation, end your final message with the special command: [GENERATE_LOGO]`,
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

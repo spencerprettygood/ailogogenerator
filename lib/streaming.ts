@@ -63,6 +63,11 @@ export class StreamProcessor {
       // Handle cache status
       if (data.type === 'cache' && callbacks.onCache) {
         callbacks.onCache(data.cached === true);
+        
+        // If we're retrieving from cache, also update the preview
+        if (data.cached === true && data.result?.logoSvg) {
+          callbacks.onPreview(data.result.logoSvg);
+        }
       }
       
       // Handle progress updates

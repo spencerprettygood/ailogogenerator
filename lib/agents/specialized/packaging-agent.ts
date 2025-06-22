@@ -18,6 +18,7 @@ export class PackagingAgent extends BaseAgent {
       ['asset-packaging'],
       {
         model: 'claude-3-5-haiku-20240307', // This agent doesn't primarily use Claude
+        fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
         temperature: 0.1,
         maxTokens: 500,
         ...config
@@ -25,6 +26,18 @@ export class PackagingAgent extends BaseAgent {
     );
     
     // This agent doesn't primarily use Claude - it handles asset packaging directly
+    
+    // Set a system prompt - required to avoid "text content blocks must be non-empty" error
+    this.systemPrompt = `You are a specialized asset packaging agent for an AI logo generator.
+    
+Your task is to create helpful documentation and organize logo assets for delivery to users.
+
+IMPORTANT REQUIREMENTS:
+1. Create clear, professional README files explaining the logo package contents
+2. Ensure documentation is concise, well-formatted, and user-friendly
+3. Focus on explaining file structure, usage instructions, and proper logo application
+4. Include appropriate credits for the AI Logo Generator
+5. Format your response as proper markdown`;
   }
   
   /**

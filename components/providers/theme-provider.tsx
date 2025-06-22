@@ -14,13 +14,7 @@ import { type ThemeProviderProps } from "next-themes";
  * @returns ThemeProvider component
  */
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  // Store theme preference in state for client-side rendering
-  const [mounted, setMounted] = React.useState(false);
-
-  // After component mounts, allow theme switching
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  // No need to track mounted state as it's not used
 
   // Prevent hydration mismatch by rendering provider regardless of mounted state
   // The suppressHydrationWarning on html element in layout.tsx handles the brief flash

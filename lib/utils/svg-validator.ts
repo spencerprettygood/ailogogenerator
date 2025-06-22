@@ -5,6 +5,12 @@
  * automatic repair, and optimization functionality.
  */
 
+export interface ValidationIssue {
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+}
+
 export interface SVGValidationResult {
   isValid: boolean;
   violations: Record<string, boolean>;
@@ -13,6 +19,7 @@ export interface SVGValidationResult {
   securityScore?: number;
   accessibilityScore?: number;
   optimizationScore?: number;
+  issues: ValidationIssue[];
 }
 
 export interface SVGRepairResult {
@@ -20,6 +27,9 @@ export interface SVGRepairResult {
   isRepaired: boolean;
   modifications: string[];
   remainingIssues: string[];
+  repaired: string;
+  issuesFixed: ValidationIssue[];
+  issuesRemaining: ValidationIssue[];
 }
 
 export interface SVGOptimizationResult {
@@ -27,6 +37,8 @@ export interface SVGOptimizationResult {
   originalSize: number;
   optimizedSize: number;
   reductionPercent: number;
+  optimized: string;
+  optimizations: string[];
 }
 
 /**
@@ -103,22 +115,44 @@ export class SVGValidator {
     // Check if content is empty or not a string
     if (!svgContent || typeof svgContent !== 'string') {
       errors.push('SVG content is empty or not a string');
+      const issues: ValidationIssue[] = [
+        {
+          type: 'validation',
+          severity: 'critical',
+          message: 'SVG content is empty or not a string'
+        }
+      ];
       return {
         isValid: false,
         violations: { empty_content: true },
         errors,
-        warnings
+        warnings,
+        issues,
+        securityScore: 0,
+        accessibilityScore: 0,
+        optimizationScore: 0
       };
     }
     
     // Basic structure checks
     if (!svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
       errors.push('SVG is missing opening or closing SVG tags');
+      const issues: ValidationIssue[] = [
+        {
+          type: 'validation',
+          severity: 'critical',
+          message: 'SVG is missing opening or closing SVG tags'
+        }
+      ];
       return {
         isValid: false,
         violations: { missing_svg_tags: true },
         errors,
-        warnings
+        warnings,
+        issues,
+        securityScore: 0,
+        accessibilityScore: 0,
+        optimizationScore: 0
       };
     }
     
@@ -232,6 +266,30 @@ export class SVGValidator {
     // Determine overall validity
     const isValid = errors.length === 0;
     
+    // Create a list of issues in the format expected by SVGValidationAgent
+    const issues: ValidationIssue[] = [
+      ...errors.map(msg => {
+        // Determine severity based on the error message
+        let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+        if (msg.includes('script') || msg.includes('event handler') || msg.includes('dangerous')) {
+          severity = 'critical';
+        } else if (msg.includes('disallowed') || msg.includes('external')) {
+          severity = 'high';
+        }
+        
+        return {
+          type: 'security',
+          severity,
+          message: msg
+        };
+      }),
+      ...warnings.map(msg => ({
+        type: 'warning',
+        severity: 'low' as const,
+        message: msg
+      }))
+    ];
+    
     return {
       isValid,
       violations: securityChecks,
@@ -239,7 +297,8 @@ export class SVGValidator {
       warnings,
       securityScore,
       accessibilityScore,
-      optimizationScore
+      optimizationScore,
+      issues
     };
   }
   
@@ -434,11 +493,28 @@ export class SVGValidator {
     // Check if the SVG is still valid after repairs
     const validationResult = this.validate(repairedSvg);
     
+    // Convert remaining issues to ValidationIssue format
+    const issuesRemaining: ValidationIssue[] = validationResult.errors.map(error => ({
+      type: 'security',
+      severity: 'medium',
+      message: error
+    }));
+    
+    // Create fixed issues list
+    const issuesFixed: ValidationIssue[] = modifications.map(mod => ({
+      type: 'repair',
+      severity: 'medium',
+      message: mod
+    }));
+    
     return {
       svg: repairedSvg,
+      repaired: repairedSvg,
       isRepaired: modifications.length > 0,
       modifications,
-      remainingIssues: validationResult.errors
+      remainingIssues: validationResult.errors,
+      issuesFixed,
+      issuesRemaining
     };
   }
   
@@ -478,11 +554,43 @@ export class SVGValidator {
     const optimizedSize = Buffer.byteLength(optimizedSvg, 'utf8');
     const reductionPercent = Math.round((1 - (optimizedSize / originalSize)) * 100);
     
+    const optimizations: string[] = [];
+    
+    // Track which optimizations were performed
+    if (svgContent !== optimizedSvg) {
+      if (svgContent.includes('<!--') && !optimizedSvg.includes('<!--')) {
+        optimizations.push('Removed comments');
+      }
+      
+      if (/>[\s]{2,}</g.test(svgContent) && !/>[\s]{2,}</g.test(optimizedSvg)) {
+        optimizations.push('Removed unnecessary whitespace');
+      }
+      
+      if (svgContent.includes('<metadata>') && !optimizedSvg.includes('<metadata>')) {
+        optimizations.push('Removed metadata elements');
+      }
+      
+      if (/<g[^>]*>\s*<\/g>/g.test(svgContent) && !/<g[^>]*>\s*<\/g>/g.test(optimizedSvg)) {
+        optimizations.push('Removed empty group elements');
+      }
+      
+      if (reductionPercent > 0) {
+        optimizations.push(`Reduced file size by ${reductionPercent}% (${originalSize} → ${optimizedSize} bytes)`);
+      }
+      
+      // If we didn't detect any specific optimizations but the file changed
+      if (optimizations.length === 0) {
+        optimizations.push('Applied general SVG optimization');
+      }
+    }
+    
     return {
       svg: optimizedSvg,
+      optimized: optimizedSvg,
       originalSize,
       optimizedSize,
-      reductionPercent
+      reductionPercent,
+      optimizations
     };
   }
   
@@ -497,11 +605,13 @@ export class SVGValidator {
     repair?: boolean;
     optimize?: boolean;
   } = {}): {
-    svg: string;
+    original: string;
+    processed: string;
     validation: SVGValidationResult;
     repair?: SVGRepairResult;
     optimization?: SVGOptimizationResult;
     success: boolean;
+    overallScore: number;
   } {
     const { repair = true, optimize = true } = options;
     
@@ -520,18 +630,22 @@ export class SVGValidator {
       const revalidationResult = this.validate(processedSvg);
       if (!revalidationResult.isValid) {
         return {
-          svg: svgContent, // Return original if repair didn't fix it
+          original: svgContent,
+          processed: svgContent, // Return original if repair didn't fix it
           validation: validationResult,
           repair: repairResult,
-          success: false
+          success: false,
+          overallScore: 0
         };
       }
     } else if (!validationResult.isValid) {
       // Invalid but repair not requested
       return {
-        svg: svgContent,
+        original: svgContent,
+        processed: svgContent,
         validation: validationResult,
-        success: false
+        success: false,
+        overallScore: 0
       };
     }
     
@@ -546,20 +660,45 @@ export class SVGValidator {
         // If optimization broke it, revert to pre-optimization
         processedSvg = repairResult ? repairResult.svg : svgContent;
         return {
-          svg: processedSvg,
+          original: svgContent,
+          processed: processedSvg,
           validation: validationResult,
           repair: repairResult,
-          success: repairResult ? repairResult.isRepaired : validationResult.isValid
+          success: repairResult ? repairResult.isRepaired : validationResult.isValid,
+          overallScore: Math.round((validationResult.securityScore || 0) + (validationResult.accessibilityScore || 0)) / 2
         };
       }
     }
     
+    // Calculate overall score based on available metrics
+    let overallScore = 0;
+    let scoreCount = 0;
+    
+    if (validationResult.securityScore) {
+      overallScore += validationResult.securityScore;
+      scoreCount++;
+    }
+    
+    if (validationResult.accessibilityScore) {
+      overallScore += validationResult.accessibilityScore;
+      scoreCount++;
+    }
+    
+    if (validationResult.optimizationScore) {
+      overallScore += validationResult.optimizationScore;
+      scoreCount++;
+    }
+    
+    overallScore = scoreCount > 0 ? Math.round(overallScore / scoreCount) : 50;
+    
     return {
-      svg: processedSvg,
+      original: svgContent,
+      processed: processedSvg,
       validation: validationResult,
       repair: repairResult,
       optimization: optimizationResult,
-      success: true
+      success: true,
+      overallScore
     };
   }
   

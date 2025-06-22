@@ -15,23 +15,31 @@ import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
 import AnimationDownloadManager from './animation-download-manager';
-import ProgressTracker from './progress-tracker';
 import { SmartFollowUps } from './smart-follow-ups';
 import { DesignCitations } from './design-citations';
 import { IndustrySelector } from './industry-selector';
 import { MockupPreviewSystem } from './mockup-preview-system';
 import { AnimationSelector } from './animation-selector';
-import { AnimationCustomizer } from './animation-customizer';
 import { AnimationShowcase } from './animation-showcase';
 import { AnimatedLogoDisplay } from './animated-logo-display';
 import { UniquenessToggle } from './uniqueness-toggle';
 import { UniquenessAnalysis } from './uniqueness-analysis';
+
+// Type definition for animation options
+interface GetAnimationsOptions {
+  type: string;
+  duration: number;
+  easing: string;
+  delay: number;
+  iterations: number;
+  direction: string;
+  [key: string]: any; // Allow additional properties
+}
 import { 
   Message, 
   GenerationProgress, 
   GeneratedAssets, 
   MessageRole, 
-  LogoGenerationState, 
   SVGLogo,            
   FileDownloadInfo,
   AnimationExportOptions
@@ -40,7 +48,7 @@ import { RefreshCw, ArrowRight } from 'lucide-react';
 import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
 
 interface AppMessage extends Message {
-  type?: MessageRole;
+  type?: MessageRole | 'system' | 'assistant';
   progress?: GenerationProgress;
   assets?: GeneratedAssets & { 
     brandName?: string;
@@ -50,9 +58,6 @@ interface AppMessage extends Message {
   };
   files?: File[];
 }
-
-// Type for progress data from the hook, aligning with LogoGenerationState
-type HookProgressData = Partial<LogoGenerationState>;
 
 // Create Logo Generator Context
 interface LogoGeneratorContextType {
@@ -72,12 +77,12 @@ interface LogoGeneratorContextType {
   setSelectedIndustry: (industry: string) => void;
   includeAnimations: boolean;
   setIncludeAnimations: (include: boolean) => void;
-  selectedAnimationOptions: any;
-  setSelectedAnimationOptions: (options: any) => void;
+  selectedAnimationOptions: GetAnimationsOptions | null;
+  setSelectedAnimationOptions: (options: GetAnimationsOptions | null) => void;
   includeUniquenessAnalysis: boolean;
   setIncludeUniquenessAnalysis: (include: boolean) => void;
   progressForTracker: {
-    stages: any[];
+    stages: Array<Record<string, unknown>>;
     currentStageId: string | null;
     overallProgress: number;
     estimatedTimeRemaining: number | null;
@@ -101,7 +106,7 @@ export function LogoGeneratorApp() {
   const [industryConfidence, setIndustryConfidence] = useState<number>(0);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('general');
   const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
-  const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<any>(null);
+  const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<GetAnimationsOptions | null>(null);
   const [includeUniquenessAnalysis, setIncludeUniquenessAnalysis] = useState<boolean>(false);
   
   const { toast } = useToast();
@@ -124,7 +129,6 @@ export function LogoGeneratorApp() {
     const userMessage: AppMessage = {
       id: generateId(),
       role: 'user',
-      type: 'user',
       content,
       timestamp: new Date(),
       files
@@ -145,7 +149,7 @@ export function LogoGeneratorApp() {
       await generateLogo(content, files, {
         industry: selectedIndustry,
         includeAnimations: includeAnimations,
-        animationOptions: selectedAnimationOptions,
+        animationOptions: (selectedAnimationOptions as Record<string, unknown>) ?? undefined,
         includeUniquenessAnalysis: includeUniquenessAnalysis
       });
     } catch (err) {
@@ -157,8 +161,8 @@ export function LogoGeneratorApp() {
     }
   }, [generateLogo, toast, selectedIndustry, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis]);
 
-  const handleSuggestionSelect = useCallback((prompt: string) => {
-    handleSubmit(prompt);
+  const handleSuggestionSelect = useCallback((prompt: string, files?: File[]) => {
+    handleSubmit(prompt, files);
   }, [handleSubmit]);
 
   React.useEffect(() => {
@@ -170,7 +174,7 @@ export function LogoGeneratorApp() {
         if (lastMessage && lastMessage.type === 'assistant' && lastMessage.progress) {
           return prev.map((msg, index) => 
             index === prev.length - 1 
-              ? { ...msg, progress: currentProgressData, content: currentProgressData.message, role: 'assistant', type: 'assistant' }
+              ? { ...msg, progress: currentProgressData, content: currentProgressData.message || '', role: 'assistant', type: 'assistant' }
               : msg
           );
         } else {
@@ -178,7 +182,7 @@ export function LogoGeneratorApp() {
             id: generateId(),
             role: 'assistant',
             type: 'assistant',
-            content: currentProgressData.message,
+            content: currentProgressData.message || '',
             timestamp: new Date(),
             progress: currentProgressData
           }];
@@ -225,7 +229,12 @@ export function LogoGeneratorApp() {
     if (lastUserMessage && lastUserMessage.content) {
       reset();
       setMessages([lastUserMessage]); 
-      handleSubmit(lastUserMessage.content, lastUserMessage.files);
+      handleSubmit(
+        typeof lastUserMessage.content === 'string'
+          ? lastUserMessage.content
+          : lastUserMessage.content.join(' '),
+        lastUserMessage.files
+      );
     }
   }, [messages, reset, handleSubmit]);
   
@@ -286,14 +295,36 @@ export function LogoGeneratorApp() {
   // Process hookProgress to ensure it has the right structure for the ProgressTracker
   const progressForTracker = useMemo(() => {
     if (!hookProgress) return null;
-    
-    // Ensure the progress data has the correct structure
+
+    // If hookProgress.stages exists and is an array, use it directly (for multi-stage progress)
+    if ('stages' in hookProgress && Array.isArray(hookProgress.stages)) {
+      return {
+        stages: hookProgress.stages as Record<string, unknown>[],
+        currentStageId: ('currentStageId' in hookProgress && typeof hookProgress.currentStageId === 'string') 
+          ? hookProgress.currentStageId 
+          : null,
+        overallProgress: hookProgress.progress ?? 0,
+        estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number'
+          ? hookProgress.estimatedTimeRemaining
+          : null
+      };
+    }
+
+    // Otherwise, adapt single-stage progress to ProgressTracker format
     return {
-      stages: Array.isArray(hookProgress.stages) ? hookProgress.stages : [],
-      currentStageId: hookProgress.currentStage || null,
-      overallProgress: typeof hookProgress.overallProgress === 'number' ? hookProgress.overallProgress : 0,
-      estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number' ? 
-        hookProgress.estimatedTimeRemaining : null
+      stages: [
+        {
+          id: hookProgress.stage ?? 'A',
+          label: hookProgress.message ?? 'Working...',
+          status: hookProgress.progress === 100 ? 'completed' : (hookProgress.progress > 0 ? 'in_progress' : 'pending'),
+          progress: hookProgress.progress ?? 0,
+        }
+      ] as Record<string, unknown>[],
+      currentStageId: (typeof hookProgress.stage === 'string') ? hookProgress.stage : 'A',
+      overallProgress: hookProgress.progress ?? 0,
+      estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number'
+        ? hookProgress.estimatedTimeRemaining
+        : null
     };
   }, [hookProgress]);
 
@@ -315,7 +346,7 @@ export function LogoGeneratorApp() {
     setSelectedIndustry,
     includeAnimations,
     setIncludeAnimations,
-    selectedAnimationOptions,
+    selectedAnimationOptions: selectedAnimationOptions,
     setSelectedAnimationOptions,
     includeUniquenessAnalysis,
     setIncludeUniquenessAnalysis,
@@ -343,11 +374,12 @@ export function LogoGeneratorApp() {
             </div>
           )}
           
-          {/* Enhanced search input with autocomplete */}
+          {/* Enhanced Search Interface with Perplexity-inspired UI */}
           <SearchInterfaceEnhanced 
             onSubmit={handleSubmit}
             isGenerating={isGenerating}
-            placeholder="Describe your brand and logo requirements..."
+            placeholder="Describe your perfect logo..."
+            className="mb-6"
           />
           
           {/* Suggestion chips - shown only when no messages */}
@@ -378,7 +410,7 @@ export function LogoGeneratorApp() {
                 {includeAnimations && (
                   <div className="space-y-4">
                     <AnimationSelector
-                      onSelectAnimation={setSelectedAnimationOptions}
+                      onSelectAnimation={(options) => setSelectedAnimationOptions(options)}
                       className="mt-4"
                     />
                     
@@ -418,7 +450,13 @@ export function LogoGeneratorApp() {
           {messages.length > 0 && (
             <div className="space-y-8">
               <StreamingResponse 
-                messages={messages.map(m => ({...m, role: m.role || m.type || 'system'}))}
+                messages={messages.map(m => ({
+                  ...m,
+                  // Ensure role is always a string for StreamingResponse
+                  role: typeof m.role === 'string' ? m.role : (typeof m.type === 'string' ? m.type : 'system'),
+                  // Pass content directly to each component, let the components handle proper rendering
+                  content: m.content
+                }))}
                 isGenerating={isGenerating}
                 previewSvg={preview}
                 progressData={progressForTracker}
@@ -458,8 +496,8 @@ export function LogoGeneratorApp() {
                         </div>
                       ) : (
                         <LogoDisplay
-                          svgCode={hookAssets.primaryLogoSVG?.svgCode || null}
-                          variants={hookAssets.primaryLogoSVG ? [{ id: 'primary', name: 'Primary', svgCode: hookAssets.primaryLogoSVG.svgCode }] : []}
+                          svgCode={hookAssets.primaryLogoSVG?.svgCode || undefined}
+                          variants={hookAssets.primaryLogoSVG ? [{ id: 'primary', name: 'Primary', svgCode: hookAssets.primaryLogoSVG.svgCode, type: 'color' }] : []}
                           className="max-w-full"
                         />
                       )}
@@ -494,7 +532,7 @@ export function LogoGeneratorApp() {
                   {/* Smart follow-ups and refinements */}
                   <div className="grid md:grid-cols-2 gap-6 mt-8">
                     <SmartFollowUps 
-                      onSelectFollowUp={handleSubmit}
+                      onSelectFollowUp={(prompt: string) => { handleSubmit(prompt); }}
                       brandName={hookAssets.brandName || "Your Brand"}
                       styleType="modern"
                       colorPalette="blue"
@@ -529,20 +567,20 @@ export function LogoGeneratorApp() {
                   <div id="animation-showcase" className="mt-8 border-t pt-6">
                     <H3 className="mb-4">Animation Options</H3>
                     <AnimationShowcase
-                      onSelectAnimation={(options) => {
-                        setSelectedAnimationOptions(options);
-                        toast({
-                          title: "Animation Selected",
-                          description: "Animation has been applied to your logo."
-                        });
-                      }}
-                      svgPreview={hookAssets.primaryLogoSVG?.svgCode || null}
-                    />
+                        onSelectAnimation={(animationOptions) => {
+                          setSelectedAnimationOptions(animationOptions as GetAnimationsOptions); // Cast to the correct type
+                          toast({
+                            title: "Animation Selected",
+                            description: "Animation has been applied to your logo."
+                          });
+                        }}
+                        svgPreview={hookAssets.primaryLogoSVG?.svgCode || null}
+                      />
                   </div>
                   
                   {/* What's next? */}
                   <div className="mt-8 border-t pt-6">
-                    <H3 className="mb-3">What's next?</H3>
+                    <H3 className="mb-3">What&rsquo;s next?</H3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Card className="p-4 hover:bg-muted/30 transition-colors">
                         <H4 className="flex items-center m-0">
@@ -599,6 +637,6 @@ export function LogoGeneratorApp() {
 }
 
 // Create a separate provider component for better code organization
-export function LogoGeneratorProvider({ children }: { children: React.ReactNode }) {
-  return <LogoGeneratorApp>{children}</LogoGeneratorApp>;
+export function LogoGeneratorProvider() {
+  return <LogoGeneratorApp />;
 }

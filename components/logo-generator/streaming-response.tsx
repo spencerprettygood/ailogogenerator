@@ -51,7 +51,8 @@ export function StreamingResponse({
     "E": "Validating and optimizing logo...",
     "F": "Creating variants and formats...",
     "G": "Preparing brand guidelines...",
-    "H": "Packaging assets for download..."
+    "H": "Packaging assets for download...",
+    "cached": "Retrieved from cache"
   });
   
   // Scroll to bottom when messages change
@@ -97,6 +98,77 @@ export function StreamingResponse({
     return `${Math.round(seconds / 60)} minute${Math.round(seconds / 60) !== 1 ? 's' : ''}`;
   };
   
+  // Safely render message content of any type
+  const renderMessageContent = (content: any) => {
+    // Handle null or undefined
+    if (content === null || content === undefined) {
+      return '';
+    }
+    
+    // Handle string content (most common case)
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    // Handle object content
+    if (typeof content === 'object') {
+      // For arrays, map and join the content
+      if (Array.isArray(content)) {
+        return content.map((item, index) => {
+          // Handle string items directly
+          if (typeof item === 'string') {
+            return <span key={index}>{item}</span>;
+          }
+          
+          // Handle objects with text property
+          if (item && typeof item === 'object') {
+            if ('text' in item && typeof item.text === 'string') {
+              return <span key={index}>{item.text}</span>;
+            }
+            
+            if ('message' in item && typeof item.message === 'string') {
+              return <span key={index}>{item.message}</span>;
+            }
+            
+            // Handle other objects by stringifying
+            try {
+              return (
+                <span key={index} className="text-xs bg-muted/50 px-1 py-0.5 rounded">
+                  {JSON.stringify(item)}
+                </span>
+              );
+            } catch {
+              return <span key={index}>[Complex object]</span>;
+            }
+          }
+          
+          // Fallback for any other type
+          return <span key={index}>{String(item)}</span>;
+        });
+      }
+      
+      // For objects with a message property, return that
+      if ('message' in content && typeof content.message === 'string') {
+        return content.message;
+      }
+      
+      // For objects with a text property, return that
+      if ('text' in content && typeof content.text === 'string') {
+        return content.text;
+      }
+      
+      // For other objects, stringify them
+      try {
+        return <pre className="text-xs bg-muted p-2 rounded overflow-auto">{JSON.stringify(content, null, 2)}</pre>;
+      } catch (error) {
+        return '[Object cannot be displayed]';
+      }
+    }
+    
+    // Handle other primitive types
+    return String(content);
+  };
+  
   return (
     <div className={`w-full max-w-5xl mx-auto space-y-6 ${className}`}>
       {/* User query card */}
@@ -104,7 +176,7 @@ export function StreamingResponse({
         <Card className="p-4 bg-muted/30">
           <div className="text-sm text-muted-foreground mb-1">Your query</div>
           <div className="font-medium">
-            {lastUserMessage.content}
+{renderMessageContent(lastUserMessage.content)}
             {lastUserFiles.length > 0 && (
               <span className="text-sm text-muted-foreground ml-2">
                 (+ {lastUserFiles.length} image{lastUserFiles.length !== 1 ? 's' : ''})
@@ -169,7 +241,7 @@ export function StreamingResponse({
             <div className="w-full bg-muted rounded-full h-2.5 mb-2">
               <div 
                 className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-in-out"
-                style={{ width: `${progressData.overallProgress || 0}%` }}
+                style={{ width: `${typeof progressData.overallProgress === 'number' && !isNaN(progressData.overallProgress) ? progressData.overallProgress : 0}%` }}
               />
             </div>
             <div className="text-xs text-right text-muted-foreground">
@@ -180,13 +252,63 @@ export function StreamingResponse({
           {/* Detailed progress view */}
           {showDetails && (
             <div className="border-t p-4">
-              <ProgressTracker
-                stages={progressData.stages || []}
-                currentStageId={progressData.currentStageId}
-                overallProgress={progressData.overallProgress || 0}
-                estimatedRemainingTime={progressData.estimatedTimeRemaining}
-              />
-              
+              {Array.isArray(progressData.stages) && progressData.stages.length > 0 ? (
+                <ProgressTracker
+                  // Ensure each stage has a valid structure
+                  stages={progressData.stages.map(stage => {
+                    // Handle if stage is not an object
+                    if (typeof stage !== 'object' || stage === null) {
+                      return { 
+                        id: 'unknown', 
+                        name: 'Unknown Stage',
+                        status: 'pending',
+                        progress: 0
+                      };
+                    }
+                    
+                    // Clone the stage to avoid directly modifying props
+                    const normalizedStage = { ...stage };
+                    
+                    // Ensure required properties exist
+                    if (!('id' in normalizedStage)) {
+                      normalizedStage.id = 'unknown';
+                    }
+                    
+                    if (!('name' in normalizedStage) && !('label' in normalizedStage)) {
+                      normalizedStage.name = `Stage ${normalizedStage.id || 'Unknown'}`;
+                    } else if (!('name' in normalizedStage) && ('label' in normalizedStage)) {
+                      // Safely access label property
+                      const label = typeof normalizedStage.label === 'string' ? normalizedStage.label : `Stage ${normalizedStage.id || 'Unknown'}`;
+                      normalizedStage.name = label;
+                    }
+                    
+                    if (!('status' in normalizedStage)) {
+                      normalizedStage.status = 'pending';
+                    } else {
+                      // Normalize status values
+                      const status = normalizedStage.status;
+                      if (status === 'in_progress') {
+                        normalizedStage.status = 'in-progress';
+                      } else if (!['pending', 'in-progress', 'completed', 'error'].includes(String(status))) {
+                        normalizedStage.status = 'pending';
+                      }
+                    }
+                    
+                    // Ensure progress is a number
+                    if (!('progress' in normalizedStage) || typeof normalizedStage.progress !== 'number' || isNaN(normalizedStage.progress)) {
+                      normalizedStage.progress = 0;
+                    }
+                    
+                    return normalizedStage;
+                  })}
+                  currentStageId={progressData.currentStageId}
+                  overallProgress={progressData.overallProgress || 0}
+                  estimatedRemainingTime={progressData.estimatedTimeRemaining}
+                />
+              ) : (
+                <div className="text-xs text-muted-foreground">No progress stages available.</div>
+              )}
+
               {/* Current stage explanation */}
               {currentStage && (
                 <div className="mt-4 bg-muted/30 rounded-lg p-3">
@@ -262,12 +384,21 @@ export function StreamingResponse({
       {/* Response messages with real-time updates */}
       <div className="space-y-4 mt-6">
         {responseMessages.map((message) => {
+          // Create a safe version of the message with properly handled content
+          const safeMessage = {
+            ...message,
+            // Ensure message has an id
+            id: message.id || `msg-${Math.random().toString(36).substring(2, 9)}`
+            // Don't modify content here - let each component handle content properly
+          };
+
+          // Render the appropriate message component based on role
           if (message.role === 'user') {
-            return <UserMessage key={message.id} message={message} />;
+            return <UserMessage key={safeMessage.id} message={safeMessage} />;
           } else if (message.role === 'assistant') {
-            return <AssistantMessage key={message.id} message={message} />;
+            return <AssistantMessage key={safeMessage.id} message={safeMessage} />;
           } else {
-            return <SystemMessage key={message.id} message={message} />;
+            return <SystemMessage key={safeMessage.id} message={safeMessage} />;
           }
         })}
         

@@ -128,9 +128,9 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
       count: memoryMetrics.length,
       avgHeapUsed: memoryMetrics.reduce((sum, m) => sum + m.heapUsed, 0) / memoryMetrics.length,
       avgHeapTotal: memoryMetrics.reduce((sum, m) => sum + m.heapTotal, 0) / memoryMetrics.length,
-      lastRecorded: memoryMetrics.reduce((latest, m) => 
-        m.timestamp > latest.timestamp ? m : latest
-      , memoryMetrics[0])
+      lastRecorded: memoryMetrics.length > 0 ? memoryMetrics.reduce((latest, m) => 
+        latest && m.timestamp > latest.timestamp ? m : (latest || m)
+      , memoryMetrics[0]) : null
     } : null;
     
     return {
@@ -375,26 +375,28 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Heap Used:</span>
-                <span className="font-medium">{formatBytes(summaries.memory.lastRecorded.heapUsed)}</span>
+                <span className="font-medium">{summaries.memory.lastRecorded ? formatBytes(summaries.memory.lastRecorded.heapUsed) : 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Heap Total:</span>
-                <span className="font-medium">{formatBytes(summaries.memory.lastRecorded.heapTotal)}</span>
+                <span className="font-medium">{summaries.memory.lastRecorded ? formatBytes(summaries.memory.lastRecorded.heapTotal) : 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Memory Usage:</span>
                 <span className="font-medium">
-                  {(summaries.memory.lastRecorded.heapUsed / summaries.memory.lastRecorded.heapTotal * 100).toFixed(1)}%
+                  {summaries.memory.lastRecorded ? 
+                    ((summaries.memory.lastRecorded.heapUsed / summaries.memory.lastRecorded.heapTotal * 100) || 0).toFixed(1) + '%' 
+                    : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">RSS:</span>
-                <span className="font-medium">{formatBytes(summaries.memory.lastRecorded.rss)}</span>
+                <span className="font-medium">{summaries.memory.lastRecorded ? formatBytes(summaries.memory.lastRecorded.rss || 0) : 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Last Updated:</span>
                 <span className="font-medium">
-                  {new Date(summaries.memory.lastRecorded.timestamp).toLocaleTimeString()}
+                  {summaries.memory.lastRecorded ? new Date(summaries.memory.lastRecorded.timestamp).toLocaleTimeString() : 'N/A'}
                 </span>
               </div>
             </div>

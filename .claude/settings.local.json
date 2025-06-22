@@ -23,7 +23,9 @@
       "Bash(npm run typecheck:*)",
       "Bash(touch:*)",
       "Bash(npm run dev:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:tailwindcss.com)"
     ],
     "deny": []
   }

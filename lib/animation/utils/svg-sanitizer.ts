@@ -64,67 +64,12 @@ export function sanitizeSVG(svgContent: string): string {
     console.warn(`SVG size exceeds maximum allowed size (${SECURITY_CONFIG.maxSvgSize} bytes)`);
   }
   
-  let sanitized = svgContent;
-  
-  // Server-side sanitization when DOMParser is not available
-  if (typeof DOMParser === 'undefined') {
-    // Use regex-based sanitization as fallback
-    return regexSanitize(svgContent);
-  }
-  
-  try {
-    // Parse SVG using DOMParser
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    
-    // Check for parsing errors
-    const parserError = doc.querySelector('parsererror');
-    if (parserError) {
-      throw new Error('Invalid SVG: ' + parserError.textContent);
-    }
-    
-    // Remove disallowed elements
-    SECURITY_CONFIG.disallowedElements.forEach(tagName => {
-      const elements = doc.getElementsByTagName(tagName);
-      for (let i = elements.length - 1; i >= 0; i--) {
-        elements[i].remove();
-      }
-    });
-    
-    // Remove disallowed attributes
-    const allElements = doc.getElementsByTagName('*');
-    for (let i = 0; i < allElements.length; i++) {
-      const element = allElements[i];
-      for (let j = element.attributes.length - 1; j >= 0; j--) {
-        const attrName = element.attributes[j].name.toLowerCase();
-        const attrValue = element.attributes[j].value.toLowerCase();
-        
-        // Check if attribute name or value contains disallowed content
-        const isDisallowed = SECURITY_CONFIG.disallowedAttributes.some(disallowed => 
-          attrName.includes(disallowed) || attrValue.includes(disallowed)
-        );
-        
-        if (isDisallowed) {
-          element.removeAttribute(element.attributes[j].name);
-        }
-      }
-    }
-    
-    // Serialize back to string
-    const serializer = new XMLSerializer();
-    sanitized = serializer.serializeToString(doc);
-    
-  } catch (error) {
-    console.error('Error sanitizing SVG:', error);
-    // Fall back to regex-based sanitization
-    sanitized = regexSanitize(svgContent);
-  }
-  
-  return sanitized;
+  // Always use regex-based sanitization for server-side compatibility
+  return regexSanitize(svgContent);
 }
 
 /**
- * Fallback sanitization using regex when DOM methods are not available
+ * Sanitization using regex for server-side compatibility
  * 
  * @param svgContent - The SVG content to sanitize
  * @returns Sanitized SVG content
@@ -239,30 +184,15 @@ export function validateSVG(svgContent: string): { isValid: boolean; error?: str
     return { isValid: false, error: 'Content is not a valid SVG (missing root svg element)' };
   }
   
-  try {
-    // Try to parse SVG
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    
-    // Check for parsing errors
-    const parserError = doc.querySelector('parsererror');
-    if (parserError) {
-      return { isValid: false, error: 'SVG parsing error: ' + parserError.textContent };
-    }
-    
-    // Check for root SVG element
-    const svgElement = doc.querySelector('svg');
-    if (!svgElement) {
-      return { isValid: false, error: 'No SVG element found in content' };
-    }
-    
-    return { isValid: true };
-  } catch (error) {
-    return { 
-      isValid: false, 
-      error: `Error validating SVG: ${error instanceof Error ? error.message : String(error)}` 
-    };
+  // Check for basic SVG structure using regex
+  const hasClosingTag = svgContent.includes('</svg>');
+  if (!hasClosingTag) {
+    return { isValid: false, error: 'Invalid SVG: missing closing </svg> tag' };
   }
+  
+  // Additional basic checks could be added here
+  
+  return { isValid: true };
 }
 
 /**
@@ -306,7 +236,7 @@ export function prepareSVGForAnimation(svgContent: string, animationType: string
 }
 
 /**
- * Extract all elements from an SVG that can be animated
+ * Extract all elements from an SVG that can be animated using regex
  * 
  * @param svgContent - The SVG content to analyze
  * @returns Array of element IDs or selectors that can be animated
@@ -314,42 +244,37 @@ export function prepareSVGForAnimation(svgContent: string, animationType: string
 export function extractAnimatableElements(svgContent: string): string[] {
   const animatableElements: string[] = [];
   
-  try {
-    // Parse SVG
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    
-    // Get all elements with IDs
-    const elementsWithId = doc.querySelectorAll('[id]');
-    elementsWithId.forEach(el => {
-      animatableElements.push(`#${el.id}`);
-    });
-    
-    // Get all paths, circles, rects without IDs
-    const elementTypes = ['path', 'circle', 'rect', 'polygon', 'ellipse', 'line', 'polyline', 'text', 'g'];
-    elementTypes.forEach(type => {
-      const elements = doc.querySelectorAll(type + ':not([id])');
-      
-      if (elements.length === 1) {
-        // If there's only one element of this type, we can target it directly
-        animatableElements.push(type);
-      } else if (elements.length > 1) {
-        // For multiple elements, include them by index
-        elements.forEach((_, index) => {
-          animatableElements.push(`${type}:nth-of-type(${index + 1})`);
-        });
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error extracting animatable elements:', error);
+  // Extract IDs using regex
+  const idRegex = /id\s*=\s*["']([^"']+)["']/g;
+  let match;
+  while ((match = idRegex.exec(svgContent)) !== null) {
+    animatableElements.push(`#${match[1]}`);
   }
+  
+  // Add generic element selectors for common SVG elements
+  const elementTypes = ['path', 'circle', 'rect', 'polygon', 'ellipse', 'line', 'polyline', 'text', 'g'];
+  elementTypes.forEach(type => {
+    // Count occurrences of this element type
+    const regex = new RegExp(`<${type}[^>]*>`, 'g');
+    const matches = svgContent.match(regex);
+    const count = matches ? matches.length : 0;
+    
+    if (count === 1) {
+      // If there's only one, we can target it directly
+      animatableElements.push(type);
+    } else if (count > 1) {
+      // For multiple elements, suggest nth-of-type selectors
+      for (let i = 1; i <= count; i++) {
+        animatableElements.push(`${type}:nth-of-type(${i})`);
+      }
+    }
+  });
   
   return animatableElements;
 }
 
 /**
- * Check if an SVG supports a specific animation type
+ * Check if an SVG supports a specific animation type using regex
  * 
  * @param svgContent - The SVG content to check
  * @param animationType - The animation type to check compatibility for
@@ -359,48 +284,32 @@ export function checkAnimationCompatibility(
   svgContent: string, 
   animationType: string
 ): { isCompatible: boolean; reason?: string } {
-  try {
-    // Parse SVG
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    
-    // Check for parsing errors
-    const parserError = doc.querySelector('parsererror');
-    if (parserError) {
-      return { isCompatible: false, reason: 'Invalid SVG: parsing error' };
-    }
-    
-    switch (animationType) {
-      case 'draw':
-        // Check if SVG has path elements for draw animation
-        const paths = doc.querySelectorAll('path');
-        if (paths.length === 0) {
-          return { isCompatible: false, reason: 'Draw animation requires path elements' };
-        }
-        break;
-        
-      case 'morph':
-        // Check if SVG has path elements for morphing
-        const morphPaths = doc.querySelectorAll('path');
-        if (morphPaths.length === 0) {
-          return { isCompatible: false, reason: 'Morph animation requires path elements' };
-        }
-        break;
-        
-      case 'typewriter':
-        // Check if SVG has text elements for typewriter effect
-        const textElements = doc.querySelectorAll('text');
-        if (textElements.length === 0) {
-          return { isCompatible: false, reason: 'Typewriter animation requires text elements' };
-        }
-        break;
-    }
-    
-    return { isCompatible: true };
-  } catch (error) {
-    return { 
-      isCompatible: false, 
-      reason: `Error checking compatibility: ${error instanceof Error ? error.message : String(error)}` 
-    };
+  
+  switch (animationType) {
+    case 'draw':
+      // Check if SVG has path elements for draw animation
+      const hasPaths = /<path[^>]*>/i.test(svgContent);
+      if (!hasPaths) {
+        return { isCompatible: false, reason: 'Draw animation requires path elements' };
+      }
+      break;
+      
+    case 'morph':
+      // Check if SVG has path elements for morphing
+      const hasMorphPaths = /<path[^>]*>/i.test(svgContent);
+      if (!hasMorphPaths) {
+        return { isCompatible: false, reason: 'Morph animation requires path elements' };
+      }
+      break;
+      
+    case 'typewriter':
+      // Check if SVG has text elements for typewriter effect
+      const hasText = /<text[^>]*>/i.test(svgContent);
+      if (!hasText) {
+        return { isCompatible: false, reason: 'Typewriter animation requires text elements' };
+      }
+      break;
   }
+  
+  return { isCompatible: true };
 }

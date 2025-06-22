@@ -1,215 +1,150 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { useIndustryAnalysis } from '../../lib/hooks/use-industry-analysis';
-import { IndustryAnalysis } from './industry-analysis';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, XCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  Search, 
+  ArrowRight, 
+  BarChart, 
+  TrendingUp, 
+  Check,
+  Loader2
+} from 'lucide-react';
+
+// Common industries for logo design
+const COMMON_INDUSTRIES = [
+  'technology', 'finance', 'healthcare', 'food & beverage', 'retail',
+  'education', 'real estate', 'fitness', 'beauty', 'e-commerce',
+  'gaming', 'media', 'consulting', 'travel', 'non-profit'
+];
 
 interface IndustrySearchInterfaceProps {
-  brandName: string;
+  brandName?: string;
   designSpec?: any;
-  svgCode?: string;
-  onIndustrySelect?: (industry: string) => void;
+  svgCode?: string | null;
+  onIndustrySelect: (industry: string) => void;
   className?: string;
 }
 
 export function IndustrySearchInterface({
-  brandName,
+  brandName = 'Your brand',
   designSpec,
   svgCode,
   onIndustrySelect,
-  className = ''
+  className = '',
 }: IndustrySearchInterfaceProps) {
-  const [industryQuery, setIndustryQuery] = useState('');
-  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
+  const [analysisStarted, setAnalysisStarted] = useState(false);
   
-  const {
-    isLoading,
-    error,
-    industryName,
-    confidence,
-    competitorLogos,
-    industryTrends,
-    designRecommendations,
-    uniquenessScore,
-    conventionScore,
-    balanceAnalysis,
-    analyzeLogoInIndustry,
-    detectIndustry
-  } = useIndustryAnalysis();
-
-  // Common industries for suggestions
-  const COMMON_INDUSTRIES = [
-    'Technology', 'Finance', 'Healthcare', 'Education', 'Retail',
-    'Food & Beverage', 'Real Estate', 'Entertainment', 'Manufacturing',
-    'Consulting', 'Transportation', 'Hospitality', 'Media', 'Fashion',
-    'Sports', 'Energy', 'Agriculture', 'Construction', 'Legal',
-    'Non-profit', 'Beauty', 'Automotive', 'Telecommunications'
-  ];
-
-  // Auto-detect industry when designSpec changes
-  useEffect(() => {
-    if (designSpec && !industryName && !searchPerformed) {
-      handleAutoDetectIndustry();
-    }
-  }, [designSpec]);
-
-  const handleSearch = async () => {
-    if (!industryQuery.trim()) return;
-    
-    setSearchPerformed(true);
-    
-    try {
-      if (designSpec) {
-        await analyzeLogoInIndustry(
-          brandName,
-          industryQuery,
-          designSpec,
-          svgCode
-        );
-        
-        // Notify parent component of industry selection
-        if (onIndustrySelect) {
-          onIndustrySelect(industryQuery);
-        }
-      }
-    } catch (error) {
-      console.error('Error analyzing industry:', error);
+  // Filter industries based on search query
+  const filteredIndustries = COMMON_INDUSTRIES.filter(industry =>
+    industry.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setIsSearching(true);
+      // Simulate search delay
+      setTimeout(() => {
+        setIsSearching(false);
+      }, 1500);
     }
   };
-
-  const handleAutoDetectIndustry = async () => {
-    if (!designSpec) return;
-    
-    try {
-      const { industry, confidence } = await detectIndustry(designSpec);
-      setIndustryQuery(industry);
-      
-      // Automatically perform the search with the detected industry
-      await analyzeLogoInIndustry(
-        brandName,
-        industry,
-        designSpec,
-        svgCode
-      );
-      
-      setSearchPerformed(true);
-      
-      // Notify parent component of industry selection
-      if (onIndustrySelect) {
-        onIndustrySelect(industry);
-      }
-    } catch (error) {
-      console.error('Error auto-detecting industry:', error);
+  
+  const handleIndustrySelect = (industry: string) => {
+    setSelectedIndustry(industry);
+  };
+  
+  const handleAnalyzeClick = () => {
+    if (selectedIndustry) {
+      setAnalysisStarted(true);
+      onIndustrySelect(selectedIndustry);
     }
   };
-
-  const clearSearch = () => {
-    setIndustryQuery('');
-    setSearchPerformed(false);
-  };
-
-  const selectIndustrySuggestion = (industry: string) => {
-    setIndustryQuery(industry);
-    // Automatically search with the selected industry
-    setTimeout(() => {
-      handleSearch();
-    }, 100);
-  };
-
+  
   return (
-    <div className={className}>
-      <Card className="p-4">
-        <div className="mb-4">
-          <h3 className="font-medium mb-2">Industry Analysis</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Analyze your logo design in the context of industry competitors and trends to ensure uniqueness while following conventions.
-          </p>
-          
-          <div className="flex space-x-2">
-            <div className="relative flex-grow">
-              <Input
-                placeholder="Enter industry (e.g., Technology, Healthcare, Finance)"
-                value={industryQuery}
-                onChange={(e) => setIndustryQuery(e.target.value)}
-                className="pr-8"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              {industryQuery && (
-                <button 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={clearSearch}
-                >
-                  <XCircle className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            
-            <Button 
-              onClick={handleSearch}
-              disabled={isLoading || !industryQuery.trim()}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4 mr-2" />
-              )}
-              Analyze
-            </Button>
-          </div>
-          
-          {error && (
-            <p className="text-sm text-red-500 mt-2">
-              Error: {error}
-            </p>
-          )}
-          
-          {!searchPerformed && !isLoading && (
-            <div className="mt-3">
-              <p className="text-xs text-muted-foreground mb-2">
-                Popular industries:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {COMMON_INDUSTRIES.slice(0, 10).map((industry) => (
-                  <Button
-                    key={industry}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs py-1 h-auto"
-                    onClick={() => selectIndustrySuggestion(industry)}
-                  >
-                    {industry}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Results Display */}
-        {searchPerformed && !isLoading && !error && industryName && (
-          <IndustryAnalysis
-            industryName={industryName}
-            confidence={confidence}
-            competitorLogos={competitorLogos}
-            industryTrends={industryTrends}
-            designRecommendations={designRecommendations}
-            uniquenessScore={uniquenessScore}
-            conventionScore={conventionScore}
-            balanceAnalysis={balanceAnalysis}
+    <Card className={`p-4 ${className}`}>
+      <div className="mb-3 text-sm font-medium">
+        Analyze how your logo compares to industry standards
+      </div>
+      
+      <form onSubmit={handleSearch} className="mb-3">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search industry (e.g., technology, retail)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10"
           />
-        )}
-        
-        {isLoading && (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Analyzing industry context...</p>
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full aspect-square"
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </form>
+      
+      {!analysisStarted ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+            {filteredIndustries.map((industry) => (
+              <Button
+                key={industry}
+                variant={selectedIndustry === industry ? "default" : "outline"}
+                size="sm"
+                className="justify-start"
+                onClick={() => handleIndustrySelect(industry)}
+              >
+                {selectedIndustry === industry && (
+                  <Check className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                <span className="truncate">{industry}</span>
+              </Button>
+            ))}
           </div>
-        )}
-      </Card>
-    </div>
+          
+          <Button
+            onClick={handleAnalyzeClick}
+            disabled={!selectedIndustry}
+            className="w-full"
+          >
+            <BarChart className="h-4 w-4 mr-2" />
+            Analyze {selectedIndustry || 'selected industry'}
+          </Button>
+        </>
+      ) : (
+        <div className="space-y-3 animate-in fade-in">
+          <div className="flex items-center text-sm">
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <span>Analyzing {brandName} against {selectedIndustry} industry standards...</span>
+          </div>
+          
+          <div className="bg-muted/30 rounded p-2 text-xs text-muted-foreground space-y-2">
+            <div className="flex items-start">
+              <TrendingUp className="h-3.5 w-3.5 mt-0.5 mr-1.5" />
+              <span>Comparing to leading {selectedIndustry} logos</span>
+            </div>
+            <div className="flex items-start">
+              <BarChart className="h-3.5 w-3.5 mt-0.5 mr-1.5" />
+              <span>Evaluating uniqueness vs. industry conventions</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }

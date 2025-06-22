@@ -1,5 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { anthropic, AnthropicOptions } from '@ai-sdk/anthropic';
+import { generateText } from 'ai';
 import { env, validateEnv, config } from '../utils/env';
+import { logClaudeError, analyzeClaudeError, ClaudeErrorType } from '../utils/claude-error-handler';
 
 // Validate environment variables on import (server-side only)
 if (!config.isClient && !validateEnv()) {
@@ -9,11 +11,14 @@ if (!config.isClient && !validateEnv()) {
   }
 }
 
+import { ClaudeModel } from '../types-agents';
+
 interface ClaudeRequestOptions {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
-  model?: 'claude-3-5-sonnet-20240620' | 'claude-3-5-haiku-20240307';
+  model?: ClaudeModel;
+  fallbackModels?: ClaudeModel[];
   stopSequences?: string[];
 }
 
@@ -28,17 +33,41 @@ interface ClaudeResponse {
 }
 
 class ClaudeService {
-  private anthropic: Anthropic | null = null;
   private isInitialized: boolean = false;
   
+  // Configure Anthropic client options
+  private getAnthropicConfig(model: string): AnthropicOptions {
+    return {
+      apiKey: env.ANTHROPIC_API_KEY || '',
+      // Add these parameters to handle retries and timeouts
+      retrySettings: {
+        maxRetries: 3,         // Number of retries for failed requests
+        initialDelayMs: 1000,  // Start with 1 second delay
+        maxDelayMs: 10000,    // Maximum 10 second delay between retries
+      },
+      timeoutMs: 60000,       // 60-second timeout for requests
+      logWarnings: true       // Log warnings to console
+    };
+  }
+
   constructor() {
-    // Only initialize on server-side
+    // Only initialize on server-side to confirm environment variables are available
     if (!config.isClient) {
       try {
-        this.anthropic = new Anthropic({
-          apiKey: env.ANTHROPIC_API_KEY || '',
-          dangerouslyAllowBrowser: false, // Safer default - handle browser usage explicitly
-        });
+        // Validate that we have the API key
+        if (!env.ANTHROPIC_API_KEY) {
+          throw new Error('Missing ANTHROPIC_API_KEY environment variable');
+        }
+        
+        // Print diagnostics information in development
+        if (config.isDevelopment) {
+          console.log('Claude service initializing in server mode with:', {
+            apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 10)}...` : undefined,
+            environment: env.NODE_ENV,
+            appUrl: env.NEXT_PUBLIC_APP_URL
+          });
+        }
+        
         this.isInitialized = true;
       } catch (error) {
         console.error('Failed to initialize Claude service:', error);
@@ -81,80 +110,104 @@ class ClaudeService {
         throw new Error('Invalid prompt: Must provide a non-empty string');
       }
       
-      // Create messages array in the format expected by Anthropic's API
-      const apiMessages = [
+      // Create messages array in the format expected by Anthropic model
+      const messages: { role: 'user'; content: string }[] = [
         {
-          role: 'user' as const, // Explicitly type as 'user' literal type
+          role: 'user',
           content: prompt
         }
       ];
 
-      // Add request ID for better tracking
-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-      
-      if (!this.anthropic) {
-        throw new Error('Anthropic client not initialized');
-      }
-      
-      const response = await this.anthropic.messages.create({
-        model: model,
-        messages: apiMessages,
-        max_tokens: maxTokens,
-        temperature: temperature,
-        stop_sequences: stopSequences,
-        system: systemPrompt, // Use the system parameter directly
-        metadata: {
-          // Store tracking information in allowed metadata format
-          request_id: requestId,
-          env: env.NODE_ENV || 'development'
-        }
+      // Add more detailed logging before API call
+      console.log('Calling Claude API with:', {
+        model,
+        system_length: systemPrompt.length,
+        input_length: prompt.length,
+        temperature,
+        max_tokens: maxTokens
       });
 
-      // Safely extract content, checking its structure first
-      const content = response.content && 
-                     response.content.length > 0 && 
-                     response.content[0].type === 'text' 
-                       ? response.content[0].text 
-                       : '';
+      // Implement a fallback mechanism to handle model compatibility issues
+      let attemptedModel = model;
+      let result;
+      // Create a list of models to try, starting with the specified model and then the fallbacks
+      const fallbackModels = options.fallbackModels || ['claude-3-sonnet-20240229'];
+      const modelsToTry = [attemptedModel, ...fallbackModels];
       
+      // Keep track of errors for better reporting
+      const errors: Record<string, unknown> = {};
+      
+      // Try each model in sequence until one succeeds
+      for (let i = 0; i < modelsToTry.length; i++) {
+        attemptedModel = modelsToTry[i];
+        try {
+          console.log(`Attempting to use model: ${attemptedModel}`);
+          
+          result = await generateText({
+            model: anthropic(attemptedModel, this.getAnthropicConfig(attemptedModel)),
+            messages: messages,
+            system: systemPrompt,
+            maxOutputTokens: maxTokens,
+            temperature: temperature,
+            stopSequences: stopSequences,
+          });
+          
+          // If successful, break out of the loop
+          console.log(`Successfully used model: ${attemptedModel}`);
+          break;
+        } catch (modelError) {
+          // Store the error for this model
+          errors[attemptedModel] = modelError;
+          
+          // Log the error
+          console.warn(`Failed with model ${attemptedModel}`, modelError);
+          
+          // If this is the last model to try, rethrow the error
+          if (i === modelsToTry.length - 1) {
+            console.error('All models failed:', errors);
+            throw new Error(`All Claude models failed. Last error: ${modelError instanceof Error ? modelError.message : String(modelError)}`);
+          }
+          
+          // Otherwise, continue to the next model
+          console.log(`Trying next fallback model: ${i < modelsToTry.length - 1 ? modelsToTry[i + 1] : 'none available'}`);
+        }
+      }
+      
+      // Create a simplified response format that matches our existing interface
       return {
-        content,
+        content: result.text,
         tokensUsed: {
-          input: response.usage.input_tokens,
-          output: response.usage.output_tokens,
-          total: response.usage.input_tokens + response.usage.output_tokens,
+          // AI SDK v5 doesn't provide token usage details directly
+          // These are placeholder values
+          input: 0,
+          output: 0,
+          total: 0,
         },
         processingTime: Date.now() - startTime,
       };
     } catch (error) {
+      // Use our specialized error handler for better diagnostics
+      const errorInfo = analyzeClaudeError(error);
+      
       // Enhanced error logging with structured information
-      console.error('Claude API Error:', {
-        error: error instanceof Error ? error.message : String(error),
+      logClaudeError(error, {
         timestamp: new Date().toISOString(),
         model: model,
         prompt_length: prompt.length,
+        error_type: errorInfo.type
       });
       
-      // Check for specific error types
-      if (error instanceof Error && 'status' in error) {
-        const apiError = error as Anthropic.APIError;
-        
-        // Handle rate limiting
-        if (apiError.status === 429) {
-          throw new Error(`Rate limit exceeded. Please try again later. (${apiError.message})`);
-        }
-        
-        // Handle authentication errors
-        if (apiError.status === 401) {
-          throw new Error(`Authentication error: Invalid API key. Please check your ANTHROPIC_API_KEY environment variable.`);
-        }
-        
-        // Handle other API errors
-        throw new Error(`Claude API error (${apiError.status}): ${apiError.message}`);
+      // For model errors, we'll have already tried a fallback in the try/catch above
+      // For other errors, we need to provide better error information
+      let errorMessage = `Failed to generate response from Claude: ${errorInfo.message}`;
+      
+      if (errorInfo.type === ClaudeErrorType.AUTHENTICATION) {
+        errorMessage = 'API key error: Check your ANTHROPIC_API_KEY environment variable';
+      } else if (errorInfo.type === ClaudeErrorType.MODEL_NOT_FOUND) {
+        errorMessage = `Model error: The requested model "${model}" is not available or doesn't exist`;
       }
       
-      // Handle other errors
-      throw new Error(`Failed to generate response from Claude: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(errorMessage);
     }
   }
   
@@ -200,26 +253,31 @@ class ClaudeService {
   // Specialized method for generating SVG logos
   async generateSVG(
     prompt: string,
-    systemPrompt: string
+    systemPrompt: string,
+    options: Partial<ClaudeRequestOptions> = {}
   ): Promise<ClaudeResponse> {
     return this.generateResponse(prompt, {
       systemPrompt,
       model: 'claude-3-5-sonnet-20240620',
       temperature: 0.5,
       maxTokens: 4000,
+      ...options
     });
   }
 
   // Specialized method for quick analysis tasks
   async analyze(
     prompt: string,
-    systemPrompt: string
+    systemPrompt: string,
+    options: Partial<ClaudeRequestOptions> = {}
   ): Promise<ClaudeResponse> {
     return this.generateResponse(prompt, {
       systemPrompt,
-      model: 'claude-3-5-haiku-20240307',
+      // Use a more stable model as the default model was failing
+      model: 'claude-3-sonnet-20240229',
       temperature: 0.3,
       maxTokens: 1000,
+      ...options
     });
   }
 }

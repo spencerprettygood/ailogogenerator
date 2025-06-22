@@ -34,8 +34,9 @@ export abstract class BaseAgent implements Agent {
   config: AgentConfig;
   protected context?: AgentContext;
   protected systemPrompt: string = '';
+  private progressCallback?: (percent: number, message: string) => void;
   
-  constructor(type: string, capabilities: AgentCapability[], config?: Partial<AgentConfig>) {
+  constructor(type: string, capabilities: AgentCapability[] = [], config?: Partial<AgentConfig>) {
     this.id = `${type}-${nanoid(6)}`;
     this.type = type;
     this.capabilities = capabilities;
@@ -73,6 +74,11 @@ export abstract class BaseAgent implements Agent {
       endTime: 0
     };
     
+    // Set progress callback if provided in context
+    if (context.progressCallback) {
+      this.progressCallback = context.progressCallback;
+    }
+    
     // Allow derived classes to perform additional initialization
     await this.onInitialize();
   }
@@ -85,6 +91,42 @@ export abstract class BaseAgent implements Agent {
   }
   
   /**
+   * Set a progress callback function to report progress updates
+   */
+  setProgressCallback(callback: (percent: number, message: string) => void): void {
+    this.progressCallback = callback;
+  }
+  
+  /**
+   * Report progress of the agent's execution
+   * 
+   * @param percent - Percentage of completion (0-100)
+   * @param message - Status message describing current progress
+   */
+  protected reportProgress(percent: number, message: string): void {
+    // Update agent status based on progress
+    if (percent === 100) {
+      this.status = 'completed';
+    } else if (percent === 0 && message.toLowerCase().includes('fail')) {
+      this.status = 'failed';
+    } else {
+      this.status = 'working';
+    }
+    
+    // Log progress for debugging
+    console.log(`[${this.type}] Progress: ${percent}% - ${message}`);
+    
+    // Call progress callback if available
+    if (this.progressCallback) {
+      try {
+        this.progressCallback(percent, message);
+      } catch (error) {
+        console.error(`Error in progress callback: ${error}`);
+      }
+    }
+  }
+  
+  /**
    * Execute the agent's core functionality
    */
   async execute(input: AgentInput): Promise<AgentOutput> {
@@ -92,16 +134,23 @@ export abstract class BaseAgent implements Agent {
     this.metrics.startTime = Date.now();
     
     try {
+      // Report initial progress
+      this.reportProgress(5, 'Starting execution...');
+      
       // Generate the prompt for this specific task
       const prompt = await this.generatePrompt(input);
+      this.reportProgress(15, 'Generated prompt...');
       
       // Determine which system prompt to use
       const systemPrompt = this.config.systemPromptOverride || this.systemPrompt;
       
       // Call Claude API with retry logic
+      this.reportProgress(20, 'Calling AI model...');
       const result = await this.callWithRetry(prompt, systemPrompt);
+      this.reportProgress(60, 'Received response from AI model...');
       
       // Process the response
+      this.reportProgress(70, 'Processing response...');
       const output = await this.processResponse(result.content, input);
       
       // Update metrics
@@ -111,8 +160,9 @@ export abstract class BaseAgent implements Agent {
       this.metrics.executionTime = Date.now() - this.metrics.startTime;
       this.metrics.endTime = Date.now();
       
-      // Update status
+      // Update status and report completion
       this.status = 'completed';
+      this.reportProgress(100, 'Execution completed successfully');
       
       // Return the processed output along with metrics
       return {
@@ -125,8 +175,9 @@ export abstract class BaseAgent implements Agent {
       this.metrics.endTime = Date.now();
       this.metrics.executionTime = this.metrics.endTime - this.metrics.startTime;
       
-      // Log the error
+      // Log the error and report failure
       console.error(`Agent ${this.id} execution failed:`, error);
+      this.reportProgress(0, `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Return error output
       return {
@@ -163,22 +214,26 @@ export abstract class BaseAgent implements Agent {
     // Use the withRetry utility
     try {
       return await withRetry(async () => {
+        // Create request options with fallback models
+        const requestOptions = {
+          systemPrompt,
+          model: this.config.model,
+          fallbackModels: this.config.fallbackModels,
+          temperature: this.config.temperature,
+          maxTokens: this.config.maxTokens,
+          stopSequences: this.config.stopSequences
+        };
+      
         // Use specialized API call based on agent capabilities
         if (this.capabilities.includes('svg-generation')) {
-          return await claudeService.generateSVG(prompt, systemPrompt);
+          return await claudeService.generateSVG(prompt, systemPrompt, requestOptions);
         } else if (
           this.capabilities.includes('requirements-analysis') || 
           this.capabilities.includes('selection')
         ) {
-          return await claudeService.analyze(prompt, systemPrompt);
+          return await claudeService.analyze(prompt, systemPrompt, requestOptions);
         } else {
-          return await claudeService.generateResponse(prompt, {
-            systemPrompt,
-            model: this.config.model,
-            temperature: this.config.temperature,
-            maxTokens: this.config.maxTokens,
-            stopSequences: this.config.stopSequences
-          });
+          return await claudeService.generateResponse(prompt, requestOptions);
         }
       }, retryConfig);
     } catch (error) {
@@ -186,6 +241,19 @@ export abstract class BaseAgent implements Agent {
       this.metrics.retryCount = retryConfig.maxAttempts - 1;
       throw error;
     }
+  }
+  
+  /**
+   * Record token usage metrics
+   * 
+   * @param inputTokens - Number of input tokens used
+   * @param outputTokens - Number of output tokens used
+   * @param totalTokens - Total number of tokens used (if not provided, calculated as inputTokens + outputTokens)
+   */
+  protected recordTokenUsage(inputTokens: number, outputTokens: number, totalTokens?: number): void {
+    this.metrics.tokenUsage.input += inputTokens;
+    this.metrics.tokenUsage.output += outputTokens;
+    this.metrics.tokenUsage.total += totalTokens || (inputTokens + outputTokens);
   }
   
   /**

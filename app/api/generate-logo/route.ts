@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { InputSanitizer, RateLimiter } from '@/lib/utils/security-utils';
 import { nanoid } from 'nanoid';
 import { MultiAgentOrchestrator } from '@/lib/agents/orchestrator';
-import { PipelineProgress, LogoBrief } from '@/lib/types';
+import { PipelineProgress, LogoBrief, PipelineStage, AnimationOptions } from '@/lib/types';
 import { CacheManager } from '@/lib/utils/cache-manager';
 import { performanceMonitor } from '@/lib/utils/performance-monitor';
 import { withPerformanceMonitoring } from '@/lib/middleware/performance-middleware';
@@ -14,16 +14,19 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
     // Create a TextEncoder for the streaming response
     const encoder = new TextEncoder();
     
+    // Generate session ID for the request
+    const sessionId = nanoid();
+    
     // Initialize the response stream
     const stream = new ReadableStream({
       async start(controller) {
         try {
           // Handle both FormData and JSON
           let prompt = '';
-          let images: any[] = [];
+          let images: (File | Blob)[] = [];
           let industry = '';
           let includeAnimations = false;
-          let animationOptions: any = null;
+          let animationOptions: Record<string, unknown> | null = null;
           
           // Check if this is a multipart form
           const contentType = req.headers.get('content-type') || '';
@@ -49,9 +52,9 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               // Process files if any
               const fileEntries = Array.from(formData.entries())
                 .filter(([key]) => key.startsWith('file_'))
-                .map(([_, value]) => value);
+                .map(([, value]) => value);
                 
-              images = fileEntries;
+              images = fileEntries.filter((value): value is File => (typeof value !== 'string') && (value instanceof File));
             } catch (formError) {
               console.error('Form data parsing error:', formError);
               controller.enqueue(encoder.encode(JSON.stringify({
@@ -100,7 +103,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           }
           
           // Check rate limits (using IP address)
-          const ip = req.ip || 'unknown';
+          const ip = req.headers.get('x-forwarded-for') || 'unknown';
           const rateLimitResult = RateLimiter.check(ip);
           
           if (!rateLimitResult.allowed) {
@@ -121,14 +124,25 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           // Sanitize input
           const sanitizedPrompt = InputSanitizer.sanitizeBrief(prompt);
           
-          // Generate session ID
-          const sessionId = nanoid();
+          // Use the session ID generated earlier
           
           // Send initial response with session ID
           controller.enqueue(encoder.encode(JSON.stringify({
             type: 'start',
             sessionId
           }) + '\n'));
+          
+          // Map agent progress to UI-friendly progress update
+          const stageMap: Record<string, PipelineStage> = {
+            'stage-a': PipelineStage.A,
+            'stage-b': PipelineStage.B,
+            'stage-c': PipelineStage.C,
+            'stage-d': PipelineStage.D,
+            'stage-e': PipelineStage.E,
+            'stage-f': PipelineStage.F,
+            'stage-g': PipelineStage.G,
+            'stage-h': PipelineStage.H,
+          };
           
           // Define progress callback
           const progressCallback = (progress: {
@@ -139,21 +153,10 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             message: string;
             overallProgress: number;
           }) => {
-            // Map agent progress to UI-friendly progress update
-            const stageMap: Record<string, string> = {
-              'stage-a': 'A',
-              'stage-b': 'B',
-              'stage-c': 'C',
-              'stage-d': 'D',
-              'stage-e': 'E',
-              'stage-f': 'F',
-              'stage-g': 'G',
-              'stage-h': 'H',
-            };
             
             // Create pipeline progress object
             const pipelineProgress: PipelineProgress = {
-              currentStage: stageMap[progress.stage] || progress.stage,
+              currentStage: stageMap[progress.stage] || PipelineStage.IDLE,
               stageProgress: progress.progress,
               overallProgress: progress.overallProgress,
               statusMessage: progress.message
@@ -169,30 +172,52 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           // Prepare the brief
           const brief: LogoBrief = {
             prompt: sanitizedPrompt,
-            image_uploads: images || [],
+            image_uploads: (images || []).filter((img): img is File => img instanceof File),
             industry: industry || undefined,
             includeAnimations: includeAnimations,
-            animationOptions: animationOptions
+            animationOptions: (animationOptions && typeof animationOptions === 'object' && 'type' in animationOptions && 'timing' in animationOptions)
+              ? animationOptions as AnimationOptions
+              : undefined
           };
           
           // Check cache for existing result
           const cacheManager = CacheManager.getInstance();
-          const cachedResult = cacheManager.getGenerationResult(brief);
+          let cachedResult = null;
+          
+          try {
+            // Need to await this async function
+            cachedResult = await cacheManager.getGenerationResult(brief);
+          } catch (cacheError) {
+            console.error('Cache lookup error:', cacheError);
+            // Proceed without cache
+          }
           
           let result;
           
           if (cachedResult) {
             // Found in cache, use cached result
+            console.log('Cache hit! Using cached logo generation result');
+            
+            // Send progress update
             controller.enqueue(encoder.encode(JSON.stringify({
               type: 'progress',
               progress: {
-                currentStage: 'cached',
+                currentStage: PipelineStage.CACHED,
                 stageProgress: 100,
                 overallProgress: 100,
                 statusMessage: 'Retrieved from cache'
               }
             }) + '\n'));
             
+            // If we have a preview SVG in the cached result, send it
+            if (cachedResult.logoSvg) {
+              controller.enqueue(encoder.encode(JSON.stringify({
+                type: 'svg_preview',
+                previewSvg: cachedResult.logoSvg
+              }) + '\n'));
+            }
+            
+            // Create a result object with the cached data
             result = {
               success: true,
               result: cachedResult,
@@ -203,6 +228,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               }
             };
             
+            // Notify client this is from cache
             controller.enqueue(encoder.encode(JSON.stringify({
               type: 'cache',
               cached: true,
@@ -233,7 +259,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               (progress) => {
                 // Cache progress updates
                 cacheManager.cacheProgress(sessionId, {
-                  currentStage: progress.stage,
+                  currentStage: stageMap[progress.stage] || PipelineStage.IDLE,
                   stageProgress: progress.progress,
                   overallProgress: progress.overallProgress,
                   statusMessage: progress.message
@@ -245,13 +271,14 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
                 // Record pipeline stage metrics
                 if (progress.progress === 100) {
                   // Stage just completed
-                  performanceMonitor.recordPipelineStage({
-                    stageId: progress.stage,
-                    stageName: progress.agent,
-                    startTime: Date.now() - (progress.progress * 100), // Approximate start time
-                    endTime: Date.now(),
-                    success: true,
+                  performanceMonitor.recordMetric({
+                    name: `stage_${progress.stage}_complete`,
+                    category: 'pipeline',
+                    value: Date.now() - (progress.progress * 100),
+                    unit: 'ms',
                     metadata: {
+                      stageId: progress.stage,
+                      stageName: progress.agent,
                       requestId: sessionId,
                       message: progress.message,
                       environment: process.env.NEXT_RUNTIME || 'default'
@@ -273,13 +300,16 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             
             // Record token usage if available
             if (result.metrics?.totalTokensUsed) {
-              performanceMonitor.recordTokenUsage({
-                model: 'claude-3-5-sonnet',
-                promptTokens: result.metrics.totalTokensUsed * 0.4, // Approximate split
-                completionTokens: result.metrics.totalTokensUsed * 0.6, // Approximate split
-                totalTokens: result.metrics.totalTokensUsed,
-                cost: result.metrics.totalTokensUsed * 0.000015, // Approximate cost calculation
+              performanceMonitor.recordMetric({
+                name: 'token_usage',
+                category: 'llm',
+                value: result.metrics.totalTokensUsed,
+                unit: 'tokens',
                 metadata: {
+                  model: 'claude-3-5-sonnet',
+                  promptTokens: result.metrics.totalTokensUsed * 0.4, // Approximate split
+                  completionTokens: result.metrics.totalTokensUsed * 0.6, // Approximate split
+                  cost: result.metrics.totalTokensUsed * 0.000015, // Approximate cost
                   requestId: sessionId,
                   executionTime: result.metrics.totalExecutionTime,
                   environment: process.env.NEXT_RUNTIME || 'default'

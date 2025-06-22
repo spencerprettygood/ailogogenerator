@@ -49,7 +49,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
       ...prev,
       timing: {
         ...prev.timing,
-        duration: value[0]
+        duration: value[0] || 1000
       }
     }));
   };
@@ -59,7 +59,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
       ...prev,
       timing: {
         ...prev.timing,
-        delay: value[0]
+        delay: value[0] || 0
       }
     }));
   };

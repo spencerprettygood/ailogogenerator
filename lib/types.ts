@@ -1,6 +1,6 @@
-import { AnimationOptions } from "./animation/types";
 // Re-export MockupType from mockup-types.ts for backward compatibility
 export { MockupType } from "./mockups/mockup-types";
+export type { AnimationOptions } from './animation/types';
 
 // Pipeline progress interface
 export interface PipelineProgress {
@@ -17,6 +17,9 @@ export interface LogoBrief {
   prompt: string;
   image_uploads?: File[];
   preferences?: LogoGenerationPreferences;
+  industry?: string;
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
 }
 
 // Complete generation result
@@ -29,18 +32,51 @@ export interface GenerationResult {
   designNotes?: string;
 }
 
-// General types for messages
+// General types for messages (compatible with AI SDK v5)
 export enum MessageRole {
   SYSTEM = 'system',
   USER = 'user',
-  ASSISTANT = 'assistant'
+  ASSISTANT = 'assistant',
+  TOOL = 'tool',
+  DATA = 'data',
+  FUNCTION = 'function'
 }
 
 export interface Message {
   id: string;
   role: string;
-  content: string;
+  content: string | MessageContent[] | Record<string, any>;
   timestamp: Date;
+  name?: string;
+  tool_call_id?: string;
+  tool_calls?: ToolCall[];
+  progress?: GenerationProgress;
+  assets?: GeneratedAssets;
+  files?: File[];
+}
+
+export interface MessageContent {
+  type: 'text' | 'image' | 'file' | 'tool_call' | 'tool_result';
+  text?: string;
+  image_url?: string;
+  file_url?: string;
+  tool_call?: ToolCall;
+  tool_result?: ToolResult;
+}
+
+export interface ToolCall {
+  id: string;
+  type: string;
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface ToolResult {
+  call_id: string;
+  type: string;
+  content: string;
 }
 
 // Pipeline status and progress
@@ -56,7 +92,17 @@ export enum PipelineStage {
   PACKAGING = 'packaging',
   ANIMATION = 'animation',
   COMPLETE = 'complete',
-  FAILED = 'failed'
+  FAILED = 'failed',
+  // Stage mapping from letters
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  D = 'D',
+  E = 'E',
+  F = 'F',
+  G = 'G',
+  H = 'H',
+  CACHED = 'cached'
 }
 
 export interface GenerationProgress {
@@ -230,6 +276,6 @@ export interface GenerationResponse {
   error?: {
     message: string;
     code: string;
-    details?: any;
+    details?: unknown;
   };
 }

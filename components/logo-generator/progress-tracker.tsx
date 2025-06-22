@@ -1,10 +1,28 @@
 'use client'
 
 import React from 'react';
-import { ProgressTrackerProps } from '@/lib/types';
-import StageItem from './stage-item'; // Corrected import
+import StageItem from './stage-item';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+
+// Define the expected shape of a stage item
+interface StageItemData {
+  id: string;
+  name: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'error';
+  progress?: number;
+  elapsedTime?: number;
+  estimatedDuration?: number;
+  details?: string;
+}
+
+// Define the props for the ProgressTracker component
+interface ProgressTrackerProps {
+  stages: any[]; // Accept any array of stage data
+  currentStageId: string | null;
+  overallProgress: number;
+  estimatedRemainingTime: number | null;
+}
 
 const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   stages,
@@ -25,8 +43,15 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     );
   }
 
-  const currentStageIndex = stages.findIndex(stage => stage.id === currentStageId);
-  const currentStage = stages[currentStageIndex]; // currentStage can be undefined if currentStageId is not found
+  // Safely find current stage index
+  const currentStageIndex = Array.isArray(stages) 
+    ? stages.findIndex(stage => stage && typeof stage === 'object' && 'id' in stage && stage.id === currentStageId)
+    : -1;
+  
+  // Get current stage safely
+  const currentStage = currentStageIndex >= 0 && currentStageIndex < stages.length 
+    ? stages[currentStageIndex] 
+    : null; // currentStage can be null if currentStageId is not found
 
   return (
     <Card className="w-full sticky top-4 shadow-lg dark:shadow-blue-900/50">
@@ -34,7 +59,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           Logo Generation Progress
         </CardTitle>
-        {currentStage && currentStage.status === 'in-progress' && (
+        {currentStage && (currentStage.status === 'in-progress' || currentStage.status === 'in_progress') && (
           <CardDescription className="text-xs text-blue-600 dark:text-blue-400">
             Current Stage: {currentStage.name}
           </CardDescription>
@@ -59,11 +84,18 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <ul className="space-y-1.5 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
           {stages.map((stage, index) => (
             <StageItem
-              key={stage.id}
+              key={stage && typeof stage === 'object' && 'id' in stage ? stage.id : `stage-${index}`}
               stage={stage}
-              isCurrent={stage.id === currentStageId}
-              isCompleted={stage.status === 'completed' || (currentStageIndex !== -1 && index < currentStageIndex)}
-              isUpcoming={ (currentStageIndex === -1 && index === 0 && stage.status === 'pending') || (currentStageIndex !== -1 && index > currentStageIndex && stage.status === 'pending')}
+              isCurrent={stage && typeof stage === 'object' && 'id' in stage && stage.id === currentStageId}
+              isCompleted={
+                stage && typeof stage === 'object' && 'status' in stage && 
+                (String(stage.status) === 'completed' || (currentStageIndex !== -1 && index < currentStageIndex))
+              }
+              isUpcoming={
+                stage && typeof stage === 'object' && 'status' in stage && 
+                ((currentStageIndex === -1 && index === 0 && String(stage.status) === 'pending') || 
+                 (currentStageIndex !== -1 && index > currentStageIndex && String(stage.status) === 'pending'))
+              }
             />
           ))}
         </ul>

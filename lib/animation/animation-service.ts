@@ -24,9 +24,10 @@ import {
   AnimationTrigger
 } from './types';
 import { AnimationRegistry } from './animation-registry';
-import { sanitizeSVG, optimizeSVG, validateSVG } from './utils/svg-sanitizer';
+import { sanitizeSVG, optimizeSVG, validateSVG, extractAnimatableElements } from './utils';
 import { Logger } from '../utils/logger';
 import { withRetry } from '../retry';
+import { CSSAnimationProvider } from './providers/css-provider';
 
 /**
  * Default animation options used when specific options are not provided
@@ -67,7 +68,11 @@ export class SVGAnimationService {
   constructor() {
     this.registry = AnimationRegistry.getInstance();
     this.logger = new Logger('SVGAnimationService');
-    this.logger.info('SVG Animation Service initialized');
+    
+    // Register default CSS animation provider
+    this.registerProvider(new CSSAnimationProvider());
+    
+    this.logger.info('SVG Animation Service initialized with default providers');
   }
   
   /**
@@ -110,7 +115,8 @@ export class SVGAnimationService {
    * @returns Promise resolving to an AnimationResponse
    */
   public async animateSVG(svg: string, options: AnimationOptions): Promise<AnimationResponse> {
-    const startTime = performance.now();
+    // Use Date.now() for server compatibility instead of performance.now()
+    const startTime = Date.now();
     const animationId = `anim_${Date.now().toString(36)}`;
     
     this.logger.info(`Starting animation process [${animationId}]`, {
@@ -129,7 +135,7 @@ export class SVGAnimationService {
             details: 'The SVG content must not be empty',
             code: AnimationErrorCode.INVALID_INPUT
           },
-          processingTime: performance.now() - startTime
+          processingTime: Date.now() - startTime
         };
       }
       
@@ -147,7 +153,7 @@ export class SVGAnimationService {
             details: validationResult.error || 'The SVG content is not properly structured',
             code: AnimationErrorCode.INVALID_INPUT
           },
-          processingTime: performance.now() - startTime
+          processingTime: Date.now() - startTime
         };
       }
       
@@ -172,7 +178,7 @@ export class SVGAnimationService {
             details: error instanceof Error ? error.message : String(error),
             code: AnimationErrorCode.SANITIZATION_FAILED
           },
-          processingTime: performance.now() - startTime
+          processingTime: Date.now() - startTime
         };
       }
       
@@ -191,7 +197,7 @@ export class SVGAnimationService {
             details: error instanceof Error ? error.message : String(error),
             code: AnimationErrorCode.OPTIMIZATION_FAILED
           },
-          processingTime: performance.now() - startTime
+          processingTime: Date.now() - startTime
         };
       }
       
@@ -207,14 +213,14 @@ export class SVGAnimationService {
           
           this.logger.info(`Applied fallback animation successfully [${animationId}]`, {
             animationType: mergedOptions.type,
-            processingTime: performance.now() - startTime,
+            processingTime: Date.now() - startTime,
             animationId
           });
           
           return {
             success: true,
             result: fallbackResult,
-            processingTime: performance.now() - startTime
+            processingTime: Date.now() - startTime
           };
         } catch (error) {
           this.logger.error(`Fallback animation failed [${animationId}]`, {
@@ -229,7 +235,7 @@ export class SVGAnimationService {
               details: error instanceof Error ? error.message : String(error),
               code: AnimationErrorCode.UNEXPECTED_ERROR
             },
-            processingTime: performance.now() - startTime
+            processingTime: Date.now() - startTime
           };
         }
       }
@@ -249,7 +255,7 @@ export class SVGAnimationService {
         );
         
         // Calculate processing time
-        const processingTime = performance.now() - startTime;
+        const processingTime = Date.now() - startTime;
         
         this.logger.info(`Animation completed successfully [${animationId}]`, {
           animationType: mergedOptions.type,
@@ -278,7 +284,7 @@ export class SVGAnimationService {
             details: error instanceof Error ? error.message : String(error),
             code: AnimationErrorCode.PROVIDER_FAILED
           },
-          processingTime: performance.now() - startTime
+          processingTime: Date.now() - startTime
         };
       }
     } catch (error) {
@@ -297,7 +303,7 @@ export class SVGAnimationService {
           details: errorMessage,
           code: AnimationErrorCode.UNEXPECTED_ERROR
         },
-        processingTime: performance.now() - startTime
+        processingTime: Date.now() - startTime
       };
     }
   }
@@ -508,6 +514,12 @@ export class SVGAnimationService {
     } as AnimationOptions;
   }
 }
+
+/**
+ * Create a singleton instance for static access
+ */
+const svgAnimationServiceInstance = new SVGAnimationService();
+export { svgAnimationServiceInstance as SVGAnimationService };
 
 /**
  * Pre-defined animation templates for common animation effects

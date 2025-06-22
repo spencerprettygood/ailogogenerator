@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const result = await defaultAnimationService.animateSVG(body.svg, animationOptions);
     
     if (!result.success) {
-      const errorCode = result.error?.code as AnimationErrorCode || AnimationErrorCode.UNEXPECTED_ERROR;
+      const errorCode = AnimationErrorCode.UNEXPECTED_ERROR;
       const statusCode = errorToStatusCode[errorCode] || 500;
       
       logger.error(`Animation failed [${requestId}]`, {

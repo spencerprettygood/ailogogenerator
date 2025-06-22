@@ -28,44 +28,89 @@ export class LogoGeneratorAPI {
     files?: File[],
     options?: LogoGenerationOptions
   ): Promise<ReadableStream<Uint8Array>> {
-    const formData = new FormData();
-    formData.append('brief', brief);
-
-    if (files && files.length > 0) {
-      files.forEach((file, index) => {
-        formData.append(`file_${index}`, file);
-      });
-    }
-    
-    // Add industry if specified
-    if (options?.industry) {
-      formData.append('industry', options.industry);
-    }
-    
-    // Add animation options if specified
-    if (options?.includeAnimations) {
-      formData.append('includeAnimations', 'true');
-      
-      if (options.animationOptions) {
-        formData.append('animationOptions', JSON.stringify(options.animationOptions));
+    try {
+      // Determine if we should use FormData or JSON based on if files are present
+      if (files && files.length > 0) {
+        // Use FormData approach when files are present
+        const formData = new FormData();
+        formData.append('brief', brief);
+        
+        files.forEach((file, index) => {
+          formData.append(`file_${index}`, file);
+        });
+        
+        // Add industry if specified
+        if (options?.industry) {
+          formData.append('industry', options.industry);
+        }
+        
+        // Add animation options if specified
+        if (options?.includeAnimations) {
+          formData.append('includeAnimations', 'true');
+          
+          if (options.animationOptions) {
+            formData.append('animationOptions', JSON.stringify(options.animationOptions));
+          }
+        }
+        
+        // Add uniqueness analysis if requested
+        if (options?.includeUniquenessAnalysis) {
+          formData.append('includeUniquenessAnalysis', 'true');
+        }
+        
+        // Send as FormData
+        const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new APIError(`Generation failed: ${response.status} ${errorText}`, response.status);
+        }
+        
+        if (!response.body) {
+          throw new APIError('No response body received', 500);
+        }
+        
+        return response.body;
+      } else {
+        // No files, use JSON approach for better caching
+        const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: brief,
+            industry: options?.industry,
+            includeAnimations: options?.includeAnimations || false,
+            animationOptions: options?.animationOptions,
+            includeUniquenessAnalysis: options?.includeUniquenessAnalysis || false,
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new APIError(`Generation failed: ${response.status} ${errorText}`, response.status);
+        }
+        
+        if (!response.body) {
+          throw new APIError('No response body received', 500);
+        }
+        
+        return response.body;
       }
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      console.error('API request error:', error);
+      throw new APIError(
+        error instanceof Error ? error.message : 'Failed to generate logo',
+        500
+      );
     }
-
-    const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new APIError(`Generation failed: ${response.status} ${errorText}`, response.status);
-    }
-
-    if (!response.body) {
-      throw new APIError('No response body received', 500);
-    }
-
-    return response.body;
   }
 
   async downloadPackage(sessionId: string): Promise<Blob> {

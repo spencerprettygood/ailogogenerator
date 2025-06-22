@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_MOCKUP_TEMPLATES, getTemplateById } from '@/lib/mockups/template-data';
 import { generateMockupSvg } from '@/lib/mockups/mockup-generator';
 import securityUtils from '@/lib/utils/security-utils';
+import sharp from 'sharp';
 
 // Use Node.js runtime since we need sharp for image processing
 export const runtime = 'nodejs';

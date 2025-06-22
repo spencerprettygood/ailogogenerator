@@ -6,3 +6,5 @@
  */
 
 export * from './svg-sanitizer';
+export * from './animation-utils';
+export * from './svg-optimizer';

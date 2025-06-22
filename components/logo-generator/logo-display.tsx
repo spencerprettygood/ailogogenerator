@@ -118,6 +118,15 @@ function LogoDisplay({
     
     // Handle both svgContent and svgCode for compatibility
     if (svgContent) {
+      // Check if the content might be from AI SDK v5 format (contains an SVG tag)
+      if (svgContent.includes('<svg') && svgContent.includes('</svg>')) {
+        // Extract SVG content using regex for safety
+        const svgMatch = svgContent.match(/<svg[\s\S]*?<\/svg>/i);
+        if (svgMatch) {
+          return svgMatch[0];
+        }
+      }
+      
       return svgContent;
     }
 

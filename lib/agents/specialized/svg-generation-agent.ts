@@ -17,6 +17,7 @@ export class SVGGenerationAgent extends BaseAgent {
       ['svg-generation'],
       {
         model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
+        fallbackModels: ['claude-3-5-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
         temperature: 0.5, // Balanced temperature for creativity with consistency
         maxTokens: 4000, // Larger token limit for SVG generation
         ...config
@@ -84,7 +85,25 @@ Please generate the SVG code for this logo and explain your design decisions.`;
   }
   
   /**
+   * Sanitize JSON string by removing control characters that cause parsing errors
+   */
+  private sanitizeJsonString(jsonString: string): string {
+    // Replace control characters (0x00-0x1F) except for valid JSON whitespace (\n, \r, \t)
+    // This regex replaces all control chars with empty string except allowed whitespace
+    const sanitized = jsonString.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    
+    // Also try to fix common JSON syntax issues:
+    // 1. Unescaped backslashes in strings
+    // 2. Unescaped quotes in strings
+    // But we have to be careful not to break valid JSON...
+    
+    return sanitized;
+  }
+
+  /**
    * Process the response from Claude
+   * This method parses the SVG generation output with robust error handling
+   * for control characters and other JSON parsing issues
    */
   protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGGenerationAgentOutput> {
     try {
@@ -98,7 +117,72 @@ Please generate the SVG code for this logo and explain your design decisions.`;
         jsonContent = jsonMatch[0];
       }
       
-      const svgData = JSON.parse(jsonContent);
+      // Sanitize the JSON string to remove problematic control characters
+      const sanitizedJsonContent = this.sanitizeJsonString(jsonContent);
+      
+      // Try parsing with more detailed error handling
+      let svgData;
+      try {
+        svgData = JSON.parse(sanitizedJsonContent);
+      } catch (parseError) {
+        console.error('JSON parse error details:', {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          jsonPreview: sanitizedJsonContent.substring(0, 100) + '...',
+          // Try to identify the position of the error if available
+          position: parseError instanceof SyntaxError && 
+                   parseError.message.includes('position') ? 
+                   parseError.message.match(/position (\d+)/)?.[1] : 'unknown'
+        });
+        
+        // As a fallback, try to extract just the SVG part if the JSON parsing failed
+        // This is a more robust approach to extract values that handles multi-line strings
+        // First, try to find SVG content between <svg> tags
+        let extractedSvg = '';
+        let extractedRationale = '';
+        
+        // Extract SVG - try multiple approaches
+        // 1. First look for SVG content between actual SVG tags
+        const svgTagMatch = sanitizedJsonContent.match(/<svg[\s\S]*<\/svg>/);
+        if (svgTagMatch) {
+          extractedSvg = svgTagMatch[0];
+          console.log('Found SVG content by matching SVG tags');
+        } else {
+          // 2. Try to extract from JSON if that didn't work
+          const svgKeyMatch = sanitizedJsonContent.match(/"svg"\s*:\s*"([\s\S]*?)(?:"|,\s*")/);
+          if (svgKeyMatch) {
+            extractedSvg = svgKeyMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            console.log('Found SVG content by matching JSON key');
+          }
+        }
+        
+        // Extract design rationale
+        const rationaleMatch = sanitizedJsonContent.match(/"designRationale"\s*:\s*"([\s\S]*?)(?:"|,\s*")/);
+        if (rationaleMatch) {
+          extractedRationale = rationaleMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          console.log('Found design rationale by matching JSON key');
+        } else {
+          // As a last resort, use any substantial text after the SVG as the rationale
+          const remainingContent = sanitizedJsonContent.split(extractedSvg)[1];
+          if (remainingContent && remainingContent.length > 50) {
+            // Take up to 500 chars of remaining content as a fallback rationale
+            extractedRationale = remainingContent.substring(0, 500);
+            console.log('Using fallback method for design rationale');
+          }
+        }
+        
+        if (extractedSvg && extractedSvg.includes('<svg')) {
+          // Construct a manual object if we were able to extract the SVG content
+          svgData = {
+            svg: extractedSvg,
+            designRationale: extractedRationale || 'Design rationale not available due to parsing error.'
+          };
+          console.log('Recovered SVG data through alternative extraction');
+        } else {
+          // If still not able to extract SVG, rethrow the error
+          console.error('Failed to extract SVG content with fallback methods');
+          throw parseError;
+        }
+      }
       
       // Validate the svg and designRationale fields
       if (!svgData.svg || !svgData.designRationale) {
@@ -111,16 +195,32 @@ Please generate the SVG code for this logo and explain your design decisions.`;
         };
       }
       
-      // Basic validation of SVG content
-      const svgContent = svgData.svg;
+      // Basic validation and sanitization of SVG content
+      let svgContent = svgData.svg;
+      
+      // If the SVG doesn't have proper tags, try to find them
       if (!svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid SVG: missing SVG tags',
-            details: { svgPreview: svgContent.substring(0, 100) + '...' }
-          }
-        };
+        // Try to extract SVG tags from the content if they're embedded
+        const embeddedSvgMatch = svgContent.match(/<svg[\s\S]*<\/svg>/);
+        if (embeddedSvgMatch) {
+          svgContent = embeddedSvgMatch[0];
+          console.log('Extracted embedded SVG tags from content');
+        } else {
+          return {
+            success: false,
+            error: {
+              message: 'Invalid SVG: missing SVG tags',
+              details: { svgPreview: svgContent.substring(0, 100) + '...' }
+            }
+          };
+        }
+      }
+      
+      // Ensure the SVG has proper XML declaration and namespace
+      if (!svgContent.includes('xmlns="http://www.w3.org/2000/svg"')) {
+        // Add the SVG namespace if it's missing
+        svgContent = svgContent.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+        console.log('Added missing SVG namespace');
       }
       
       // Check for disallowed elements
@@ -160,7 +260,7 @@ Please generate the SVG code for this logo and explain your design decisions.`;
         };
       }
       
-      // If everything is valid, return the processed result
+      // If everything is valid, return the processed result with the sanitized SVG
       return {
         success: true,
         result: {
@@ -170,11 +270,28 @@ Please generate the SVG code for this logo and explain your design decisions.`;
       };
     } catch (error) {
       console.error('Failed to process SVG generation agent response:', error);
+      
+      // Check if this is a JSON parsing error with control characters
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('control character')) {
+        // Provide more specific error details for control character issues
+        return {
+          success: false,
+          error: {
+            message: 'Failed to parse SVG generation output due to invalid control characters',
+            details: {
+              originalError: errorMessage,
+              suggestion: 'SVG generation failed due to control characters in the response. This is usually a temporary issue with the Claude API. Please try again.'
+            }
+          }
+        };
+      }
+      
       return {
         success: false,
         error: {
           message: 'Failed to parse SVG generation output',
-          details: error instanceof Error ? error.message : String(error)
+          details: errorMessage
         }
       };
     }

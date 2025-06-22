@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid';
+import { analyzeClaudeError, ClaudeErrorType } from '../../utils/claude-error-handler';
 import { 
   Agent, 
   AgentContext, 
@@ -409,22 +410,32 @@ export class MultiAgentOrchestrator {
         
         // If execution failed
         if (!output.success) {
-          this.log(`Agent ${agentId} execution failed: ${output.error?.message}`);
+          // Analyze the error to determine if it's retryable
+          const errorInfo = analyzeClaudeError(output.error);
+          const isRetryable = errorInfo.isRetryable;
           
-          // Update progress
+          this.log(`Agent ${agentId} execution failed: ${output.error?.message} (${errorInfo.type}, retryable: ${isRetryable})`);
+          
+          // Update progress with more detailed error information
           this.updateProgress(
             agentId,
             agent,
             'failed',
             0,
-            `${agentId} execution failed: ${output.error?.message}`
+            `${agentId} execution error: ${errorInfo.message}`
           );
           
           // Store the error for potential retry
           lastError = new Error(`Agent ${agentId} failed: ${output.error?.message}`);
           
-          // If we've reached max retries or retrying is disabled, mark as failed and throw
-          if (attempt === maxRetries || !this.options.retryFailedAgents) {
+          // For authentication errors, we should fail immediately as retries won't help
+          const shouldSkipRetry = 
+            errorInfo.type === ClaudeErrorType.AUTHENTICATION || 
+            errorInfo.type === ClaudeErrorType.CONTENT_POLICY ||
+            !isRetryable;
+          
+          // If we've reached max retries, retrying is disabled, or it's a non-retryable error, mark as failed and throw
+          if (attempt === maxRetries || !this.options.retryFailedAgents || shouldSkipRetry) {
             this.failedAgents.add(agentId);
             this.executingAgents.delete(agentId);
             

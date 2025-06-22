@@ -44,9 +44,9 @@ interface ResponseWithMetrics extends NextResponse {
  * export const GET = withPerformanceMonitoring(handler);
  */
 export function withPerformanceMonitoring(
-  handler: (req: NextRequest) => Promise<NextResponse> | NextResponse
+  handler: (req: NextRequest) => Promise<Response | NextResponse> | Response | NextResponse
 ) {
-  return async function (req: NextRequest): Promise<NextResponse> {
+  return async function (req: NextRequest): Promise<Response | NextResponse> {
     // Skip monitoring if disabled
     if (!performanceMonitor.isEnabled()) {
       return handler(req);

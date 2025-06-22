@@ -140,7 +140,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      {test.name}
+                      {/* Only render test.name, not the whole test object */}
+                      {typeof test.name === 'string' ? test.name : String(test.name)}
                     </button>
                   </li>
                 ))}
@@ -157,8 +158,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             ) : (
               <div>
                 <div className="mb-6">
-                  <h2 className="text-xl font-medium text-gray-900">{selectedTest.name}</h2>
-                  <p className="mt-1 text-gray-600">{selectedTest.description}</p>
+                  <h2 className="text-xl font-medium text-gray-900">
+                    {/* Only render selectedTest.name, not the object */}
+                    {typeof selectedTest.name === 'string' ? selectedTest.name : String(selectedTest.name)}
+                  </h2>
+                  <p className="mt-1 text-gray-600">
+                    {/* Only render selectedTest.description, not the object */}
+                    {typeof selectedTest.description === 'string' ? selectedTest.description : String(selectedTest.description)}
+                  </p>
                   
                   <div className="grid grid-cols-3 gap-4 mt-4">
                     <div className="bg-blue-50 p-3 rounded-lg">

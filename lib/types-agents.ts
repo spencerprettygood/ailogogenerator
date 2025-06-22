@@ -18,8 +18,11 @@ export interface AgentOutput {
   processingTime?: number;
 }
 
+export type ClaudeModel = 'claude-3-5-sonnet-20240620' | 'claude-3-5-haiku-20240307' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307';
+
 export interface AgentConfig {
-  model: 'claude-3-5-sonnet-20240620' | 'claude-3-5-haiku-20240307';
+  model: ClaudeModel;
+  fallbackModels?: ClaudeModel[];
   temperature: number;
   maxTokens: number;
   systemPromptOverride?: string;
@@ -52,6 +55,7 @@ export interface AgentContext {
   overrides?: Record<string, any>;
   debugMode?: boolean;
   abortSignal?: AbortSignal;
+  progressCallback?: (percent: number, message: string) => void;
 }
 
 // Agent status
@@ -69,7 +73,8 @@ export type AgentCapability =
   'asset-packaging' |
   'design-theory' |
   'industry-analysis' |
-  'animation-generation';
+  'animation-generation' |
+  'animation';
 
 // Agent message types
 export interface AgentMessage {

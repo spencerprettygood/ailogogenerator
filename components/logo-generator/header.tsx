@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export function Header({ onThemeToggle }: HeaderProps) {
   return (
-    <header className="relative border-b border-l-0 border-r-0 border-t-0 border-gray-300 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+    <header className="border-b border-l-0 border-r-0 border-t-0 border-gray-300 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
       {/* Asymmetric accent line */}
       <div className="absolute bottom-0 left-0 w-2/3 h-[1px] bg-accent"></div>
       <div className="absolute bottom-0 right-0 w-1/3 h-[1px] bg-gray-300"></div>

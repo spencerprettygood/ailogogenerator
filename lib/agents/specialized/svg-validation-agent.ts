@@ -19,6 +19,7 @@ export class SVGValidationAgent extends BaseAgent {
       ['svg-validation'],
       {
         model: 'claude-3-5-haiku-20240307', // Use faster model for validation
+        fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
         temperature: 0.1, // Low temperature for consistent, deterministic output
         maxTokens: 1000,
         ...config
@@ -26,6 +27,41 @@ export class SVGValidationAgent extends BaseAgent {
     );
     
     // This agent doesn't primarily use Claude - it uses direct validation and repair
+    
+    // Set a system prompt - required to avoid "text content blocks must be non-empty" error
+    this.systemPrompt = `You are a specialized SVG validation and repair agent for an AI logo generator.
+    
+Your task is to validate and repair SVG logos to ensure they are valid, secure, and optimized.
+
+IMPORTANT REQUIREMENTS:
+1. Analyze SVG for validity, security issues, and optimization opportunities
+2. Fix common structural and syntax issues
+3. Remove potentially dangerous elements (scripts, event handlers, external references)
+4. Maintain the original design intent and visual appearance
+5. Return only the fixed SVG without any explanations or comments`;
+  }
+  
+  /**
+   * Helper function to ensure SVGValidator's ValidationIssue interface is compatible with what we expect
+   */
+  private ensureValidationIssues(validationResult: any): any {
+    if (!validationResult.issues || !Array.isArray(validationResult.issues)) {
+      // Create a default issues array if one doesn't exist
+      validationResult.issues = [
+        ...(validationResult.errors || []).map(error => ({
+          type: 'error',
+          severity: 'high',
+          message: String(error)
+        })),
+        ...(validationResult.warnings || []).map(warning => ({
+          type: 'warning',
+          severity: 'low',
+          message: String(warning)
+        }))
+      ];
+    }
+    
+    return validationResult;
   }
   
   /**
@@ -62,7 +98,7 @@ Return only the fixed SVG code without any explanations.`;
     
     try {
       // Step 1: Use comprehensive SVG validator for initial validation
-      const validationResult = SVGValidator.validate(svg);
+      const validationResult = this.ensureValidationIssues(SVGValidator.validate(svg));
       
       // Basic security check with InputSanitizer for backward compatibility
       const securityResult = InputSanitizer.validateSVG(svg);
@@ -101,10 +137,10 @@ Return only the fixed SVG code without any explanations.`;
       
       if (repair && optimize) {
         // Use the single-call process method that does validation, repair, and optimization
-        processedResult = SVGValidator.process(svg);
+        processedResult = this.ensureValidationIssues(SVGValidator.process(svg));
       } else if (repair) {
         // Just repair without optimization
-        const repairResult = SVGValidator.repair(svg);
+        const repairResult = this.ensureValidationIssues(SVGValidator.repair(svg));
         processedResult = {
           original: svg,
           processed: repairResult.repaired,
@@ -115,7 +151,7 @@ Return only the fixed SVG code without any explanations.`;
         };
       } else if (optimize) {
         // Just optimize without repair
-        const optimizationResult = SVGValidator.optimize(svg);
+        const optimizationResult = this.ensureValidationIssues(SVGValidator.optimize(svg));
         processedResult = {
           original: svg,
           processed: optimizationResult.optimized,
