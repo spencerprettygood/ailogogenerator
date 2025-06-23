@@ -1,8 +1,7 @@
-'use client'
-
 import './globals.css';
 import { Raleway, Arimo, IBM_Plex_Mono } from 'next/font/google';
-import { ThemeProvider } from '@/components/providers/theme-provider';
+import { ThemeProviderClient } from '@/components/providers/theme-provider-client';
+import type { Metadata, Viewport } from 'next';
 
 // Load Raleway font for headings
 const raleway = Raleway({ 
@@ -28,7 +27,22 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap'
 });
 
-// Metadata moved to separate export to avoid 'use client' conflicts
+// Metadata for the application
+export const metadata: Metadata = {
+  title: 'AI Logo Generator',
+  description: 'Generate professional logos using AI',
+  applicationName: 'AI Logo Generator',
+  authors: [{ name: 'AI Logo Generator Team' }],
+  keywords: ['logo', 'design', 'ai', 'generator', 'branding'],
+};
+
+// Viewport configuration
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#ffffff' }, { media: '(prefers-color-scheme: dark)', color: '#121212' }],
+};
 
 export default function RootLayout({
   children,
@@ -36,20 +50,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
+    <html lang="en">
       <body 
         className={`${raleway.variable} ${arimo.variable} ${ibmPlexMono.variable}
                     font-body bg-background text-foreground antialiased`}
       >
-        <ThemeProvider
+        <ThemeProviderClient
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
           {children}
-        </ThemeProvider>
+        </ThemeProviderClient>
       </body>
     </html>
   );

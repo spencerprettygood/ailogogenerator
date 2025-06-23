@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { FileItemProps } from '@/lib/types';
 import { Button } from '@/components/ui/button';

@@ -1,28 +1,31 @@
-'use client';
+'use client'
 
-import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { type ThemeProviderProps } from "next-themes";
+import * as React from 'react'
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
+import { type ThemeProviderProps } from 'next-themes/dist/types'
+import { useTheme as useNextTheme } from 'next-themes'
 
 /**
- * Theme Provider Component
- * 
- * Wraps Next-Themes provider to provide theme context throughout the application.
- * Enables theme switching between light, dark, and system preference.
- * 
- * @param props - Theme provider props from next-themes
- * @returns ThemeProvider component
+ * Client-side ThemeProvider wrapper
+ * This separate client component is needed since ThemeProvider uses client-side 
+ * functionality and the root layout should be a server component in Next.js 15+
  */
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  // No need to track mounted state as it's not used
+export function ThemeProviderClient({ children, ...props }: ThemeProviderProps) {
+  const [mounted, setMounted] = React.useState(false)
+  
+  // After component mounts, set mounted to true to enable client-side rendering
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  // Prevent hydration mismatch by rendering provider regardless of mounted state
-  // The suppressHydrationWarning on html element in layout.tsx handles the brief flash
+  // Use suppressHydrationWarning on the wrapper div
   return (
-    <NextThemesProvider {...props}>
-      {children}
-    </NextThemesProvider>
-  );
+    <div suppressHydrationWarning>
+      <NextThemesProvider {...props}>
+        {mounted ? children : null}
+      </NextThemesProvider>
+    </div>
+  )
 }
 
 /**
@@ -37,25 +40,23 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
  *   Toggle theme
  * </button>
  */
-import { useTheme as useNextTheme } from "next-themes";
-
 export function useTheme() {
-  const { theme, setTheme, systemTheme } = useNextTheme();
+  const { theme, setTheme, systemTheme } = useNextTheme()
   
   // Check if current theme is dark (either explicitly set to dark or system preference is dark)
   const isDark = React.useMemo(() => {
     if (theme === 'system' && systemTheme) {
-      return systemTheme === 'dark';
+      return systemTheme === 'dark'
     }
-    return theme === 'dark';
-  }, [theme, systemTheme]);
+    return theme === 'dark'
+  }, [theme, systemTheme])
   
   return {
     theme,
     setTheme,
     systemTheme,
     isDark,
-  };
+  }
 }
 
 /**
@@ -70,13 +71,13 @@ export function ThemeToggle({
 }: { 
   className?: string 
 }) {
-  const { setTheme, isDark } = useTheme();
+  const { setTheme, isDark } = useTheme()
   
   return (
     <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={className}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
     >
       {isDark ? (
         <SunIcon className="h-5 w-5" />
@@ -84,7 +85,7 @@ export function ThemeToggle({
         <MoonIcon className="h-5 w-5" />
       )}
     </button>
-  );
+  )
 }
 
 function SunIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -109,7 +110,7 @@ function SunIcon(props: React.SVGProps<SVGSVGElement>) {
       <path d="m6.34 17.66-1.41 1.41" />
       <path d="m19.07 4.93-1.41 1.41" />
     </svg>
-  );
+  )
 }
 
 function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -126,5 +127,5 @@ function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
     >
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
     </svg>
-  );
+  )
 }

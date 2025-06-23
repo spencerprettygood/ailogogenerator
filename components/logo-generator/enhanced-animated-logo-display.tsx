@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { AnimatedSVGLogo, AnimationOptions } from '../../lib/animation/types';
 import { Button } from '../ui/button';
