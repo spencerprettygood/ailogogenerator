@@ -1,6 +1,6 @@
 import './globals.css';
 import { Raleway, Arimo, IBM_Plex_Mono } from 'next/font/google';
-import { ThemeProviderClient } from '@/components/providers/theme-provider-client';
+import ClientThemeProvider from '@/components/providers/client-theme-provider';
 import type { Metadata, Viewport } from 'next';
 
 // Load Raleway font for headings
@@ -55,14 +55,9 @@ export default function RootLayout({
         className={`${raleway.variable} ${arimo.variable} ${ibmPlexMono.variable}
                     font-body bg-background text-foreground antialiased`}
       >
-        <ThemeProviderClient
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ClientThemeProvider>
           {children}
-        </ThemeProviderClient>
+        </ClientThemeProvider>
       </body>
     </html>
   );

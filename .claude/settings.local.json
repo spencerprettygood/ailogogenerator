@@ -26,7 +26,8 @@
       "Bash(node:*)",
       "Bash(curl:*)",
       "WebFetch(domain:tailwindcss.com)",
-      "Bash(./scripts/add-use-client.sh:*)"
+      "Bash(./scripts/add-use-client.sh:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

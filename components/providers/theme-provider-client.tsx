@@ -11,20 +11,11 @@ import { useTheme as useNextTheme } from 'next-themes'
  * functionality and the root layout should be a server component in Next.js 15+
  */
 export function ThemeProviderClient({ children, ...props }: ThemeProviderProps) {
-  const [mounted, setMounted] = React.useState(false)
-  
-  // After component mounts, set mounted to true to enable client-side rendering
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Use suppressHydrationWarning on the wrapper div
+  // Simple implementation - wrap children in the NextThemesProvider
   return (
-    <div suppressHydrationWarning>
-      <NextThemesProvider {...props}>
-        {mounted ? children : null}
-      </NextThemesProvider>
-    </div>
+    <NextThemesProvider {...props}>
+      {children}
+    </NextThemesProvider>
   )
 }
 
@@ -41,10 +32,13 @@ export function ThemeProviderClient({ children, ...props }: ThemeProviderProps) 
  * </button>
  */
 export function useTheme() {
+  // Use the hook from next-themes directly
   const { theme, setTheme, systemTheme } = useNextTheme()
   
   // Check if current theme is dark (either explicitly set to dark or system preference is dark)
   const isDark = React.useMemo(() => {
+    if (!theme) return false;
+    
     if (theme === 'system' && systemTheme) {
       return systemTheme === 'dark'
     }
@@ -52,10 +46,10 @@ export function useTheme() {
   }, [theme, systemTheme])
   
   return {
-    theme,
-    setTheme,
-    systemTheme,
-    isDark,
+    theme: theme || 'system',
+    setTheme: setTheme || (() => {}),
+    systemTheme: systemTheme || 'light',
+    isDark: isDark || false,
   }
 }
 
