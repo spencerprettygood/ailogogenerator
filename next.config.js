@@ -100,6 +100,14 @@ const nextConfig = {
 
   // Webpack configuration optimized for Vercel
   webpack: (config, { dev, isServer }) => {
+    const path = require('path');
+    
+    // Add path alias resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+    
     // SVG handling
     config.module.rules.push({
       test: /\.svg$/,
