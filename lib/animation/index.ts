@@ -9,7 +9,7 @@
 export * from './types';
 
 // Export core services
-export { SVGAnimationService } from './animation-service';
+export { SVGAnimationService, svgAnimationService } from './animation-service';
 export { AnimationRegistry } from './animation-registry';
 
 // Export providers

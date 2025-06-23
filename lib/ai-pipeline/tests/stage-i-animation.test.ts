@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { animateLogo } from '../stages/stage-i-animation';
-import { SVGAnimationService } from '../../animation/animation-service';
+import { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
 import { AnimationType, AnimationEasing, AnimationTrigger } from '../../animation/types';
 
 // Sample SVG for testing
@@ -13,7 +13,8 @@ const sampleSvg = `
 
 // Mock the SVGAnimationService
 vi.mock('../../animation/animation-service', () => ({
-  SVGAnimationService: {
+  SVGAnimationService: class {},
+  svgAnimationService: {
     animateSVG: vi.fn()
   }
 }));
@@ -30,7 +31,7 @@ describe('Stage I: Animation', () => {
 
   it('should successfully animate a logo with default options', async () => {
     // Mock successful animation
-    vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+    vi.mocked(svgAnimationService.animateSVG).mockResolvedValue({
       success: true,
       result: {
         originalSvg: sampleSvg,
@@ -54,7 +55,7 @@ describe('Stage I: Animation', () => {
     expect(result.success).toBe(true);
     expect(result.result).toBeDefined();
     expect(result.result?.cssCode).toContain('fadeIn');
-    expect(SVGAnimationService.animateSVG).toHaveBeenCalledWith(
+    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
         type: AnimationType.FADE_IN
@@ -64,7 +65,7 @@ describe('Stage I: Animation', () => {
 
   it('should use provided animation options when specified', async () => {
     // Mock successful animation
-    vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+    vi.mocked(svgAnimationService.animateSVG).mockResolvedValue({
       success: true,
       result: {
         originalSvg: sampleSvg,
@@ -96,7 +97,7 @@ describe('Stage I: Animation', () => {
 
     expect(result.success).toBe(true);
     expect(result.result).toBeDefined();
-    expect(SVGAnimationService.animateSVG).toHaveBeenCalledWith(
+    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       customOptions
     );
@@ -123,7 +124,7 @@ describe('Stage I: Animation', () => {
     })) as any;
 
     // Mock successful animation
-    vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+    vi.mocked(svgAnimationService.animateSVG).mockResolvedValue({
       success: true,
       result: {
         originalSvg: sampleSvg,
@@ -147,7 +148,7 @@ describe('Stage I: Animation', () => {
 
     expect(result.success).toBe(true);
     expect(result.result).toBeDefined();
-    expect(SVGAnimationService.animateSVG).toHaveBeenCalledWith(
+    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
         type: AnimationType.DRAW
@@ -157,7 +158,7 @@ describe('Stage I: Animation', () => {
 
   it('should handle animation service failures', async () => {
     // Mock animation failure
-    vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+    vi.mocked(svgAnimationService.animateSVG).mockResolvedValue({
       success: false,
       error: {
         message: 'Animation service error',
@@ -178,7 +179,7 @@ describe('Stage I: Animation', () => {
 
   it('should handle exceptions during processing', async () => {
     // Mock exception during animation
-    vi.mocked(SVGAnimationService.animateSVG).mockImplementation(() => {
+    vi.mocked(svgAnimationService.animateSVG).mockImplementation(() => {
       throw new Error('Unexpected error during animation');
     });
 
@@ -195,7 +196,7 @@ describe('Stage I: Animation', () => {
 
   it('should track processing time', async () => {
     // Mock successful animation with a delay
-    vi.mocked(SVGAnimationService.animateSVG).mockImplementation(async () => {
+    vi.mocked(svgAnimationService.animateSVG).mockImplementation(async () => {
       await new Promise(resolve => setTimeout(resolve, 10)); // Small delay
       return {
         success: true,
@@ -244,7 +245,7 @@ describe('Stage I: Animation', () => {
     })) as any;
 
     // Mock successful animation
-    vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+    vi.mocked(svgAnimationService.animateSVG).mockResolvedValue({
       success: true,
       result: {
         originalSvg: sampleSvg,
@@ -267,7 +268,7 @@ describe('Stage I: Animation', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(SVGAnimationService.animateSVG).toHaveBeenCalledWith(
+    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
         type: AnimationType.SEQUENTIAL

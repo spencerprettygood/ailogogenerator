@@ -1,4 +1,4 @@
-import { SVGAnimationService } from '../../animation/animation-service';
+import { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
 import { AnimationOptions, AnimatedSVGLogo, AnimationType } from '../../animation/types';
 import { SVGLogo } from '../../types';
 
@@ -57,7 +57,7 @@ export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
     }
     
     // Apply animation to the SVG logo using the singleton instance
-    const animationResponse = await SVGAnimationService.animateSVG(input.svg, animationOptions);
+    const animationResponse = await svgAnimationService.animateSVG(input.svg, animationOptions);
     
     if (!animationResponse.success) {
       throw new Error(`Animation failed: ${animationResponse.error?.message}`);

@@ -519,7 +519,7 @@ export class SVGAnimationService {
  * Create a singleton instance for static access
  */
 const svgAnimationServiceInstance = new SVGAnimationService();
-export { svgAnimationServiceInstance as SVGAnimationService };
+export { svgAnimationServiceInstance as svgAnimationService };
 
 /**
  * Pre-defined animation templates for common animation effects
