@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { 
-  AnimationType, 
+  // AnimationType is imported but not used
+  // AnimationEasing is imported but not used
   AnimationOptions,
-  AnimationEasing,
   AnimationTrigger
 } from '@/lib/animation/types';
 import { animationTemplates } from '@/lib/animation/animation-service';
@@ -43,7 +43,7 @@ export const AnimationShowcase: React.FC<AnimationShowcaseProps> = ({
   );
 
   // Create preview animation by applying it to the SVG
-  const createPreview = (template: any) => {
+  const createPreview = (template: typeof animationTemplates[0]) => {
     if (!svgPreview) return null;
     
     // This is a simplified approach - in a real app, you'd use the animation service

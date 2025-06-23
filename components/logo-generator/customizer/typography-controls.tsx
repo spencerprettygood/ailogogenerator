@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { TypographyControlsProps } from '@/lib/types-customization';
-import { updateElementTypography } from '@/lib/utils/svg-parser';
+// Import not used
+// import { updateElementTypography } from '@/lib/utils/svg-parser';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+// Import not used
+// import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
@@ -14,31 +16,29 @@ const TypographyControls: React.FC<TypographyControlsProps> = ({
   onUpdate,
   fontOptions,
 }) => {
-  // Only proceed if this is a text element
-  if (element.type !== 'text') {
-    return <div>Typography controls are only available for text elements.</div>;
-  }
-
-  // Initialize typography values
-  const [text, setText] = useState(element.content || '');
+  // Declare all hooks before any conditionals - this is crucial for React Hook rules
+  const [text, setText] = useState(element.type === 'text' ? (element.content || '') : '');
   const [fontFamily, setFontFamily] = useState(
-    (element.attributes['font-family'] as string) || 'Arial'
+    element.type === 'text' ? ((element.attributes['font-family'] as string) || 'Arial') : 'Arial'
   );
   const [fontSize, setFontSize] = useState(
-    parseFloat((element.attributes['font-size'] as string) || '12')
+    element.type === 'text' ? parseFloat((element.attributes['font-size'] as string) || '12') : 12
   );
   const [fontWeight, setFontWeight] = useState(
-    (element.attributes['font-weight'] as string) || 'normal'
+    element.type === 'text' ? ((element.attributes['font-weight'] as string) || 'normal') : 'normal'
   );
   const [fontStyle, setFontStyle] = useState(
-    (element.attributes['font-style'] as string) || 'normal'
+    element.type === 'text' ? ((element.attributes['font-style'] as string) || 'normal') : 'normal'
   );
   const [textAnchor, setTextAnchor] = useState(
-    (element.attributes['text-anchor'] as string) || 'start'
+    element.type === 'text' ? ((element.attributes['text-anchor'] as string) || 'start') : 'start'
   );
-
-  // Update element when typography changes
+  
+  // Update element when typography changes - place this before any conditionals
   useEffect(() => {
+    // Only update if this is a text element
+    if (element.type !== 'text') return;
+    
     const updatedElement = { ...element };
     updatedElement.attributes = { ...element.attributes };
     updatedElement.content = text;
@@ -51,7 +51,12 @@ const TypographyControls: React.FC<TypographyControlsProps> = ({
     updatedElement.attributes['text-anchor'] = textAnchor;
     
     onUpdate(updatedElement);
-  }, [text, fontFamily, fontSize, fontWeight, fontStyle, textAnchor]);
+  }, [text, fontFamily, fontSize, fontWeight, fontStyle, textAnchor, element, onUpdate]);
+  
+  // Only proceed if this is a text element
+  if (element.type !== 'text') {
+    return <div>Typography controls are only available for text elements.</div>;
+  }
 
   // Handle text content change
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -80,7 +80,8 @@ export function AnimatedLogoDisplay({
       const animatedElements = containerRef.current.querySelectorAll('*');
       animatedElements.forEach((el: Element) => {
         if (el instanceof HTMLElement || el instanceof SVGElement) {
-          (el as any).style.animationPlayState = 'paused';
+          // Use properly typed interface to avoid 'any'
+          (el as HTMLElement | SVGElement).style.animationPlayState = 'paused';
         }
       });
     } else {
@@ -88,7 +89,8 @@ export function AnimatedLogoDisplay({
       const animatedElements = containerRef.current.querySelectorAll('*');
       animatedElements.forEach((el: Element) => {
         if (el instanceof HTMLElement || el instanceof SVGElement) {
-          (el as any).style.animationPlayState = 'running';
+          // Use properly typed interface to avoid 'any'
+          (el as HTMLElement | SVGElement).style.animationPlayState = 'running';
         }
       });
     }

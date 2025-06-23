@@ -16,7 +16,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   performanceMonitor, 
   PerformanceMetric,
-  TimingMetric,
+  // TimingMetric is imported but not used, so removing it
   APIMetric,
   TokenUsageMetric,
   PipelineMetric,

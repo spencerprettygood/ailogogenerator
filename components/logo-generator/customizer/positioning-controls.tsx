@@ -1,14 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PositioningControlsProps } from '@/lib/types-customization';
-import { updateElementPosition } from '@/lib/utils/svg-parser';
+// Import not used
+// import { updateElementPosition } from '@/lib/utils/svg-parser';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, 
-  MoveHorizontal, MoveVertical, RotateCcw
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight
+  // These imports are not used
+  // MoveHorizontal, MoveVertical, RotateCcw
 } from 'lucide-react';
 
 const PositioningControls: React.FC<PositioningControlsProps> = ({
@@ -68,13 +70,8 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
     return 0;
   });
 
-  // Update position when form changes
-  useEffect(() => {
-    updateElementWithPosition();
-  }, [position, rotation]);
-
-  // Update element position
-  const updateElementWithPosition = () => {
+  // Update element position - define with useCallback to fix dependency issues
+  const updateElementWithPosition = useCallback(() => {
     const updatedElement = { ...element };
     const { attributes } = element;
     
@@ -125,7 +122,12 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
     }
     
     onUpdate(updatedElement);
-  };
+  }, [element, position, rotation, onUpdate]);
+  
+  // Update position when form changes
+  useEffect(() => {
+    updateElementWithPosition();
+  }, [updateElementWithPosition]);
 
   // Handle X position change
   const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {

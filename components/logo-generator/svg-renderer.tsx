@@ -59,32 +59,44 @@ export function SVGRenderer({
   
   // Extract SVG dimensions from the SVG content
   useEffect(() => {
-    if (svgContent && svgRef.current) {
-      try {
-        // Create a temporary div to parse the SVG
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = svgContent;
-        const svgElement = tempDiv.querySelector('svg');
-        
-        if (svgElement) {
-          // Get the viewBox
-          const viewBox = svgElement.getAttribute('viewBox');
-          if (viewBox) {
-            const [,, width, height] = viewBox.split(' ').map(Number);
+    if (!svgContent || typeof window === 'undefined') return;
+    
+    // Cleanup function for memory management
+    let cleanupNeeded = false;
+    
+    try {
+      // Create a temporary div to parse the SVG
+      const tempDiv = document.createElement('div');
+      cleanupNeeded = true;
+      tempDiv.innerHTML = svgContent;
+      const svgElement = tempDiv.querySelector('svg');
+      
+      if (svgElement) {
+        // Get the viewBox
+        const viewBox = svgElement.getAttribute('viewBox');
+        if (viewBox) {
+          const [,, width, height] = viewBox.split(' ').map(Number);
+          setSvgDimensions({ width, height });
+        } else if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {
+          // Get width and height attributes
+          const width = parseFloat(svgElement.getAttribute('width') || '0');
+          const height = parseFloat(svgElement.getAttribute('height') || '0');
+          if (width && height) {
             setSvgDimensions({ width, height });
-          } else if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {
-            // Get width and height attributes
-            const width = parseFloat(svgElement.getAttribute('width') || '0');
-            const height = parseFloat(svgElement.getAttribute('height') || '0');
-            if (width && height) {
-              setSvgDimensions({ width, height });
-            }
           }
         }
-      } catch (error) {
-        console.error("Error parsing SVG dimensions:", error);
       }
+    } catch (error) {
+      console.error("Error parsing SVG dimensions:", error);
     }
+    
+    return () => {
+      // Clean up DOM elements to prevent memory leaks
+      if (cleanupNeeded) {
+        // No explicit cleanup needed for this implementation
+        // as garbage collection will handle the tempDiv
+      }
+    };
   }, [svgContent]);
   
   // Create animation class based on playback state

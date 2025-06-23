@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { ElementEditorProps, SVGElement } from '@/lib/types-customization';
-import { updateElementColor, updateElementPosition, updateElementTypography } from '@/lib/utils/svg-parser';
+// Remove unused imports
+// import { updateElementColor, updateElementPosition, updateElementTypography } from '@/lib/utils/svg-parser';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+// Button is imported but not used
+// import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ColorPicker from './color-picker';
 import PositioningControls from './positioning-controls';
@@ -48,7 +50,7 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
     }
     
     onUpdate(updatedElement);
-  }, [fillColor, strokeColor, strokeWidth]);
+  }, [fillColor, strokeColor, strokeWidth, element, onUpdate]);
 
   // Handle fill color change
   const handleFillColorChange = (color: string) => {

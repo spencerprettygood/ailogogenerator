@@ -4,10 +4,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+// Card is imported but not used
+// import { Card } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from "@/lib/hooks/use-toast";
-import { MessageList } from './message-list';
+// MessageList is imported but not used
+// import { MessageList } from './message-list';
 import { TypingIndicator } from './typing-indicator';
 import { FileUploadSimple as FileUpload } from './file-upload-simple';
 import { Paperclip, Send, Loader2 } from 'lucide-react';

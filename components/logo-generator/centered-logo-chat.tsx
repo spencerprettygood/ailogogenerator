@@ -41,7 +41,8 @@ export function CenteredLogoChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { toast } = useToast();
+  // toast is declared but not used - we could remove it, but keeping with an underscore for clarity
+  const { toast: _toast } = useToast();
   const {
     generateLogo,
     isGenerating,
