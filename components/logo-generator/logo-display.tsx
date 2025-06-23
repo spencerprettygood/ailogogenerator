@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { AnimationType } from "@/lib/animation/types";
-import { useTheme } from "@/components/providers/theme-provider";
+import { useTheme } from "@/components/providers/theme-fixed";
 import { LogoVariant, SVGLogo, AnimatedLogo } from "@/lib/types";
 import { SVGRenderer } from "./svg-renderer";
 import { cn } from "@/lib/utils";

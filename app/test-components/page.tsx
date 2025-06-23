@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ThemeProvider } from '@/components/providers/theme-provider'
+import ThemedLayout from '@/components/providers/theme-fixed'
 import LogoDisplay from '@/components/logo-generator/logo-display'
 import { Card } from '@/components/ui/card'
 
