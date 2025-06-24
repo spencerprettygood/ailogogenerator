@@ -6,12 +6,24 @@
  * for different use cases like SVG generation and analysis.
  */
 
-import { anthropic, AnthropicOptions } from '@ai-sdk/anthropic';
+import { anthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
 import { env } from '../utils/env';
 import { logClaudeError, analyzeClaudeError, ClaudeErrorType } from '../utils/claude-error-handler';
 import { ClaudeModel } from '../types-agents';
 import "server-only";
+
+// Interface for Claude API options
+interface AnthropicOptions {
+  apiKey: string;
+  retrySettings?: {
+    maxRetries: number;
+    initialDelayMs: number;
+    maxDelayMs: number;
+  };
+  timeoutMs?: number;
+  logWarnings?: boolean;
+}
 
 // Interface for Claude request options
 interface ClaudeRequestOptions {
@@ -177,7 +189,7 @@ class ClaudeService {
       
       // Create a simplified response format that matches our existing interface
       return {
-        content: result.text,
+        content: result?.text || '',
         tokensUsed: {
           // AI SDK v5 doesn't provide token usage details directly
           // These are placeholder values

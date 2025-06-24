@@ -114,48 +114,13 @@ const nextConfig = {
       use: ['@svgr/webpack'],
     });
     
-    // Only apply these optimizations for client bundles
-    if (!isServer) {
-      // Polyfill handling for browser
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'fs': false,
-        'path': false,
-        'os': false,
-        'crypto': false,
-        'stream': false,
-        'http': false,
-        'https': false,
-        'zlib': false,
-        'async_hooks': false,
-      };
-      
-      // Production optimizations
-      if (!dev) {
-        // Improved chunk splitting for better performance
-        config.optimization.splitChunks = {
-          chunks: 'all',
-          cacheGroups: {
-            vendors: {
-              test: /[\\/]node_modules[\\/]/,
-              priority: -10,
-              reuseExistingChunk: true,
-            },
-            default: {
-              minChunks: 2,
-              priority: -20,
-              reuseExistingChunk: true,
-            },
-          },
-        };
-        
-        // Ignore certain modules in the browser
-        config.plugins.push(
-          new (require('webpack').IgnorePlugin)({
-            resourceRegExp: /^(node-fetch|encoding)$/,
-          })
-        );
-      }
+    // Apply our custom webpack config
+    const { createWebpackConfig, addProductionOptimizations } = require('./lib/webpack-config');
+    config = createWebpackConfig(config, { isServer });
+    
+    // Apply production optimizations
+    if (!dev && !isServer) {
+      config = addProductionOptimizations(config);
     }
     
     return config;

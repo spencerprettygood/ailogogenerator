@@ -30,17 +30,8 @@ import { UniquenessAnalysis } from './uniqueness-analysis';
 import { LogoFeedback, LiveFeedbackButton } from '@/components/feedback';
 import { FeedbackService } from '@/lib/services/feedback-service';
 import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feedback';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-// Type definition for animation options
-interface GetAnimationsOptions {
-  type: string;
-  duration: number;
-  easing: string;
-  delay: number;
-  iterations: number;
-  direction: string;
-  [key: string]: any; // Allow additional properties
-}
 import { 
   Message, 
   GenerationProgress, 
@@ -48,20 +39,27 @@ import {
   MessageRole, 
   SVGLogo,            
   FileDownloadInfo,
-  AnimationExportOptions
+  AnimationExportOptions,
+  ProgressStage,
+  AnimationOptions
 } from '@/lib/types'; 
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
 
+// Type definition for animation options
+interface GetAnimationsOptions extends Omit<AnimationOptions, 'timing'> {
+  duration: number;
+  easing: string;
+  delay: number;
+  iterations: number;
+  direction: string;
+  [key: string]: any; // Allow additional properties
+}
+
 interface AppMessage extends Message {
   type?: MessageRole | 'system' | 'assistant';
   progress?: GenerationProgress;
-  assets?: GeneratedAssets & { 
-    brandName?: string;
-    primaryLogoSVG?: SVGLogo; 
-    individualFiles?: FileDownloadInfo[]; 
-    zipPackageUrl?: string; 
-  };
+  assets?: GeneratedAssets;
   files?: File[];
 }
 
@@ -88,7 +86,7 @@ interface LogoGeneratorContextType {
   includeUniquenessAnalysis: boolean;
   setIncludeUniquenessAnalysis: (include: boolean) => void;
   progressForTracker: {
-    stages: Array<Record<string, unknown>>;
+    stages: ProgressStage[];
     currentStageId: string | null;
     overallProgress: number;
     estimatedTimeRemaining: number | null;
@@ -138,20 +136,20 @@ export function LogoGeneratorApp() {
     setIndustryConfidence(0);
     
     const userMessage: AppMessage = {
-      id: generateId(),
       role: 'user',
       content,
       timestamp: new Date(),
-      files
+      files,
+      id: generateId()
     };
     setMessages(prev => [...prev, userMessage]);
 
     const systemMessage: AppMessage = {
-      id: generateId(),
       role: 'system',
       type: 'system',
       content: 'Starting logo generation...',
-      timestamp: new Date()
+      timestamp: new Date(),
+      id: generateId()
     };
     setMessages(prev => [...prev, systemMessage]);
 
@@ -160,7 +158,16 @@ export function LogoGeneratorApp() {
       await generateLogo(content, files, {
         industry: selectedIndustry,
         includeAnimations: includeAnimations,
-        animationOptions: (selectedAnimationOptions as Record<string, unknown>) ?? undefined,
+        animationOptions: selectedAnimationOptions ? {
+          type: selectedAnimationOptions.type,
+          timing: {
+            duration: selectedAnimationOptions.duration,
+            easing: selectedAnimationOptions.easing,
+            delay: selectedAnimationOptions.delay,
+            iterations: selectedAnimationOptions.iterations,
+            direction: selectedAnimationOptions.direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse' | undefined
+          }
+        } : undefined,
         includeUniquenessAnalysis: includeUniquenessAnalysis
       });
     } catch (err) {
@@ -210,7 +217,7 @@ export function LogoGeneratorApp() {
         type: 'assistant',
         content: '🎉 Your logo package is ready! You can preview it above and download all files below.',
         timestamp: new Date(),
-        assets: hookAssets as AppMessage['assets']
+        assets: hookAssets
       };
       setMessages(prev => [...prev, completionMessage]);
 
@@ -241,9 +248,7 @@ export function LogoGeneratorApp() {
       reset();
       setMessages([lastUserMessage]); 
       handleSubmit(
-        typeof lastUserMessage.content === 'string'
-          ? lastUserMessage.content
-          : lastUserMessage.content.join(' '),
+        lastUserMessage.content,
         lastUserMessage.files
       );
     }
@@ -310,7 +315,7 @@ export function LogoGeneratorApp() {
     // If hookProgress.stages exists and is an array, use it directly (for multi-stage progress)
     if ('stages' in hookProgress && Array.isArray(hookProgress.stages)) {
       return {
-        stages: hookProgress.stages as Record<string, unknown>[],
+        stages: hookProgress.stages as ProgressStage[],
         currentStageId: ('currentStageId' in hookProgress && typeof hookProgress.currentStageId === 'string') 
           ? hookProgress.currentStageId 
           : null,
@@ -323,14 +328,12 @@ export function LogoGeneratorApp() {
 
     // Otherwise, adapt single-stage progress to ProgressTracker format
     return {
-      stages: [
-        {
-          id: hookProgress.stage ?? 'A',
-          label: hookProgress.message ?? 'Working...',
-          status: hookProgress.progress === 100 ? 'completed' : (hookProgress.progress > 0 ? 'in_progress' : 'pending'),
-          progress: hookProgress.progress ?? 0,
-        }
-      ] as Record<string, unknown>[],
+      stages: [{
+        id: hookProgress.stage ?? 'A',
+        label: hookProgress.message ?? 'Working...',
+        status: hookProgress.progress === 100 ? 'completed' : (hookProgress.progress > 0 ? 'in_progress' : 'pending'),
+        progress: hookProgress.progress ?? 0,
+      }] as ProgressStage[],
       currentStageId: (typeof hookProgress.stage === 'string') ? hookProgress.stage : 'A',
       overallProgress: hookProgress.progress ?? 0,
       estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number'
@@ -459,7 +462,18 @@ export function LogoGeneratorApp() {
                 {includeAnimations && (
                   <div className="space-y-4">
                     <AnimationSelector
-                      onSelectAnimation={(options) => setSelectedAnimationOptions(options)}
+                      onSelectAnimation={(options) => {
+                        const convertedOptions: GetAnimationsOptions = {
+                          ...options,
+                          type: options.type,
+                          duration: options.timing?.duration || 1000,
+                          easing: options.timing?.easing || 'ease',
+                          delay: options.timing?.delay || 0,
+                          iterations: options.timing?.iterations || 1,
+                          direction: options.timing?.direction || 'normal',
+                        };
+                        setSelectedAnimationOptions(convertedOptions);
+                      }}
                       className="mt-4"
                     />
                     
@@ -578,7 +592,7 @@ export function LogoGeneratorApp() {
                         files={hookAssets.individualFiles || []} 
                         packageUrl={hookAssets.zipPackageUrl}
                         brandName={hookAssets.brandName || "Your Brand"}
-                        onDownloadFileAction={(fileId: string) => console.log('Download file:', fileId)}
+                        onDownloadFileAction={(file: FileDownloadInfo) => console.log('Download file:', file.id)}
                         onDownloadAllAction={() => console.log('Download all')}
                       />
                       
@@ -653,7 +667,16 @@ export function LogoGeneratorApp() {
                     <H3 className="mb-4">Animation Options</H3>
                     <AnimationShowcase
                         onSelectAnimation={(animationOptions) => {
-                          setSelectedAnimationOptions(animationOptions as GetAnimationsOptions); // Cast to the correct type
+                          const convertedOptions: GetAnimationsOptions = {
+                            ...animationOptions,
+                            type: animationOptions.type,
+                            duration: animationOptions.timing?.duration || 1000,
+                            easing: animationOptions.timing?.easing || 'ease',
+                            delay: animationOptions.timing?.delay || 0,
+                            iterations: animationOptions.timing?.iterations || 1,
+                            direction: animationOptions.timing?.direction || 'normal',
+                          };
+                          setSelectedAnimationOptions(convertedOptions);
                           toast({
                             title: "Animation Selected",
                             description: "Animation has been applied to your logo."

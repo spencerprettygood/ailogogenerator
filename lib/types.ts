@@ -3,20 +3,22 @@ export interface LogoBrief {
   image_uploads?: File[];
   industry?: string;
   uniqueness_preference?: number; // 0-10, higher means more unique
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
+  includeUniquenessAnalysis?: boolean;
 }
 
 export interface DesignSpec {
   brand_name: string;
-  description: string;
+  brand_description: string;
+  style_preferences: string;
+  color_palette: string;
+  imagery: string;
+  target_audience: string;
+  additional_requests: string;
   industry?: string;
-  color_preferences?: string[];
-  style_preferences?: string[];
-  keywords?: string[];
-  target_audience?: string;
-  avoid?: string[];
-  inspiration?: string[];
+  industry_confidence?: number;
   uniqueness_level?: number; // 0-10 scale
-  additional_context?: string;
 }
 
 export interface LogoColors {
@@ -64,11 +66,29 @@ export interface SVGLogo {
   name: string;
 }
 
+export enum MessageRole {
+  USER = 'user',
+  ASSISTANT = 'assistant',
+  SYSTEM = 'system'
+}
+
+export interface Message {
+  role: MessageRole;
+  content: string;
+  timestamp: Date;
+  files?: File[];
+  id?: string;
+}
+
 export interface GenerationProgress {
   status: 'queued' | 'analyzing' | 'generating' | 'refining' | 'completed' | 'failed';
   progress: number; // 0-100
   message: string;
   timeRemaining?: number; // in seconds
+  stage?: string; // Stage identifier (A, B, C, etc.)
+  estimatedTimeRemaining?: number; // in milliseconds
+  stages?: Array<Record<string, unknown>>; // Array of stage objects for multi-stage progress
+  currentStageId?: string; // Current stage ID
 }
 
 export interface FileDownloadInfo {
@@ -92,6 +112,15 @@ export interface DownloadManagerProps {
   includeFavicon?: boolean;
 }
 
+export interface AnimationDownloadManagerProps {
+  animatedSvg: string;
+  animationCss?: string;
+  animationJs?: string;
+  animationOptions?: AnimationOptions;
+  brandName?: string;
+  onExport: (format: string, options?: AnimationExportOptions) => void;
+}
+
 export interface GeneratedAssets {
   brandName?: string;
   primaryLogoSVG?: SVGLogo;
@@ -104,6 +133,11 @@ export interface GeneratedAssets {
   guidelines?: DesignGuidelines;
   individualFiles?: FileDownloadInfo[];
   zipPackageUrl?: string;
+  animatedSvg?: string;
+  animationCss?: string;
+  animationJs?: string;
+  animationOptions?: AnimationOptions;
+  uniquenessAnalysis?: IndustryAnalysis;
 }
 
 export interface GenerationResult {
@@ -217,36 +251,50 @@ export interface AnimationExportOptions {
   height?: number;
   backgroundColor?: string;
   includeSource?: boolean;
+  fps?: number;
+  loop?: boolean;
 }
 
 export interface AnimationOptions {
   type: string; // 'fade', 'rotate', 'pulse', etc.
-  duration: number; // in seconds
-  delay?: number; // in seconds
-  iterationCount?: number | 'infinite';
-  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
-  timingFunction?: string; // 'ease', 'linear', 'ease-in', etc.
-  target?: string; // CSS selector or element ID to target specific elements
-  fromState?: Record<string, any>; // Initial state
-  toState?: Record<string, any>; // Final state
-  includeSource?: boolean;
+  timing: {
+    duration: number; // in seconds
+    delay?: number; // in seconds
+    easing?: string;
+    iterations?: number;
+    direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
+  };
+  trigger?: string; // 'load', 'hover', 'click'
+  elements?: string[];
+  stagger?: number;
+  customKeyframes?: string;
+  customCSS?: string;
+  jsCode?: string;
+  transformOrigin?: string;
+  sequenceOrder?: string[];
 }
 
-export interface PipelineStage {
+export enum PipelineStage {
+  IDLE = 'idle',
+  A = 'distillation',
+  B = 'moodboard',
+  C = 'selection',
+  D = 'generation',
+  E = 'validation',
+  F = 'variants',
+  G = 'guidelines',
+  H = 'packaging',
+  I = 'animation',
+  UNIQUENESS = 'uniqueness',
+  CACHED = 'cached',
+  COMPLETE = 'complete'
+}
+
+export interface ProgressStage {
   id: string;
-  name: string;
-  description: string;
+  label: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   progress: number; // 0-100
-  output?: any;
-  error?: {
-    message: string;
-    code?: string;
-    details?: string;
-  };
-  startTime?: number;
-  endTime?: number;
-  estimatedDuration?: number; // in milliseconds
 }
 
 export interface SVGValidationResult {

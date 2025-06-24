@@ -17,746 +17,574 @@
 
 import { GenerationResult, LogoBrief, PipelineProgress } from '../types';
 import { Logger } from './logger';
-import { cacheAdapter, CacheItem } from './cache-adapter';
+import { cacheAdapter } from './cache-adapter';
 import { ErrorCategory, ErrorSeverity, createAppError, handleError } from './error-handler';
 
+// Internal types
+
 /**
- * @interface CacheItem
+ * @interface LocalCacheItem
  * @description Represents an item stored in the cache with its metadata
  * @template T The type of data being stored in the cache
  * @property {T} data - The actual cached data
  * @property {number} expiresAt - Timestamp (ms) when this item expires
  * @property {number} createdAt - Timestamp (ms) when this item was created
  * @property {string} key - The unique identifier for this cache item
- * @property {CacheType} type - The category this cached item belongs to
- * @property {Record<string, unknown>} [metadata] - Optional additional information about the cached item
+ * @property {CacheType} type - The type of cached data (generation, asset, etc.)
  */
-export interface CacheItem<T> {
+interface LocalCacheItem<T = any> {
   data: T;
   expiresAt: number;
   createdAt: number;
   key: string;
   type: CacheType;
-  metadata?: Record<string, unknown>;
+  lastAccessed?: number;
 }
 
 /**
- * @typedef {('generation'|'intermediate'|'asset'|'progress')} CacheType
- * @description Types of data that can be stored in the cache
- * - generation: Complete logo generation results
- * - intermediate: Partial results from pipeline stages
- * - asset: Generated files and resources
- * - progress: Real-time generation progress information
+ * @type {CacheType}
+ * @description Enum-like type for different categories of cached data
  */
-export type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
+type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
 
 /**
  * @interface CacheConfig
  * @description Configuration options for the cache manager
- * @property {boolean} enabled - Master switch to enable/disable caching
- * @property {Object} ttl - Time-to-live settings for different cache types (in milliseconds)
- * @property {number} ttl.generation - TTL for complete generation results
- * @property {number} ttl.intermediate - TTL for intermediate pipeline stage results
- * @property {number} ttl.asset - TTL for generated assets (SVGs, PNGs, etc.)
- * @property {number} ttl.progress - TTL for progress tracking information
- * @property {Object} maxSize - Maximum number of items to keep in each cache type
- * @property {number} maxSize.generation - Max number of complete generation results
- * @property {number} maxSize.intermediate - Max number of intermediate results
- * @property {number} maxSize.asset - Max number of cached assets
- * @property {number} maxSize.progress - Max number of progress entries
  */
-export interface CacheConfig {
+interface CacheConfig {
+  /** Whether the cache is enabled */
   enabled: boolean;
+  
+  /** Default TTL for cache entries in milliseconds */
+  defaultTTL: number;
+  
+  /** TTL for different cache types in milliseconds */
   ttl: {
     generation: number;
     intermediate: number;
     asset: number;
     progress: number;
   };
-  maxSize: {
-    generation: number;
-    intermediate: number;
-    asset: number;
-    progress: number;
-  };
+  
+  /** Maximum number of items to store in the cache */
+  maxItems: number;
+  
+  /** Clean interval in milliseconds */
+  cleanInterval: number;
 }
 
 /**
  * @class CacheManager
- * @description Singleton class that manages caching for the AI Logo Generator
+ * @description Singleton manager for in-memory caching of frequently used data
  * 
- * Provides a centralized caching system with the following features:
- * - Singleton pattern for application-wide access
- * - In-memory storage with configurable TTL
- * - LRU (Least Recently Used) eviction strategy
- * - Support for different cache types with separate configurations
- * - Automatic cleanup of expired items
- * - Metrics and statistics tracking
+ * This cache manager provides efficient storage and retrieval of:
+ * - Generation results (complete logo packages)
+ * - Intermediate results (partial processing results)
+ * - Assets (individual files like SVGs, PNGs)
+ * - Progress updates (for streaming responses)
  * 
- * @example
- * // Get the singleton instance
- * const cacheManager = CacheManager.getInstance();
- * 
- * // Store a generation result
- * cacheManager.cacheGenerationResult(brief, result);
- * 
- * // Retrieve a cached result
- * const cachedResult = cacheManager.getGenerationResult(brief);
- * 
- * @implements {Singleton<CacheManager>}
+ * It implements automatic cleanup, TTL expiration, and memory-safe storage.
  */
 export class CacheManager {
   private static instance: CacheManager;
-  private cache: Map<string, CacheItem<unknown>> = new Map();
+  private cache: Map<string, LocalCacheItem>;
+  private cleanupTimer: NodeJS.Timeout | null = null;
   private config: CacheConfig;
   private logger: Logger;
-  private counts: Record<CacheType, number> = {
-    generation: 0,
-    intermediate: 0,
-    asset: 0,
-    progress: 0,
-  };
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private counts: Record<CacheType, number>;
+  private hits: Record<CacheType, number>;
+  private misses: Record<CacheType, number>;
   
   /**
-   * @constructor
-   * @private
-   * @description Private constructor to enforce singleton pattern
-   * 
-   * Initializes the cache with default configuration and starts the
-   * automatic cleanup process to remove expired items periodically.
+   * Private constructor (use getInstance() instead)
    */
   private constructor() {
-    this.logger = new Logger('CacheManager');
+    // Initialize the cache
+    this.cache = new Map<string, LocalCacheItem>();
     
-    // Default configuration
-    this.config = {
-      enabled: process.env.ENABLE_CACHING !== 'false',
-      ttl: {
-        generation: 60 * 60 * 1000, // 1 hour
-        intermediate: 30 * 60 * 1000, // 30 minutes
-        asset: 24 * 60 * 60 * 1000, // 24 hours
-        progress: 5 * 60 * 1000, // 5 minutes
-      },
-      maxSize: {
-        generation: 100,
-        intermediate: 200,
-        asset: 50,
-        progress: 500,
-      }
+    // Set up cache counts by type
+    this.counts = {
+      generation: 0,
+      intermediate: 0,
+      asset: 0,
+      progress: 0
     };
     
-    this.logger.info('CacheManager initialized', {
-      enabled: this.config.enabled,
-      maxSizes: this.config.maxSize
-    });
+    // Set up cache hit/miss counters
+    this.hits = {
+      generation: 0,
+      intermediate: 0,
+      asset: 0,
+      progress: 0
+    };
     
-    // Start the cleanup interval
-    this.startCleanupInterval();
+    this.misses = {
+      generation: 0,
+      intermediate: 0,
+      asset: 0,
+      progress: 0
+    };
+    
+    // Initialize configuration with defaults
+    this.config = {
+      enabled: true,
+      defaultTTL: 24 * 60 * 60 * 1000, // 24 hours
+      ttl: {
+        generation: 24 * 60 * 60 * 1000, // 24 hours
+        intermediate: 2 * 60 * 60 * 1000, // 2 hours
+        asset: 24 * 60 * 60 * 1000, // 24 hours
+        progress: 15 * 60 * 1000 // 15 minutes
+      },
+      maxItems: 1000,
+      cleanInterval: 10 * 60 * 1000 // 10 minutes
+    };
+    
+    // Initialize logger
+    this.logger = new Logger('CacheManager');
+    
+    // Start the cleanup timer
+    this.startCleanupTimer();
   }
   
   /**
-   * @static
-   * @method getInstance
-   * @description Gets the singleton instance of the CacheManager
+   * Get the singleton instance of the cache manager
    * 
-   * If an instance doesn't exist yet, it creates one. Otherwise,
-   * returns the existing instance. This ensures only one cache
-   * exists throughout the application lifecycle.
-   * 
-   * @returns {CacheManager} The singleton CacheManager instance
+   * @returns {CacheManager} The singleton cache manager instance
    */
   public static getInstance(): CacheManager {
     if (!CacheManager.instance) {
       CacheManager.instance = new CacheManager();
     }
-    
     return CacheManager.instance;
   }
   
   /**
-   * @method configure
-   * @description Updates the cache configuration with new settings
+   * Start the timer that periodically cleans up expired cache entries
+   */
+  private startCleanupTimer(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+    
+    if (this.config.enabled) {
+      this.cleanupTimer = setInterval(() => {
+        this.cleanup();
+      }, this.config.cleanInterval);
+    }
+  }
+  
+  /**
+   * Configure the cache manager with custom settings
    * 
-   * This method allows partial updates to the configuration, merging
-   * the new settings with the existing ones. It handles nested properties
-   * like ttl and maxSize correctly.
-   * 
-   * @param {Partial<CacheConfig>} config - New configuration options to apply
-   * @returns {void}
-   * 
-   * @example
-   * // Update only specific TTL values
-   * cacheManager.configure({
-   *   ttl: { 
-   *     generation: 120 * 60 * 1000, // 2 hours
-   *     asset: 48 * 60 * 60 * 1000   // 48 hours
-   *   }
-   * });
+   * @param {Partial<CacheConfig>} config - Custom configuration options
    */
   public configure(config: Partial<CacheConfig>): void {
+    // Merge the provided config with current config
     this.config = {
       ...this.config,
       ...config,
       ttl: {
         ...this.config.ttl,
         ...(config.ttl || {})
-      },
-      maxSize: {
-        ...this.config.maxSize,
-        ...(config.maxSize || {})
       }
     };
-  }
-  
-  /**
-   * Starts the cleanup interval if it's not already running
-   * @private
-   */
-  private startCleanupInterval(): void {
-    if (this.cleanupInterval === null) {
-      this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000); // Run cleanup every 5 minutes
+    
+    // Restart the cleanup timer with new interval if provided
+    if (config.cleanInterval) {
+      this.startCleanupTimer();
     }
+    
+    this.logger.info('Cache manager configured', { config: this.config });
   }
   
   /**
-   * Stops the cleanup interval if it's running
-   * @private
-   */
-  private stopCleanupInterval(): void {
-    if (this.cleanupInterval !== null) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
-  }
-  
-  /**
-   * Ensures cleanup resources are properly released
-   * @public
-   */
-  public dispose(): void {
-    this.stopCleanupInterval();
-    this.clear();
-    this.logger.info('CacheManager disposed');
-  }
-  
-  /**
-   * @method setEnabled
-   * @description Enables or disables the entire cache system
+   * Enable or disable the cache
    * 
-   * When disabled, all cache operations become no-ops (they don't error,
-   * but they don't store or retrieve data). When switching from enabled
-   * to disabled, the entire cache is cleared.
-   * 
-   * @param {boolean} enabled - Whether the cache should be enabled
-   * @returns {void}
-   * 
-   * @example
-   * // Disable caching (clears existing cache)
-   * cacheManager.setEnabled(false);
-   * 
-   * // Re-enable caching
-   * cacheManager.setEnabled(true);
+   * @param {boolean} enabled - Whether to enable the cache
    */
   public setEnabled(enabled: boolean): void {
     this.config.enabled = enabled;
     
-    // Clear cache if disabled
-    if (!enabled) {
-      this.clear();
-      this.stopCleanupInterval();
-    } else {
-      this.startCleanupInterval();
+    if (enabled && !this.cleanupTimer) {
+      this.startCleanupTimer();
+    } else if (!enabled && this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
     }
-  }
-  
-  /**
-   * @method getCacheKey
-   * @description Generates a deterministic hash key from a logo brief
-   * 
-   * Creates a SHA-256 hash based on the essential elements of a logo brief,
-   * ensuring that identical briefs will generate the same cache key. For file
-   * uploads, only metadata (filename, size, type) is used, not the actual file
-   * contents, to keep key generation fast.
-   * 
-   * @param {LogoBrief} brief - The logo generation brief to create a key for
-   * @returns {string} A unique hexadecimal hash that can be used as a cache key
-   * 
-   * @example
-   * const brief = { 
-   *   prompt: "Create a modern tech logo", 
-   *   image_uploads: [file1, file2] 
-   * };
-   * const key = cacheManager.getCacheKey(brief);
-   * // Returns something like: "8f7d6c5e4b3a2910..."
-   */
-  public async getCacheKey(brief: LogoBrief): Promise<string> {
-    this.logger.debug('Generating cache key for brief');
     
+    this.logger.info(`Cache ${enabled ? 'enabled' : 'disabled'}`);
+  }
+  
+  /**
+   * Clear all items from the cache
+   */
+  public clear(): void {
+    this.cache.clear();
+    
+    // Reset counts
+    for (const type in this.counts) {
+      this.counts[type as CacheType] = 0;
+    }
+    
+    this.logger.info('Cache cleared');
+  }
+  
+  /**
+   * Get cache statistics for monitoring and debugging
+   * 
+   * @returns {object} Cache statistics including size, hit/miss ratio, etc.
+   */
+  public getStats(): any {
+    const totalItems = this.cache.size;
+    const totalHits = Object.values(this.hits).reduce((sum, value) => sum + value, 0);
+    const totalMisses = Object.values(this.misses).reduce((sum, value) => sum + value, 0);
+    
+    const hitRatio = totalHits + totalMisses > 0 
+      ? totalHits / (totalHits + totalMisses) 
+      : 0;
+    
+    return {
+      enabled: this.config.enabled,
+      totalItems,
+      itemsByType: { ...this.counts },
+      hitRatio: hitRatio.toFixed(2),
+      hits: { ...this.hits },
+      misses: { ...this.misses },
+      memoryUsage: this.estimateMemoryUsage(),
+    };
+  }
+  
+  /**
+   * Estimate the amount of memory being used by the cache
+   * 
+   * @returns {number} Estimated memory usage in bytes
+   */
+  private estimateMemoryUsage(): number {
     try {
-      // Create a string representation of the brief
-      const briefString = JSON.stringify({
-        prompt: brief.prompt,
-        // For images, we just store the file names and sizes for the key
-        image_uploads: brief.image_uploads?.map((file: File) => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        }))
-      });
+      // Rough estimate: 200 bytes overhead per item plus the size of the data
+      const ITEM_OVERHEAD = 200;
+      let totalSize = 0;
       
-      // Create a hash of the brief using browser-compatible approach
-      const hash = await this.generateHash(briefString);
-      this.logger.debug('Generated cache key successfully', { keyLength: hash.length });
-      return hash;
+      for (const [key, item] of this.cache.entries()) {
+        // Add key size
+        totalSize += key.length * 2;
+        
+        // Add item overhead
+        totalSize += ITEM_OVERHEAD;
+        
+        // Add data size (rough estimate)
+        if (typeof item.data === 'string') {
+          totalSize += item.data.length * 2;
+        } else if (item.data && typeof item.data === 'object') {
+          // Convert to JSON and measure (rough estimate)
+          try {
+            const jsonSize = JSON.stringify(item.data).length * 2;
+            totalSize += jsonSize;
+          } catch (e) {
+            // If JSON stringification fails, use a default size
+            totalSize += 1000;
+          }
+        }
+      }
+      
+      return totalSize;
     } catch (error) {
-      const appError = handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { 
-          operation: 'generateCacheKey',
-          briefLength: brief.prompt?.length
-        },
-        rethrow: false
-      });
-      
-      // Fallback to timestamp-based key in case of crypto failures
-      return `fallback_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      this.logger.warn('Error estimating cache memory usage', { error });
+      return 0;
     }
   }
   
   /**
-   * @method get
-   * @description Retrieves an item from the cache if it exists and hasn't expired
+   * Store a value in the cache with the specified key and type
    * 
-   * This method looks up an item in the cache by its key and type, checks if
-   * it has expired, and returns the data if valid. If the item has expired,
-   * it's automatically removed from the cache.
-   * 
-   * @template T - The type of data being retrieved
-   * @param {string} key - The unique identifier for the item
-   * @param {CacheType} type - The category of cached data
-   * @returns {T | null} The cached data if found and valid, null otherwise
-   * 
-   * @example
-   * // Get a cached generation result
-   * const result = cacheManager.get<GenerationResult>('abc123', 'generation');
-   * 
-   * if (result) {
-   *   // Use the cached result
-   * } else {
-   *   // Generate a new result
-   * }
+   * @template T Type of data being stored
+   * @param {string} key - Unique identifier for the cached item
+   * @param {T} value - The data to cache
+   * @param {CacheType} type - The type of data being cached
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
+   * @returns {void}
    */
-  public get<T>(key: string, type: CacheType): T | null {
+  private set<T>(key: string, value: T, type: CacheType, ttl?: number): void {
     if (!this.config.enabled) {
+      return;
+    }
+    
+    // If cache is at capacity, evict least recently used item
+    if (this.cache.size >= this.config.maxItems) {
+      this.evictLRU();
+    }
+    
+    // Calculate TTL
+    const expiresAt = Date.now() + (ttl || this.config.ttl[type] || this.config.defaultTTL);
+    
+    // Create cache item
+    const item: LocalCacheItem<T> = {
+      data: value,
+      expiresAt,
+      createdAt: Date.now(),
+      lastAccessed: Date.now(),
+      key,
+      type
+    };
+    
+    // Store in cache
+    this.cache.set(key, item);
+    
+    // Update count
+    this.counts[type]++;
+    
+    this.logger.debug(`Cache set: ${key} (${type})`, { ttl: ttl || this.config.ttl[type] });
+  }
+  
+  /**
+   * Evict the least recently used item from the cache
+   */
+  private evictLRU(): void {
+    let oldestItem: LocalCacheItem | null = null;
+    let oldestKey: string | null = null;
+    
+    for (const [key, item] of this.cache.entries()) {
+      if (!oldestItem || (item.lastAccessed || 0) < (oldestItem.lastAccessed || 0)) {
+        oldestItem = item;
+        oldestKey = key;
+      }
+    }
+    
+    if (oldestKey) {
+      const removedType = oldestItem?.type || 'unknown';
+      this.cache.delete(oldestKey);
+      
+      if (removedType in this.counts) {
+        this.counts[removedType as CacheType]--;
+      }
+      
+      this.logger.debug(`Cache evicted LRU item: ${oldestKey} (${removedType})`);
+    }
+  }
+  
+  /**
+   * Retrieve a value from the cache
+   * 
+   * @template T Expected type of the cached data
+   * @param {string} key - The key to look up
+   * @param {CacheType} type - The type of data being retrieved
+   * @returns {T|null} The cached value or null if not found
+   */
+  private get<T>(key: string, type: CacheType): T | null {
+    if (!this.config.enabled) {
+      this.misses[type]++;
       return null;
     }
     
-    const cacheKey = `${type}:${key}`;
-    const item = this.cache.get(cacheKey);
+    const item = this.cache.get(key);
     
     if (!item) {
+      this.misses[type]++;
       return null;
     }
     
-    // Check if the item has expired
+    // Check if expired
     if (Date.now() > item.expiresAt) {
-      this.cache.delete(cacheKey);
+      this.cache.delete(key);
       this.counts[type]--;
+      this.misses[type]++;
       return null;
     }
+    
+    // Update last accessed time
+    item.lastAccessed = Date.now();
+    
+    // Register hit
+    this.hits[type]++;
     
     return item.data as T;
   }
   
   /**
-   * @method set
-   * @description Stores an item in the cache with its type and metadata
+   * Generate a cache key for a logo brief to ensure consistent lookups
    * 
-   * This method adds or updates an item in the cache. If the cache for this
-   * type is full, it will evict the oldest item before adding the new one.
-   * Each item is stored with its expiration time based on the TTL for its type.
-   * 
-   * @template T - The type of data being stored
-   * @param {string} key - The unique identifier for the item
-   * @param {T} data - The data to cache
-   * @param {CacheType} type - The category of cached data
-   * @param {Record<string, any>} [metadata] - Optional additional information about the item
-   * @returns {string} The cache key
-   * 
-   * @example
-   * // Store a generation result
-   * const key = cacheManager.set(
-   *   '123abc', 
-   *   generationResult, 
-   *   'generation', 
-   *   { brandName: 'TechCorp', timestamp: Date.now() }
-   * );
+   * @param {LogoBrief} brief - The logo brief to generate a key for
+   * @returns {string} A deterministic cache key
    */
-  public set<T>(key: string, data: T, type: CacheType, metadata?: Record<string, unknown>): string {
-    if (!this.config.enabled) {
-      return key;
-    }
-    
-    const cacheKey = `${type}:${key}`;
-    const ttl = this.config.ttl[type];
-    const expiresAt = Date.now() + ttl;
-    
-    // Check if we need to evict items
-    if (!this.cache.has(cacheKey) && this.counts[type] >= this.config.maxSize[type]) {
-      this.evictOldest(type);
-    }
-    
-    // Create cache item
-    const cacheItem: CacheItem<T> = {
-      data,
-      expiresAt,
-      createdAt: Date.now(),
-      key,
-      type,
-      metadata
-    };
-    
-    // Update counts if this is a new item
-    if (!this.cache.has(cacheKey)) {
-      this.counts[type]++;
-    }
-    
-    // Store in cache
-    this.cache.set(cacheKey, cacheItem);
-    
-    return key;
-  }
-  
-  /**
-   * @method cacheGenerationResult
-   * @description Stores a complete logo generation result in the cache
-   * 
-   * This is a high-level method that handles creating the appropriate key
-   * from a logo brief and storing the result with metadata for easier
-   * retrieval and management.
-   * 
-   * @param {LogoBrief} brief - The original logo generation brief
-   * @param {GenerationResult} result - The complete generation result to cache
-   * @returns {string} The cache key used to store the result
-   * 
-   * @example
-   * const result = await generateLogo(brief);
-   * cacheManager.cacheGenerationResult(brief, result);
-   */
-  public async cacheGenerationResult(brief: LogoBrief, result: GenerationResult): Promise<string> {
+  private generateBriefKey(brief: LogoBrief): string {
     try {
-      const key = await this.getCacheKey(brief);
-      return this.set(key, result, 'generation', { 
-        brandName: result.brandName,
-        timestamp: Date.now()
-      });
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'cacheGenerationResult' },
-        logLevel: 'warn'
-      });
-      return `error_${Date.now()}`;
-    }
-  }
-  
-  /**
-   * @method cacheIntermediateResult
-   * @description Stores partial results from a pipeline stage
-   * 
-   * Caches intermediate results from specific pipeline stages, which can
-   * be used to speed up regeneration or for debugging purposes. These
-   * results have a shorter TTL than complete generation results.
-   * 
-   * @param {string} sessionId - The unique generation session identifier
-   * @param {string} stageId - The pipeline stage identifier
-   * @param {any} data - The stage result data to cache
-   * @returns {string} The cache key used to store the result
-   * 
-   * @example
-   * // Cache moodboard results from stage B
-   * cacheManager.cacheIntermediateResult(
-   *   'session-123',
-   *   'stage-b',
-   *   moodboardData
-   * );
-   */
-  public cacheIntermediateResult(sessionId: string, stageId: string, data: unknown): string {
-    try {
-      const key = `${sessionId}:${stageId}`;
-      return this.set(key, data, 'intermediate', {
-        sessionId,
-        stageId,
-        timestamp: Date.now()
-      });
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'cacheIntermediateResult', sessionId, stageId },
-        logLevel: 'warn'
-      });
-      return `${sessionId}:${stageId}`;
-    }
-  }
-  
-  /**
-   * @method cacheProgress
-   * @description Stores progress information for active generations
-   * 
-   * Caches real-time progress data for ongoing logo generation processes.
-   * This data is used to provide progress updates to users, especially
-   * after page refreshes or when reconnecting.
-   * 
-   * @param {string} sessionId - The unique generation session identifier
-   * @param {PipelineProgress} progress - The current progress data
-   * @returns {string} The cache key used to store the progress
-   * 
-   * @example
-   * cacheManager.cacheProgress('session-456', {
-   *   currentStage: 'stage-d',
-   *   stageProgress: 60,
-   *   overallProgress: 45,
-   *   statusMessage: 'Generating SVG logo...'
-   * });
-   */
-  public cacheProgress(sessionId: string, progress: PipelineProgress): string {
-    try {
-      return this.set(sessionId, progress, 'progress', {
-        timestamp: Date.now(),
-        stage: progress.currentStage
-      });
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'cacheProgress', sessionId },
-        logLevel: 'warn'
-      });
-      return sessionId;
-    }
-  }
-  
-  /**
-   * @method getGenerationResult
-   * @description Retrieves a complete logo generation result from the cache
-   * 
-   * Looks up a generation result using the same brief that was used to
-   * create it. This is the primary method for implementing result caching
-   * at the API level.
-   * 
-   * @param {LogoBrief} brief - The logo brief to search for
-   * @returns {GenerationResult | null} The cached generation result or null if not found
-   * 
-   * @example
-   * // Check if we already have a result for this brief
-   * const cachedResult = await cacheManager.getGenerationResult(userBrief);
-   * if (cachedResult) {
-   *   return cachedResult; // Use cached result
-   * } else {
-   *   // Generate new result
-   * }
-   */
-  public async getGenerationResult(brief: LogoBrief): Promise<GenerationResult | null> {
-    if (!this.config.enabled) {
-      return null;
-    }
-    
-    try {
-      // Generate cache key
-      const key = await this.getCacheKey(brief);
+      // Start with the prompt
+      const components = [
+        brief.prompt.trim().toLowerCase().replace(/\s+/g, ' ')
+      ];
       
-      // Fetch from cache
-      const cachedData = this.get<GenerationResult>(key, 'generation');
-      
-      if (cachedData) {
-        this.logger.debug('Cache hit: generation result found', { cacheKey: key });
-      } else {
-        this.logger.debug('Cache miss: no generation result found', { cacheKey: key });
+      // Add industry if specified
+      if (brief.industry) {
+        components.push(`industry:${brief.industry}`);
       }
       
-      return cachedData;
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'getGenerationResult' },
-        logLevel: 'warn'
-      });
-      return null;
-    }
-  }
-  
-  /**
-   * @method getIntermediateResult
-   * @description Retrieves a cached intermediate result from a specific pipeline stage
-   * 
-   * Used to retrieve partial results from pipeline stages, which can be used
-   * to skip stages that have already been completed in case of a restart or
-   * to implement incremental generation.
-   * 
-   * @param {string} sessionId - The unique generation session identifier
-   * @param {string} stageId - The pipeline stage identifier
-   * @returns {any | null} The cached stage result or null if not found
-   * 
-   * @example
-   * // Check if we already have moodboard results
-   * const moodboard = cacheManager.getIntermediateResult(
-   *   sessionId, 
-   *   'stage-b'
-   * );
-   */
-  public getIntermediateResult(sessionId: string, stageId: string): unknown | null {
-    try {
-      const key = `${sessionId}:${stageId}`;
-      return this.get(key, 'intermediate');
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'getIntermediateResult', sessionId, stageId },
-        logLevel: 'warn'
-      });
-      return null;
-    }
-  }
-  
-  /**
-   * @method getProgress
-   * @description Retrieves cached progress information for a generation session
-   * 
-   * Used to restore progress information when a user reconnects or refreshes
-   * the page during an ongoing generation process.
-   * 
-   * @param {string} sessionId - The unique generation session identifier
-   * @returns {PipelineProgress | null} The cached progress data or null if not found
-   * 
-   * @example
-   * // Check if we have progress data for this session
-   * const progress = cacheManager.getProgress('session-789');
-   * if (progress) {
-   *   // Update UI with current progress
-   *   updateProgressUI(progress);
-   * }
-   */
-  public getProgress(sessionId: string): PipelineProgress | null {
-    try {
-      return this.get<PipelineProgress>(sessionId, 'progress');
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'getProgress', sessionId },
-        logLevel: 'warn'
-      });
-      return null;
-    }
-  }
-  
-  /**
-   * @method invalidate
-   * @description Removes a specific item from the cache
-   * 
-   * Manually removes a cached item before its expiration time.
-   * Useful for invalidating stale data or for implementing
-   * cache purging on demand.
-   * 
-   * @param {string} key - The cache key to invalidate
-   * @param {CacheType} type - The category of cached data
-   * @returns {void}
-   * 
-   * @example
-   * // Invalidate a cached result when it's no longer needed
-   * cacheManager.invalidate(cacheKey, 'generation');
-   */
-  public invalidate(key: string, type: CacheType): void {
-    try {
-      const cacheKey = `${type}:${key}`;
-      
-      if (this.cache.has(cacheKey)) {
-        this.cache.delete(cacheKey);
-        this.counts[type]--;
+      // Add uniqueness preference if specified
+      if (typeof brief.uniqueness_preference === 'number') {
+        components.push(`uniqueness:${brief.uniqueness_preference}`);
       }
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'invalidate', key, type },
-        logLevel: 'warn'
-      });
-    }
-  }
-  
-  /**
-   * @method invalidateType
-   * @description Removes all cached items of a specific type
-   * 
-   * Clears an entire category of cached data. Useful for implementing
-   * cache refresh policies or handling data schema changes that would
-   * make all cached items of a certain type invalid.
-   * 
-   * @param {CacheType} type - The category of cached data to invalidate
-   * @returns {void}
-   * 
-   * @example
-   * // Clear all generation results
-   * cacheManager.invalidateType('generation');
-   * 
-   * // Clear all progress data
-   * cacheManager.invalidateType('progress');
-   */
-  public invalidateType(type: CacheType): void {
-    try {
-      for (const [key, item] of this.cache.entries()) {
-        if (item.type === type) {
-          this.cache.delete(key);
+      
+      // Add animation flag if specified
+      if (brief.includeAnimations) {
+        components.push('animated:true');
+        
+        // Add animation options if specified
+        if (brief.animationOptions) {
+          components.push(`animation:${brief.animationOptions.type}`);
         }
       }
       
-      this.counts[type] = 0;
+      // Add uniqueness analysis flag if specified
+      if (brief.includeUniquenessAnalysis) {
+        components.push('uniqueness_analysis:true');
+      }
+      
+      // Join and hash
+      return `brief:${components.join('|')}`;
     } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'invalidateType', type },
-        logLevel: 'warn'
-      });
+      this.logger.warn('Error generating brief key', { error, brief });
+      // Fallback to a simple timestamp-based key to avoid cache collisions
+      return `brief:${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     }
   }
   
   /**
-   * @method clear
-   * @description Removes all items from all caches
+   * Cache a generation result for future retrieval
    * 
-   * Completely empties the cache. Useful for implementing a "force refresh"
-   * function or when deploying significant application updates that would
-   * invalidate all cached data.
-   * 
+   * @param {LogoBrief} brief - The original logo brief
+   * @param {GenerationResult} result - The generation result to cache
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
    * @returns {void}
-   * 
-   * @example
-   * // Clear all cached data
-   * cacheManager.clear();
    */
-  public clear(): void {
+  public cacheGenerationResult(brief: LogoBrief, result: GenerationResult, ttl?: number): void {
     try {
-      this.cache.clear();
-      this.counts = {
-        generation: 0,
-        intermediate: 0,
-        asset: 0,
-        progress: 0,
-      };
+      const key = this.generateBriefKey(brief);
+      this.set(key, result, 'generation', ttl);
     } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'clear' },
-        logLevel: 'warn'
-      });
+      this.logger.warn('Failed to cache generation result', { error });
     }
   }
   
   /**
-   * @method cleanup
-   * @private
-   * @description Automatically removes expired items from the cache
+   * Retrieve a cached generation result
    * 
-   * This method is called periodically to scan the cache for items
+   * @param {LogoBrief} brief - The logo brief to look up
+   * @returns {Promise<GenerationResult|null>} The cached result or null if not found
+   */
+  public async getGenerationResult(brief: LogoBrief): Promise<GenerationResult | null> {
+    try {
+      const key = this.generateBriefKey(brief);
+      return this.get<GenerationResult>(key, 'generation');
+    } catch (error) {
+      this.logger.warn('Failed to retrieve cached generation result', { error });
+      return null;
+    }
+  }
+  
+  /**
+   * Cache progress information for a session
+   * 
+   * @param {string} sessionId - The session ID
+   * @param {PipelineProgress} progress - The progress data to cache
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
+   * @returns {void}
+   */
+  public cacheProgress(sessionId: string, progress: PipelineProgress, ttl?: number): void {
+    try {
+      const key = `progress:${sessionId}`;
+      this.set(key, progress, 'progress', ttl);
+    } catch (error) {
+      this.logger.warn('Failed to cache progress', { error, sessionId });
+    }
+  }
+  
+  /**
+   * Retrieve cached progress information
+   * 
+   * @param {string} sessionId - The session ID to look up
+   * @returns {PipelineProgress|null} The cached progress or null if not found
+   */
+  public getProgress(sessionId: string): PipelineProgress | null {
+    try {
+      const key = `progress:${sessionId}`;
+      return this.get<PipelineProgress>(key, 'progress');
+    } catch (error) {
+      this.logger.warn('Failed to retrieve cached progress', { error, sessionId });
+      return null;
+    }
+  }
+  
+  /**
+   * Cache an intermediate result during processing
+   * 
+   * @template T Type of the intermediate data
+   * @param {string} key - A unique key for this intermediate result
+   * @param {T} data - The data to cache
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
+   * @returns {void}
+   */
+  public cacheIntermediate<T>(key: string, data: T, ttl?: number): void {
+    try {
+      const cacheKey = `intermediate:${key}`;
+      this.set(cacheKey, data, 'intermediate', ttl);
+    } catch (error) {
+      this.logger.warn('Failed to cache intermediate result', { error, key });
+    }
+  }
+  
+  /**
+   * Retrieve a cached intermediate result
+   * 
+   * @template T Expected type of the intermediate data
+   * @param {string} key - The key to look up
+   * @returns {T|null} The cached data or null if not found
+   */
+  public getIntermediate<T>(key: string): T | null {
+    try {
+      const cacheKey = `intermediate:${key}`;
+      return this.get<T>(cacheKey, 'intermediate');
+    } catch (error) {
+      this.logger.warn('Failed to retrieve cached intermediate result', { error, key });
+      return null;
+    }
+  }
+  
+  /**
+   * Cache an asset like an SVG, PNG, etc.
+   * 
+   * @param {string} key - A unique key for this asset
+   * @param {string|Buffer} data - The asset data to cache
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
+   * @returns {void}
+   */
+  public cacheAsset(key: string, data: string | Buffer, ttl?: number): void {
+    try {
+      const cacheKey = `asset:${key}`;
+      this.set(cacheKey, data, 'asset', ttl);
+    } catch (error) {
+      this.logger.warn('Failed to cache asset', { error, key });
+    }
+  }
+  
+  /**
+   * Retrieve a cached asset
+   * 
+   * @param {string} key - The key to look up
+   * @returns {string|Buffer|null} The cached asset or null if not found
+   */
+  public getAsset(key: string): string | Buffer | null {
+    try {
+      const cacheKey = `asset:${key}`;
+      return this.get<string | Buffer>(cacheKey, 'asset');
+    } catch (error) {
+      this.logger.warn('Failed to retrieve cached asset', { error, key });
+      return null;
+    }
+  }
+  
+  /**
+   * Clean up expired cache entries
+   * 
+   * This method iterates through all items in the cache and removes any
    * that have exceeded their TTL and remove them. This prevents the
    * cache from growing indefinitely with stale data.
    * 
@@ -772,7 +600,7 @@ export class CacheManager {
     try {
       const now = Date.now();
       let cleaned = 0;
-      const typeCleanupCounts: Record<CacheType, number> = {
+      const typeCleanupCounts: Record<string, number> = {
         generation: 0,
         intermediate: 0,
         asset: 0,
@@ -809,186 +637,9 @@ export class CacheManager {
       });
     }
   }
-  
-  /**
-   * Generates a hash using the Web Crypto API or falls back to a simple hash for environments without it
-   * Uses browser-compatible approach that works in both Node.js and browser environments
-   * 
-   * @private
-   * @param {string} str - The string to hash
-   * @returns {string} A hex hash string
-   */
-  private async generateHash(str: string): Promise<string> {
-    this.logger.debug('Generating hash', { inputLength: str.length });
-    
-    try {
-      // Try to use the Web Crypto API if available (works in modern browsers and Node.js)
-      if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
-        try {
-          this.logger.debug('Using Web Crypto API for hashing');
-          const msgUint8 = new TextEncoder().encode(str);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-          return hexHash;
-        } catch (error) {
-          // Log error and fall back to simple hash if crypto API fails
-          const appError = handleError(error, {
-            category: ErrorCategory.STORAGE,
-            context: { operation: 'generateHash', method: 'WebCrypto' },
-            rethrow: false,
-            logLevel: 'warn'
-          });
-          
-          return this.simpleHash(str);
-        }
-      }
-      
-      // Fallback for environments without Web Crypto API
-      this.logger.debug('Web Crypto API not available, using fallback hash');
-      return this.simpleHash(str);
-    } catch (error) {
-      // If any error occurs in the hash generation, handle it and return a deterministic fallback
-      const appError = handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'generateHash' },
-        rethrow: false
-      });
-      
-      // Create a basic hash from string length and first few characters
-      const basicHash = `fallback_${str.length}_${str.slice(0, 20).replace(/\W/g, '')}`;
-      return basicHash;
-    }
-  }
-  
-  /**
-   * Simple hash function for fallback when crypto API is not available
-   * This is a basic implementation of the djb2 algorithm
-   * 
-   * @private
-   * @param {string} str - The string to hash
-   * @returns {string} A hex hash string
-   */
-  private simpleHash(str: string): string {
-    try {
-      let hash = 5381; // djb2 hash starting value
-      
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) + hash) + char; // hash * 33 + char
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      
-      // Add some randomness to avoid collisions in the fallback
-      const randomSuffix = Math.floor(Math.random() * 1000000).toString(16).padStart(6, '0');
-      
-      // Convert to hex string and ensure it's positive
-      return (hash >>> 0).toString(16).padStart(8, '0') + randomSuffix;
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'simpleHash' },
-        logLevel: 'warn'
-      });
-      
-      // If even the simple hash fails, return a truly basic fallback
-      return `basic_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-    }
-  }
-  
-  /**
-   * @method evictOldest
-   * @private
-   * @description Removes the oldest item of a specific type when the cache is full
-   * 
-   * Implements a Least Recently Used (LRU) eviction strategy for each cache type.
-   * When a cache type reaches its maximum size, this method removes the oldest
-   * item to make room for new entries.
-   * 
-   * @param {CacheType} type - The category of cached data to evict from
-   * @returns {void}
-   */
-  private evictOldest(type: CacheType): void {
-    try {
-      let oldestKey: string | null = null;
-      let oldestTime = Infinity;
-      
-      for (const [key, item] of this.cache.entries()) {
-        if (item.type === type && item.createdAt < oldestTime) {
-          oldestKey = key;
-          oldestTime = item.createdAt;
-        }
-      }
-      
-      if (oldestKey) {
-        this.cache.delete(oldestKey);
-        this.counts[type]--;
-      }
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'evictOldest', type },
-        logLevel: 'warn',
-        silent: true
-      });
-    }
-  }
-  
-  /**
-   * @method getStats
-   * @description Returns detailed statistics about the current cache state
-   * 
-   * Provides comprehensive metrics about the cache, including item counts
-   * by type, configured limits, and overall size. Useful for monitoring
-   * cache performance and usage patterns.
-   * 
-   * @returns {Object} Cache statistics object
-   * @returns {boolean} .enabled - Whether caching is currently enabled
-   * @returns {Record<CacheType, number>} .counts - Number of items by type
-   * @returns {Record<CacheType, number>} .maxSizes - Maximum allowed items by type
-   * @returns {Record<CacheType, number>} .ttls - TTL values by type (ms)
-   * @returns {number} .totalSize - Total number of items in the cache
-   * 
-   * @example
-   * // Log cache statistics
-   * console.log('Cache stats:', cacheManager.getStats());
-   * 
-   * // Check memory usage
-   * const stats = cacheManager.getStats();
-   * const utilization = stats.totalSize / 
-   *   Object.values(stats.maxSizes).reduce((a, b) => a + b, 0);
-   * console.log(`Cache utilization: ${(utilization * 100).toFixed(1)}%`);
-   */
-  public getStats(): {
-    enabled: boolean;
-    counts: Record<CacheType, number>;
-    maxSizes: Record<CacheType, number>;
-    ttls: Record<CacheType, number>;
-    totalSize: number;
-  } {
-    try {
-      return {
-        enabled: this.config.enabled,
-        counts: { ...this.counts },
-        maxSizes: { ...this.config.maxSize },
-        ttls: { ...this.config.ttl },
-        totalSize: this.cache.size
-      };
-    } catch (error) {
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { operation: 'getStats' },
-        logLevel: 'warn'
-      });
-      
-      // Return empty stats if there's an error
-      return {
-        enabled: false,
-        counts: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
-        maxSizes: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
-        ttls: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
-        totalSize: 0
-      };
-    }
-  }
+}
+
+// Export a function to get the cache manager instance
+export function getCacheManager(): CacheManager {
+  return CacheManager.getInstance();
 }
