@@ -22,7 +22,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   module: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   error?: Error;
 }
 
@@ -83,7 +83,7 @@ export class Logger {
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
-  debug(message: string, metadata?: Record<string, any>): void {
+  debug(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, metadata);
   }
 
@@ -93,7 +93,7 @@ export class Logger {
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
-  info(message: string, metadata?: Record<string, any>): void {
+  info(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, metadata);
   }
 
@@ -103,7 +103,7 @@ export class Logger {
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
-  warn(message: string, metadata?: Record<string, any>): void {
+  warn(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, metadata);
   }
 
@@ -114,7 +114,7 @@ export class Logger {
    * @param metadata - Optional contextual data
    * @param error - Optional error object
    */
-  error(message: string, metadata?: Record<string, any>, error?: Error): void {
+  error(message: string, metadata?: Record<string, unknown>, error?: Error): void {
     const metadataWithError = { ...metadata };
     if (error && !metadataWithError.error) {
       metadataWithError.error = error.message;
@@ -132,7 +132,7 @@ export class Logger {
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
-  private log(level: LogLevel, message: string, metadata?: Record<string, any>): void {
+  private log(level: LogLevel, message: string, metadata?: Record<string, unknown>): void {
     // Skip logging if below minimum level
     if (level < this.config.minLevel) {
       return;

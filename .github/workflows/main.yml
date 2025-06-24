@@ -1,0 +1,106 @@
+name: Full Audit, Clean & Integration Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  audit-and-clean:
+    name: Audit & Clean Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Remove Redundant Files
+        run: |
+          rm -rf **/*.log node_modules/.cache coverage .next .turbo dist tmp temp
+          npx ts-prune | xargs rm -f
+          npx depcheck
+
+      - name: Check for Useless Files
+        run: |
+          npx unused-files
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npm run type-check
+
+      - name: Format Check
+        run: npm run format:check
+
+      - name: Security Audit
+        run: npm audit --audit-level=moderate
+
+      - name: Dependency Check
+        run: npx npm-check-updates -u
+
+      - name: Build
+        run: npm run build
+
+  test-and-integrate:
+    name: Test & Integration Checks
+    runs-on: ubuntu-latest
+    needs: audit-and-clean
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test -- --coverage
+
+      - name: Run Integration Tests (Frontend ↔ Backend)
+        run: npm run test:integration
+
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  deploy:
+    name: Deploy (if tests pass)
+    runs-on: ubuntu-latest
+    needs: [audit-and-clean, test-and-integrate]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        run: npm run deploy

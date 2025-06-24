@@ -126,8 +126,6 @@ const nextConfig = {
     return config;
   },
   
-  // Package optimization
-  optimizePackageImports: undefined, // Remove deprecated option
   // Experimental features for better performance
   experimental: {
     // These settings improve performance with large components and server actions

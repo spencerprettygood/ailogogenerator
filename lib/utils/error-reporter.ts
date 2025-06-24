@@ -14,7 +14,7 @@ interface ErrorMetadata {
   component?: string;
   userId?: string;
   requestId?: string;
-  additionalInfo?: Record<string, any>;
+  additionalInfo?: Record<string, unknown>;
 }
 
 // Define error severity levels

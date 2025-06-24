@@ -181,8 +181,7 @@ const retryableCategories = new Set([
   ErrorCategory.RATE_LIMIT,
   ErrorCategory.API,
   ErrorCategory.CLAUDE_API,
-  ErrorCategory.EXTERNAL,
-  ErrorCategory.SERVICE_UNAVAILABLE
+  ErrorCategory.EXTERNAL
 ]);
 
 /**
@@ -193,7 +192,7 @@ export interface AppError extends Error {
   severity: ErrorSeverity;
   code: ErrorCode;
   statusCode: HttpStatusCode;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   originalError?: Error | unknown;
   isOperational: boolean;
   isRetryable: boolean;
@@ -214,7 +213,7 @@ export function createAppError(
     code?: ErrorCode;
     statusCode?: HttpStatusCode;
     cause?: Error | unknown;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     isOperational?: boolean;
     isRetryable?: boolean;
     requestId?: string;
@@ -274,7 +273,7 @@ function mapSeverityToReporter(severity: ErrorSeverity): ReporterSeverity {
 export function handleError<T extends Error | unknown>(
   error: T,
   options: {
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     category?: ErrorCategory;
     rethrow?: boolean;
     silent?: boolean;
@@ -294,8 +293,8 @@ export function handleError<T extends Error | unknown>(
   } = options;
 
   // Normalize the error to an AppError
-  const appError = error instanceof Error && 'category' in error
-    ? error as AppError
+  const appError = error instanceof Error && 'category' in error && typeof (error as any).severity !== 'undefined'
+    ? (error as unknown as AppError)
     : createAppError(
         error instanceof Error ? error.message : String(error),
         {
@@ -338,8 +337,8 @@ export function handleError<T extends Error | unknown>(
     }
   }
 
-  // Report error to monitoring service in production or if explicitly enabled
-  if (env.isProduction || env.NEXT_PUBLIC_ENABLE_ERROR_REPORTING === 'true') {
+  // Report error to monitoring service in production only
+  if (env.isProduction) {
     if (appError.severity !== ErrorSeverity.INFO) {
       errorReporter.reportError(
         appError,
@@ -375,10 +374,10 @@ export function handleError<T extends Error | unknown>(
  * @param options Error handling options
  * @returns A wrapped function with error handling
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
+export function withErrorHandling<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   options: {
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     category?: ErrorCategory;
     rethrow?: boolean;
     silent?: boolean;
@@ -387,7 +386,7 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
 ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     try {
-      return await fn(...args);
+      return await fn(...args) as Awaited<ReturnType<T>>;
     } catch (error) {
       const appError = handleError(error, {
         context: { 
@@ -429,7 +428,7 @@ export async function tryWithRetry<T>(
     maxRetries?: number;
     delayMs?: number;
     backoffFactor?: number;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     category?: ErrorCategory;
     retryableErrors?: Array<string | RegExp | ((error: Error) => boolean)>;
     onRetry?: (error: Error, attempt: number, delayMs: number) => void;
@@ -520,7 +519,7 @@ export async function tryWithRetry<T>(
  * Creates specialized error factories for common error types
  */
 export const ErrorFactory = {
-  validation: (message: string, context?: Record<string, any>) => 
+  validation: (message: string, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.VALIDATION, 
       severity: ErrorSeverity.WARNING,
@@ -535,21 +534,21 @@ export const ErrorFactory = {
       context: { resource, id } 
     }),
     
-  unauthorized: (message = 'Unauthorized access', context?: Record<string, any>) => 
+  unauthorized: (message = 'Unauthorized access', context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.AUTHENTICATION, 
       code: ErrorCode.UNAUTHORIZED,
       context 
     }),
     
-  forbidden: (message = 'Access forbidden', context?: Record<string, any>) => 
+  forbidden: (message = 'Access forbidden', context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.AUTHORIZATION, 
       code: ErrorCode.FORBIDDEN,
       context 
     }),
     
-  network: (message: string, context?: Record<string, any>) => 
+  network: (message: string, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.NETWORK, 
       code: ErrorCode.NETWORK_ERROR,
@@ -565,7 +564,7 @@ export const ErrorFactory = {
       context: { operation, durationMs } 
     }),
     
-  rateLimit: (message = 'Rate limit exceeded', context?: Record<string, any>) => 
+  rateLimit: (message = 'Rate limit exceeded', context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.RATE_LIMIT, 
       code: ErrorCode.RATE_LIMITED,
@@ -573,21 +572,21 @@ export const ErrorFactory = {
       context 
     }),
     
-  svg: (message: string, subCategory?: ErrorCategory, context?: Record<string, any>) => 
+  svg: (message: string, subCategory?: ErrorCategory, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: subCategory || ErrorCategory.SVG, 
       code: ErrorCode.SVG_ERROR,
       context 
     }),
     
-  animation: (message: string, context?: Record<string, any>) => 
+  animation: (message: string, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.ANIMATION, 
       code: ErrorCode.ANIMATION_ERROR,
       context 
     }),
     
-  claudeApi: (message: string, context?: Record<string, any>) => 
+  claudeApi: (message: string, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.CLAUDE_API, 
       code: ErrorCode.CLAUDE_API_ERROR,
@@ -595,7 +594,7 @@ export const ErrorFactory = {
       context 
     }),
     
-  internal: (message: string, context?: Record<string, any>) => 
+  internal: (message: string, context?: Record<string, unknown>) => 
     createAppError(message, { 
       category: ErrorCategory.INTERNAL, 
       severity: ErrorSeverity.ERROR,
@@ -604,7 +603,7 @@ export const ErrorFactory = {
       context 
     }),
     
-  unexpected: (error: unknown, context?: Record<string, any>) => {
+  unexpected: (error: unknown, context?: Record<string, unknown>) => {
     const message = error instanceof Error ? error.message : String(error);
     return createAppError(`Unexpected error: ${message}`, { 
       category: ErrorCategory.UNEXPECTED, 

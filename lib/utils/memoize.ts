@@ -62,7 +62,7 @@ interface CacheItem {
   /**
    * The cached function result
    */
-  value: any;
+  value: unknown;
   
   /**
    * Timestamp when this item expires (0 = no expiration)
@@ -141,7 +141,7 @@ const defaultOptions: MemoizeOptions = {
  * // Second call with same input: returns cached result without calculation
  * calculateComplexValue(42); // returns cached result without logging
  */
-export function memoize<T extends (...args: any[]) => any>(
+export function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
   options: MemoizeOptions = {}
 ): T {
@@ -163,7 +163,7 @@ export function memoize<T extends (...args: any[]) => any>(
   });
   
   // Create the memoized function
-  const memoized = function (this: any, ...args: Parameters<T>): ReturnType<T> {
+  const memoized = function (this: unknown, ...args: Parameters<T>): ReturnType<T> {
     try {
       // Generate the cache key
       const key = opts.keyGenerator!(...args);
@@ -425,7 +425,7 @@ export function getMemoizationStats(): Record<string, {
  *   });
  * };
  */
-export function memoizeDebounced<T extends (...args: any[]) => Promise<any>>(
+export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   wait: number,
   options: MemoizeOptions = {}
@@ -446,7 +446,7 @@ export function memoizeDebounced<T extends (...args: any[]) => Promise<any>>(
   });
   
   // Add debouncing behavior
-  const debouncedMemoized = function (this: any, ...args: Parameters<T>): ReturnType<T> {
+  const debouncedMemoized = function (this: unknown, ...args: Parameters<T>): ReturnType<T> {
     try {
       // Generate the cache key
       const key = opts.keyGenerator!(...args);

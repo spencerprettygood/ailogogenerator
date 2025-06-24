@@ -33,7 +33,7 @@ export interface PerformanceMetric {
   value: number;
   unit: string;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

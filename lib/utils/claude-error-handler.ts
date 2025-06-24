@@ -270,7 +270,7 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
  * @param context - Additional context about the request
  * @returns A standardized AppError for consistent handling
  */
-export function createClaudeError(error: unknown, context: Record<string, any> = {}) {
+export function createClaudeError(error: unknown, context: Record<string, unknown> = {}) {
   const errorInfo = analyzeClaudeError(error);
   
   return createAppError(errorInfo.message, {
