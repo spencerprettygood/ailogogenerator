@@ -79,7 +79,7 @@ export function createErrorResponse(
     statusCode?: HttpStatusCode,
     errorCode?: ErrorCode,
     requestId?: string,
-    additionalData?: Record<string, any>
+    additionalData?: Record<string, unknown>
   } = {}
 ) {
   const { 

@@ -296,7 +296,9 @@ export function invalidateCache(pattern: string | RegExp) {
   };
 }
 
-export default {
+export const cacheMiddleware = {
   withCache,
   invalidateCache
 };
+
+export default cacheMiddleware;

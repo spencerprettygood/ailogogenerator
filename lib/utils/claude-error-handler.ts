@@ -272,7 +272,6 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
  */
 export function createClaudeError(error: unknown, context: Record<string, unknown> = {}) {
   const errorInfo = analyzeClaudeError(error);
-  
   return createAppError(errorInfo.message, {
     category: errorInfo.errorCategory,
     severity: errorInfo.severity,
@@ -281,14 +280,7 @@ export function createClaudeError(error: unknown, context: Record<string, unknow
     cause: error,
     context: {
       ...context,
-      claudeErrorType: errorInfo.type,
-      suggestedAction: errorInfo.suggestedAction,
-      originalError: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : String(error)
-    }
+    },
   });
 }
 
@@ -327,11 +319,3 @@ export function logClaudeError(error: unknown, context: Record<string, unknown> 
 export function isRetryableClaudeError(error: unknown): boolean {
   return analyzeClaudeError(error).isRetryable;
 }
-
-export default {
-  analyzeClaudeError,
-  createClaudeError,
-  logClaudeError,
-  isRetryableClaudeError,
-  ClaudeErrorType
-};

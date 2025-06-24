@@ -482,11 +482,15 @@ export class SVGValidator {
       const widthMatch = repairedSvg.match(/width\s*=\s*["']([0-9.]+)/i);
       const heightMatch = repairedSvg.match(/height\s*=\s*["']([0-9.]+)/i);
       
-      if (widthMatch && heightMatch) {
-        const width = parseFloat(widthMatch[1]);
-        const height = parseFloat(heightMatch[1]);
-        
-        repairedSvg = repairedSvg.replace(/<svg/, `<svg viewBox="0 0 ${width} ${height}"`);
+      let width: number | undefined, height: number | undefined;
+      if (widthMatch && widthMatch[1]) {
+        width = parseFloat(widthMatch[1]);
+      }
+      if (heightMatch && heightMatch[1]) {
+        height = parseFloat(heightMatch[1]);
+      }
+      if (typeof width === 'number' && typeof height === 'number' && !isNaN(width) && !isNaN(height)) {
+        repairedSvg = repairedSvg.replace(/<svg/, `<svg viewBox=\"0 0 ${width} ${height}\"`);
         modifications.push('Added viewBox attribute based on width and height');
       }
     }
@@ -761,15 +765,17 @@ export class SVGValidator {
     
     while ((match = tagPattern.exec(svgContent)) !== null) {
       const fullTag = match[0];
-      const tagName = match[1].toLowerCase();
-      
-      if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
-        // Opening tag
-        tags.push(tagName);
-      } else if (fullTag.startsWith('</')) {
-        // Closing tag
-        if (tags.length === 0 || tags.pop() !== tagName) {
-          return false; // Mismatched closing tag
+      if (match && match[1]) {
+        const tagName = match[1].toLowerCase();
+        
+        if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
+          // Opening tag
+          tags.push(tagName);
+        } else if (fullTag.startsWith('</')) {
+          // Closing tag
+          if (tags.length === 0 || tags.pop() !== tagName) {
+            return false; // Mismatched closing tag
+          }
         }
       }
     }
@@ -793,17 +799,19 @@ export class SVGValidator {
     
     while ((match = tagPattern.exec(svgContent)) !== null) {
       const fullTag = match[0];
-      const tagName = match[1].toLowerCase();
-      
-      if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
-        // Opening tag
-        tags.push(tagName);
-      } else if (fullTag.startsWith('</')) {
-        // Closing tag
-        if (tags.length === 0) {
-          errors.push(`Unexpected closing tag: ${tagName}`);
-        } else if (tags.pop() !== tagName) {
-          errors.push(`Mismatched closing tag: ${tagName}`);
+      if (match && match[1]) {
+        const tagName = match[1].toLowerCase();
+        
+        if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
+          // Opening tag
+          tags.push(tagName);
+        } else if (fullTag.startsWith('</')) {
+          // Closing tag
+          if (tags.length === 0) {
+            errors.push(`Unexpected closing tag: ${tagName}`);
+          } else if (tags.pop() !== tagName) {
+            errors.push(`Mismatched closing tag: ${tagName}`);
+          }
         }
       }
     }
@@ -818,7 +826,7 @@ export class SVGValidator {
       const attrName = match[1];
       const attrValue = match[2];
       
-      if (attrValue.includes('<') || attrValue.includes('>')) {
+      if (attrValue && (attrValue.includes('<') || attrValue.includes('>'))) {
         errors.push(`Invalid characters in attribute: ${attrName}`);
       }
     }

@@ -91,15 +91,23 @@ export class SVGAccessibilityValidator extends SVGValidator {
     
     // If accessibility assessment is requested, add it to the result
     if (assessAccessibility) {
-      const accessibilityScore = this.assessAccessibility(processResult.svg);
-      
+      const accessibilityScore = this.assessAccessibility(processResult.svg ?? processResult.processed ?? '');
       return {
-        ...processResult,
-        accessibilityAssessment: accessibilityScore
+        svg: processResult.processed ?? '',
+        validation: processResult.validation,
+        accessibilityAssessment: accessibilityScore,
+        repair: processResult.repair,
+        optimization: processResult.optimization,
+        success: processResult.success
       };
     }
-    
-    return processResult;
+    return {
+      svg: processResult.processed ?? '',
+      validation: processResult.validation,
+      repair: processResult.repair,
+      optimization: processResult.optimization,
+      success: processResult.success
+    };
   }
   
   /**
@@ -293,12 +301,19 @@ export class SVGAccessibilityValidator extends SVGValidator {
       // Check contrast between adjacent colors in sorted array
       let lowestContrastRatio = Infinity;
       for (let i = 0; i < luminances.length - 1; i++) {
-        const contrastRatio = (luminances[i + 1] + 0.05) / (luminances[i] + 0.05);
+        // For contrastRatio and highestContrastRatio calculations
+        let contrastRatio = 0;
+        if (luminances && luminances[i + 1] !== undefined && luminances[i] !== undefined) {
+          contrastRatio = (luminances[i + 1] + 0.05) / (luminances[i] + 0.05);
+        }
         lowestContrastRatio = Math.min(lowestContrastRatio, contrastRatio);
       }
       
       // Check contrast between lightest and darkest colors
-      const highestContrastRatio = (luminances[luminances.length - 1] + 0.05) / (luminances[0] + 0.05);
+      let highestContrastRatio = 0;
+      if (luminances && luminances.length > 0) {
+        highestContrastRatio = (luminances[luminances.length - 1] + 0.05) / (luminances[0] + 0.05);
+      }
       
       // Score based on highest contrast available
       if (highestContrastRatio >= 7) {
@@ -371,9 +386,11 @@ export class SVGAccessibilityValidator extends SVGValidator {
     if (color.startsWith('#')) {
       if (color.length === 4) {
         // #RGB format
-        r = parseInt(color[1] + color[1], 16) / 255;
-        g = parseInt(color[2] + color[2], 16) / 255;
-        b = parseInt(color[3] + color[3], 16) / 255;
+        if (color && color[1] && color[2] && color[3]) {
+          r = parseInt(color[1] + color[1], 16) / 255;
+          g = parseInt(color[2] + color[2], 16) / 255;
+          b = parseInt(color[3] + color[3], 16) / 255;
+        }
       } else if (color.length === 7) {
         // #RRGGBB format
         r = parseInt(color.substring(1, 3), 16) / 255;
@@ -384,7 +401,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     // Handle rgb/rgba colors
     else if (color.startsWith('rgb')) {
       const match = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (match) {
+      if (match && match[1] && match[2] && match[3]) {
         r = parseInt(match[1], 10) / 255;
         g = parseInt(match[2], 10) / 255;
         b = parseInt(match[3], 10) / 255;

@@ -274,13 +274,15 @@ export function sanitizeSVGForAnimation(svgContent: string): string {
     const widthMatch = processed.match(/width=["']([^"']+)["']/);
     const heightMatch = processed.match(/height=["']([^"']+)["']/);
     
-    if (widthMatch && heightMatch) {
-      const width = parseFloat(widthMatch[1]);
-      const height = parseFloat(heightMatch[1]);
-      
-      if (!isNaN(width) && !isNaN(height)) {
-        processed = processed.replace(/<svg/, `<svg viewBox="0 0 ${width} ${height}"`);
-      }
+    let width: number | undefined, height: number | undefined;
+    if (widthMatch && widthMatch[1]) {
+      width = parseFloat(widthMatch[1]);
+    }
+    if (heightMatch && heightMatch[1]) {
+      height = parseFloat(heightMatch[1]);
+    }
+    if (typeof width === 'number' && typeof height === 'number' && !isNaN(width) && !isNaN(height)) {
+      processed = processed.replace(/<svg/, `<svg viewBox=\"0 0 ${width} ${height}\"`);
     }
   }
   

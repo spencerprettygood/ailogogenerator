@@ -24,7 +24,7 @@
  * @property {number} value - The metric value
  * @property {string} unit - Unit of measurement (e.g., 'ms', 'bytes', 'count')
  * @property {number} timestamp - When the metric was recorded
- * @property {Record<string, any>} [metadata] - Additional contextual information
+ * @property {Record<string, unknown>} [metadata] - Additional contextual information
  */
 export interface PerformanceMetric {
   id: string;
@@ -249,7 +249,7 @@ export class PerformanceMonitor {
    * @description Starts timing an operation
    * @param {string} name - Name of the operation
    * @param {string} category - Category of the operation
-   * @param {Record<string, any>} [metadata] - Additional information about the operation
+   * @param {Record<string, unknown>} [metadata] - Additional information about the operation
    * @returns {string} Timer ID for use with endTimer
    * 
    * @example
@@ -257,7 +257,7 @@ export class PerformanceMonitor {
    * // ... perform operation ...
    * monitor.endTimer(timerId, { records: 42 });
    */
-  public startTimer(name: string, category: string, metadata?: Record<string, any>): string {
+  public startTimer(name: string, category: string, metadata?: Record<string, unknown>): string {
     if (!this.enabled) return '';
     
     const id = this.generateId();
@@ -272,10 +272,10 @@ export class PerformanceMonitor {
    * @method endTimer
    * @description Ends a previously started timer and records the timing metric
    * @param {string} id - Timer ID returned from startTimer
-   * @param {Record<string, any>} [metadata] - Additional information about the operation
+   * @param {Record<string, unknown>} [metadata] - Additional information about the operation
    * @returns {TimingMetric | null} The recorded timing metric or null if timer not found
    */
-  public endTimer(id: string, metadata?: Record<string, any>): TimingMetric | null {
+  public endTimer(id: string, metadata?: Record<string, unknown>): TimingMetric | null {
     if (!this.enabled || !id) return null;
     
     const timer = this.activeTimers.get(id);
@@ -315,14 +315,14 @@ export class PerformanceMonitor {
     const duration = metric.endTime - metric.startTime;
     
     const apiMetric: APIMetric = {
+      ...metric,
       id: this.generateId(),
       name: `API: ${metric.endpoint}`,
       category: 'api',
       value: duration,
       unit: 'ms',
       timestamp: metric.endTime,
-      duration,
-      ...metric
+      duration
     };
     
     this.addMetric(apiMetric);
@@ -339,13 +339,13 @@ export class PerformanceMonitor {
     if (!this.enabled) return '';
     
     const tokenMetric: TokenUsageMetric = {
+      ...metric,
       id: this.generateId(),
       name: `Tokens: ${metric.model}`,
       category: 'tokens',
       value: metric.totalTokens,
       unit: 'tokens',
-      timestamp: Date.now(),
-      ...metric
+      timestamp: Date.now()
     };
     
     this.addMetric(tokenMetric);
@@ -364,14 +364,14 @@ export class PerformanceMonitor {
     const duration = metric.endTime - metric.startTime;
     
     const pipelineMetric: PipelineMetric = {
+      ...metric,
       id: this.generateId(),
       name: `Stage: ${metric.stageName}`,
       category: 'pipeline',
       value: duration,
       unit: 'ms',
       timestamp: metric.endTime,
-      duration,
-      ...metric
+      duration
     };
     
     this.addMetric(pipelineMetric);
@@ -381,10 +381,10 @@ export class PerformanceMonitor {
   /**
    * @method recordMemoryUsage
    * @description Records current memory usage metrics
-   * @param {Record<string, any>} [metadata] - Additional information
+   * @param {Record<string, unknown>} [metadata] - Additional information
    * @returns {string} The ID of the recorded metric
    */
-  public recordMemoryUsage(metadata?: Record<string, any>): string {
+  public recordMemoryUsage(metadata?: Record<string, unknown>): string {
     if (!this.enabled) return '';
     
     // Avoid using process.memoryUsage in Edge Runtime
@@ -416,13 +416,13 @@ export class PerformanceMonitor {
       };
       
       // Try to get memory info based on environment without using restricted APIs
-      if (typeof window !== 'undefined' && window.performance && (window.performance as any).memory) {
+      if (typeof window !== 'undefined' && window.performance && typeof (window.performance as { memory?: unknown }).memory !== 'undefined') {
         // Browser environment with performance.memory API (Chrome)
         try {
-          const browserMemory = (window.performance as any).memory;
-          memoryMetric.value = browserMemory.usedJSHeapSize || 0;
-          memoryMetric.heapUsed = browserMemory.usedJSHeapSize || 0;
-          memoryMetric.heapTotal = browserMemory.totalJSHeapSize || 0;
+          const browserMemory = (window.performance as { memory?: { usedJSHeapSize?: number; totalJSHeapSize?: number } }).memory;
+          memoryMetric.value = browserMemory?.usedJSHeapSize || 0;
+          memoryMetric.heapUsed = browserMemory?.usedJSHeapSize || 0;
+          memoryMetric.heapTotal = browserMemory?.totalJSHeapSize || 0;
         } catch (browserMemError) {
           // Silently continue with default values if browser memory API fails
           memoryMetric.metadata = {
@@ -491,7 +491,7 @@ export class PerformanceMonitor {
       }
       
       if (options.since) {
-        result = result.filter(m => m.timestamp >= options.since);
+        result = result.filter(m => m.timestamp >= options.since!);
       }
     }
     
@@ -542,7 +542,7 @@ export class PerformanceMonitor {
       if (categoryMetrics.length === 0) continue;
       
       const values = categoryMetrics.map(m => m.value);
-      const unit = categoryMetrics[0].unit;
+      const unit = categoryMetrics[0]?.unit ?? '';
       const totalValue = values.reduce((sum, val) => sum + val, 0);
       
       summary[category] = {

@@ -100,27 +100,24 @@ export class SVGDesignValidator extends SVGValidator {
     
     // If design assessment is requested, add it to the result
     if (assessDesign) {
-      const designQuality = this.assessDesignQuality(processResult.svg);
-      
-      // Calculate technical quality from base validator scores
-      const technicalQuality = processResult.validation.securityScore && 
-                             processResult.validation.accessibilityScore && 
-                             processResult.validation.optimizationScore
-        ? Math.round((processResult.validation.securityScore + 
-                    processResult.validation.accessibilityScore + 
-                    processResult.validation.optimizationScore) / 3)
-        : 0;
-      
-      // Update the design quality score with the technical quality
-      designQuality.technicalQuality = technicalQuality;
-      
+      const designQuality = this.assessDesignQuality(processResult.svg ?? processResult.processed ?? '');
       return {
-        ...processResult,
-        designQuality
+        svg: processResult.processed ?? '',
+        validation: processResult.validation,
+        designQuality,
+        repair: processResult.repair,
+        optimization: processResult.optimization,
+        success: processResult.success
       };
     }
     
-    return processResult;
+    return {
+      svg: processResult.processed ?? '',
+      validation: processResult.validation,
+      repair: processResult.repair,
+      optimization: processResult.optimization,
+      success: processResult.success
+    };
   }
   
   /**
@@ -296,10 +293,12 @@ export class SVGDesignValidator extends SVGValidator {
     if (hslColors.length >= 2) {
       for (let i = 0; i < hslColors.length; i++) {
         for (let j = i + 1; j < hslColors.length; j++) {
-          const hueDiff = Math.abs(hslColors[i].h - hslColors[j].h);
-          if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
-            isComplementary = true;
-            break;
+          if (hslColors[i] && hslColors[j]) {
+            const hueDiff = Math.abs(hslColors[i].h - hslColors[j].h);
+            if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
+              isComplementary = true;
+              break;
+            }
           }
         }
         if (isComplementary) break;
@@ -313,13 +312,19 @@ export class SVGDesignValidator extends SVGValidator {
       for (let i = 0; i < hues.length; i++) {
         for (let j = i + 1; j < hues.length; j++) {
           for (let k = j + 1; k < hues.length; k++) {
-            const diff1 = Math.abs((hues[j] - hues[i] + 360) % 360);
-            const diff2 = Math.abs((hues[k] - hues[j] + 360) % 360);
-            const diff3 = Math.abs((hues[i] - hues[k] + 360) % 360);
-            
-            if (Math.abs(diff1 - 120) <= 20 && Math.abs(diff2 - 120) <= 20) {
-              isTriadic = true;
-              break;
+            if (hues[i] !== undefined && hues[j] !== undefined) {
+              const diff1 = Math.abs((hues[j] - hues[i] + 360) % 360);
+              if (hues[k] !== undefined && hues[j] !== undefined) {
+                const diff2 = Math.abs((hues[k] - hues[j] + 360) % 360);
+                if (hues[i] !== undefined && hues[k] !== undefined) {
+                  const diff3 = Math.abs((hues[i] - hues[k] + 360) % 360);
+                  
+                  if (Math.abs(diff1 - 120) <= 20 && Math.abs(diff2 - 120) <= 20) {
+                    isTriadic = true;
+                    break;
+                  }
+                }
+              }
             }
           }
           if (isTriadic) break;
@@ -337,9 +342,11 @@ export class SVGDesignValidator extends SVGValidator {
       
       for (let i = 0; i < hues.length; i++) {
         for (let j = i + 1; j < hues.length; j++) {
-          const hueDiff = Math.abs(hues[i] - hues[j]);
-          if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
-            complementaryPairs++;
+          if (hues[i] !== undefined && hues[j] !== undefined) {
+            const hueDiff = Math.abs(hues[i] - hues[j]);
+            if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
+              complementaryPairs++;
+            }
           }
         }
       }
@@ -372,9 +379,11 @@ export class SVGDesignValidator extends SVGValidator {
       
       if (color.length === 4) {
         // #RGB format
-        r = parseInt(color[1] + color[1], 16) / 255;
-        g = parseInt(color[2] + color[2], 16) / 255;
-        b = parseInt(color[3] + color[3], 16) / 255;
+        if (color && color[1] && color[2] && color[3]) {
+          r = parseInt(color[1] + color[1], 16) / 255;
+          g = parseInt(color[2] + color[2], 16) / 255;
+          b = parseInt(color[3] + color[3], 16) / 255;
+        }
       } else if (color.length === 7) {
         // #RRGGBB format
         r = parseInt(color.substring(1, 3), 16) / 255;
@@ -405,7 +414,7 @@ export class SVGDesignValidator extends SVGValidator {
     // Handle rgb/rgba colors
     else if (color.startsWith('rgb')) {
       const match = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (match) {
+      if (match && match[1] && match[2] && match[3]) {
         const r = parseInt(match[1], 10) / 255;
         const g = parseInt(match[2], 10) / 255;
         const b = parseInt(match[3], 10) / 255;
@@ -509,9 +518,11 @@ export class SVGDesignValidator extends SVGValidator {
     if (color.startsWith('#')) {
       if (color.length === 4) {
         // #RGB format
-        r = parseInt(color[1] + color[1], 16) / 255;
-        g = parseInt(color[2] + color[2], 16) / 255;
-        b = parseInt(color[3] + color[3], 16) / 255;
+        if (color && color[1] && color[2] && color[3]) {
+          r = parseInt(color[1] + color[1], 16) / 255;
+          g = parseInt(color[2] + color[2], 16) / 255;
+          b = parseInt(color[3] + color[3], 16) / 255;
+        }
       } else if (color.length === 7) {
         // #RRGGBB format
         r = parseInt(color.substring(1, 3), 16) / 255;
@@ -522,10 +533,30 @@ export class SVGDesignValidator extends SVGValidator {
     // Handle rgb/rgba colors
     else if (color.startsWith('rgb')) {
       const match = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (match) {
-        r = parseInt(match[1], 10) / 255;
-        g = parseInt(match[2], 10) / 255;
-        b = parseInt(match[3], 10) / 255;
+      if (match && match[1] && match[2] && match[3]) {
+        const r = parseInt(match[1], 10) / 255;
+        const g = parseInt(match[2], 10) / 255;
+        const b = parseInt(match[3], 10) / 255;
+        
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const d = max - min;
+        
+        // Calculate hue
+        if (d === 0) h = 0;
+        else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+        else if (max === g) h = ((b - r) / d + 2) * 60;
+        else if (max === b) h = ((r - g) / d + 4) * 60;
+        
+        // Calculate lightness
+        l = (max + min) / 2;
+        
+        // Calculate saturation
+        s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+        
+        // Convert to percentages
+        s = s * 100;
+        l = l * 100;
       }
     }
     

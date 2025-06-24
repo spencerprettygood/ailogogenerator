@@ -152,8 +152,3 @@ Assistant: Great! I'll create a logo for ByteWave that features a clean, profess
 export const INITIAL_WELCOME_MESSAGE = `Hi there! I'm your AI logo designer. I'd love to help create the perfect logo for your brand. 
 
 What's the project you're working on? You can tell me about your business or idea, and we'll start from there.`;
-
-/**
- * Export default for easier importing
- */
-export default CONVERSATIONAL_LOGO_DESIGN_PROMPT;

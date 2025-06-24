@@ -602,5 +602,3 @@ export class ExtendedCacheManager extends CacheManager {
  * Singleton instance for convenience
  */
 export const extendedCacheManager = ExtendedCacheManager.getInstance();
-
-export default extendedCacheManager;

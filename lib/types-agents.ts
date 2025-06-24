@@ -52,7 +52,7 @@ export interface AgentContext {
   brief: LogoBrief;
   sharedMemory: Map<string, any>;
   designSpec?: DesignSpec;
-  overrides?: Record<string, any>;
+  overrides?: Record<string, unknown>;
   debugMode?: boolean;
   abortSignal?: AbortSignal;
   progressCallback?: (percent: number, message: string) => void;
