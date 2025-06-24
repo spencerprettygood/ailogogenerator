@@ -21,6 +21,8 @@ export interface PipelineOptions {
   includeAnimations?: boolean;
   animationOptions?: AnimationOptions;
   includeUniquenessAnalysis?: boolean;
+  industry?: string; // Added industry field for context
+  referenceImages?: string[]; // Added reference images descriptions
 }
 
 export interface PipelineProgress {
@@ -174,6 +176,8 @@ export class LogoGenerationPipeline {
         success: true,
         brandName: stageAOutput?.designSpec?.brand_name,
         logoSvg: svgOutput?.result?.svg,
+        designRationale: svgOutput?.result?.designRationale, // Added design rationale
+        industryContext: svgOutput?.result?.industryContext, // Added industry context
         logoPngUrls: {
           size256: '/api/download?file=logo-256.png',
           size512: '/api/download?file=logo-512.png',
@@ -416,7 +420,9 @@ export class LogoGenerationPipeline {
     
     const input: StageDInput = {
       designSpec: stageAOutput.designSpec,
-      selectedConcept: stageCOutput.selection.selectedConcept
+      selectedConcept: stageCOutput.selection.selectedConcept,
+      industry: this.options.industry, // Pass industry context
+      referenceImages: this.options.referenceImages // Pass reference images
     };
     
     const output = await generateSvgLogo(input);
@@ -552,7 +558,9 @@ export class LogoGenerationPipeline {
         transparentPngVariants: stageFOutput.variants.transparentPngVariants,
         monochromePngVariants: stageFOutput.variants.monochromePngVariants
       },
-      designSpec: stageAOutput.designSpec
+      designSpec: stageAOutput.designSpec,
+      designRationale: stageDOutput.result.designRationale, // Pass design rationale
+      industryContext: stageDOutput.result.industryContext // Pass industry context
     };
     
     const output = await generateBrandGuidelines(input);
@@ -605,7 +613,9 @@ export class LogoGenerationPipeline {
       guidelines: {
         html: stageGOutput.html,
         plainText: '' // Optionally generate plain text from HTML if needed
-      }
+      },
+      designRationale: stageDOutput.result.designRationale, // Add design rationale
+      industryContext: stageDOutput.result.industryContext // Add industry context
     };
     
     // Add enhanced variants if available in the output
@@ -652,7 +662,8 @@ export class LogoGenerationPipeline {
       svg: stageDOutput.result.svg,
       brandName: stageAOutput.designSpec.brand_name,
       animationOptions: this.options.animationOptions,
-      autoSelectAnimation: !this.options.animationOptions // Auto-select if no specific options provided
+      autoSelectAnimation: !this.options.animationOptions, // Auto-select if no specific options provided
+      industry: this.options.industry // Pass industry context for better animation selection
     };
     
     const output = await animateLogo(input);
@@ -689,7 +700,7 @@ export class LogoGenerationPipeline {
     const input: UniquenessAnalysisInput = {
       svg: stageDOutput.result.svg,
       designSpec: stageAOutput.designSpec,
-      industry: stageAOutput.designSpec.industry
+      industry: this.options.industry || stageAOutput.designSpec.industry // Use provided industry if available
     };
     
     const output = await analyzeLogoUniqueness(input);

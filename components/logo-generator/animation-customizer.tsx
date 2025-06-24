@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import {
   AnimationTrigger, 
   AnimationOptions
 } from '@/lib/animation/types';
+import { ErrorCategory, handleError } from '@/lib/utils/error-handler';
 
 interface AnimationCustomizerProps {
   initialOptions?: AnimationOptions;
@@ -46,7 +47,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
   }, [initialOptions]);
   
   // Handle changes to animation options
-  const handleDurationChange = (value: number[]) => {
+  const handleDurationChange = useCallback((value: number[]) => {
     setOptions(prev => ({
       ...prev,
       timing: {
@@ -54,9 +55,9 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         duration: value[0] || 1000
       }
     }));
-  };
+  }, []);
   
-  const handleDelayChange = (value: number[]) => {
+  const handleDelayChange = useCallback((value: number[]) => {
     setOptions(prev => ({
       ...prev,
       timing: {
@@ -64,9 +65,9 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         delay: value[0] || 0
       }
     }));
-  };
+  }, []);
   
-  const handleEasingChange = (easing: AnimationEasing) => {
+  const handleEasingChange = useCallback((easing: AnimationEasing) => {
     setOptions(prev => ({
       ...prev,
       timing: {
@@ -74,30 +75,52 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         easing
       }
     }));
-  };
+  }, []);
   
-  const handleTriggerChange = (trigger: AnimationTrigger) => {
+  const handleTriggerChange = useCallback((trigger: AnimationTrigger) => {
     setOptions(prev => ({
       ...prev,
       trigger
     }));
-  };
+  }, []);
   
-  const handleTypeChange = (type: AnimationType) => {
+  const handleTypeChange = useCallback((type: AnimationType) => {
     setOptions(prev => ({
       ...prev,
       type
     }));
-  };
+  }, []);
   
   // Handle preview and save actions
-  const handlePreview = () => {
-    onPreview(options);
-  };
+  const handlePreview = useCallback(() => {
+    try {
+      onPreview(options);
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.UI,
+        context: {
+          component: 'AnimationCustomizer',
+          operation: 'preview',
+          options
+        }
+      });
+    }
+  }, [options, onPreview]);
   
-  const handleSave = () => {
-    onSave(options);
-  };
+  const handleSave = useCallback(() => {
+    try {
+      onSave(options);
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.UI,
+        context: {
+          component: 'AnimationCustomizer',
+          operation: 'save',
+          options
+        }
+      });
+    }
+  }, [options, onSave]);
 
   return (
     <Card className={`${className}`}>
@@ -127,7 +150,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             Duration: {options.timing.duration}ms
           </label>
           <Slider
-            defaultValue={[options.timing.duration]}
+            value={[options.timing.duration]}
             min={100}
             max={3000}
             step={100}
@@ -140,7 +163,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             Delay: {options.timing.delay || 0}ms
           </label>
           <Slider
-            defaultValue={[options.timing.delay || 0]}
+            value={[options.timing.delay || 0]}
             min={0}
             max={2000}
             step={100}

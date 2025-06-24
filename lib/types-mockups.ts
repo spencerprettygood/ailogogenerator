@@ -6,10 +6,26 @@
  */
 
 import { SVGLogo } from "./types";
-import { MockupTemplate, MockupType, TextPlaceholder, LogoPlacement } from "./mockups/mockup-types";
+import { 
+  MockupTemplate, 
+  MockupType, 
+  TextPlaceholder, 
+  LogoPlacement,
+  EnhancedEffectsConfig,
+  LightingEffects,
+  ShadowEffects
+} from "./mockups/mockup-types";
 
 // Re-export from mockup-types.ts
-export { MockupType, MockupTemplate, TextPlaceholder, LogoPlacement };
+export { 
+  MockupType, 
+  MockupTemplate, 
+  TextPlaceholder, 
+  LogoPlacement,
+  EnhancedEffectsConfig,
+  LightingEffects,
+  ShadowEffects
+};
 
 /**
  * Props for the MockupSelector component
@@ -50,6 +66,42 @@ export interface MockupPreviewProps {
 }
 
 /**
+ * Props for the EnhancedMockupPreviewSystem component
+ */
+export interface EnhancedMockupPreviewSystemProps {
+  logo: SVGLogo | string;
+  brandName?: string;
+  templates?: MockupTemplate[];
+  className?: string;
+  onDownload?: (templateId: string, format: string) => void;
+  initialTemplateId?: string;
+  initialBackgroundId?: string;
+}
+
+/**
+ * Props for the EnhancedMockupPreview component
+ */
+export interface EnhancedMockupPreviewProps extends MockupPreviewProps {
+  backgroundId?: string;
+  onBackgroundChange?: (backgroundId: string) => void;
+  showBackgroundSelector?: boolean;
+  showEffectsControls?: boolean;
+  effectsConfig?: EnhancedEffectsConfig;
+  onEffectsChange?: (effectsConfig: EnhancedEffectsConfig) => void;
+}
+
+/**
+ * Props for the EnhancedBackgroundSelector component
+ */
+export interface EnhancedBackgroundSelectorProps {
+  initialBackgroundId?: string;
+  mockupType: MockupType;
+  onSelectBackground: (backgroundId: string) => void;
+  className?: string;
+  filteredTags?: string[];
+}
+
+/**
  * Props for the MockupCustomizer component
  */
 export interface MockupCustomizerProps {
@@ -59,6 +111,16 @@ export interface MockupCustomizerProps {
   onUpdateColorVariant: (colorVariant: string) => void;
   selectedColorVariant?: string;
   initialCustomText?: Record<string, string>;
+  className?: string;
+}
+
+/**
+ * Props for the EnhancedEffectsCustomizer component
+ */
+export interface EnhancedEffectsCustomizerProps {
+  effectsConfig: EnhancedEffectsConfig;
+  onEffectsChange: (effectsConfig: EnhancedEffectsConfig) => void;
+  templateId: string;
   className?: string;
 }
 
@@ -74,4 +136,13 @@ export interface MockupRenderOptions {
   customText?: Record<string, string>;
   colorVariant?: string;
   brandName?: string;
+}
+
+/**
+ * Enhanced mockup rendering options
+ */
+export interface EnhancedMockupRenderOptions extends MockupRenderOptions {
+  backgroundId?: string;
+  effectsConfig?: EnhancedEffectsConfig;
+  renderQuality?: 'standard' | 'high' | 'ultra';
 }

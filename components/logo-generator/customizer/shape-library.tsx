@@ -556,6 +556,66 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
               </div>
             </div>
             
+            {/* Rotation control */}
+            <div className="space-y-2 mt-3">
+              <Label>Rotation (degrees)</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="0"
+                  max="360"
+                  value={customizedAttributes.rotate || 0}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    handleAttributeChange('rotate', value);
+                    
+                    // Update transform attribute to include rotation
+                    const currentTransform = customizedAttributes.transform || '';
+                    const hasRotate = currentTransform.includes('rotate');
+                    
+                    if (hasRotate) {
+                      // Replace existing rotation
+                      const newTransform = currentTransform.replace(/rotate\([^)]+\)/, `rotate(${value})`);
+                      handleAttributeChange('transform', newTransform);
+                    } else {
+                      // Add rotation to existing transform or create new transform
+                      const newTransform = currentTransform 
+                        ? `${currentTransform} rotate(${value})`
+                        : `rotate(${value})`;
+                      handleAttributeChange('transform', newTransform);
+                    }
+                  }}
+                  className="w-20"
+                />
+                <Slider
+                  value={[parseFloat(customizedAttributes.rotate as string || '0')]}
+                  min={0}
+                  max={360}
+                  step={5}
+                  onValueChange={(value) => {
+                    handleAttributeChange('rotate', value[0]);
+                    
+                    // Update transform attribute to include rotation
+                    const currentTransform = customizedAttributes.transform || '';
+                    const hasRotate = currentTransform.includes('rotate');
+                    
+                    if (hasRotate) {
+                      // Replace existing rotation
+                      const newTransform = currentTransform.replace(/rotate\([^)]+\)/, `rotate(${value[0]})`);
+                      handleAttributeChange('transform', newTransform);
+                    } else {
+                      // Add rotation to existing transform or create new transform
+                      const newTransform = currentTransform 
+                        ? `${currentTransform} rotate(${value[0]})`
+                        : `rotate(${value[0]})`;
+                      handleAttributeChange('transform', newTransform);
+                    }
+                  }}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            
             {/* Add button */}
             <Button 
               className="w-full mt-2"

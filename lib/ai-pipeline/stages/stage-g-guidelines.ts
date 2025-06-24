@@ -7,8 +7,35 @@ export interface StageGInput {
       black: string;
       white: string;
     };
+    favicon?: {
+      svg: string;
+      png32: Buffer;
+      ico: Buffer;
+    };
+    pngVariants?: {
+      png256: Buffer;
+      png512: Buffer;
+      png1024: Buffer;
+    };
+    transparentPngVariants?: {
+      png256: Buffer;
+      png512: Buffer;
+      png1024: Buffer;
+    };
+    monochromePngVariants?: {
+      black: {
+        png256: Buffer;
+        png512: Buffer;
+      };
+      white: {
+        png256: Buffer;
+        png512: Buffer;
+      };
+    };
   };
   designSpec: DesignSpec;
+  designRationale?: string; // Detailed explanation of design decisions
+  industryContext?: string; // Industry-specific context and considerations
 }
 
 export type StageGOutput = BrandGuidelines;
@@ -37,6 +64,8 @@ export interface BrandGuidelines {
     spacing_guidelines: string;
     usage_examples: string;
     dos_and_donts: string;
+    design_rationale?: string; // Detailed explanation of design decisions
+    industry_context?: string; // Industry-specific context and considerations
   };
 }
 
@@ -97,7 +126,9 @@ function getTypography(style: string): TypographySpec {
 export async function generateBrandGuidelines(
   input: StageGInput
 ): Promise<StageGOutput> {
-  const { variants, designSpec } = input;
+  const { variants, designSpec, designRationale, industryContext } = input;
+  
+  // We're only extracting colors from the primary SVG, ignoring binary assets
   const colors = extractHexColors(variants.primary);
   const colorPalette: ColorPalette[] = colors.map(hex => ({
     name: `Color ${hex}`,
@@ -119,6 +150,16 @@ export async function generateBrandGuidelines(
   const usage_examples = `<h2>Usage Examples</h2><p>Place the logo on marketing materials, websites, and social media profiles. Ensure high contrast with the background.</p>`;
 
   const dos_and_donts = `<h2>Do's and Don'ts</h2><ul><li>Do: Use the logo consistently.</li><li>Don't: Stretch, distort, or change the colors of the logo.</li></ul>`;
+  
+  // Add design rationale if provided
+  const design_rationale = designRationale 
+    ? `<h2>Design Rationale</h2><p>${designRationale}</p>` 
+    : undefined;
+  
+  // Add industry context if provided
+  const industry_context = industryContext 
+    ? `<h2>Industry Context</h2><p>${industryContext}</p>` 
+    : undefined;
 
   const html = `
 <!DOCTYPE html>
@@ -175,14 +216,24 @@ export async function generateBrandGuidelines(
     ${spacing_guidelines}
     ${usage_examples}
     ${dos_and_donts}
+    ${design_rationale ? design_rationale : ''}
+    ${industry_context ? industry_context : ''}
 
   </div>
 </body>
 </html>
   `;
 
+  // Update the HTML to include the design rationale and industry context
+  const enhancedHtml = html.replace(
+    `${dos_and_donts}`,
+    `${dos_and_donts}
+    ${design_rationale || ''}
+    ${industry_context || ''}`
+  );
+
   return {
-    html,
+    html: enhancedHtml,
     sections: {
       brand_overview,
       logo_usage,
@@ -191,6 +242,8 @@ export async function generateBrandGuidelines(
       spacing_guidelines,
       usage_examples,
       dos_and_donts,
+      design_rationale,
+      industry_context,
     },
   };
 }

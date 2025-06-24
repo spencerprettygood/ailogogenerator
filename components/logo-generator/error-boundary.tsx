@@ -48,8 +48,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     
     // In production, send to error reporting service
     if (process.env.NODE_ENV === 'production') {
-      // Example: Send to error reporting service
-      // reportError(error, errorInfo);
+      import('@/lib/utils/error-reporter').then(module => {
+        const errorReporter = module.default;
+        errorReporter.reportError(error, {
+          component: errorInfo.componentStack,
+          url: typeof window !== 'undefined' ? window.location.href : undefined
+        });
+      });
     }
   }
 
@@ -71,21 +76,28 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   // Helper function to report the error
   handleReportError = () => {
-    // Example implementation for error reporting
-    const errorData = {
-      message: this.state.error?.message,
-      stack: this.state.error?.stack,
-      componentStack: this.state.componentStack,
-      url: window.location.href,
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('Reporting error:', errorData);
-    
-    // In a real app, you would send this to your error reporting service
-    // Example: fetch('/api/report-error', { method: 'POST', body: JSON.stringify(errorData) });
-    
-    alert('Error reported. Thank you for helping improve the application.');
+    if (this.state.error) {
+      // Use the error reporter service
+      import('@/lib/utils/error-reporter').then(module => {
+        const errorReporter = module.default;
+        
+        errorReporter.reportError(this.state.error!, {
+          component: this.state.componentStack,
+          url: window.location.href,
+          additionalInfo: {
+            userReported: true,
+            timestamp: new Date().toISOString()
+          }
+        });
+        
+        // Also capture user feedback
+        errorReporter.submitFeedback('User manually reported error', {
+          url: window.location.href
+        });
+        
+        alert('Error reported. Thank you for helping improve the application.');
+      });
+    }
   };
 
   render() {

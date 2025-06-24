@@ -8,7 +8,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const ElementSelector: React.FC<ElementSelectorProps> = ({
   elements,
   selectedElementId,
+  selectedElementIds = [],
   onSelectElement,
+  allowMultiSelect = false,
 }) => {
   // Group elements by type for better organization
   const groupedElements: Record<string, SVGElement[]> = elements.reduce(
@@ -78,9 +80,19 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
                 {typeElements.map((element) => (
                   <Button
                     key={element.id}
-                    variant={selectedElementId === element.id ? "default" : "outline"}
-                    className="w-full justify-start text-left h-auto py-2 px-3"
-                    onClick={() => onSelectElement(element.id)}
+                    variant={
+                      selectedElementIds.includes(element.id) 
+                        ? "default" 
+                        : "outline"
+                    }
+                    className={`w-full justify-start text-left h-auto py-2 px-3 ${
+                      selectedElementId === element.id ? "ring-2 ring-primary" : ""
+                    }`}
+                    onClick={(e) => {
+                      // Handle multi-select with Shift or Ctrl/Cmd key
+                      const isMultiSelect = allowMultiSelect && (e.shiftKey || e.ctrlKey || e.metaKey);
+                      onSelectElement(element.id, isMultiSelect);
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       <div 
@@ -88,6 +100,9 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
                         style={{ backgroundColor: getElementColor(element) }}
                       />
                       <span className="text-sm truncate">{getElementName(element)}</span>
+                      {element.type === 'g' && element.children && element.children.length > 0 && (
+                        <span className="text-xs text-muted-foreground ml-auto">Group ({element.children.length})</span>
+                      )}
                     </div>
                   </Button>
                 ))}

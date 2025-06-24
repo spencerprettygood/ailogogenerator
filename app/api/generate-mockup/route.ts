@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Return a list of available templates
   return NextResponse.json({
     templates: DEFAULT_MOCKUP_TEMPLATES.map(template => ({

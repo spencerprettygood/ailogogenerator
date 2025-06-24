@@ -28,6 +28,13 @@ import { sanitizeSVG, optimizeSVG, validateSVG, extractAnimatableElements } from
 import { Logger } from '../utils/logger';
 import { withRetry } from '../retry';
 import { CSSAnimationProvider } from './providers/css-provider';
+import { 
+  handleError, 
+  withErrorHandling, 
+  ErrorCategory, 
+  ErrorSeverity,
+  createAppError
+} from '../utils/error-handler';
 
 /**
  * Default animation options used when specific options are not provided
@@ -162,20 +169,22 @@ export class SVGAnimationService {
       
       this.logger.debug(`Sanitizing and optimizing SVG [${animationId}]`);
       
-      // Sanitize and optimize SVG with proper error handling
+      // Sanitize and optimize SVG with our new error handling system
       let sanitizedSVG: string;
       try {
         sanitizedSVG = sanitizeSVG(svg);
       } catch (error) {
-        this.logger.error(`SVG sanitization failed [${animationId}]`, {
-          error: error instanceof Error ? error.message : String(error),
-          animationId
+        const appError = handleError(error, {
+          category: ErrorCategory.SVG,
+          context: { animationId },
+          rethrow: false
         });
+        
         return {
           success: false,
           error: {
             message: 'Failed to sanitize SVG',
-            details: error instanceof Error ? error.message : String(error),
+            details: appError.message,
             code: AnimationErrorCode.SANITIZATION_FAILED
           },
           processingTime: Date.now() - startTime
@@ -186,15 +195,17 @@ export class SVGAnimationService {
       try {
         optimizedSVG = optimizeSVG(sanitizedSVG);
       } catch (error) {
-        this.logger.error(`SVG optimization failed [${animationId}]`, {
-          error: error instanceof Error ? error.message : String(error),
-          animationId
+        const appError = handleError(error, {
+          category: ErrorCategory.SVG,
+          context: { animationId },
+          rethrow: false
         });
+        
         return {
           success: false,
           error: {
             message: 'Failed to optimize SVG',
-            details: error instanceof Error ? error.message : String(error),
+            details: appError.message,
             code: AnimationErrorCode.OPTIMIZATION_FAILED
           },
           processingTime: Date.now() - startTime

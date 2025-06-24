@@ -144,14 +144,8 @@ const nextConfig = {
     return config;
   },
   
-  // Experimental features
-  experimental: {
-    // Optimize for Vercel deployments
-    optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
-    
-    // Statically typed links
-    typedRoutes: true,
-  },
+  // Package optimization (no longer experimental in Next.js 15)
+  optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
   
   // Handle environment variables for different deployments
   env: {

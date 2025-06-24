@@ -10,7 +10,7 @@ import ElementEditor from './customizer/element-editor';
 import ElementSelector from './customizer/element-selector';
 import ShapeLibrary from './customizer/shape-library';
 import HistoryControls from './customizer/history-controls';
-import { ArrowLeftIcon, UndoIcon, RedoIcon, SaveIcon, Shapes } from 'lucide-react';
+import { ArrowLeftIcon, UndoIcon, RedoIcon, SaveIcon, Shapes, Layers, Group, MoveUp, MoveDown, ArrowUpToLine, ArrowDownToLine } from 'lucide-react';
 
 // Default color palette if none provided
 const DEFAULT_COLOR_PALETTE = [
@@ -52,6 +52,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         viewBox,
         svgAttrs,
         selectedElementId: null,
+        selectedElementIds: [], // For multi-select
         history: [{ elements, timestamp: Date.now() }],
         historyIndex: 0,
         colorPalette: initialPalette,
@@ -65,6 +66,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         viewBox: '0 0 100 100',
         svgAttrs: {},
         selectedElementId: null,
+        selectedElementIds: [], // For multi-select
         history: [],
         historyIndex: -1,
         colorPalette: initialPalette,
@@ -162,11 +164,29 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
   }, []);
 
   // Element selection handler
-  const handleElementSelect = useCallback((elementId: string) => {
-    setCustomizationState(prev => ({
-      ...prev,
-      selectedElementId: elementId,
-    }));
+  const handleElementSelect = useCallback((elementId: string, isMultiSelect: boolean = false) => {
+    setCustomizationState(prev => {
+      if (isMultiSelect) {
+        // Toggle selection in the multi-select array
+        const isAlreadySelected = prev.selectedElementIds.includes(elementId);
+        const newSelectedIds = isAlreadySelected
+          ? prev.selectedElementIds.filter(id => id !== elementId)
+          : [...prev.selectedElementIds, elementId];
+        
+        return {
+          ...prev,
+          selectedElementId: elementId, // Still set as the "primary" selection
+          selectedElementIds: newSelectedIds,
+        };
+      } else {
+        // Single selection mode
+        return {
+          ...prev,
+          selectedElementId: elementId,
+          selectedElementIds: [elementId], // Reset multi-select to just this element
+        };
+      }
+    });
   }, []);
 
   // Add new shape handler
@@ -184,6 +204,221 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         history: newHistory,
         historyIndex: newHistory.length - 1,
         selectedElementId: newElement.id, // Auto-select the new shape
+        selectedElementIds: [newElement.id], // Reset multi-select to just this element
+      };
+    });
+  }, []);
+  
+  // Group selected elements
+  const handleGroupElements = useCallback(() => {
+    setCustomizationState(prev => {
+      // Need at least 2 elements to form a group
+      if (prev.selectedElementIds.length < 2) return prev;
+      
+      // Generate a unique ID for the group
+      const groupId = `group_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      // Create the group element
+      const groupElement: SVGElement = {
+        id: groupId,
+        type: 'g',
+        attributes: {
+          id: groupId,
+        },
+        children: []
+      };
+      
+      // Filter out the selected elements from the main elements array
+      // and collect them to add to the group
+      const selectedElements: SVGElement[] = [];
+      const remainingElements = prev.elements.filter(el => {
+        if (prev.selectedElementIds.includes(el.id)) {
+          selectedElements.push(el);
+          return false;
+        }
+        return true;
+      });
+      
+      // Add the selected elements as children of the group
+      // We need to update their attributes to make them relative to the group
+      const groupChildren = selectedElements.map(el => ({
+        ...el,
+        attributes: {
+          ...el.attributes,
+          parent: groupId, // Mark the parent for SVG rendering
+        }
+      }));
+      
+      // Create the new elements array with the group added
+      const updatedElements = [
+        ...remainingElements,
+        {
+          ...groupElement,
+          children: groupChildren
+        }
+      ];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: updatedElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        selectedElementId: groupId, // Select the new group
+        selectedElementIds: [groupId], // Reset multi-select to just the group
+      };
+    });
+  }, []);
+  
+  // Ungroup elements
+  const handleUngroupElements = useCallback(() => {
+    setCustomizationState(prev => {
+      // Must have a single group selected to ungroup
+      if (prev.selectedElementIds.length !== 1) return prev;
+      
+      const selectedId = prev.selectedElementId;
+      const selectedElement = prev.elements.find(el => el.id === selectedId);
+      
+      // Must be a group element with children
+      if (!selectedElement || selectedElement.type !== 'g' || !selectedElement.children || selectedElement.children.length === 0) {
+        return prev;
+      }
+      
+      // Extract all children from the group and remove the parent attribute
+      const ungroupedChildren = selectedElement.children.map(child => ({
+        ...child,
+        attributes: {
+          ...child.attributes,
+          parent: undefined // Remove the parent reference
+        }
+      }));
+      
+      // Filter out the group from the elements array and add the children
+      const updatedElements = [
+        ...prev.elements.filter(el => el.id !== selectedId),
+        ...ungroupedChildren
+      ];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: updatedElements, timestamp: Date.now() });
+      
+      // Select the first child as the new selected element
+      const newSelectedId = ungroupedChildren.length > 0 ? ungroupedChildren[0].id : null;
+      
+      return {
+        ...prev,
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        selectedElementId: newSelectedId,
+        selectedElementIds: newSelectedId ? [newSelectedId] : [],
+      };
+    });
+  }, []);
+  
+  // Z-index controls
+  const moveElementUp = useCallback(() => {
+    setCustomizationState(prev => {
+      if (!prev.selectedElementId) return prev;
+      
+      const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
+      if (elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
+      
+      // Swap the element with the one above it
+      const newElements = [...prev.elements];
+      [newElements[elementIndex], newElements[elementIndex + 1]] = 
+        [newElements[elementIndex + 1], newElements[elementIndex]];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: newElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  }, []);
+  
+  const moveElementDown = useCallback(() => {
+    setCustomizationState(prev => {
+      if (!prev.selectedElementId) return prev;
+      
+      const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
+      if (elementIndex <= 0) return prev;
+      
+      // Swap the element with the one below it
+      const newElements = [...prev.elements];
+      [newElements[elementIndex], newElements[elementIndex - 1]] = 
+        [newElements[elementIndex - 1], newElements[elementIndex]];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: newElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  }, []);
+  
+  const moveElementToFront = useCallback(() => {
+    setCustomizationState(prev => {
+      if (!prev.selectedElementId) return prev;
+      
+      const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
+      if (elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
+      
+      // Remove the element and add it to the end (top)
+      const newElements = [
+        ...prev.elements.filter(el => el.id !== prev.selectedElementId),
+        prev.elements[elementIndex]
+      ];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: newElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  }, []);
+  
+  const moveElementToBack = useCallback(() => {
+    setCustomizationState(prev => {
+      if (!prev.selectedElementId) return prev;
+      
+      const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
+      if (elementIndex <= 0) return prev;
+      
+      // Remove the element and add it to the beginning (bottom)
+      const newElements = [
+        prev.elements[elementIndex],
+        ...prev.elements.filter(el => el.id !== prev.selectedElementId)
+      ];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: newElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
       };
     });
   }, []);
@@ -254,11 +489,91 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
             </TabsList>
 
             <TabsContent value="elements" className="mt-0">
-              <ElementSelector
-                elements={customizationState.elements}
-                selectedElementId={customizationState.selectedElementId}
-                onSelectElement={handleElementSelect}
-              />
+              <div className="space-y-4">
+                <div className="flex justify-between mb-2">
+                  <h3 className="text-sm font-medium">Elements</h3>
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={customizationState.selectedElementIds.length < 2}
+                        onClick={handleGroupElements}
+                        title="Group selected elements"
+                      >
+                        <Group className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={
+                          customizationState.selectedElementIds.length !== 1 ||
+                          !customizationState.elements.find(
+                            el => el.id === customizationState.selectedElementId && 
+                                 el.type === 'g' && 
+                                 el.children && 
+                                 el.children.length > 0
+                          )
+                        }
+                        onClick={handleUngroupElements}
+                        title="Ungroup selected group"
+                      >
+                        <Layers className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Z-index controls */}
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!customizationState.selectedElementId}
+                        onClick={moveElementToFront}
+                        title="Bring to front"
+                      >
+                        <ArrowUpToLine className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!customizationState.selectedElementId}
+                        onClick={moveElementUp}
+                        title="Bring forward"
+                      >
+                        <MoveUp className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!customizationState.selectedElementId}
+                        onClick={moveElementDown}
+                        title="Send backward"
+                      >
+                        <MoveDown className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!customizationState.selectedElementId}
+                        onClick={moveElementToBack}
+                        title="Send to back"
+                      >
+                        <ArrowDownToLine className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <ElementSelector
+                  elements={customizationState.elements}
+                  selectedElementId={customizationState.selectedElementId}
+                  selectedElementIds={customizationState.selectedElementIds}
+                  onSelectElement={handleElementSelect}
+                  allowMultiSelect={true}
+                />
+                <div className="text-xs text-muted-foreground mt-2">
+                  Hold Shift or Ctrl/Cmd to select multiple elements for grouping
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="editor" className="mt-0">

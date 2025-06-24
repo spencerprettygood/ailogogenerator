@@ -10,6 +10,7 @@ export interface SVGElement {
 export interface LogoCustomizationState {
   elements: SVGElement[];
   selectedElementId: string | null;
+  selectedElementIds: string[]; // For multi-select and grouping
   history: Array<{
     elements: SVGElement[];
     timestamp: number;
@@ -18,6 +19,8 @@ export interface LogoCustomizationState {
   colorPalette: string[];
   fontOptions: string[];
   logoName: string;
+  viewBox?: string;
+  svgAttrs?: Record<string, string | number>;
 }
 
 // Props for the customization panel
@@ -50,7 +53,9 @@ export interface ColorPickerProps {
 export interface ElementSelectorProps {
   elements: SVGElement[];
   selectedElementId: string | null;
-  onSelectElement: (elementId: string) => void;
+  selectedElementIds?: string[]; // For multi-select
+  onSelectElement: (elementId: string, isMultiSelect?: boolean) => void;
+  allowMultiSelect?: boolean;
 }
 
 // Props for the positioning controls

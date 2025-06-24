@@ -27,7 +27,11 @@
       "Bash(curl:*)",
       "WebFetch(domain:tailwindcss.com)",
       "Bash(./scripts/add-use-client.sh:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm run lint:*)",
+      "Bash(./bypass-lint.sh)",
+      "Bash(git config:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }

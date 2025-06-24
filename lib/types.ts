@@ -1,281 +1,207 @@
-// Re-export MockupType from mockup-types.ts for backward compatibility
-export { MockupType } from "./mockups/mockup-types";
-export type { AnimationOptions } from './animation/types';
-
-// Pipeline progress interface
-export interface PipelineProgress {
-  currentStage: PipelineStage;
-  stageProgress: number; // 0-100
-  overallProgress: number; // 0-100
-  statusMessage: string;
-  startTime?: number;
-  estimatedTimeRemaining?: number; // in seconds
-}
-
-// Logo brief interface for logo generation requests
 export interface LogoBrief {
   prompt: string;
   image_uploads?: File[];
-  preferences?: LogoGenerationPreferences;
   industry?: string;
-  includeAnimations?: boolean;
-  animationOptions?: AnimationOptions;
+  uniqueness_preference?: number; // 0-10, higher means more unique
 }
 
-// Complete generation result
-export interface GenerationResult {
-  brandName: string;
-  sessionId: string;
-  assets: GeneratedAssets;
-  completionTime: number; // milliseconds
-  uniquenessScore?: number; // 0-100
-  designNotes?: string;
+export interface DesignSpec {
+  brand_name: string;
+  description: string;
+  industry?: string;
+  color_preferences?: string[];
+  style_preferences?: string[];
+  keywords?: string[];
+  target_audience?: string;
+  avoid?: string[];
+  inspiration?: string[];
+  uniqueness_level?: number; // 0-10 scale
+  additional_context?: string;
 }
 
-// General types for messages (compatible with AI SDK v5)
-export enum MessageRole {
-  SYSTEM = 'system',
-  USER = 'user',
-  ASSISTANT = 'assistant',
-  TOOL = 'tool',
-  DATA = 'data',
-  FUNCTION = 'function'
+export interface LogoColors {
+  primary: string;
+  secondary?: string;
+  tertiary?: string;
+  background?: string;
+  accent?: string;
 }
 
-export interface Message {
-  id: string;
-  role: string;
-  content: string | MessageContent[] | Record<string, any>;
-  timestamp: Date;
-  name?: string;
-  tool_call_id?: string;
-  tool_calls?: ToolCall[];
-  progress?: GenerationProgress;
-  assets?: GeneratedAssets;
-  files?: File[];
-}
-
-export interface MessageContent {
-  type: 'text' | 'image' | 'file' | 'tool_call' | 'tool_result';
-  text?: string;
-  image_url?: string;
-  file_url?: string;
-  tool_call?: ToolCall;
-  tool_result?: ToolResult;
-}
-
-export interface ToolCall {
-  id: string;
-  type: string;
-  function: {
-    name: string;
-    arguments: string;
+export interface Typography {
+  fontFamily: string;
+  fontCategory: string;
+  fallbackFonts: string;
+  weights: number[];
+  styles: {
+    heading?: {
+      size: string;
+      weight: number;
+      lineHeight: number;
+      letterSpacing?: string;
+    };
+    body?: {
+      size: string;
+      weight: number;
+      lineHeight: number;
+      letterSpacing?: string;
+    };
   };
 }
 
-export interface ToolResult {
-  call_id: string;
-  type: string;
-  content: string;
+export interface LogoElement {
+  id: string;
+  type: 'path' | 'circle' | 'rect' | 'ellipse' | 'polygon' | 'text' | 'group';
+  attributes: Record<string, string | number>;
+  children?: LogoElement[];
 }
 
-// Pipeline status and progress
-export enum PipelineStage {
-  IDLE = 'idle',
-  DISTILLATION = 'distillation',
-  MOODBOARD = 'moodboard',
-  SELECTION = 'selection',
-  GENERATION = 'generation',
-  VALIDATION = 'validation',
-  VARIANTS = 'variants',
-  GUIDELINES = 'guidelines',
-  PACKAGING = 'packaging',
-  ANIMATION = 'animation',
-  COMPLETE = 'complete',
-  FAILED = 'failed',
-  // Stage mapping from letters
-  A = 'A',
-  B = 'B',
-  C = 'C',
-  D = 'D',
-  E = 'E',
-  F = 'F',
-  G = 'G',
-  H = 'H',
-  CACHED = 'cached'
+export interface SVGLogo {
+  svgCode: string;
+  width: number;
+  height: number;
+  elements: LogoElement[];
+  colors: LogoColors;
+  name: string;
 }
 
 export interface GenerationProgress {
-  stage: PipelineStage;
+  status: 'queued' | 'analyzing' | 'generating' | 'refining' | 'completed' | 'failed';
   progress: number; // 0-100
   message: string;
-  estimatedTimeRemaining?: number; // in seconds
-}
-
-// Logo and assets
-export interface SVGLogo {
-  id: string;
-  name: string;
-  svgCode: string;
-  width?: number;
-  height?: number;
-}
-
-export interface LogoVariant {
-  id: string;
-  name: string; // e.g., "Monochrome", "Favicon", etc.
-  svgCode: string;
-  type: 'color' | 'monochrome' | 'favicon' | 'simplified' | 'custom';
+  timeRemaining?: number; // in seconds
 }
 
 export interface FileDownloadInfo {
   id: string;
   name: string;
-  description?: string;
+  type: 'svg' | 'png' | 'ico' | 'html' | 'pdf' | 'zip' | 'css' | 'js';
+  size?: number;
   url: string;
-  size?: number; // in bytes
-  format: 'svg' | 'png' | 'ico' | 'html' | 'zip' | 'other';
-  type: 'logo' | 'variant' | 'guideline' | 'package';
-  thumbnailUrl?: string;
-}
-
-// Animation-related types
-export interface AnimatedLogo {
-  svgCode: string;
-  cssCode: string;
-  jsCode?: string;
-  animationOptions: AnimationOptions;
-}
-
-// Uniqueness analysis
-export interface UniquenessAnalysis {
-  score: number; // 0-100
-  similarLogos?: SimilarLogo[];
-  suggestedChanges?: string[];
-  industryDistinctiveness?: number; // 0-100
-  uniquenessFactors?: {
-    shape: number; // 0-100
-    color: number; // 0-100
-    style: number; // 0-100
-    concept: number; // 0-100
-  };
-}
-
-export interface SimilarLogo {
-  name: string;
-  similarity: number; // 0-100
-  imageUrl?: string;
   description?: string;
+  isPrimary?: boolean;
+  icon?: string;
+  category?: 'logo' | 'favicon' | 'guideline' | 'animation' | 'package' | 'other';
 }
 
-// Generated assets
+export interface DownloadManagerProps {
+  files: FileDownloadInfo[];
+  packageUrl?: string;
+  onDownloadFileAction: (file: FileDownloadInfo) => void;
+  onDownloadAllAction: () => void;
+  brandName?: string;
+  includeFavicon?: boolean;
+}
+
 export interface GeneratedAssets {
   brandName?: string;
   primaryLogoSVG?: SVGLogo;
-  variants?: LogoVariant[];
-  monochrome?: {
-    black: SVGLogo;
-    white: SVGLogo;
+  logos?: SVGLogo[];
+  favicon?: {
+    svg: string;
+    png32?: Buffer | string;
+    ico?: Buffer | string;
   };
-  favicon?: SVGLogo;
-  pngVersions?: {
-    small: string; // base64 or URL
-    medium: string; // base64 or URL
-    large: string; // base64 or URL
-  };
+  guidelines?: DesignGuidelines;
   individualFiles?: FileDownloadInfo[];
   zipPackageUrl?: string;
-  brandGuidelines?: string; // HTML content
-  
-  // Animation-related assets
-  animatedSvg?: string;
-  animationCss?: string;
-  animationJs?: string;
-  animationOptions?: AnimationOptions;
-  
-  // Analysis and additional data
-  uniquenessAnalysis?: UniquenessAnalysis;
-  inspirationSources?: string[];
-  designNotes?: string;
 }
 
-// Logo generation state (for persistent state tracking)
-export interface LogoGenerationState {
-  id: string;
-  sessionId: string;
-  startTime: Date;
-  endTime?: Date;
-  currentStage: PipelineStage;
-  stageProgress: number; // 0-100
-  userPrompt: string;
-  assets?: GeneratedAssets;
-  error?: string;
-  cancelled?: boolean;
-}
-
-// User preferences for logo generation
-export interface LogoGenerationPreferences {
-  industry?: string;
-  style?: string;
-  colorScheme?: string;
-  includeAnimations?: boolean;
-  animationOptions?: AnimationOptions;
-  includeGuidelines?: boolean;
-  includeUniquenessAnalysis?: boolean;
-  includeStandardVariants?: boolean;
-}
-
-// Animation export options
-export interface AnimationExportOptions {
-  format: 'svg' | 'html' | 'gif' | 'mp4';
-  duration?: number; // in milliseconds
-  fps?: number; // frames per second for video/GIF
-  quality?: 'low' | 'medium' | 'high';
-  loop?: boolean;
-  width?: number;
-  height?: number;
-}
-
-// Download manager props
-export interface DownloadManagerProps {
-  files: {
-    id: string;
-    name: string;
-    description?: string;
-    url: string;
-    size?: number;
-    format: string;
-    type: string;
-    isPrimary?: boolean;
-    thumbnailUrl?: string;
-  }[];
-  packageUrl?: string;
-  onDownloadFileAction: (fileId: string) => void;
-  onDownloadAllAction: () => void;
-  brandName?: string;
-}
-
-// Animation download manager props
-export interface AnimationDownloadManagerProps {
-  animatedSvg?: string;
-  animationCss?: string;
-  animationJs?: string;
-  animationOptions?: AnimationOptions;
-  brandName?: string;
-  onExport: (format: string, options?: AnimationExportOptions) => void;
-}
-
-// API response types
-export interface GenerationResponse {
+export interface GenerationResult {
   success: boolean;
-  sessionId?: string;
-  message?: string;
-  progress?: GenerationProgress;
-  assets?: GeneratedAssets;
-  preview?: string; // SVG preview during generation
+  id?: string;
+  brandName?: string;
+  logos?: SVGLogo[];
+  favicon?: {
+    svg: string;
+    png32?: Buffer | string;
+    ico?: Buffer | string;
+  };
+  guidelines?: DesignGuidelines;
   error?: {
     message: string;
-    code: string;
-    details?: unknown;
+    code?: string;
+    details?: string;
   };
+  processingTime?: number; // in milliseconds
+}
+
+export interface DesignGuidelines {
+  brandName: string;
+  logoDescription: string;
+  colorPalette: LogoColors;
+  typography: Typography;
+  spacing: {
+    minSize: string;
+    clearSpace: string;
+    recommendations: string[];
+  };
+  usage: {
+    doList: string[];
+    dontList: string[];
+  };
+  rationale: string;
+}
+
+export interface PipelineProgress {
+  currentStage: string;
+  stageProgress: number; // 0-100
+  overallProgress: number; // 0-100
+  statusMessage: string;
+  estimatedTimeRemaining?: number; // in milliseconds
+  startTime?: number; // timestamp when generation started
+  logs?: ProgressLog[];
+}
+
+export interface ProgressLog {
+  timestamp: number;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  details?: any;
+}
+
+export interface WebSearchResultItem {
+  title: string;
+  url: string;
+  snippet?: string;
+  domain: string;
+  imageUrl?: string;
+}
+
+export interface WebSearchResults {
+  success: boolean;
+  vertical: string;
+  query?: string;
+  results: WebSearchResultItem[];
+  resultCount: number;
+  error?: {
+    message: string;
+    details?: string;
+  };
+}
+
+export interface DesignTrend {
+  name: string;
+  description: string;
+  prevalence: number; // 0-100
+  examples: string[];
+  relevance: number; // 0-100, how relevant for current brief
+}
+
+export interface IndustryAnalysis {
+  industryName: string;
+  confidence: number; // 0-1
+  competitorLogos: CompetitorLogo[];
+  industryTrends: DesignTrend[];
+  designRecommendations: string[];
+  uniquenessScore: number; // 0-100
+  conventionScore: number; // 0-100
+  balanceAnalysis: string;
+}
+
+export interface CompetitorLogo {
+  companyName: string;
+  logoDescription: string;
+  dominantColors: string[];
+  styleCategory: string;
+  visualElements: string[];
 }

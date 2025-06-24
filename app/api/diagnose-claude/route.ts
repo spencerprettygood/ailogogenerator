@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claudeService } from '@/lib/services/claude-service';
 import { withErrorHandling } from '@/lib/middleware/error-middleware';
-import { env, config } from '@/lib/utils/env';
+import { env } from '@/lib/utils/env';
 
 /**
  * Diagnose Claude API connection issues
  * This endpoint is only available in development mode
  */
-export const GET = withErrorHandling(async function GET(req: NextRequest) {
+export const GET = withErrorHandling(async function GET(_req: NextRequest) {
   // Only allow in development mode
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json({
@@ -24,13 +24,12 @@ export const GET = withErrorHandling(async function GET(req: NextRequest) {
       app_url: process.env.NEXT_PUBLIC_APP_URL || 'Not set',
     },
     anthropic: {
-      api_key_present: Boolean(env.ANTHROPIC_API_KEY),
-      api_key_format_valid: validateApiKeyFormat(env.ANTHROPIC_API_KEY),
+      api_key_present: Boolean(env.get('CLAUDE_API_KEY')),
+      api_key_format_valid: validateApiKeyFormat(env.get('CLAUDE_API_KEY')),
     },
     config: {
-      is_client: config.isClient,
-      is_development: config.isDevelopment,
-      caching_enabled: config.features.cachingEnabled,
+      is_development: env.isDevelopment,
+      is_production: env.isProduction,
     }
   };
   

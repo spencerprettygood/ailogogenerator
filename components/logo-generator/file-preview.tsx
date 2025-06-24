@@ -41,8 +41,10 @@ export function FilePreview({ file, onRemoveAction, className }: FilePreviewProp
           src={previewUrl}
           alt={file.name}
           fill
-          objectFit="cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={{ objectFit: "cover" }}
           className="transition-transform duration-300 group-hover:scale-105"
+          priority={true}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-muted-foreground">

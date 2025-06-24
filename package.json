@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json,css,scss}\"",
-    "build:no-lint": "NEXT_DISABLE_ESLINT=1 next build --no-lint"
+    "build:no-lint": "NEXT_DISABLE_ESLINT=1 next build --no-lint",
+    "optimize-mockups": "node scripts/optimize-mockups.js",
+    "test-mockups": "next dev -p 3000 -- --open-url http://localhost:3000/test-mockups",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0-alpha.15",
@@ -28,6 +31,7 @@
     "clsx": "^2.1.1",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.18.1",
+    "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.516.0",
     "next": "^15.3.4",

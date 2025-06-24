@@ -17,6 +17,8 @@
 
 import { GenerationResult, LogoBrief, PipelineProgress } from '../types';
 import { Logger } from './logger';
+import { cacheAdapter, CacheItem } from './cache-adapter';
+import { ErrorCategory, ErrorSeverity, createAppError, handleError } from './error-handler';
 
 /**
  * @interface CacheItem
@@ -114,6 +116,7 @@ export class CacheManager {
     asset: 0,
     progress: 0,
   };
+  private cleanupInterval: NodeJS.Timeout | null = null;
   
   /**
    * @constructor
@@ -149,7 +152,7 @@ export class CacheManager {
     });
     
     // Start the cleanup interval
-    setInterval(() => this.cleanup(), 5 * 60 * 1000); // Run cleanup every 5 minutes
+    this.startCleanupInterval();
   }
   
   /**
@@ -207,6 +210,37 @@ export class CacheManager {
   }
   
   /**
+   * Starts the cleanup interval if it's not already running
+   * @private
+   */
+  private startCleanupInterval(): void {
+    if (this.cleanupInterval === null) {
+      this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000); // Run cleanup every 5 minutes
+    }
+  }
+  
+  /**
+   * Stops the cleanup interval if it's running
+   * @private
+   */
+  private stopCleanupInterval(): void {
+    if (this.cleanupInterval !== null) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+  
+  /**
+   * Ensures cleanup resources are properly released
+   * @public
+   */
+  public dispose(): void {
+    this.stopCleanupInterval();
+    this.clear();
+    this.logger.info('CacheManager disposed');
+  }
+  
+  /**
    * @method setEnabled
    * @description Enables or disables the entire cache system
    * 
@@ -230,6 +264,9 @@ export class CacheManager {
     // Clear cache if disabled
     if (!enabled) {
       this.clear();
+      this.stopCleanupInterval();
+    } else {
+      this.startCleanupInterval();
     }
   }
   
@@ -274,9 +311,15 @@ export class CacheManager {
       this.logger.debug('Generated cache key successfully', { keyLength: hash.length });
       return hash;
     } catch (error) {
-      this.logger.error('Failed to generate cache key', {
-        error: error instanceof Error ? error.message : String(error)
+      const appError = handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { 
+          operation: 'generateCacheKey',
+          briefLength: brief.prompt?.length
+        },
+        rethrow: false
       });
+      
       // Fallback to timestamp-based key in case of crypto failures
       return `fallback_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
     }
@@ -403,11 +446,20 @@ export class CacheManager {
    * cacheManager.cacheGenerationResult(brief, result);
    */
   public async cacheGenerationResult(brief: LogoBrief, result: GenerationResult): Promise<string> {
-    const key = await this.getCacheKey(brief);
-    return this.set(key, result, 'generation', { 
-      brandName: result.brandName,
-      timestamp: Date.now()
-    });
+    try {
+      const key = await this.getCacheKey(brief);
+      return this.set(key, result, 'generation', { 
+        brandName: result.brandName,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'cacheGenerationResult' },
+        logLevel: 'warn'
+      });
+      return `error_${Date.now()}`;
+    }
   }
   
   /**
@@ -432,12 +484,21 @@ export class CacheManager {
    * );
    */
   public cacheIntermediateResult(sessionId: string, stageId: string, data: unknown): string {
-    const key = `${sessionId}:${stageId}`;
-    return this.set(key, data, 'intermediate', {
-      sessionId,
-      stageId,
-      timestamp: Date.now()
-    });
+    try {
+      const key = `${sessionId}:${stageId}`;
+      return this.set(key, data, 'intermediate', {
+        sessionId,
+        stageId,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'cacheIntermediateResult', sessionId, stageId },
+        logLevel: 'warn'
+      });
+      return `${sessionId}:${stageId}`;
+    }
   }
   
   /**
@@ -461,10 +522,19 @@ export class CacheManager {
    * });
    */
   public cacheProgress(sessionId: string, progress: PipelineProgress): string {
-    return this.set(sessionId, progress, 'progress', {
-      timestamp: Date.now(),
-      stage: progress.currentStage
-    });
+    try {
+      return this.set(sessionId, progress, 'progress', {
+        timestamp: Date.now(),
+        stage: progress.currentStage
+      });
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'cacheProgress', sessionId },
+        logLevel: 'warn'
+      });
+      return sessionId;
+    }
   }
   
   /**
@@ -507,8 +577,10 @@ export class CacheManager {
       
       return cachedData;
     } catch (error) {
-      this.logger.error('Error retrieving generation result from cache', {
-        error: error instanceof Error ? error.message : String(error)
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'getGenerationResult' },
+        logLevel: 'warn'
       });
       return null;
     }
@@ -534,8 +606,17 @@ export class CacheManager {
    * );
    */
   public getIntermediateResult(sessionId: string, stageId: string): unknown | null {
-    const key = `${sessionId}:${stageId}`;
-    return this.get(key, 'intermediate');
+    try {
+      const key = `${sessionId}:${stageId}`;
+      return this.get(key, 'intermediate');
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'getIntermediateResult', sessionId, stageId },
+        logLevel: 'warn'
+      });
+      return null;
+    }
   }
   
   /**
@@ -557,7 +638,16 @@ export class CacheManager {
    * }
    */
   public getProgress(sessionId: string): PipelineProgress | null {
-    return this.get<PipelineProgress>(sessionId, 'progress');
+    try {
+      return this.get<PipelineProgress>(sessionId, 'progress');
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'getProgress', sessionId },
+        logLevel: 'warn'
+      });
+      return null;
+    }
   }
   
   /**
@@ -577,11 +667,19 @@ export class CacheManager {
    * cacheManager.invalidate(cacheKey, 'generation');
    */
   public invalidate(key: string, type: CacheType): void {
-    const cacheKey = `${type}:${key}`;
-    
-    if (this.cache.has(cacheKey)) {
-      this.cache.delete(cacheKey);
-      this.counts[type]--;
+    try {
+      const cacheKey = `${type}:${key}`;
+      
+      if (this.cache.has(cacheKey)) {
+        this.cache.delete(cacheKey);
+        this.counts[type]--;
+      }
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'invalidate', key, type },
+        logLevel: 'warn'
+      });
     }
   }
   
@@ -604,13 +702,21 @@ export class CacheManager {
    * cacheManager.invalidateType('progress');
    */
   public invalidateType(type: CacheType): void {
-    for (const [key, item] of this.cache.entries()) {
-      if (item.type === type) {
-        this.cache.delete(key);
+    try {
+      for (const [key, item] of this.cache.entries()) {
+        if (item.type === type) {
+          this.cache.delete(key);
+        }
       }
+      
+      this.counts[type] = 0;
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'invalidateType', type },
+        logLevel: 'warn'
+      });
     }
-    
-    this.counts[type] = 0;
   }
   
   /**
@@ -628,13 +734,21 @@ export class CacheManager {
    * cacheManager.clear();
    */
   public clear(): void {
-    this.cache.clear();
-    this.counts = {
-      generation: 0,
-      intermediate: 0,
-      asset: 0,
-      progress: 0,
-    };
+    try {
+      this.cache.clear();
+      this.counts = {
+        generation: 0,
+        intermediate: 0,
+        asset: 0,
+        progress: 0,
+      };
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'clear' },
+        logLevel: 'warn'
+      });
+    }
   }
   
   /**
@@ -655,35 +769,44 @@ export class CacheManager {
     
     this.logger.debug('Starting cache cleanup');
     
-    const now = Date.now();
-    let cleaned = 0;
-    const typeCleanupCounts: Record<CacheType, number> = {
-      generation: 0,
-      intermediate: 0,
-      asset: 0,
-      progress: 0
-    };
-    
-    for (const [key, item] of this.cache.entries()) {
-      if (now > item.expiresAt) {
-        this.cache.delete(key);
-        this.counts[item.type]--;
-        typeCleanupCounts[item.type]++;
-        cleaned++;
-      }
-    }
-    
-    if (cleaned > 0) {
-      this.logger.info(`Cleaned up ${cleaned} expired cache items`, {
-        totalCleaned: cleaned,
-        byType: typeCleanupCounts,
-        remainingItems: {
-          total: this.cache.size,
-          byType: { ...this.counts }
+    try {
+      const now = Date.now();
+      let cleaned = 0;
+      const typeCleanupCounts: Record<CacheType, number> = {
+        generation: 0,
+        intermediate: 0,
+        asset: 0,
+        progress: 0
+      };
+      
+      for (const [key, item] of this.cache.entries()) {
+        if (now > item.expiresAt) {
+          this.cache.delete(key);
+          this.counts[item.type]--;
+          typeCleanupCounts[item.type]++;
+          cleaned++;
         }
+      }
+      
+      if (cleaned > 0) {
+        this.logger.info(`Cleaned up ${cleaned} expired cache items`, {
+          totalCleaned: cleaned,
+          byType: typeCleanupCounts,
+          remainingItems: {
+            total: this.cache.size,
+            byType: { ...this.counts }
+          }
+        });
+      } else {
+        this.logger.debug('No expired cache items found during cleanup');
+      }
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'cleanup' },
+        logLevel: 'warn',
+        silent: true // Don't report this to monitoring systems
       });
-    } else {
-      this.logger.debug('No expired cache items found during cleanup');
     }
   }
   
@@ -710,9 +833,13 @@ export class CacheManager {
           return hexHash;
         } catch (error) {
           // Log error and fall back to simple hash if crypto API fails
-          this.logger.warn('Web Crypto API failed, using fallback hash', {
-            error: error instanceof Error ? error.message : String(error)
+          const appError = handleError(error, {
+            category: ErrorCategory.STORAGE,
+            context: { operation: 'generateHash', method: 'WebCrypto' },
+            rethrow: false,
+            logLevel: 'warn'
           });
+          
           return this.simpleHash(str);
         }
       }
@@ -721,9 +848,11 @@ export class CacheManager {
       this.logger.debug('Web Crypto API not available, using fallback hash');
       return this.simpleHash(str);
     } catch (error) {
-      // If any error occurs in the hash generation, return a deterministic fallback
-      this.logger.error('Hash generation failed completely', {
-        error: error instanceof Error ? error.message : String(error)
+      // If any error occurs in the hash generation, handle it and return a deterministic fallback
+      const appError = handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'generateHash' },
+        rethrow: false
       });
       
       // Create a basic hash from string length and first few characters
@@ -741,19 +870,30 @@ export class CacheManager {
    * @returns {string} A hex hash string
    */
   private simpleHash(str: string): string {
-    let hash = 5381; // djb2 hash starting value
-    
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) + hash) + char; // hash * 33 + char
-      hash = hash & hash; // Convert to 32bit integer
+    try {
+      let hash = 5381; // djb2 hash starting value
+      
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) + hash) + char; // hash * 33 + char
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      
+      // Add some randomness to avoid collisions in the fallback
+      const randomSuffix = Math.floor(Math.random() * 1000000).toString(16).padStart(6, '0');
+      
+      // Convert to hex string and ensure it's positive
+      return (hash >>> 0).toString(16).padStart(8, '0') + randomSuffix;
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'simpleHash' },
+        logLevel: 'warn'
+      });
+      
+      // If even the simple hash fails, return a truly basic fallback
+      return `basic_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
     }
-    
-    // Add some randomness to avoid collisions in the fallback
-    const randomSuffix = Math.floor(Math.random() * 1000000).toString(16).padStart(6, '0');
-    
-    // Convert to hex string and ensure it's positive
-    return (hash >>> 0).toString(16).padStart(8, '0') + randomSuffix;
   }
   
   /**
@@ -769,19 +909,28 @@ export class CacheManager {
    * @returns {void}
    */
   private evictOldest(type: CacheType): void {
-    let oldestKey: string | null = null;
-    let oldestTime = Infinity;
-    
-    for (const [key, item] of this.cache.entries()) {
-      if (item.type === type && item.createdAt < oldestTime) {
-        oldestKey = key;
-        oldestTime = item.createdAt;
+    try {
+      let oldestKey: string | null = null;
+      let oldestTime = Infinity;
+      
+      for (const [key, item] of this.cache.entries()) {
+        if (item.type === type && item.createdAt < oldestTime) {
+          oldestKey = key;
+          oldestTime = item.createdAt;
+        }
       }
-    }
-    
-    if (oldestKey) {
-      this.cache.delete(oldestKey);
-      this.counts[type]--;
+      
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+        this.counts[type]--;
+      }
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'evictOldest', type },
+        logLevel: 'warn',
+        silent: true
+      });
     }
   }
   
@@ -817,12 +966,29 @@ export class CacheManager {
     ttls: Record<CacheType, number>;
     totalSize: number;
   } {
-    return {
-      enabled: this.config.enabled,
-      counts: { ...this.counts },
-      maxSizes: { ...this.config.maxSize },
-      ttls: { ...this.config.ttl },
-      totalSize: this.cache.size
-    };
+    try {
+      return {
+        enabled: this.config.enabled,
+        counts: { ...this.counts },
+        maxSizes: { ...this.config.maxSize },
+        ttls: { ...this.config.ttl },
+        totalSize: this.cache.size
+      };
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { operation: 'getStats' },
+        logLevel: 'warn'
+      });
+      
+      // Return empty stats if there's an error
+      return {
+        enabled: false,
+        counts: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
+        maxSizes: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
+        ttls: { generation: 0, intermediate: 0, asset: 0, progress: 0 },
+        totalSize: 0
+      };
+    }
   }
 }

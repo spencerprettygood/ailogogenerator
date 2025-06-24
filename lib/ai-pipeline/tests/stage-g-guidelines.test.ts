@@ -47,4 +47,20 @@ describe('generateBrandGuidelines', () => {
     expect(result.html).toContain('<html');
     expect(result.html).toContain('Brand Guidelines');
   });
+
+  it('includes design rationale and industry context when provided', async () => {
+    const input = {
+      variants: mockVariants,
+      designSpec: mockDesignSpec,
+      designRationale: 'Test design rationale',
+      industryContext: 'Test industry context'
+    };
+    const result = await generateBrandGuidelines(input);
+    expect(result.sections).toHaveProperty('design_rationale');
+    expect(result.sections).toHaveProperty('industry_context');
+    expect(result.html).toContain('Design Rationale');
+    expect(result.html).toContain('Industry Context');
+    expect(result.html).toContain('Test design rationale');
+    expect(result.html).toContain('Test industry context');
+  });
 });

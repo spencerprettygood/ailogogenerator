@@ -68,14 +68,42 @@ const nextConfig = {
     ];
   },
   
-  // Webpack configuration optimized based on official documentation
-  webpack: (config) => {
+  // Webpack configuration optimized based on Next.js 15 documentation
+  webpack: (config, { isServer, dev }) => {
     // Add proper path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@components': path.resolve(__dirname, 'components'),
-      '@lib': path.resolve(__dirname, 'lib'),
+      '@': path.resolve(__dirname),
     };
+    
+    // Only apply these optimizations for client bundles
+    if (!isServer) {
+      // Polyfill handling for browser
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'fs': false,
+        'path': false,
+        'os': false,
+        'crypto': false,
+        'stream': false,
+        'http': false,
+        'https': false,
+        'zlib': false,
+        'async_hooks': false,
+      };
+      
+      // Production optimizations
+      if (!dev) {
+        const webpack = require('webpack');
+        
+        // Ignore certain modules in the browser
+        config.plugins.push(
+          new webpack.IgnorePlugin({
+            resourceRegExp: /^(node-fetch|encoding)$/,
+          })
+        );
+      }
+    }
     
     // Ensure extensions are properly configured
     config.resolve.extensions = [
@@ -96,15 +124,22 @@ const nextConfig = {
     return config;
   },
   
-  // Experimental features
-  experimental: {
-    // Optimize for Vercel deployments
-    optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
-    // Statically typed routes
-    typedRoutes: true,
-    // External packages that should be treated as external
-    serverComponentsExternalPackages: ['next-themes'],
-  },
+  // Package optimization (no longer experimental in Next.js 15)
+  optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
+  
+  // External packages that should be transpiled (renamed from serverComponentsExternalPackages)
+  transpilePackages: [
+    'next-themes',
+    '@opentelemetry/api',
+    '@opentelemetry/core',
+    '@opentelemetry/sdk-trace-base',
+    '@opentelemetry/resources',
+    '@opentelemetry/semantic-conventions',
+    '@opentelemetry/sdk-trace-node',
+    '@opentelemetry/instrumentation',
+    '@opentelemetry/exporter-trace-otlp-proto',
+    '@anthropic-ai/sdk',
+  ],
 };
 
 export default nextConfig;

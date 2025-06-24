@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CacheManager } from '@/lib/utils/cache-manager';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   // Only allow in development mode
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json({

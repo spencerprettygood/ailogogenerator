@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnimationExportOptions } from '@/lib/types';
 import { storeFile } from '@/lib/utils/file-storage';
-// Import sharp but only use it in GIF/MP4 handlers that are currently disabled
-import * as sharp from 'sharp';
+// Import sharp is commented out since it's not used in the current implementation
+// import * as sharp from 'sharp';
 
 // Keep edge runtime since we're not actively using Node.js features in current implementation
 // If GIF/MP4 export is enabled in the future, this should be changed to 'nodejs'
@@ -128,7 +128,7 @@ async function handleHtmlExport(svg: string, css?: string, js?: string, options?
  * Note: This is a simplified implementation. In a production environment,
  * you would use a more robust solution like puppeteer to render and capture frames.
  */
-async function handleGifExport(svg: string, css?: string, js?: string, options?: AnimationExportOptions) {
+async function handleGifExport(_svg: string, _css?: string, _js?: string, _options?: AnimationExportOptions) {
   // For now, return an error as GIF generation requires more complex setup
   return NextResponse.json(
     { 
@@ -144,7 +144,7 @@ async function handleGifExport(svg: string, css?: string, js?: string, options?:
  * Note: This is a simplified implementation. In a production environment,
  * you would use a tool like FFmpeg to generate videos.
  */
-async function handleMp4Export(svg: string, css?: string, js?: string, options?: AnimationExportOptions) {
+async function handleMp4Export(_svg: string, _css?: string, _js?: string, _options?: AnimationExportOptions) {
   // For now, return an error as MP4 generation requires more complex setup
   return NextResponse.json(
     { 

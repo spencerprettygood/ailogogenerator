@@ -428,7 +428,14 @@ export class SVGValidator {
         svg: svgContent,
         isRepaired: false,
         modifications: [],
-        remainingIssues: ['SVG is invalid or empty and cannot be repaired']
+        remainingIssues: ['SVG is invalid or empty and cannot be repaired'],
+        repaired: svgContent,
+        issuesFixed: [],
+        issuesRemaining: [{
+          type: 'validation',
+          severity: 'critical',
+          message: 'SVG is invalid or empty and cannot be repaired'
+        }]
       };
     }
     

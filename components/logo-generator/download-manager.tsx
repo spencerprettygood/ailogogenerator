@@ -13,6 +13,7 @@ const DownloadManager: React.FC<DownloadManagerProps> = ({
   onDownloadFileAction,
   onDownloadAllAction,
   brandName = 'Your Logo',
+  includeFavicon = true,
 }) => {
   if (!files || files.length === 0) {
     return (

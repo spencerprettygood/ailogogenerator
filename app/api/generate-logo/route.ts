@@ -344,7 +344,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               operation: 'logo-generation-complete',
               environment: process.env.NEXT_RUNTIME || 'default'
             });
-          } catch (memoryError) {
+          } catch {
             // Silently handle memory recording errors in Edge Runtime
             console.debug('Memory recording skipped in Edge Runtime');
           }

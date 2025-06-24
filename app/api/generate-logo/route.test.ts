@@ -65,10 +65,10 @@ global.TextEncoder = class TextEncoder {
 
 // Mock ReadableStream
 class MockReadableStream extends ReadableStream {
-  controller: any;
+  controller: { enqueue?: (chunk: unknown) => void; close?: () => void };
   
-  constructor(options: any) {
-    const controller = {};
+  constructor(options: { start?: (controller: { enqueue: (chunk: unknown) => void; close: () => void }) => void }) {
+    const controller = {} as { enqueue: (chunk: unknown) => void; close: () => void };
     super({
       start(c) {
         Object.assign(controller, c);
@@ -79,7 +79,7 @@ class MockReadableStream extends ReadableStream {
   }
 }
 
-// @ts-ignore - Mock ReadableStream
+// @ts-expect-error - Mock ReadableStream
 global.ReadableStream = MockReadableStream;
 
 describe('Logo Generation API Route', () => {
@@ -193,8 +193,8 @@ describe('Logo Generation API Route', () => {
     });
     
     it('should handle rate limiting', async () => {
-      // Mock rate limiter to deny the request
-      const { RateLimiter } = require('@/lib/utils/security-utils');
+      // Mock rate limiter to deny the request - using import instead of require
+      const { RateLimiter } = await import('@/lib/utils/security-utils');
       RateLimiter.check.mockReturnValueOnce({ 
         allowed: false, 
         retryAfter: 60000 

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { ErrorCategory, handleError } from "@/lib/utils/error-handler";
 
 export interface SVGRendererProps {
   /** SVG content as a string */
@@ -61,13 +62,11 @@ export function SVGRenderer({
   useEffect(() => {
     if (!svgContent || typeof window === 'undefined') return;
     
-    // Cleanup function for memory management
-    let cleanupNeeded = false;
+    let tempDiv: HTMLDivElement | null = null;
     
     try {
       // Create a temporary div to parse the SVG
-      const tempDiv = document.createElement('div');
-      cleanupNeeded = true;
+      tempDiv = document.createElement('div');
       tempDiv.innerHTML = svgContent;
       const svgElement = tempDiv.querySelector('svg');
       
@@ -87,14 +86,21 @@ export function SVGRenderer({
         }
       }
     } catch (error) {
-      console.error("Error parsing SVG dimensions:", error);
+      handleError(error, {
+        category: ErrorCategory.SVG,
+        context: {
+          component: 'SVGRenderer',
+          operation: 'parseDimensions'
+        },
+        logLevel: 'warn'
+      });
     }
     
     return () => {
       // Clean up DOM elements to prevent memory leaks
-      if (cleanupNeeded) {
-        // No explicit cleanup needed for this implementation
-        // as garbage collection will handle the tempDiv
+      if (tempDiv) {
+        tempDiv.innerHTML = '';
+        tempDiv = null;
       }
     };
   }, [svgContent]);

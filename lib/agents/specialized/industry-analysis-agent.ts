@@ -11,12 +11,16 @@ import {
   IndustryTrend
 } from '../../types-agents';
 import { DesignSpec } from '../../types';
+import { WebSearchService } from '../../services/web-search-service';
+import { ErrorCategory, handleError } from '../../utils/error-handler';
 
 /**
  * Specialized agent for analyzing logos within a specific industry
  * to determine uniqueness and adherence to industry conventions.
  */
 export class IndustryAnalysisAgent extends BaseAgent {
+  private webSearchService: WebSearchService | null = null;
+  
   constructor(config?: AgentConfig) {
     super({
       model: 'claude-3-5-sonnet-20240620',
@@ -27,10 +31,72 @@ export class IndustryAnalysisAgent extends BaseAgent {
 
     this.type = 'industry-analysis';
     this.capabilities = ['industry-analysis'];
+    
+    // Initialize web search service if we're in a browser environment
+    if (typeof window !== 'undefined') {
+      try {
+        this.webSearchService = new WebSearchService();
+      } catch (error) {
+        handleError(error, {
+          category: ErrorCategory.EXTERNAL,
+          context: {
+            component: 'IndustryAnalysisAgent',
+            operation: 'constructor'
+          },
+          logLevel: 'warn'
+        });
+      }
+    }
   }
 
   protected async preparePrompt(input: IndustryAnalysisAgentInput): Promise<string> {
     const { brandName, industry, designSpec, svg } = input;
+    
+    // Try to enhance analysis with web search if available
+    let industryResearch = '';
+    let awardWinningLogos = '';
+    
+    if (this.webSearchService) {
+      try {
+        // Search for industry design trends
+        const designTrends = await this.webSearchService.searchDesignTrends(industry || 'general');
+        
+        if (designTrends.success && designTrends.results.length > 0) {
+          industryResearch = `
+## Current Industry Design Research
+${designTrends.results.slice(0, 5).map(result => `
+### ${result.title}
+Source: ${result.domain}
+${result.snippet || 'No preview available.'}
+`).join('\n')}
+`;
+        }
+        
+        // Search for award-winning logos in this industry
+        const awardLogos = await this.webSearchService.searchAwardWinningLogos(industry || 'general');
+        
+        if (awardLogos.success && awardLogos.results.length > 0) {
+          awardWinningLogos = `
+## Award-Winning Logo Examples
+${awardLogos.results.slice(0, 5).map(result => `
+### ${result.title}
+Source: ${result.domain}
+${result.snippet || 'No preview available.'}
+`).join('\n')}
+`;
+        }
+      } catch (error) {
+        handleError(error, {
+          category: ErrorCategory.EXTERNAL,
+          context: {
+            component: 'IndustryAnalysisAgent',
+            operation: 'preparePrompt',
+            industry
+          },
+          logLevel: 'warn'
+        });
+      }
+    }
 
     const prompt = `
 # Industry Logo Analysis Task
@@ -40,6 +106,10 @@ export class IndustryAnalysisAgent extends BaseAgent {
 - Industry: "${industry}"
 - Design Specifications: ${JSON.stringify(designSpec, null, 2)}
 ${svg ? `- Existing Logo SVG: ${svg.substring(0, 500)}... (truncated)` : ''}
+
+${industryResearch}
+
+${awardWinningLogos}
 
 ## Your Task
 1. Analyze the most common logo design trends in the ${industry} industry
@@ -68,7 +138,8 @@ Provide your analysis in JSON format with the following structure:
       "name": "string",
       "description": "string",
       "prevalence": number, // 0-100 indicating how common this trend is
-      "examples": ["string"]
+      "examples": ["string"],
+      "relevance": number // 0-100 how relevant for this brief
     }
   ],
   "designRecommendations": ["string"],
@@ -84,6 +155,7 @@ Provide your analysis in JSON format with the following structure:
 - For color analysis, use common color names and hex codes when possible
 - For style categorization, use standard design terminology (minimalist, 3D, vintage, etc.)
 - Balance your recommendations between standing out and fitting in with industry expectations
+- Incorporate insights from the design research and award-winning examples provided
 `;
 
     return prompt;

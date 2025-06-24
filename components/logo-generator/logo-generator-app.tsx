@@ -15,15 +15,21 @@ import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
 import AnimationDownloadManager from './animation-download-manager';
+import FaviconDisplay from './FaviconDisplay';
+import DeliverablesOverview from './DeliverablesOverview';
 import { SmartFollowUps } from './smart-follow-ups';
 import { DesignCitations } from './design-citations';
 import { IndustrySelector } from './industry-selector';
 import { MockupPreviewSystem } from './mockup-preview-system';
+import { EnhancedMockupIntegration } from './enhanced-mockup-integration';
 import { AnimationSelector } from './animation-selector';
 import { AnimationShowcase } from './animation-showcase';
 import { AnimatedLogoDisplay } from './animated-logo-display';
 import { UniquenessToggle } from './uniqueness-toggle';
 import { UniquenessAnalysis } from './uniqueness-analysis';
+import { LogoFeedback, LiveFeedbackButton } from '@/components/feedback';
+import { FeedbackService } from '@/lib/services/feedback-service';
+import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feedback';
 
 // Type definition for animation options
 interface GetAnimationsOptions {
@@ -87,6 +93,10 @@ interface LogoGeneratorContextType {
     overallProgress: number;
     estimatedTimeRemaining: number | null;
   } | null;
+  showFeedback: boolean;
+  setShowFeedback: (show: boolean) => void;
+  submitFeedback: (feedback: LogoFeedbackType) => Promise<void>;
+  submitIssueFeedback: (feedback: LiveFeedback) => Promise<void>;
 }
 
 const LogoGeneratorContext = createContext<LogoGeneratorContextType | null>(null);
@@ -108,6 +118,7 @@ export function LogoGeneratorApp() {
   const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
   const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<GetAnimationsOptions | null>(null);
   const [includeUniquenessAnalysis, setIncludeUniquenessAnalysis] = useState<boolean>(false);
+  const [showFeedback, setShowFeedback] = useState<boolean>(false);
   
   const { toast } = useToast();
   const {
@@ -328,6 +339,40 @@ export function LogoGeneratorApp() {
     };
   }, [hookProgress]);
 
+  // Handle feedback submission
+  const submitFeedback = useCallback(async (feedback: LogoFeedbackType) => {
+    try {
+      await FeedbackService.submitLogoFeedback(feedback);
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback!"
+      });
+    } catch (error) {
+      toast({
+        title: "Feedback Submission Failed",
+        description: "There was an error submitting your feedback. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  // Handle issue feedback submission
+  const submitIssueFeedback = useCallback(async (feedback: LiveFeedback) => {
+    try {
+      await FeedbackService.submitIssueFeedback(feedback);
+      toast({
+        title: "Issue Reported",
+        description: "Thank you for reporting this issue!"
+      });
+    } catch (error) {
+      toast({
+        title: "Issue Report Failed",
+        description: "There was an error submitting your report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
   // Create context value
   const contextValue: LogoGeneratorContextType = {
     messages,
@@ -350,7 +395,11 @@ export function LogoGeneratorApp() {
     setSelectedAnimationOptions,
     includeUniquenessAnalysis,
     setIncludeUniquenessAnalysis,
-    progressForTracker
+    progressForTracker,
+    showFeedback,
+    setShowFeedback,
+    submitFeedback,
+    submitIssueFeedback
   };
 
   return (
@@ -465,17 +514,37 @@ export function LogoGeneratorApp() {
               {/* Results area */}
               {hookAssets && sessionId && (
                 <div className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
+                  {/* Logo Feedback */}
+                  {showFeedback && (
+                    <div className="mb-6">
+                      <LogoFeedback
+                        logoId={sessionId}
+                        sessionId={sessionId}
+                        onClose={() => setShowFeedback(false)}
+                        onSubmit={submitFeedback}
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <H2>Your Logo Package</H2>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground"
-                      onClick={handleReset}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      New Logo
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowFeedback(true)}
+                      >
+                        Rate Logo
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-muted-foreground"
+                        onClick={handleReset}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        New Logo
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6">
@@ -550,17 +619,33 @@ export function LogoGeneratorApp() {
                     </div>
                   )}
                   
-                  {/* Mockup Preview System */}
+                  {/* Enhanced Mockup Preview System */}
                   <div className="mt-8 border-t pt-6">
                     <H3 className="mb-4">Visualize Your Logo</H3>
-                    <MockupPreviewSystem 
-                      logo={hookAssets.primaryLogoSVG?.svgCode || ''}
-                      brandName={hookAssets.brandName || 'Your Brand'}
-                      onDownload={(mockupId, format) => {
-                        console.log(`Download mockup ${mockupId} in ${format} format`);
-                        // You can implement additional download tracking here
-                      }}
-                    />
+                    <div className="flex flex-col gap-4">
+                      <Tabs defaultValue="realistic">
+                        <TabsList>
+                          <TabsTrigger value="realistic">Realistic Mockups</TabsTrigger>
+                          <TabsTrigger value="standard">Standard Mockups</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="realistic">
+                          <EnhancedMockupIntegration 
+                            logo={hookAssets.primaryLogoSVG?.svgCode || ''}
+                            brandName={hookAssets.brandName || 'Your Brand'}
+                          />
+                        </TabsContent>
+                        <TabsContent value="standard">
+                          <MockupPreviewSystem 
+                            logo={hookAssets.primaryLogoSVG?.svgCode || ''}
+                            brandName={hookAssets.brandName || 'Your Brand'}
+                            onDownload={(mockupId, format) => {
+                              console.log(`Download mockup ${mockupId} in ${format} format`);
+                              // You can implement additional download tracking here
+                            }}
+                          />
+                        </TabsContent>
+                      </Tabs>
+                    </div>
                   </div>
                   
                   {/* Animation Showcase Section */}
@@ -628,6 +713,15 @@ export function LogoGeneratorApp() {
             </div>
           )}
         </main>
+        
+        {/* Live Feedback Button */}
+        {sessionId && (
+          <LiveFeedbackButton
+            sessionId={sessionId}
+            currentStage={hookProgress?.stage || undefined}
+            onSubmit={submitIssueFeedback}
+          />
+        )}
         
         <Toaster />
       </div>

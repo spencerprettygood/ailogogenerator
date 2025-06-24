@@ -3,7 +3,10 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { InputSanitizer } from '@/lib/utils/security-utils';
 import { NextResponse } from 'next/server';
 
+// Route segment config using Next.js 15 standards
 export const runtime = 'edge';
+export const preferredRegion = 'auto';
+export const dynamic = 'force-dynamic'; // Always revalidate this route
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
@@ -58,23 +61,20 @@ export async function POST(req: Request) {
       messages: sanitizedMessages,
     });
 
-    // Convert to standard text stream
-    return new Response(result.textStream, {
+    // Use NextResponse for consistent API handling
+    return new NextResponse(result.textStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
       },
     });
   } catch (error) {
     console.error('Error in chat route:', error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'An error occurred',
-      }),
+    return NextResponse.json(
       {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        error: error instanceof Error ? error.message : 'An error occurred',
+      },
+      {
+        status: 500
       }
     );
   }

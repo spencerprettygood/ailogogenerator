@@ -8,62 +8,71 @@
  * @version 1.0.0
  */
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { afterResponse } from './lib/middleware/performance-middleware';
+import { NextResponse, type NextRequest } from 'next/server';
+import { env } from '@/lib/utils/env';
 
-// Admin username and password (in a real app, use environment variables)
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
+// Use secure environment variables with validation
+const ADMIN_USERNAME = env.get('ADMIN_USERNAME');
+const ADMIN_PASSWORD = env.get('ADMIN_PASSWORD');
 
 /**
- * Middleware handler function
+ * Middleware handler function using Next.js 15 patterns
  * @param request Incoming request
  */
-export function middleware(request: NextRequest) {
-  // Performance monitoring for all requests
-  const response = performanceMiddleware(request);
+export async function middleware(request: NextRequest) {
+  // Get the pathname from the URL
+  const pathname = request.nextUrl.pathname;
   
   // Admin route protection
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    return adminMiddleware(request, response);
+  if (pathname.startsWith('/admin')) {
+    return handleAdminAuth(request);
+  }
+  
+  // Add performance monitoring headers
+  const response = NextResponse.next();
+  
+  // Add Server-Timing header for basic monitoring
+  const requestStartTime = request.headers.get('x-request-start-time');
+  const duration = requestStartTime ? Date.now() - parseInt(requestStartTime, 10) : 0;
+  response.headers.set('Server-Timing', `route;dur=${duration}`);
+  
+  // Add CORS headers for API routes
+  if (pathname.startsWith('/api')) {
+    // Add CORS headers to all API responses
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Handle OPTIONS requests (preflight)
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: response.headers,
+      });
+    }
   }
   
   return response;
 }
 
 /**
- * Performance monitoring middleware
+ * Admin route protection middleware using modern patterns
  * @param request Incoming request
  */
-function performanceMiddleware(request: NextRequest) {
-  // Just continue for now - actual monitoring happens in the handlers
-  const response = NextResponse.next();
-  
-  // Process after response
-  afterResponse(response, request);
-  
-  return response;
-}
-
-/**
- * Admin route protection middleware
- * @param request Incoming request
- * @param response Current response
- */
-function adminMiddleware(request: NextRequest, response: NextResponse) {
+function handleAdminAuth(request: NextRequest) {
   // Check for Basic Auth credentials
   const authHeader = request.headers.get('authorization');
   
   if (authHeader) {
     // Parse the Authorization header
     const authValue = authHeader.split(' ')[1];
-    const [user, pwd] = atob(authValue).split(':');
+    const decodedAuth = authValue ? atob(authValue) : '';
+    const [user, pwd] = decodedAuth.split(':');
     
     // Check credentials
     if (user === ADMIN_USERNAME && pwd === ADMIN_PASSWORD) {
       // Valid credentials - continue
-      return response;
+      return NextResponse.next();
     }
   }
   
@@ -71,7 +80,8 @@ function adminMiddleware(request: NextRequest, response: NextResponse) {
   return new NextResponse('Authentication required', {
     status: 401,
     headers: {
-      'WWW-Authenticate': 'Basic realm="Admin Dashboard"'
+      'WWW-Authenticate': 'Basic realm="Admin Dashboard"',
+      'Content-Type': 'text/plain',
     },
   });
 }

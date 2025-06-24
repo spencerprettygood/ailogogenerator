@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -22,6 +22,7 @@ import {
   AnimationType, 
   AnimationTrigger 
 } from '@/lib/animation/types';
+import { ErrorCategory, handleError } from '@/lib/utils/error-handler';
 
 const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
   animatedSvg,
@@ -40,6 +41,24 @@ const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
     quality: 'medium',
     loop: true
   });
+  
+  const formatMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Close format menu when clicking outside
+  useEffect(() => {
+    if (!showFormatOptions) return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      if (formatMenuRef.current && !formatMenuRef.current.contains(event.target as Node)) {
+        setShowFormatOptions(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFormatOptions]);
 
   if (!animatedSvg) {
     return (
@@ -56,15 +75,27 @@ const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
     );
   }
 
-  const handleExport = () => {
-    onExport(exportFormat, exportOptions);
-  };
+  const handleExport = useCallback(() => {
+    try {
+      onExport(exportFormat, exportOptions);
+    } catch (error) {
+      handleError(error, {
+        category: ErrorCategory.UI,
+        context: {
+          component: 'AnimationDownloadManager',
+          operation: 'export',
+          format: exportFormat,
+          options: exportOptions
+        }
+      });
+    }
+  }, [exportFormat, exportOptions, onExport]);
 
-  const selectFormat = (format: string) => {
+  const selectFormat = useCallback((format: string) => {
     setExportFormat(format);
     setExportOptions(prev => ({ ...prev, format: format as any }));
     setShowFormatOptions(false);
-  };
+  }, []);
 
   return (
     <Card className="w-full shadow-lg dark:shadow-indigo-900/50">
@@ -101,7 +132,7 @@ const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-4 mb-6">
-          <div className="relative">
+          <div className="relative" ref={formatMenuRef}>
             <Button 
               onClick={() => setShowFormatOptions(!showFormatOptions)}
               variant="outline" 

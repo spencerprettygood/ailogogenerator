@@ -10,11 +10,15 @@ export interface SvgGenerationResult {
   elementCount: number;
   hasGradients: boolean;
   designNotes: string;
+  designRationale?: string; // New field for design rationale
+  industryContext?: string; // New field for industry context
 }
 
 export interface StageDInput {
   designSpec: DesignSpec;
   selectedConcept: MoodboardConcept;
+  industry?: string; // Optional industry context
+  referenceImages?: string[]; // Optional reference image descriptions
 }
 
 export interface StageDOutput {
@@ -32,33 +36,34 @@ export interface StageDOutput {
 // Configuration
 const STAGE_D_CONFIG = {
   model: 'claude-3-5-sonnet-20240620' as const, // Sonnet for complex generation
-  temperature: 0.4, // Balance of creativity and consistency
-  max_tokens: 2000, // Allow for complex SVG generation
+  temperature: 0.5, // Slightly increased for more creativity
+  max_tokens: 2500, // Increased to allow for more detailed SVG and rationale
   timeout: 60_000, // 60 seconds
   max_retries: 3,
   retry_delay: 3000, // 3 seconds
-  max_svg_size: 15 * 1024, // 15KB maximum size
+  max_svg_size: 20 * 1024, // Increased to 20KB maximum size
   viewBox: '0 0 300 300',
   allowed_elements: [
     'svg', 'g', 'path', 'circle', 'rect', 'polygon', 'polyline',
     'line', 'text', 'tspan', 'defs', 'linearGradient', 'radialGradient',
-    'stop', 'ellipse', 'mask', 'clipPath', 'use', 'title', 'desc'
+    'stop', 'ellipse', 'mask', 'clipPath', 'use', 'title', 'desc',
+    'pattern', 'symbol'
   ],
   forbidden_elements: [
     'script', 'foreignObject', 'iframe', 'image', 'embed', 'video',
     'audio', 'canvas', 'object', 'animate', 'set', 'animateMotion',
     'animateTransform', 'animateColor', 'a'
   ],
-  max_colors: 5
+  max_colors: 6 // Increased to allow for more nuanced palettes
 };
 
-// System prompt for SVG logo generation
+// Enhanced system prompt for SVG logo generation with advanced design principles
 const STAGE_D_SYSTEM_PROMPT = `
-You are a professional logo designer with expertise in creating SVG logos. Generate a high-quality, production-ready SVG logo based on the provided design concept.
+You are a world-class logo designer with decades of experience creating iconic, award-winning brand identities for Fortune 500 companies and startups alike. Generate a high-quality, production-ready SVG logo based on the provided design concept. Your designs are known for their strategic thinking, visual sophistication, and ability to stand the test of time.
 
 OUTPUT FORMAT:
 1. First, output ONLY the complete SVG code enclosed in \`\`\`svg and \`\`\` tags.
-2. After the SVG code, output a JSON object with design notes in \`\`\`json and \`\`\` tags.
+2. After the SVG code, output a JSON object with design notes and rationale in \`\`\`json and \`\`\` tags.
 
 SVG TECHNICAL REQUIREMENTS:
 - Use viewBox="${STAGE_D_CONFIG.viewBox}"
@@ -72,17 +77,24 @@ SVG TECHNICAL REQUIREMENTS:
 - Add title and desc elements for accessibility
 - Use consistent spacing and organization
 
-DESIGN PRINCIPLES:
-- Focus on simplicity and memorability
-- Ensure the logo works at small sizes
-- Limit colors to ${STAGE_D_CONFIG.max_colors} or fewer
-- Create clean, scalable vector paths
-- Match the concept's style and color palette
-- Make text legible and properly spaced
-- Balance all elements in the composition
-- Maintain white space appropriately
+ADVANCED DESIGN PRINCIPLES:
+1. ICONIC SIMPLICITY: Create a logo that can be drawn from memory after a single viewing
+2. DIFFERENTIATION: Analyze expected industry conventions and create a design that is clearly distinct while remaining relevant
+3. VISUAL METAPHOR: Incorporate subtle, clever visual metaphors that add depth of meaning (avoid obvious, literal representations)
+4. GOLDEN RATIO & SACRED GEOMETRY: Use harmonious proportions based on classic design principles
+5. WHITESPACE UTILIZATION: Strategic use of negative space that contributes to the overall design
+6. VISUAL BALANCE: Create perfect equilibrium, whether symmetrical or asymmetrical, to ensure stability and professionalism
+7. COLOR PSYCHOLOGY: Apply colors that evoke specific emotional responses aligned with brand personality
+8. BRAND PERSONALITY EMBODIMENT: Ensure every design element reflects the core brand personality traits
+9. MICRO-UNIQUENESS: Include small, distinctive details that set the logo apart but don't complicate the design
+10. DESIGN RESILIENCE: Create a logo that remains effective across all contexts, applications, and scales
 
-SVG OPTIMIZATIONS:
+COMPETITION AWARENESS:
+- Avoid designs that resemble major competitors or well-known brands
+- Strive for a unique silhouette that is instantly recognizable
+- Consider how the design will stand out in crowded visual environments
+
+SVG OPTIMIZATION BEST PRACTICES:
 - Round path coordinates to 1 decimal place
 - Minimize path commands and points
 - Use compact but readable attribute values
@@ -97,15 +109,203 @@ SECURITY CONSTRAINTS:
 - Use only inline styles, no external CSS
 - No event handlers of any kind
 
-The JSON design notes should include:
-- Key design decisions made
-- Color codes used
-- Typography notes
-- Potential applications
-- Technical considerations
+The JSON design notes MUST include these fields in a structured object:
+{
+  "designNotes": "Key design decisions and technical specifications",
+  "designRationale": "Explanation of why specific design choices were made",
+  "brandAlignment": "How the design aligns with the brand's values and personality",
+  "visualMetaphors": "Explanation of any symbolic elements and their meanings",
+  "colorStrategy": {
+    "palette": ["#hex1", "#hex2", ...],
+    "psychology": "Color psychology considerations",
+    "accessibility": "Contrast and visibility considerations"
+  },
+  "typography": {
+    "fonts": ["Font1", "Font2"],
+    "characteristics": "Font style characteristics"
+  },
+  "uniquenessFactors": [
+    "Element 1 that makes this logo unique",
+    "Element 2 that makes this logo unique"
+  ],
+  "industryContext": "How the logo relates to and differentiates from industry norms",
+  "competitiveAdvantage": "How the design provides visual differentiation from competitors",
+  "scalability": {
+    "favicon": "How it works at 16x16px",
+    "smallScale": "How it works at small sizes",
+    "largeScale": "How it works at large sizes"
+  },
+  "versatility": "How the logo performs across different applications and contexts"
+}
 
 EXTREMELY IMPORTANT: Return ONLY the SVG code in \`\`\`svg \`\`\` tags followed by the JSON notes in \`\`\`json \`\`\` tags. No other text or explanations.
 `;
+
+// Industry-specific design principles
+const INDUSTRY_DESIGN_PRINCIPLES = {
+  technology: `
+TECHNOLOGY INDUSTRY DESIGN PRINCIPLES & DIFFERENTIATION STRATEGIES:
+
+COMMON INDUSTRY CONVENTIONS:
+- Geometric shapes and abstract icons
+- Blue color schemes and gradients
+- Sans-serif typefaces with modified characters
+- Circuit-like patterns and connectivity motifs
+- Orbital or circular elements
+
+DIFFERENTIATION STRATEGIES:
+- Avoid overused blue-only color schemes - consider unexpected color combinations that still feel tech-oriented
+- Move beyond purely geometric forms - integrate organic elements strategically
+- Create distinctive silhouettes rather than common abstract shapes
+- Develop a unique visual metaphor rather than generic tech symbols
+- Consider innovative negative space usage that creates dual readings
+- If using typography, create custom letterforms with distinctive characteristics
+- Integrate subtle asymmetry for visual interest while maintaining professional appeal
+- Consider depth and dimensionality without sacrificing scalability
+- Explore bold, unexpected color combinations while maintaining professionalism
+
+SUCCESSFUL DIFFERENTIATION EXAMPLES:
+- Slack's hashtag/octothorpe that forms a distinctive multi-colored pinwheel
+- Spotify's sound waves arranged in a circular form with distinctive color
+- Figma's community-oriented "dots" forming an 'F' with unique colors
+- Notion's minimal yet distinctive "N" that suggests both pages and tabs
+  `,
+  healthcare: `
+HEALTHCARE INDUSTRY DESIGN PRINCIPLES & DIFFERENTIATION STRATEGIES:
+
+COMMON INDUSTRY CONVENTIONS:
+- Blue and green color schemes
+- Crosses, hearts, and human figures
+- Rounded shapes and soft edges
+- Caduceus or staff of Hermes medical symbols
+- Shield or protective forms
+- Wave patterns suggesting lifelines or heartbeats
+
+DIFFERENTIATION STRATEGIES:
+- Move beyond predictable blue/green - consider strategic use of warm colors balanced with cool tones
+- Avoid explicit medical symbols (cross, caduceus) in favor of more abstract visual metaphors
+- Create balanced asymmetry rather than perfect symmetry
+- Develop distinctive custom elements rather than stock medical imagery
+- Consider innovative representations of care, wellness, or health journeys
+- If using typography, balance professional qualities with human warmth
+- Incorporate subtle natural elements that suggest growth, renewal, or vitality
+- Consider dual-reading imagery that implies both technical expertise and human compassion
+
+SUCCESSFUL DIFFERENTIATION EXAMPLES:
+- Cleveland Clinic's simple yet distinctive morphing 'C' form that suggests both technical precision and human care
+- One Medical's distinctive stylized '1' that feels both modern and approachable
+- ZocDoc's abstract 'Z' formed by overlapping semicircles that suggests both organization and connections
+- Oscar Health's simple 'o' with personality that breaks healthcare visual conventions
+  `,
+  finance: `
+FINANCE INDUSTRY DESIGN PRINCIPLES & DIFFERENTIATION STRATEGIES:
+
+COMMON INDUSTRY CONVENTIONS:
+- Blue color schemes (especially navy and dark blue)
+- Abstract shapes suggesting buildings, shields, or graphs
+- Upward-trending lines or arrows indicating growth
+- Strong, symmetrical forms suggesting stability
+- Conservative sans-serif typography
+- Square or rectangular containment shapes
+- Shield forms suggesting security
+
+DIFFERENTIATION STRATEGIES:
+- Move beyond expected blues - consider strategic use of distinctive color combinations
+- Avoid obvious financial metaphors (coins, graphs, buildings) in favor of more subtle symbolism
+- Create visual tension between stability and dynamism to suggest both reliability and innovation
+- Develop distinctive custom elements rather than generic financial imagery
+- If using typography, create custom letterforms with unexpected characteristics
+- Consider abstract forms that suggest both protection and growth
+- Incorporate human-centered elements to balance technical financial aspects
+- Consider dual-reading imagery that implies both tradition and innovation
+
+SUCCESSFUL DIFFERENTIATION EXAMPLES:
+- Robinhood's simple yet distinctive feather that breaks financial services visual conventions
+- Stripe's distinctive 'S' formed by a continuous curved line suggesting both fluidity and connectivity
+- Square's distinctive square logo with rounded corners balancing technical precision with accessibility
+- Wise's distinctive flag symbol that stands out in the financial services landscape
+  `,
+  food: `
+FOOD & BEVERAGE INDUSTRY DESIGN PRINCIPLES:
+- Use organic, flowing shapes that feel natural and appetizing
+- Warm colors like reds, oranges, and browns stimulate appetite
+- Typography can range from elegant to playful depending on positioning
+- Avoid overly abstract designs that don't connect to food experience
+- Balance distinctive with appetizing - the logo should never make food seem unappetizing
+- Consider hand-drawn or artisanal elements for craft/quality positioning
+- Ensure the design works well on packaging and signage
+  `,
+  retail: `
+RETAIL INDUSTRY DESIGN PRINCIPLES:
+- Design should be adaptable across various product categories
+- Typography is often the dominant element in retail logos
+- Balance between trendy and timeless to avoid frequent redesigns
+- Colors should coordinate with merchandise and store environments
+- Consider how the logo appears on storefronts, bags, and tags
+- Design should be distinctive enough to be recognized across crowded marketplaces
+- Often simpler is better for maximum recognition
+  `,
+  education: `
+EDUCATION INDUSTRY DESIGN PRINCIPLES:
+- Balance tradition with forward-thinking innovation
+- Blues, greens, and burgundies suggest wisdom and growth
+- Consider emblematic shapes like books, trees, or graduation caps
+- Typography should be clear and authoritative
+- Avoid overly casual or playful elements for higher education
+- Design should work well in both digital and traditional contexts
+- Consider how the logo represents the specific educational philosophy
+  `,
+  entertainment: `
+ENTERTAINMENT INDUSTRY DESIGN PRINCIPLES:
+- Bold, dynamic designs that capture attention quickly
+- Vibrant colors that evoke emotion and energy
+- Typography can be more expressive and distinctive
+- Consider motion and dynamism in static elements
+- The logo should be adaptable across various media formats
+- Often more symbolic than literal to capture a feeling
+- Design should balance memorability with versatility
+  `,
+  construction: `
+CONSTRUCTION/REAL ESTATE INDUSTRY DESIGN PRINCIPLES:
+- Use strong, structural shapes that suggest stability and quality
+- Earth tones, blues, and grays connote reliability and craftsmanship
+- Typography should be bold and substantial
+- Consider architectural elements or abstract house shapes
+- Design should work well on vehicles, signage, and hard hats
+- Balance professionalism with approachability
+- Avoid overly complex designs that won't reproduce well on various materials
+  `,
+  agriculture: `
+AGRICULTURE INDUSTRY DESIGN PRINCIPLES:
+- Organic shapes and natural elements suggest growth and cultivation
+- Greens, browns, and earthy colors connect to nature and growth
+- Balance tradition with modern agricultural practices
+- Consider sunrise/horizon elements to suggest growth and optimism
+- Typography can range from traditional to contemporary depending on positioning
+- Design should work well on equipment, packaging, and outdoor signage
+- Avoid overly stylized elements that disconnect from the land
+  `,
+  nonprofit: `
+NONPROFIT INDUSTRY DESIGN PRINCIPLES:
+- Approachable, human-centered design elements
+- Colors often relate to the specific cause (green for environment, etc.)
+- Typography should be clear and sincere
+- Consider symbolic elements that represent the mission
+- Balance professionalism with emotional connection
+- Design should translate well across fundraising materials
+- Avoid looking too corporate or too amateur
+  `,
+  default: `
+GENERAL DESIGN PRINCIPLES:
+- Focus on simplicity and memorability above all
+- Ensure the design is versatile across applications
+- Use color strategically - each color should have purpose
+- Typography should be carefully selected to match brand personality
+- Balance distinctive with appropriate for maximum effectiveness
+- Consider negative space as an active design element
+- Ensure the logo tells a coherent visual story about the brand
+  `
+};
 
 // Input validation class
 class StageDValidator {
@@ -145,6 +345,11 @@ class StageDValidator {
 
     if (!Array.isArray(input.selectedConcept.primary_colors) || input.selectedConcept.primary_colors.length === 0) {
       throw new Error('Selected concept must have at least one primary color');
+    }
+
+    // Validate reference images if provided
+    if (input.referenceImages && (!Array.isArray(input.referenceImages) || input.referenceImages.some(img => typeof img !== 'string'))) {
+      throw new Error('Reference images must be an array of strings');
     }
   }
 
@@ -299,7 +504,7 @@ class StageDRetryHandler {
   }
 }
 
-// Main SVG generation function
+// Enhanced SVG generation function with industry context
 export async function generateSvgLogo(
   input: StageDInput
 ): Promise<StageDOutput> {
@@ -316,8 +521,13 @@ export async function generateSvgLogo(
     }
     const anthropic = new Anthropic({ apiKey: anthropicApiKey });
 
+    // Get industry-specific design principles
+    const industryContext = input.industry && INDUSTRY_DESIGN_PRINCIPLES[input.industry as keyof typeof INDUSTRY_DESIGN_PRINCIPLES]
+      ? INDUSTRY_DESIGN_PRINCIPLES[input.industry as keyof typeof INDUSTRY_DESIGN_PRINCIPLES]
+      : INDUSTRY_DESIGN_PRINCIPLES.default;
+
     // Construct user message with design requirements and selected concept
-    const userMessage = `
+    let userMessage = `
 LOGO DESIGN TASK:
 
 Create a production-ready SVG logo for:
@@ -325,25 +535,45 @@ Create a production-ready SVG logo for:
 Brand Name: ${input.designSpec.brand_name}
 Brand Description: ${input.designSpec.brand_description}
 
+BRAND PROFILE:
+Target Audience: ${input.designSpec.target_audience}
+Brand Personality: ${input.designSpec.brand_personality || 'Not specified'}
+Industry Context: ${input.designSpec.industry_context || input.industry || 'Not specified'}
+Competitive Positioning: ${input.designSpec.competitive_positioning || 'Not specified'}
+Uniqueness Requirements: ${input.designSpec.uniqueness_requirements || 'Not specified'}
+
 SELECTED CONCEPT:
 Name: ${input.selectedConcept.name}
 Description: ${input.selectedConcept.description}
-Style Approach: ${input.selectedConcept.style_approach}
+Style Approach: ${input.selectedConcept.style_approach || 'Not specified'}
 Primary Colors: ${input.selectedConcept.primary_colors.join(', ')}
-Typography Style: ${input.selectedConcept.typography_style}
-Imagery Elements: ${input.selectedConcept.imagery_elements}
+Typography Style: ${input.selectedConcept.typography_style || 'Not specified'}
+Imagery Elements: ${input.selectedConcept.imagery_elements || 'Not specified'}
 
-Additional Requirements:
-- Create a clean, professional SVG logo that follows the selected concept
-- Ensure the design is simple enough to be recognizable at small sizes
-- Use the specified color palette
-- Follow the style approach described
-- Incorporate the key imagery elements in a balanced composition
-- Create a logo that will work well in both digital and print applications
-- Focus on creating a visually appealing, modern, and professional logo
+INDUSTRY CONTEXT: ${input.industry || input.designSpec.industry_context || 'General'}
 
-Please generate the complete SVG code for this logo followed by design notes in JSON format.
+${industryContext}
+
+ADVANCED DESIGN REQUIREMENTS:
+- Create a logo with ICONIC SIMPLICITY that can be drawn from memory after a single viewing
+- Ensure UNIQUENESS by avoiding industry clichés and creating a distinctive silhouette
+- Develop a VISUAL METAPHOR that adds depth of meaning without being too literal
+- Incorporate elements of the GOLDEN RATIO for harmonious proportions
+- Use NEGATIVE SPACE strategically to create additional meaning or visual interest
+- Create perfect VISUAL BALANCE that ensures stability and professionalism
+- Apply COLOR PSYCHOLOGY principles that align with the brand personality
+- Ensure every element EMBODIES THE BRAND PERSONALITY
+- Include MICRO-UNIQUE details that set the logo apart without complicating the design
+- Ensure the design has VERSATILITY across all applications and contexts
 `;
+
+    // Add reference images if provided
+    if (input.referenceImages && input.referenceImages.length > 0) {
+      userMessage += `\nREFERENCE IMAGES:\n${input.referenceImages.map((desc, i) => `${i + 1}. ${desc}`).join('\n')}\n`;
+      userMessage += `\nIncorporate relevant inspiration from these reference images while creating a unique, original logo design.\n`;
+    }
+
+    userMessage += `\nPlease generate the complete SVG code for this logo followed by comprehensive design notes and rationale in JSON format.`;
 
     // Call Claude API with retry logic
     const completion = await StageDRetryHandler.withRetry(async () => {
@@ -391,14 +621,36 @@ Please generate the complete SVG code for this logo followed by design notes in 
     
     // Parse design notes if available
     let designNotes = "No design notes provided.";
+    let designRationale = undefined;
+    let industryContextNotes = undefined;
+
     if (notes) {
       try {
         const parsedNotes = JSON.parse(notes);
         if (typeof parsedNotes === 'object' && parsedNotes !== null) {
-          // Convert notes object to string if it's an object
-          designNotes = typeof parsedNotes === 'string' 
-            ? parsedNotes 
-            : JSON.stringify(parsedNotes, null, 2);
+          // Extract design rationale if available
+          if (parsedNotes.designRationale) {
+            designRationale = typeof parsedNotes.designRationale === 'string'
+              ? parsedNotes.designRationale
+              : JSON.stringify(parsedNotes.designRationale);
+          }
+
+          // Extract industry context if available
+          if (parsedNotes.industry) {
+            industryContextNotes = typeof parsedNotes.industry === 'string'
+              ? parsedNotes.industry
+              : JSON.stringify(parsedNotes.industry);
+          }
+
+          // Extract design notes
+          if (parsedNotes.designNotes) {
+            designNotes = typeof parsedNotes.designNotes === 'string'
+              ? parsedNotes.designNotes
+              : JSON.stringify(parsedNotes.designNotes);
+          } else {
+            // Use the whole notes object if designNotes is not available
+            designNotes = JSON.stringify(parsedNotes, null, 2);
+          }
         }
       } catch (error) {
         console.warn('Could not parse design notes JSON:', error);
@@ -416,7 +668,9 @@ Please generate the complete SVG code for this logo followed by design notes in 
         height: metadata.height,
         elementCount: metadata.elementCount,
         hasGradients: metadata.hasGradients,
-        designNotes
+        designNotes,
+        designRationale,
+        industryContext: industryContextNotes
       },
       tokensUsed: (completion.usage.input_tokens || 0) + (completion.usage.output_tokens || 0),
       processingTime,

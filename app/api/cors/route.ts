@@ -38,17 +38,18 @@ export async function OPTIONS(req: NextRequest) {
   const corsOrigin = isAllowedOrigin ? origin : corsConfig.allowedOrigins[0];
   
   // Create a response with CORS headers
-  return new NextResponse(null, {
-    status: 204, // No content for OPTIONS requests
-    headers: {
-      'Access-Control-Allow-Origin': corsOrigin,
-      'Access-Control-Allow-Methods': corsConfig.allowedMethods.join(', '),
-      'Access-Control-Allow-Headers': corsConfig.allowedHeaders.join(', '),
-      'Access-Control-Expose-Headers': corsConfig.exposedHeaders.join(', '),
-      'Access-Control-Max-Age': corsConfig.maxAge.toString(),
-      'Access-Control-Allow-Credentials': corsConfig.credentials ? 'true' : 'false',
-    },
-  });
+  // Create response with proper headers
+  const response = new NextResponse(null, { status: 204 });
+  
+  // Add CORS headers
+  response.headers.set('Access-Control-Allow-Origin', corsOrigin || '*');
+  response.headers.set('Access-Control-Allow-Methods', corsConfig.allowedMethods.join(', '));
+  response.headers.set('Access-Control-Allow-Headers', corsConfig.allowedHeaders.join(', '));
+  response.headers.set('Access-Control-Expose-Headers', corsConfig.exposedHeaders.join(', '));
+  response.headers.set('Access-Control-Max-Age', corsConfig.maxAge.toString());
+  response.headers.set('Access-Control-Allow-Credentials', corsConfig.credentials ? 'true' : 'false');
+  
+  return response;
 }
 
 /**
@@ -66,7 +67,7 @@ export function applyCorsHeaders(response: NextResponse, request: NextRequest): 
   const corsOrigin = isAllowedOrigin ? origin : corsConfig.allowedOrigins[0];
   
   // Add CORS headers to the response
-  response.headers.set('Access-Control-Allow-Origin', corsOrigin);
+  response.headers.set('Access-Control-Allow-Origin', corsOrigin || '*');
   response.headers.set('Access-Control-Expose-Headers', corsConfig.exposedHeaders.join(', '));
   
   if (corsConfig.credentials) {
