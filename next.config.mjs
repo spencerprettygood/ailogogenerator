@@ -127,14 +127,6 @@ const nextConfig = {
   // External packages that should be transpiled (renamed from serverComponentsExternalPackages)
   serverExternalPackages: [
     'next-themes',
-    '@opentelemetry/api',
-    '@opentelemetry/core',
-    '@opentelemetry/sdk-trace-base',
-    '@opentelemetry/resources',
-    '@opentelemetry/semantic-conventions',
-    '@opentelemetry/sdk-trace-node',
-    '@opentelemetry/instrumentation',
-    '@opentelemetry/exporter-trace-otlp-proto',
     '@anthropic-ai/sdk',
   ],
 };

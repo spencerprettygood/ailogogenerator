@@ -95,14 +95,6 @@ const nextConfig = (phase: string): NextConfig => {
     
     // Explicitly list externals that should not be bundled in server components
     serverExternalPackages: [
-      '@opentelemetry/api',
-      '@opentelemetry/core',
-      '@opentelemetry/sdk-trace-base',
-      '@opentelemetry/resources',
-      '@opentelemetry/semantic-conventions',
-      '@opentelemetry/sdk-trace-node',
-      '@opentelemetry/instrumentation',
-      '@opentelemetry/exporter-trace-otlp-proto',
       '@anthropic-ai/sdk',
       'async_hooks'
     ],

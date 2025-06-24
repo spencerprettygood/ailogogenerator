@@ -6,21 +6,15 @@ This project uses a custom, lightweight telemetry system instead of OpenTelemetr
 
 ## Why Not OpenTelemetry?
 
-OpenTelemetry was causing build failures and runtime errors due to:
-
-1. Dependency on Node.js-specific modules like `async_hooks` that don't exist in browser environments
-2. Complex dependency chains and initialization requirements
-3. Integration issues with Next.js 15, particularly in Edge Runtime
+OpenTelemetry is not used in this project. All blockers, patches, and config hacks have been removed. Our custom telemetry system is the only solution in use.
 
 ## Our Solution
 
-We've implemented a custom telemetry system that:
-
-1. Works in both Node.js and browser environments
-2. Has zero external dependencies
-3. Provides all essential telemetry features (events, spans, metrics)
-4. Integrates seamlessly with Next.js middleware and API routes
-5. Has minimal performance impact
+- Works in both Node.js and browser environments
+- Has zero external dependencies
+- Provides all required metrics and event tracking
+- Integrates seamlessly with Next.js middleware and API routes
+- Has minimal performance impact
 
 ## Features
 

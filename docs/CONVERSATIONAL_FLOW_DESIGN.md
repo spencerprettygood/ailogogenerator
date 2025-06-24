@@ -34,7 +34,7 @@ Hi there! I'm your AI logo designer. I'd love to help create the perfect logo fo
 What's the project you're working on? You can tell me about your business or idea, and we'll start from there.
 ```
 
-**Psychology:** 
+**Psychology:**
 - Opens with a warm greeting to establish rapport
 - Uses "I'd love to help" to position as a collaborative partner
 - Asks an open-ended question to encourage free expression

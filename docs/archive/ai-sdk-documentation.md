@@ -97,6 +97,7 @@ createServer(async (req, res) => {
 - Streaming not working when [proxied](/docs/troubleshooting/streaming-not-working-when-proxied)
 
 ---
+
 title: Express
 description: Learn how to use the AI SDK in an Express server
 tags: ['api servers', 'streaming']
@@ -213,6 +214,7 @@ app.listen(8080, () => {
 - Streaming not working when [proxied](/docs/troubleshooting/streaming-not-working-when-proxied)
 
 ---
+
 title: Hono
 description: Example of using the AI SDK in a Hono server.
 tags: ['api servers', 'streaming']
@@ -343,6 +345,7 @@ serve({ fetch: app.fetch, port: 8080 });
 - Streaming not working when [proxied](/docs/troubleshooting/streaming-not-working-when-proxied)
 
 ---
+
 title: Fastify
 description: Learn how to use the AI SDK in a Fastify server
 tags: ['api servers', 'streaming']
@@ -465,6 +468,7 @@ fastify.listen({ port: 8080 });
 - Streaming not working when [proxied](/docs/troubleshooting/streaming-not-working-when-proxied)
 
 ---
+
 title: Nest.js
 description: Learn how to use the AI SDK in a Nest.js server
 tags: ['api servers', 'streaming']
@@ -568,8 +572,9 @@ export class AppController {
 - Streaming not working when [proxied](/docs/troubleshooting/streaming-not-working-when-proxied)
 
 ---
+
 title: AI SDK by Vercel
-description: The AI SDK is the TypeScript toolkit for building AI applications and agents with React, Next.js, Vue, Svelte, Node.js, and more.
+description: The AI SDK is the TypeScript toolkit for building AI applications and agents with React, Next.js, Vue, Svelte, Node.js, and more
 ---
 
 # AI SDK
@@ -645,8 +650,9 @@ Based on the above documentation, answer the following:
 ```
 
 ---
+
 title: AI SDK 5 Alpha
-description: Get started with the Alpha version of AI SDK 5.
+description: Get started with the Alpha version of AI SDK 5
 ---
 
 # Announcing AI SDK 5 Alpha
@@ -1028,8 +1034,9 @@ const result = generateText({
 These agentic controls form the foundation for building more reliable, controllable AI systems that can tackle complex problems while remaining within well-defined constraints.
 
 ---
+
 title: Overview
-description: An overview of AI SDK Core.
+description: An overview of AI SDK Core
 ---
 
 # AI SDK Core
@@ -1062,8 +1069,9 @@ These functions take a standardized approach to setting up [prompts](./prompts) 
 Please check out the [AI SDK Core API Reference](/docs/reference/ai-sdk-core) for more details on each function.
 
 ---
+
 title: Generating Text
-description: Learn how to generate text with the AI SDK.
+description: Learn how to generate text with the AI SDK
 ---
 
 # Generating and Streaming Text
@@ -1590,8 +1598,9 @@ You can see `generateText` and `streamText` in action using various frameworks i
 />
 
 ---
+
 title: Generating Structured Data
-description: Learn how to generate structured data with the AI SDK.
+description: Learn how to generate structured data with the AI SDK
 ---
 
 # Generating Structured Data
@@ -1983,8 +1992,9 @@ You can see `generateObject` and `streamObject` in action using various framewor
 />
 
 ---
+
 title: Tool Calling
-description: Learn about tool calling and multi-step calls (using maxSteps) with AI SDK Core.
+description: Learn about tool calling and multi-step calls (using maxSteps) with AI SDK Core
 ---
 
 # Tool Calling
@@ -2854,8 +2864,9 @@ You can see tools in action using various frameworks in the following examples:
 />
 
 ---
+
 title: Prompt Engineering
-description: Learn how to develop prompts with AI SDK Core.
+description: Learn how to develop prompts with AI SDK Core
 ---
 
 # Prompt Engineering
@@ -2940,8 +2951,9 @@ console.log(result.request.body);
 ```
 
 ---
+
 title: Settings
-description: Learn how to configure the AI SDK.
+description: Learn how to configure the AI SDK
 ---
 
 # Settings
@@ -3072,8 +3084,9 @@ const result = await generateText({
 </Note>
 
 ---
+
 title: Embeddings
-description: Learn how to embed values with the AI SDK.
+description: Learn how to embed values with the AI SDK
 ---
 
 # Embeddings
@@ -3234,8 +3247,9 @@ Several providers offer embedding models:
 | [Amazon Bedrock](/providers/ai-sdk-providers/amazon-bedrock#embedding-models)             | `amazon.titan-embed-text-v2:0`  | 1024                 |
 
 ---
+
 title: Image Generation
-description: Learn how to generate images with the AI SDK.
+description: Learn how to generate images with the AI SDK
 ---
 
 # Image Generation
@@ -3524,8 +3538,9 @@ for (const file of result.files) {
 Above are a small subset of the image models supported by the AI SDK providers. For more, see the respective provider documentation.
 
 ---
+
 title: Transcription
-description: Learn how to transcribe audio with the AI SDK.
+description: Learn how to transcribe audio with the AI SDK
 ---
 
 # Transcription
@@ -3699,8 +3714,9 @@ try {
 Above are a small subset of the transcription models supported by the AI SDK providers. For more, see the respective provider documentation.
 
 ---
+
 title: Speech
-description: Learn how to generate speech from text with the AI SDK.
+description: Learn how to generate speech from text with the AI SDK
 ---
 
 # Speech
@@ -3852,6 +3868,7 @@ try {
 Above are a small subset of the speech models supported by the AI SDK providers. For more, see the respective provider documentation.
 
 ---
+
 title: Language Model Middleware
 description: Learn how to use middleware to enhance the behavior of language models
 ---
@@ -4166,6 +4183,7 @@ console.log(text);
 ```
 
 ---
+
 title: Provider & Model Management
 description: Learn how to work with multiple providers and models
 ---
@@ -4424,6 +4442,7 @@ const model = registry.languageModel('anthropic > reasoning');
 ```
 
 ---
+
 title: Error Handling
 description: Learn how to handle errors in the AI SDK Core
 ---
@@ -4505,8 +4524,9 @@ try {
 ```
 
 ---
+
 title: Testing
-description: Learn how to use AI SDK Core mock providers for testing.
+description: Learn how to use AI SDK Core mock providers for testing
 ---
 
 # Testing
@@ -4671,6 +4691,7 @@ export async function POST(req: Request) {
 ```
 
 ---
+
 title: Telemetry
 description: Using OpenTelemetry with AI SDK Core
 ---
@@ -4992,8 +5013,9 @@ Tool call spans (`ai.toolCall`) contain the following attributes:
 - `ai.toolCall.result`: the result of the tool call. Only available if the tool call is successful and the result is serializable.
 
 ---
+
 title: Overview
-description: An overview of AI SDK UI.
+description: An overview of AI SDK UI
 ---
 
 # AI SDK UI
@@ -5031,8 +5053,9 @@ Here is a comparison of the supported functions across these frameworks:
 Please check out the [AI SDK UI API Reference](/docs/reference/ai-sdk-ui) for more details on each function.
 
 ---
+
 title: Chatbot
-description: Learn how to use the useChat hook.
+description: Learn how to use the useChat hook
 ---
 
 # Chatbot
@@ -5837,8 +5860,9 @@ export default function Page() {
 ```
 
 ---
+
 title: Chatbot Message Persistence
-description: Learn how to store and load chat messages in a chatbot.
+description: Learn how to store and load chat messages in a chatbot
 ---
 
 # Chatbot Message Persistence
@@ -6439,8 +6463,9 @@ async function POST(request: Request) {
 With both handlers, your clients can now gracefully resume ongoing streams.
 
 ---
+
 title: Chatbot Tool Usage
-description: Learn how to use tools with the useChat hook.
+description: Learn how to use tools with the useChat hook
 ---
 
 # Chatbot Tool Usage
@@ -6851,8 +6876,9 @@ const response = createDataStreamResponse({
 ```
 
 ---
+
 title: Generative User Interfaces
-description: Learn how to build Generative UI with AI SDK UI.
+description: Learn how to build Generative UI with AI SDK UI
 ---
 
 # Generative User Interfaces
@@ -6861,7 +6887,7 @@ Generative user interfaces (generative UI) is the process of allowing a large la
 
 <WeatherSearch />
 
-At the core of generative UI are [ tools ](/docs/ai-sdk-core/tools-and-tool-calling), which are functions you provide to the model to perform specialized tasks like getting the weather in a location. The model can decide when and how to use these tools based on the context of the conversation.
+At the core of generative UI are [tools](/docs/ai-sdk-core/tools-and-tool-calling), which are functions you provide to the model to perform specialized tasks like getting the weather in a location. The model can decide when and how to use these tools based on the context of the conversation.
 
 Generative UI is the process of connecting the results of a tool call to a React component. Here's how it works:
 
@@ -7202,8 +7228,9 @@ export default function Page() {
 By following this pattern, you can continue to add more tools and components, expanding the capabilities of your Generative UI application.
 
 ---
+
 title: Completion
-description: Learn how to use the useCompletion hook.
+description: Learn how to use the useCompletion hook
 ---
 
 # Completion
@@ -7385,8 +7412,9 @@ const { messages, input, handleInputChange, handleSubmit } = useCompletion({
 In this example, the `useCompletion` hook sends a POST request to the `/api/completion` endpoint with the specified headers, additional body fields, and credentials for that fetch request. On your server side, you can handle the request with these additional information.
 
 ---
+
 title: Object Generation
-description: Learn how to use the useObject hook.
+description: Learn how to use the useObject hook
 ---
 
 # Object Generation
@@ -7670,8 +7698,9 @@ const { submit, object } = useObject({
 ```
 
 ---
+
 title: OpenAI Assistants
-description: Learn how to use the useAssistant hook.
+description: Learn how to use the useAssistant hook
 ---
 
 # OpenAI Assistants
@@ -7883,8 +7912,9 @@ const { messages, input, handleInputChange, handleSubmit } = useAssistant({
 In this example, the `useAssistant` hook sends a POST request to the `/api/custom-completion` endpoint with the specified headers, additional body fields, and credentials for that fetch request. On your server side, you can handle the request with these additional information.
 
 ---
+
 title: Streaming Custom Data
-description: Learn how to stream custom data to the client.
+description: Learn how to stream custom data to the client
 ---
 
 # Streaming Custom Data
@@ -8084,6 +8114,7 @@ export default function Chat() {
 ```
 
 ---
+
 title: Error Handling
 description: Learn how to handle errors in the AI SDK UI
 ---
@@ -8216,6 +8247,7 @@ export async function POST(req: Request) {
 ```
 
 ---
+
 title: Smooth streaming japanese text
 description: Learn how to stream smooth stream japanese text
 ---
@@ -8236,6 +8268,7 @@ const { data } = useChat({
 ```
 
 ---
+
 title: Smooth streaming chinese text
 description: Learn how to stream smooth stream chinese text
 ---
@@ -8256,6 +8289,7 @@ const { data } = useChat({
 ```
 
 ---
+
 title: AI_APICallError
 description: Learn how to fix AI_APICallError
 ---
@@ -8287,6 +8321,7 @@ if (APICallError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_DownloadError
 description: Learn how to fix AI_DownloadError
 ---
@@ -8315,6 +8350,7 @@ if (DownloadError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_EmptyResponseBodyError
 description: Learn how to fix AI_EmptyResponseBodyError
 ---
@@ -8340,6 +8376,7 @@ if (EmptyResponseBodyError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidArgumentError
 description: Learn how to fix AI_InvalidArgumentError
 ---
@@ -8367,13 +8404,14 @@ if (InvalidArgumentError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidDataContentError
 description: How to fix AI_InvalidDataContentError
 ---
 
 # AI_InvalidDataContentError
 
-This error occurs when the data content provided in a multi-modal message part is invalid. Check out the [ prompt examples for multi-modal messages ](/docs/foundations/prompts#message-prompts).
+This error occurs when the data content provided in a multi-modal message part is invalid. Check out the [prompt examples for multi-modal messages](/docs/foundations/prompts#message-prompts).
 
 ## Properties
 
@@ -8393,6 +8431,7 @@ if (InvalidDataContentError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidDataContent
 description: Learn how to fix AI_InvalidDataContent
 ---
@@ -8420,6 +8459,7 @@ if (InvalidDataContent.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidMessageRoleError
 description: Learn how to fix AI_InvalidMessageRoleError
 ---
@@ -8446,6 +8486,7 @@ if (InvalidMessageRoleError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidPromptError
 description: Learn how to fix AI_InvalidPromptError
 ---
@@ -8473,6 +8514,7 @@ if (InvalidPromptError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidResponseDataError
 description: Learn how to fix AI_InvalidResponseDataError
 ---
@@ -8499,6 +8541,7 @@ if (InvalidResponseDataError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_InvalidToolArgumentsError
 description: Learn how to fix AI_InvalidToolArgumentsError
 ---
@@ -8527,6 +8570,7 @@ if (InvalidToolArgumentsError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_JSONParseError
 description: Learn how to fix AI_JSONParseError
 ---
@@ -8553,6 +8597,7 @@ if (JSONParseError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_LoadAPIKeyError
 description: Learn how to fix AI_LoadAPIKeyError
 ---
@@ -8578,6 +8623,7 @@ if (LoadAPIKeyError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_LoadSettingError
 description: Learn how to fix AI_LoadSettingError
 ---
@@ -8603,6 +8649,7 @@ if (LoadSettingError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_MessageConversionError
 description: Learn how to fix AI_MessageConversionError
 ---
@@ -8629,6 +8676,7 @@ if (MessageConversionError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoAudioGeneratedError
 description: Learn how to fix AI_NoAudioGeneratedError
 ---
@@ -8655,6 +8703,7 @@ if (NoAudioGeneratedError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoContentGeneratedError
 description: Learn how to fix AI_NoContentGeneratedError
 ---
@@ -8680,6 +8729,7 @@ if (NoContentGeneratedError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoImageGeneratedError
 description: Learn how to fix AI_NoImageGeneratedError
 ---
@@ -8717,6 +8767,7 @@ try {
 ```
 
 ---
+
 title: AI_NoObjectGeneratedError
 description: Learn how to fix AI_NoObjectGeneratedError
 ---
@@ -8761,6 +8812,7 @@ try {
 ```
 
 ---
+
 title: AI_NoOutputSpecifiedError
 description: Learn how to fix AI_NoOutputSpecifiedError
 ---
@@ -8786,6 +8838,7 @@ if (NoOutputSpecifiedError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoSuchModelError
 description: Learn how to fix AI_NoSuchModelError
 ---
@@ -8813,6 +8866,7 @@ if (NoSuchModelError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoSuchProviderError
 description: Learn how to fix AI_NoSuchProviderError
 ---
@@ -8842,6 +8896,7 @@ if (NoSuchProviderError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoSuchToolError
 description: Learn how to fix AI_NoSuchToolError
 ---
@@ -8869,6 +8924,7 @@ if (NoSuchToolError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_NoTranscriptGeneratedError
 description: Learn how to fix AI_NoTranscriptGeneratedError
 ---
@@ -8895,6 +8951,7 @@ if (NoTranscriptGeneratedError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_RetryError
 description: Learn how to fix AI_RetryError
 ---
@@ -8923,6 +8980,7 @@ if (RetryError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_TooManyEmbeddingValuesForCallError
 description: Learn how to fix AI_TooManyEmbeddingValuesForCallError
 ---
@@ -8951,6 +9009,7 @@ if (TooManyEmbeddingValuesForCallError.isInstance(error)) {
 ```
 
 ---
+
 title: ToolCallRepairError
 description: Learn how to fix AI SDK ToolCallRepairError
 ---
@@ -8980,6 +9039,7 @@ if (ToolCallRepairError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_ToolExecutionError
 description: Learn how to fix AI_ToolExecutionError
 ---
@@ -9009,6 +9069,7 @@ if (ToolExecutionError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_TypeValidationError
 description: Learn how to fix AI_TypeValidationError
 ---
@@ -9035,6 +9096,7 @@ if (TypeValidationError.isInstance(error)) {
 ```
 
 ---
+
 title: AI_UnsupportedFunctionalityError
 description: Learn how to fix AI_UnsupportedFunctionalityError
 ---
@@ -9061,8 +9123,9 @@ if (UnsupportedFunctionalityError.isInstance(error)) {
 ```
 
 ---
+
 title: xAI Grok
-description: Learn how to use xAI Grok.
+description: Learn how to use xAI Grok
 ---
 
 # xAI Grok Provider
@@ -9259,8 +9322,9 @@ const { images } = await generateImage({
 | `grok-2-image` | 1024x768 (default) | xAI's text-to-image generation model, designed to create high-quality images from text prompts. It's trained on a diverse dataset and can generate images across various styles, subjects, and settings. |
 
 ---
+
 title: Vercel
-description: Learn how to use Vercel's v0 models with the AI SDK.
+description: Learn how to use Vercel's v0 models with the AI SDK
 ---
 
 # Vercel Provider
@@ -9393,8 +9457,9 @@ Capabilities:
 | `v0-1.0-md` | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: OpenAI
-description: Learn how to use the OpenAI provider for the AI SDK.
+description: Learn how to use the OpenAI provider for the AI SDK
 ---
 
 # OpenAI Provider
@@ -10421,8 +10486,9 @@ const result = await generateSpeech({
 | `gpt-4o-mini-tts` | <Check size={18} /> |
 
 ---
+
 title: Azure OpenAI
-description: Learn how to use the Azure OpenAI provider for the AI SDK.
+description: Learn how to use the Azure OpenAI provider for the AI SDK
 ---
 
 # Azure OpenAI Provider
@@ -10965,8 +11031,9 @@ The following provider options are available:
 | `gpt-4o-transcribe`      | <Check size={18} /> | <Cross size={18} /> | <Cross size={18} /> | <Cross size={18} /> |
 
 ---
+
 title: Anthropic
-description: Learn how to use the Anthropic provider for the AI SDK.
+description: Learn how to use the Anthropic provider for the AI SDK
 ---
 
 # Anthropic Provider
@@ -11395,8 +11462,9 @@ and the `mimeType` should be set to `'application/pdf'`.
 </Note>
 
 ---
+
 title: Amazon Bedrock
-description: Learn how to use the Amazon Bedrock provider.
+description: Learn how to use the Amazon Bedrock provider
 ---
 
 # Amazon Bedrock Provider
@@ -12012,8 +12080,9 @@ environment that the Amazon Bedrock provider will then pick up and could
 conflict with the ones you're intending to use.
 
 ---
+
 title: Groq
-description: Learn how to use Groq.
+description: Learn how to use Groq
 ---
 
 # Groq Provider
@@ -12203,8 +12272,9 @@ The following provider options are available:
 | `distil-whisper-large-v3-en` | <Check size={18} /> | <Cross size={18} /> | <Cross size={18} /> | <Cross size={18} /> |
 
 ---
+
 title: Fal
-description: Learn how to use Fal AI models with the AI SDK.
+description: Learn how to use Fal AI models with the AI SDK
 ---
 
 # Fal Provider
@@ -12422,8 +12492,9 @@ The following provider options are available:
 | `wizper`  | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: AssemblyAI
-description: Learn how to use the AssemblyAI provider for the AI SDK.
+description: Learn how to use the AssemblyAI provider for the AI SDK
 ---
 
 # AssemblyAI Provider
@@ -12701,8 +12772,9 @@ The following provider options are available:
 | `nano` | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: DeepInfra
-description: Learn how to use DeepInfra's models with the AI SDK.
+description: Learn how to use DeepInfra's models with the AI SDK
 ---
 
 # DeepInfra Provider
@@ -12884,8 +12956,9 @@ For models supporting size parameters, dimensions must typically be:
 For more details and pricing information, see the [DeepInfra text-to-image models page](https://deepinfra.com/models/text-to-image).
 
 ---
+
 title: Deepgram
-description: Learn how to use the Deepgram provider for the AI SDK.
+description: Learn how to use the Deepgram provider for the AI SDK
 ---
 
 # Deepgram Provider
@@ -13071,8 +13144,9 @@ The following provider options are available:
 | `base` (+ [variants](https://developers.deepgram.com/docs/models-languages-overview#base))         | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Cross size={18} /> |
 
 ---
+
 title: Gladia
-description: Learn how to use the Gladia provider for the AI SDK.
+description: Learn how to use the Gladia provider for the AI SDK
 ---
 
 # Gladia Provider
@@ -13362,8 +13436,9 @@ The following provider options are available:
 | `Default` | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: LMNT
-description: Learn how to use the LMNT provider for the AI SDK.
+description: Learn how to use the LMNT provider for the AI SDK
 ---
 
 # LMNT Provider
@@ -13499,8 +13574,9 @@ The LMNT provider accepts the following options:
 | `blizzard` | <Check size={18} /> |
 
 ---
+
 title: Google Generative AI
-description: Learn how to use Google Generative AI Provider.
+description: Learn how to use Google Generative AI Provider
 ---
 
 # Google Generative AI Provider
@@ -14120,8 +14196,9 @@ The following optional settings are available for Google Generative AI embedding
 | `text-embedding-004` | 768                | <Check size={18} /> |
 
 ---
+
 title: Hume
-description: Learn how to use the Hume provider for the AI SDK.
+description: Learn how to use the Hume provider for the AI SDK
 ---
 
 # Hume Provider
@@ -14220,8 +14297,9 @@ The following provider options are available:
 | `default` | <Check size={18} /> |
 
 ---
+
 title: Google Vertex AI
-description: Learn how to use the Google Vertex AI provider.
+description: Learn how to use the Google Vertex AI provider
 ---
 
 # Google Vertex Provider
@@ -14363,6 +14441,7 @@ You can use the following optional settings to customize the provider instance:
   `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google`
 
 <a id="google-vertex-edge-runtime"></a>
+
 #### Edge Runtime
 
 Edge runtimes (like Vercel Edge Functions and Cloudflare Workers) are lightweight JavaScript environments that run closer to users at the network edge.
@@ -15031,6 +15110,7 @@ You can use the following optional settings to customize the Google Vertex Anthr
   or to provide a custom fetch implementation for e.g. testing.
 
 <a id="google-vertex-anthropic-edge-runtime"></a>
+
 #### Edge Runtime
 
 Edge runtimes (like Vercel Edge Functions and Cloudflare Workers) are lightweight JavaScript environments that run closer to users at the network edge.
@@ -15383,8 +15463,9 @@ See also [Anthropic Model Comparison](https://docs.anthropic.com/en/docs/about-c
 </Note>
 
 ---
+
 title: Rev.ai
-description: Learn how to use the Rev.ai provider for the AI SDK.
+description: Learn how to use the Rev.ai provider for the AI SDK
 ---
 
 # Rev.ai Provider
@@ -15586,8 +15667,9 @@ The following provider options are available:
 | `fusion`   | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: Mistral AI
-description: Learn how to use Mistral.
+description: Learn how to use Mistral
 ---
 
 # Mistral AI Provider
@@ -15766,8 +15848,9 @@ const model = mistral.embedding('mistral-embed');
 | `mistral-embed` | 1024               |
 
 ---
+
 title: Together.ai
-description: Learn how to use Together.ai's models with the AI SDK.
+description: Learn how to use Together.ai's models with the AI SDK
 ---
 
 # Together.ai Provider
@@ -15957,8 +16040,9 @@ Together.ai image models support various image dimensions that vary by model. Co
 </Note>
 
 ---
+
 title: Cohere
-description: Learn how to use the Cohere provider for the AI SDK.
+description: Learn how to use the Cohere provider for the AI SDK
 ---
 
 # Cohere Provider
@@ -16118,8 +16202,9 @@ The following optional settings are available for Cohere embedding models:
 | `embed-multilingual-v2.0`       | 768                  |
 
 ---
+
 title: Fireworks
-description: Learn how to use Fireworks models with the AI SDK.
+description: Learn how to use Fireworks models with the AI SDK
 ---
 
 # Fireworks Provider
@@ -16321,8 +16406,9 @@ support for these models:
 | `accounts/stability/models/sd3`        |
 
 ---
+
 title: DeepSeek
-description: Learn how to use DeepSeek's models with the AI SDK.
+description: Learn how to use DeepSeek's models with the AI SDK
 ---
 
 # DeepSeek Provider
@@ -16463,8 +16549,9 @@ The metrics include:
 </Note>
 
 ---
+
 title: Cerebras
-description: Learn how to use Cerebras's models with the AI SDK.
+description: Learn how to use Cerebras's models with the AI SDK
 ---
 
 # Cerebras Provider
@@ -16560,8 +16647,9 @@ Cerebras language models can be used in the `streamText` function
 </Note>
 
 ---
+
 title: Replicate
-description: Learn how to use Replicate models with the AI SDK.
+description: Learn how to use Replicate models with the AI SDK
 ---
 
 # Replicate Provider
@@ -16712,8 +16800,9 @@ const { image } = await generateImage({
 For more details, see the [Replicate models page](https://replicate.com/explore).
 
 ---
+
 title: Perplexity
-description: Learn how to use Perplexity's Sonar API with the AI SDK.
+description: Learn how to use Perplexity's Sonar API with the AI SDK
 ---
 
 # Perplexity Provider
@@ -16861,8 +16950,9 @@ You can enable image responses by setting `return_images: true` in the provider 
 </Note>
 
 ---
+
 title: Luma
-description: Learn how to use Luma AI models with the AI SDK.
+description: Learn how to use Luma AI models with the AI SDK
 ---
 
 # Luma Provider
@@ -17105,8 +17195,9 @@ await generateImage({
 For more details about Luma's capabilities and features, visit the [Luma Image Generation documentation](https://docs.lumalabs.ai/docs/image-generation).
 
 ---
+
 title: ElevenLabs
-description: Learn how to use the ElevenLabs provider for the AI SDK.
+description: Learn how to use the ElevenLabs provider for the AI SDK
 ---
 
 # ElevenLabs Provider
@@ -17237,8 +17328,9 @@ The following provider options are available:
 | `scribe_v1_experimental` | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 
 ---
+
 title: LM Studio
-description: Use the LM Studio OpenAI compatible API with the AI SDK.
+description: Use the LM Studio OpenAI compatible API with the AI SDK
 ---
 
 # LM Studio Provider
@@ -17292,7 +17384,7 @@ The first argument is the model id, e.g. `llama-3.2-1b`.
 const model = lmstudio('llama-3.2-1b');
 ```
 
-###### To be able to use a model, you need to [download it first](https://lmstudio.ai/docs/basics/download-model).
+###### To be able to use a model, you need to [download it first](https://lmstudio.ai/docs/basics/download-model)
 
 ### Example
 
@@ -17374,8 +17466,9 @@ const { embeddings } = await embedMany({
 ```
 
 ---
+
 title: NVIDIA NIM
-description: Use NVIDIA NIM OpenAI compatible API with the AI SDK.
+description: Use NVIDIA NIM OpenAI compatible API with the AI SDK
 ---
 
 # NVIDIA NIM Provider
@@ -17496,8 +17589,9 @@ NIM language models can also be used with other AI SDK functions like `generateO
 </Note>
 
 ---
+
 title: OpenAI Compatible Providers
-description: Use OpenAI compatible providers with the AI SDK.
+description: Use OpenAI compatible providers with the AI SDK
 ---
 
 # OpenAI Compatible Providers
