@@ -195,6 +195,22 @@ export function updateElement(
 }
 
 /**
+ * Adds a new SVG element to the elements array
+ * If the element is a group with children, adds all children as well
+ */
+export function addElement(
+  elements: SVGElement[],
+  newElement: SVGElement
+): SVGElement[] {
+  const updatedElements = [...elements];
+  
+  // Add the main element
+  updatedElements.push(newElement);
+  
+  return updatedElements;
+}
+
+/**
  * Updates the color of an SVG element
  */
 export function updateElementColor(

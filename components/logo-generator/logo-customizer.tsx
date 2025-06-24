@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ElementEditor from './customizer/element-editor';
 import ElementSelector from './customizer/element-selector';
+import ShapeLibrary from './customizer/shape-library';
 import HistoryControls from './customizer/history-controls';
-import { ArrowLeftIcon, UndoIcon, RedoIcon, SaveIcon } from 'lucide-react';
+import { ArrowLeftIcon, UndoIcon, RedoIcon, SaveIcon, Shapes } from 'lucide-react';
 
 // Default color palette if none provided
 const DEFAULT_COLOR_PALETTE = [
@@ -168,6 +169,25 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
     }));
   }, []);
 
+  // Add new shape handler
+  const handleAddShape = useCallback((newElement: SVGElement) => {
+    setCustomizationState(prev => {
+      const updatedElements = [...prev.elements, newElement];
+      
+      // Add to history
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push({ elements: updatedElements, timestamp: Date.now() });
+      
+      return {
+        ...prev,
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        selectedElementId: newElement.id, // Auto-select the new shape
+      };
+    });
+  }, []);
+
   // Save handler
   const handleSave = useCallback(() => {
     onCustomizationComplete(previewSvgCode);
@@ -224,9 +244,13 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         {/* Customization Controls */}
         <div className="md:col-span-1">
           <Tabs defaultValue="elements" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
+            <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="elements">Elements</TabsTrigger>
               <TabsTrigger value="editor">Editor</TabsTrigger>
+              <TabsTrigger value="add" className="flex items-center justify-center">
+                <Shapes className="h-3.5 w-3.5 mr-1.5" />
+                Add Elements
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="elements" className="mt-0">
@@ -252,6 +276,13 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                   </p>
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="add" className="mt-0">
+              <ShapeLibrary
+                onAddShape={handleAddShape}
+                colorPalette={customizationState.colorPalette}
+              />
             </TabsContent>
           </Tabs>
         </div>

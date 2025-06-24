@@ -4,6 +4,7 @@ export interface SVGElement {
   type: 'path' | 'rect' | 'circle' | 'text' | 'polygon' | 'ellipse' | 'line' | 'g';
   attributes: Record<string, string | number>;
   content?: string; // For text elements
+  children?: SVGElement[]; // For group elements
 }
 
 export interface LogoCustomizationState {
@@ -78,4 +79,23 @@ export interface ActionButtonsProps {
   onSave: () => void;
   onCancel?: () => void;
   onReset: () => void;
+}
+
+// Shape template interface for the shape library
+export interface ShapeTemplate {
+  name: string;
+  type: SVGElement['type'];
+  icon: React.FC<{ className?: string }>;
+  attributes: Record<string, string | number>;
+  children?: Array<{
+    type: SVGElement['type'];
+    attributes: Record<string, string | number>;
+    content?: string;
+  }>;
+}
+
+// Props for the shape library component
+export interface ShapeLibraryProps {
+  onAddShape: (element: SVGElement) => void;
+  colorPalette: string[];
 }
