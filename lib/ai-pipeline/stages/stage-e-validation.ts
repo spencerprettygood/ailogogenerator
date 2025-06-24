@@ -18,6 +18,15 @@ export interface SvgValidationResult {
     accessibility: number;
     optimization: number;
     overall: number;
+    designQuality?: number;
+    colorHarmony?: number;
+    composition?: number;
+    visualHierarchy?: number;
+  };
+  designAssessment?: {
+    overallScore: number;
+    recommendations: string[];
+    details: Record<string, unknown>;
   };
 }
 
@@ -380,10 +389,93 @@ export async function validateAndRepairSvg(
           };
         }
       }
+      
+      // Apply Design Intelligence assessment
+      try {
+        // Import design intelligence utilities
+        const { assessSVGDesignQuality } = require('../../utils/svg-enhancer');
+        
+        // Create a minimal SVGLogo object for assessment
+        const svgLogo = {
+          svgCode: resultSvg,
+          width: 300, // Default width from config
+          height: 300, // Default height from config
+          elements: [], // Will be parsed internally
+          colors: {
+            primary: '#000000' // Default color, will be extracted from SVG
+          },
+          name: input.brandName
+        };
+        
+        console.log('Performing design quality assessment on SVG logo');
+        const designAssessment = await assessSVGDesignQuality(svgLogo);
+        
+        // Add design quality scores
+        if (!scores) {
+          scores = {
+            security: 80, // Default values if not set previously
+            accessibility: 80,
+            optimization: 80,
+            overall: 80
+          };
+        }
+        
+        // Add design intelligence scores
+        scores.designQuality = designAssessment.overallScore;
+        scores.colorHarmony = designAssessment.colorHarmony.score;
+        scores.composition = designAssessment.composition.score;
+        scores.visualHierarchy = designAssessment.visualHierarchy.score;
+        
+        // Include overall design score in the weighted average
+        scores.overall = Math.round((
+          (scores.security || 0) * 0.4 + 
+          (scores.accessibility || 0) * 0.2 + 
+          (scores.optimization || 0) * 0.1 +
+          (scores.designQuality || 0) * 0.3 // Add design quality to the overall score
+        ));
+        
+        // Add design assessment to the result
+        const validationResult: SvgValidationResult = {
+          isValid,
+          svg: resultSvg,
+          warnings,
+          errors,
+          optimized,
+          optimizationResults,
+          scores,
+          designAssessment: {
+            overallScore: designAssessment.overallScore,
+            recommendations: [
+              ...designAssessment.colorHarmony.recommendations,
+              ...designAssessment.composition.recommendations,
+              ...designAssessment.visualHierarchy.recommendations,
+              ...designAssessment.accessibility.recommendations,
+              ...designAssessment.technicalQuality.recommendations
+            ].filter(Boolean), // Filter out any undefined/empty items
+            details: {
+              colorHarmony: designAssessment.colorHarmony,
+              composition: designAssessment.composition,
+              visualHierarchy: designAssessment.visualHierarchy,
+              accessibility: designAssessment.accessibility,
+              technicalQuality: designAssessment.technicalQuality
+            }
+          }
+        };
+        
+        return {
+          success: isValid,
+          result: validationResult,
+          processingTime: Date.now() - startTime
+        };
+      } catch (assessmentError) {
+        console.error('Error during design quality assessment:', assessmentError);
+        // Continue without design assessment if it fails
+      }
     }
     
     const processingTime = Date.now() - startTime;
     
+    // Only reach here if design assessment fails or is skipped
     return {
       success: isValid,
       result: {
@@ -428,8 +520,8 @@ export async function validateAndRepairSvg(
 
 // Export configuration and metadata
 export const STAGE_E_METADATA = {
-  name: 'Stage E - SVG Validation & Repair',
-  expected_processing_time_ms: 1000, // Expected processing time
+  name: 'Stage E - SVG Validation & Design Intelligence',
+  expected_processing_time_ms: 1500, // Increased for design intelligence
   disallowed_elements: STAGE_E_CONFIG.disallowed_elements,
   disallowed_attributes: STAGE_E_CONFIG.disallowed_attributes,
   max_svg_size: STAGE_E_CONFIG.max_svg_size,
@@ -439,6 +531,11 @@ export const STAGE_E_METADATA = {
     optimization_scoring: true,
     enhanced_validation: true,
     enhanced_repair: true,
-    svg_optimization: true
+    svg_optimization: true,
+    design_intelligence: true, // New feature
+    design_quality_assessment: true, // New feature
+    golden_ratio_analysis: true, // New feature
+    color_theory_analysis: true, // New feature
+    visual_hierarchy_assessment: true // New feature
   }
 };

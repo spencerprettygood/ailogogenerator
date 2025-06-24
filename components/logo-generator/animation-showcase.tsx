@@ -18,12 +18,12 @@ import {
 import { animationTemplates } from '@/lib/animation/animation-service';
 
 interface AnimationShowcaseProps {
-  onSelectAnimation: (animationOptions: AnimationOptions) => void;
+  onSelectAnimationAction: (animationOptions: AnimationOptions) => void;
   svgPreview: string | null;
 }
 
 export const AnimationShowcase: React.FC<AnimationShowcaseProps> = ({
-  onSelectAnimation,
+  onSelectAnimationAction,
   svgPreview
 }) => {
   const [selectedTab, setSelectedTab] = useState('simple');
@@ -80,7 +80,7 @@ export const AnimationShowcase: React.FC<AnimationShowcaseProps> = ({
                   {createPreview(template)}
                   
                   <Button 
-                    onClick={() => onSelectAnimation(template.defaultOptions)}
+                    onClick={() => onSelectAnimationAction(template.defaultOptions)}
                     className="w-full mt-3"
                     size="sm"
                   >

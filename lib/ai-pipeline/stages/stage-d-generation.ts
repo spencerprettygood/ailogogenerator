@@ -657,6 +657,66 @@ ADVANCED DESIGN REQUIREMENTS:
         designNotes = notes; // Use raw notes if parsing fails
       }
     }
+    
+    // Apply Design Intelligence enhancements
+    try {
+      // Import design intelligence utilities
+      const { enhanceSVGLogo } = require('../../utils/svg-enhancer');
+      
+      // Parse colors from the design notes or concept
+      const primaryColors = input.selectedConcept.primary_colors || [];
+      
+      // Create a SVGLogo object from the generated SVG
+      const svgLogo = {
+        svgCode: svg,
+        width: metadata.width,
+        height: metadata.height,
+        elements: [], // Elements will be parsed internally by the enhanceSVGLogo function
+        colors: {
+          primary: primaryColors[0] || '#000000',
+          secondary: primaryColors[1],
+          tertiary: primaryColors[2]
+        },
+        name: input.designSpec.brand_name
+      };
+      
+      // Apply design intelligence enhancements
+      const enhancementOptions = {
+        applyGoldenRatio: true,
+        enhanceColors: true,
+        enhanceAccessibility: true,
+        enhanceHierarchy: true,
+        optimizePaths: true,
+        culturalRegion: input.designSpec.cultural_region,
+        industry: input.industry || input.designSpec.industry,
+        minQualityThreshold: 75, // Only enhance if quality is below 75
+        autoEnhance: true,
+        includeAssessment: true
+      };
+      
+      console.log('Applying design intelligence enhancements to SVG logo');
+      const enhancementResult = await enhanceSVGLogo(svgLogo, enhancementOptions);
+      
+      // Use the enhanced SVG if enhancements were applied
+      if (enhancementResult.enhancementApplied) {
+        svg = enhancementResult.svg.svgCode;
+        console.log('Design intelligence enhancements applied successfully');
+        
+        // Append the design quality assessment to the design notes
+        const assessmentSummary = `\n\nDESIGN QUALITY ASSESSMENT:\n` +
+          `Overall Quality: ${enhancementResult.designQualityScore.overallScore}/100\n` +
+          `Color Harmony: ${enhancementResult.designQualityScore.colorHarmony.score}/100 - ${enhancementResult.designQualityScore.colorHarmony.assessment}\n` +
+          `Composition: ${enhancementResult.designQualityScore.composition.score}/100 - ${enhancementResult.designQualityScore.composition.assessment}\n` +
+          `Visual Hierarchy: ${enhancementResult.designQualityScore.visualHierarchy.score}/100 - ${enhancementResult.designQualityScore.visualHierarchy.assessment}\n` +
+          `Accessibility: ${enhancementResult.designQualityScore.accessibility.score}/100 - ${enhancementResult.designQualityScore.accessibility.assessment}\n` +
+          `Technical Quality: ${enhancementResult.designQualityScore.technicalQuality.score}/100 - ${enhancementResult.designQualityScore.technicalQuality.assessment}`;
+        
+        designNotes += assessmentSummary;
+      }
+    } catch (error) {
+      console.error('Error applying design intelligence enhancements:', error);
+      // Continue with the original SVG if enhancement fails
+    }
 
     const processingTime = Date.now() - startTime;
 
