@@ -161,11 +161,12 @@ export class Logger {
    * @param entry - The log entry to output
    */
   private logToConsole(entry: LogEntry): void {
-    const levelLabels = {
+    const levelLabels: Record<LogLevel, string> = {
       [LogLevel.DEBUG]: 'DEBUG',
       [LogLevel.INFO]: 'INFO',
       [LogLevel.WARN]: 'WARN',
-      [LogLevel.ERROR]: 'ERROR'
+      [LogLevel.ERROR]: 'ERROR',
+      [LogLevel.NONE]: 'NONE'
     };
 
     const timestamp = entry.timestamp ? `[${entry.timestamp}] ` : '';

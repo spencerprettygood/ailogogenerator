@@ -89,8 +89,8 @@ export class SVGDesignValidator extends SVGValidator {
     svg: string;
     validation: SVGValidationResult;
     designQuality?: SVGDesignQualityScore;
-    repair?: any;
-    optimization?: any;
+    repair?: unknown;
+    optimization?: unknown;
     success: boolean;
   } {
     const { repair = true, optimize = true, assessDesign = true } = options;

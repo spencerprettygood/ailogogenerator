@@ -7,9 +7,9 @@
 
 // We're defining this interface to ensure type safety while we wait for DOMPurify to be installed
 interface DOMPurifyStatic {
-  sanitize(html: string | Node, options?: any): string;
+  sanitize(html: string | Node, options?: unknown): string;
   addHook(hookName: string, callback: (node: Element) => void): void;
-  setConfig(config: Record<string, any>): void;
+  setConfig(config: Record<string, unknown>): void;
 }
 
 // Will be properly initialized after dependency is installed

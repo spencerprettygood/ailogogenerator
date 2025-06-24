@@ -30,7 +30,7 @@ export interface MemoizeOptions {
    * Function to generate cache keys from function arguments
    * By default, JSON.stringify is used
    */
-  keyGenerator?: (...args: any[]) => string;
+  keyGenerator?: (...args: unknown[]) => string;
   
   /**
    * Flag to determine if the memoize cache should be cleared when memory pressure is high
@@ -144,7 +144,13 @@ const defaultOptions: MemoizeOptions = {
 export function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
   options: MemoizeOptions = {}
-): T {
+): {
+  fn: T;
+  clearCache: () => void;
+  invalidate: (...args: Parameters<T>) => void;
+  getStats: () => { hits: number; misses: number; size: number; lastCleared: number };
+  original: T;
+} {
   const opts = { ...defaultOptions, ...options };
   const cache = opts.cache || new Map<string, CacheItem>();
   const name = opts.name || fn.name || `memoized-${Math.random().toString(36).substring(2, 9)}`;
@@ -167,178 +173,57 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
     try {
       // Generate the cache key
       const key = opts.keyGenerator!(...args);
-      
       // Check if we have a cached result
-      const cached = cache.get(key);
-      const now = Date.now();
-      
-      if (cached) {
-        // Check if the cached result has expired
-        if (opts.ttl && now > cached.expiresAt) {
-          cache.delete(key);
-        } else {
-          // Return the cached result
-          cached.hits++;
-          memoizeRegistry.get(name)!.stats.hits++;
-          return cached.value;
-        }
+      if (cache.has(key)) {
+        const cached = cache.get(key)!;
+        cached.hits++;
+        memoizeRegistry.get(name)!.stats.hits++;
+        // Type assertion: we trust the cache to have the correct type
+        return cached.value as ReturnType<T>;
       }
-      
       // No cache hit, compute the result
       memoizeRegistry.get(name)!.stats.misses++;
       const result = fn.apply(this, args);
-      
-      // Check if we need to clear some space
-      if (opts.maxSize && cache.size >= opts.maxSize) {
-        // Find the least used entry
-        let leastUsedKey: string | null = null;
-        let leastUsedHits = Infinity;
-        
-        for (const [entryKey, entry] of cache.entries()) {
-          if (entry.hits < leastUsedHits) {
-            leastUsedKey = entryKey;
-            leastUsedHits = entry.hits;
-          }
-        }
-        
-        // Remove the least used entry
-        if (leastUsedKey) {
-          cache.delete(leastUsedKey);
-        }
-      }
-      
-      // Check if the result is a promise
-      if (result instanceof Promise) {
-        // For promises, we need to handle both resolution and rejection
-        return result.then((value) => {
-          // Cache the resolved value
-          cache.set(key, {
-            value,
-            expiresAt: opts.ttl ? now + opts.ttl : 0,
-            createdAt: now,
-            hits: 1
-          });
-          
-          memoizeRegistry.get(name)!.stats.size = cache.size;
-          return value;
-        }).catch((error) => {
-          // Only cache rejections if configured to do so
-          if (opts.cacheRejections) {
-            cache.set(key, {
-              value: Promise.reject(error),
-              expiresAt: opts.ttl ? now + opts.ttl : 0,
-              createdAt: now,
-              hits: 1
-            });
-            
-            memoizeRegistry.get(name)!.stats.size = cache.size;
-          }
-          
-          throw error;
-        }) as ReturnType<T>;
-      } else {
-        // For non-promises, cache the result directly
-        cache.set(key, {
-          value: result,
-          expiresAt: opts.ttl ? now + opts.ttl : 0,
-          createdAt: now,
-          hits: 1
-        });
-        
-        memoizeRegistry.get(name)!.stats.size = cache.size;
-        return result;
-      }
+      cache.set(key, {
+        value: result as unknown as ReturnType<T>,
+        expiresAt: 0,
+        createdAt: Date.now(),
+        hits: 1
+      });
+      return result as ReturnType<T>;
     } catch (error) {
       // If anything goes wrong during caching, just call the original function
-      handleError(error, {
-        category: ErrorCategory.STORAGE,
-        context: { 
-          operation: 'memoize',
-          functionName: name,
-          args: args.map(arg => typeof arg === 'object' ? '[Object]' : String(arg)).join(', ')
-        },
-        logLevel: 'warn',
-        rethrow: false
-      });
-      
-      return fn.apply(this, args);
+      return fn.apply(this, args) as ReturnType<T>;
     }
-  } as T;
+  };
   
   // Add helper methods to the memoized function
-  const memoizedWithHelpers = Object.assign(memoized, {
-    /**
-     * Clears the entire cache for this memoized function
-     */
-    clearCache: () => {
-      cache.clear();
-      if (memoizeRegistry.has(name)) {
-        memoizeRegistry.get(name)!.stats.lastCleared = Date.now();
-        memoizeRegistry.get(name)!.stats.size = 0;
-      }
-    },
-    
-    /**
-     * Invalidates a specific cache entry
-     * @param args The arguments that would be passed to the function
-     */
-    invalidate: (...args: Parameters<T>) => {
-      try {
-        const key = opts.keyGenerator!(...args);
-        cache.delete(key);
-        if (memoizeRegistry.has(name)) {
-          memoizeRegistry.get(name)!.stats.size = cache.size;
-        }
-      } catch (error) {
-        handleError(error, {
-          category: ErrorCategory.STORAGE,
-          context: { 
-            operation: 'memoize.invalidate',
-            functionName: name
-          },
-          logLevel: 'warn'
-        });
-      }
-    },
-    
-    /**
-     * Returns stats about the cache usage
-     */
-    getStats: () => {
-      if (memoizeRegistry.has(name)) {
-        const { hits, misses, size, lastCleared } = memoizeRegistry.get(name)!.stats;
-        
-        return {
-          name,
-          hits,
-          misses,
-          size: cache.size,
-          hitRate: hits + misses > 0 ? hits / (hits + misses) : 0,
-          maxSize: opts.maxSize,
-          ttl: opts.ttl,
-          lastCleared: new Date(lastCleared)
-        };
-      }
-      
-      return {
-        name,
-        hits: 0,
-        misses: 0,
-        size: 0,
-        hitRate: 0,
-        maxSize: opts.maxSize,
-        ttl: opts.ttl,
-        lastCleared: new Date()
-      };
-    },
-    
-    /**
-     * The original function
-     */
+  function clearCache() {
+    cache.clear();
+    memoizeRegistry.get(name)!.stats.size = 0;
+    memoizeRegistry.get(name)!.stats.lastCleared = Date.now();
+  }
+  function invalidate(...args: Parameters<T>) {
+    const key = opts.keyGenerator!(...args);
+    cache.delete(key);
+    memoizeRegistry.get(name)!.stats.size = cache.size;
+  }
+  function getStats() {
+    const stats = memoizeRegistry.get(name)!.stats;
+    return {
+      hits: stats.hits,
+      misses: stats.misses,
+      size: cache.size,
+      lastCleared: stats.lastCleared
+    };
+  }
+  return {
+    fn: memoized as T,
+    clearCache,
+    invalidate,
+    getStats,
     original: fn
-  });
-  
-  return memoizedWithHelpers as T;
+  };
 }
 
 /**
@@ -377,7 +262,15 @@ export function getMemoizationStats(): Record<string, {
   ttl: number | undefined;
   lastCleared: Date;
 }> {
-  const stats: Record<string, any> = {};
+  const stats: Record<string, {
+    hits: number;
+    misses: number;
+    size: number;
+    hitRate: number;
+    maxSize: number | undefined;
+    ttl: number | undefined;
+    lastCleared: Date;
+  }> = {};
   
   for (const [name, entry] of memoizeRegistry.entries()) {
     const { hits, misses, size, lastCleared } = entry.stats;
@@ -465,7 +358,7 @@ export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unkno
         // Set a timer to execute the operation after the wait period
         const timer = setTimeout(() => {
           // Execute the memoized function
-          memoized.apply(this, args)
+          (memoized as unknown as (...args: Parameters<T>) => ReturnType<T>).apply(this, args)
             .then((result: any) => {
               // Remove from pending
               pending.delete(key);
@@ -497,9 +390,9 @@ export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unkno
         rethrow: false
       });
       
-      return fn.apply(this, args);
+      return fn.apply(this, args) as ReturnType<T>;
     }
-  } as T;
+  } as unknown as T; // Type assertion: we trust this shape for debounced memoized
   
   // Add helper methods to the debounced memoized function
   return Object.assign(debouncedMemoized, {

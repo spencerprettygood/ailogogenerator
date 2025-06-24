@@ -381,7 +381,6 @@ export function withErrorHandling<T extends (...args: unknown[]) => Promise<unkn
     category?: ErrorCategory;
     rethrow?: boolean;
     silent?: boolean;
-    onError?: (error: AppError) => void;
   } = {}
 ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
@@ -400,18 +399,8 @@ export function withErrorHandling<T extends (...args: unknown[]) => Promise<unkn
         rethrow: false,
         silent: options.silent
       });
-
-      // Call optional error handler
-      if (options.onError) {
-        options.onError(appError);
-      }
-
-      // Rethrow if requested
-      if (options.rethrow) {
-        throw appError;
-      }
-
-      throw appError;
+      if (options.rethrow) throw appError;
+      return Promise.reject(appError) as Promise<Awaited<ReturnType<T>>>;
     }
   };
 }

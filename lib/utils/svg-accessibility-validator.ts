@@ -80,8 +80,8 @@ export class SVGAccessibilityValidator extends SVGValidator {
     svg: string;
     validation: SVGValidationResult;
     accessibilityAssessment?: SVGAccessibilityScore;
-    repair?: any;
-    optimization?: any;
+    repair?: unknown;
+    optimization?: unknown;
     success: boolean;
   } {
     const { repair = true, optimize = true, assessAccessibility = true } = options;
@@ -117,10 +117,10 @@ export class SVGAccessibilityValidator extends SVGValidator {
   } = {}): {
     svg: string;
     validation: SVGValidationResult;
-    designQuality?: any;
+    designQuality?: unknown;
     accessibilityAssessment?: SVGAccessibilityScore;
-    repair?: any;
-    optimization?: any;
+    repair?: unknown;
+    optimization?: unknown;
     success: boolean;
   } {
     const { 

@@ -288,8 +288,7 @@ export function createClaudeError(error: unknown, context: Record<string, unknow
         message: error.message,
         stack: error.stack
       } : String(error)
-    },
-    isRetryable: errorInfo.isRetryable
+    }
   });
 }
 
