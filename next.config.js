@@ -127,20 +127,15 @@ const nextConfig = {
   },
   
   // Package optimization
-  optimizePackageImports: [
-    '@lucide-react', 
-    '@radix-ui/react-*',
-    'framer-motion',
-    'class-variance-authority'
-  ],
-  
+  optimizePackageImports: undefined, // Remove deprecated option
   // Experimental features for better performance
   experimental: {
     // These settings improve performance with large components and server actions
     serverActions: {
       bodySizeLimit: '5mb',
     },
-    serverComponentsExternalPackages: [
+    // serverComponentsExternalPackages is deprecated, use serverExternalPackages
+    serverExternalPackages: [
       '@anthropic-ai/sdk',
       'sharp',
       'svgo',

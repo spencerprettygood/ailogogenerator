@@ -124,11 +124,8 @@ const nextConfig = {
     return config;
   },
   
-  // Package optimization (no longer experimental in Next.js 15)
-  optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
-  
   // External packages that should be transpiled (renamed from serverComponentsExternalPackages)
-  transpilePackages: [
+  serverExternalPackages: [
     'next-themes',
     '@opentelemetry/api',
     '@opentelemetry/core',
