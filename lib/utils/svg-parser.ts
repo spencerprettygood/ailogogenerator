@@ -87,7 +87,7 @@ function processChildren(parent: Element, elements: SVGElement[], parentId: stri
 function isSupported(tagName: string): boolean {
   const supportedElements = [
     'path', 'rect', 'circle', 'text', 
-    'polygon', 'ellipse', 'line', 'g'
+    'polygon', 'ellipse', 'line', 'g', 'image'
   ];
   return supportedElements.includes(tagName);
 }

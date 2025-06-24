@@ -1,18 +1,19 @@
+/**
+ * Claude Service
+ * 
+ * Secure, server-side-only service for interacting with Claude AI models.
+ * Handles authentication, error management, and provides specialized methods
+ * for different use cases like SVG generation and analysis.
+ */
+
 import { anthropic, AnthropicOptions } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
-import { env, validateEnv, config } from '../utils/env';
+import { env } from '../utils/env';
 import { logClaudeError, analyzeClaudeError, ClaudeErrorType } from '../utils/claude-error-handler';
-
-// Validate environment variables on import (server-side only)
-if (!config.isClient && !validateEnv()) {
-  console.error('Error: Required environment variables are missing. Check your .env.local file.');
-  if (typeof window === 'undefined') { // Only exit in Node.js environment
-    process.exit(1);
-  }
-}
-
 import { ClaudeModel } from '../types-agents';
+import "server-only";
 
+// Interface for Claude request options
 interface ClaudeRequestOptions {
   systemPrompt?: string;
   temperature?: number;
@@ -22,6 +23,7 @@ interface ClaudeRequestOptions {
   stopSequences?: string[];
 }
 
+// Interface for Claude response structure
 interface ClaudeResponse {
   content: string;
   tokensUsed: {
@@ -32,54 +34,59 @@ interface ClaudeResponse {
   processingTime: number;
 }
 
+/**
+ * Service class for handling Claude API interactions.
+ * This is designed to be server-side only to protect API keys.
+ */
 class ClaudeService {
   private isInitialized: boolean = false;
   
-  // Configure Anthropic client options
+  /**
+   * Configure Anthropic client options with proper security and error handling
+   */
   private getAnthropicConfig(model: string): AnthropicOptions {
     return {
-      apiKey: env.ANTHROPIC_API_KEY || '',
-      // Add these parameters to handle retries and timeouts
+      apiKey: env.ANTHROPIC_API_KEY, // Type-safe access to validated env variable
       retrySettings: {
-        maxRetries: 3,         // Number of retries for failed requests
-        initialDelayMs: 1000,  // Start with 1 second delay
-        maxDelayMs: 10000,    // Maximum 10 second delay between retries
+        maxRetries: 3,
+        initialDelayMs: 1000,
+        maxDelayMs: 10000,
       },
-      timeoutMs: 60000,       // 60-second timeout for requests
-      logWarnings: true       // Log warnings to console
+      timeoutMs: 60000,
+      logWarnings: true
     };
   }
 
   constructor() {
-    // Only initialize on server-side to confirm environment variables are available
-    if (!config.isClient) {
-      try {
-        // Validate that we have the API key
-        if (!env.ANTHROPIC_API_KEY) {
-          throw new Error('Missing ANTHROPIC_API_KEY environment variable');
-        }
-        
-        // Print diagnostics information in development
-        if (config.isDevelopment) {
-          console.log('Claude service initializing in server mode with:', {
-            apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 10)}...` : undefined,
-            environment: env.NODE_ENV,
-            appUrl: env.NEXT_PUBLIC_APP_URL
-          });
-        }
-        
-        this.isInitialized = true;
-      } catch (error) {
-        console.error('Failed to initialize Claude service:', error);
-        this.isInitialized = false;
+    try {
+      // Validate that we have the API key
+      if (!env.ANTHROPIC_API_KEY) {
+        throw new Error('Missing ANTHROPIC_API_KEY environment variable');
       }
-    } else {
-      // Client-side initialization (will rely on API routes)
-      console.log('Claude service initialized in client mode - API calls will use server endpoints');
+      
+      // Print diagnostics information in development
+      if (env.NODE_ENV === 'development') {
+        console.log('Claude service initializing with:', {
+          // Only show first few characters of the API key for debugging
+          apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 5)}...` : undefined,
+          environment: env.NODE_ENV
+        });
+      }
+      
       this.isInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize Claude service:', error);
+      this.isInitialized = false;
     }
   }
 
+  /**
+   * Generate a response from Claude
+   * 
+   * @param prompt The user prompt to send to Claude
+   * @param options Configuration options for the request
+   * @returns Formatted Claude response
+   */
   async generateResponse(
     prompt: string, 
     options: ClaudeRequestOptions = {}
@@ -87,11 +94,6 @@ class ClaudeService {
     // Check if service is properly initialized
     if (!this.isInitialized) {
       throw new Error('Claude service is not properly initialized. Check your API key.');
-    }
-    
-    // Client-side handling
-    if (config.isClient) {
-      return this.generateResponseViaAPI(prompt, options);
     }
     
     const startTime = Date.now();
@@ -210,47 +212,15 @@ class ClaudeService {
       throw new Error(errorMessage);
     }
   }
-  
-  // Method to handle client-side API calls via server endpoints
-  private async generateResponseViaAPI(
-    prompt: string,
-    options: ClaudeRequestOptions
-  ): Promise<ClaudeResponse> {
-    const startTime = Date.now();
-    
-    try {
-      // Make a request to the server-side API endpoint
-      const response = await fetch('/api/generate-logo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          options,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`API error (${response.status}): ${errorData.error || response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      // Return formatted response
-      return {
-        content: data.content || '',
-        tokensUsed: data.tokensUsed || { input: 0, output: 0, total: 0 },
-        processingTime: Date.now() - startTime,
-      };
-    } catch (error) {
-      console.error('API Request Error:', error);
-      throw new Error(`Failed to generate response: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
-  // Specialized method for generating SVG logos
+  /**
+   * Specialized method for generating SVG logos
+   * 
+   * @param prompt User prompt describing the logo to generate
+   * @param systemPrompt System prompt with SVG generation instructions
+   * @param options Additional configuration options
+   * @returns Claude response with SVG content
+   */
   async generateSVG(
     prompt: string,
     systemPrompt: string,
@@ -265,7 +235,14 @@ class ClaudeService {
     });
   }
 
-  // Specialized method for quick analysis tasks
+  /**
+   * Specialized method for quick analysis tasks
+   * 
+   * @param prompt User prompt describing the analysis task
+   * @param systemPrompt System prompt with analysis instructions
+   * @param options Additional configuration options
+   * @returns Claude response with analysis content
+   */
   async analyze(
     prompt: string,
     systemPrompt: string,

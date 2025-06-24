@@ -205,3 +205,80 @@ export interface CompetitorLogo {
   styleCategory: string;
   visualElements: string[];
 }
+
+// Animation and Pipeline related types
+export interface AnimationExportOptions {
+  svgContent: string;
+  animationType: string;
+  format: 'svg' | 'gif' | 'mp4' | 'webm';
+  quality?: number;
+  duration?: number;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  includeSource?: boolean;
+}
+
+export interface AnimationOptions {
+  type: string; // 'fade', 'rotate', 'pulse', etc.
+  duration: number; // in seconds
+  delay?: number; // in seconds
+  iterationCount?: number | 'infinite';
+  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
+  timingFunction?: string; // 'ease', 'linear', 'ease-in', etc.
+  target?: string; // CSS selector or element ID to target specific elements
+  fromState?: Record<string, any>; // Initial state
+  toState?: Record<string, any>; // Final state
+  includeSource?: boolean;
+}
+
+export interface PipelineStage {
+  id: string;
+  name: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  progress: number; // 0-100
+  output?: any;
+  error?: {
+    message: string;
+    code?: string;
+    details?: string;
+  };
+  startTime?: number;
+  endTime?: number;
+  estimatedDuration?: number; // in milliseconds
+}
+
+export interface SVGValidationResult {
+  isValid: boolean;
+  errors: string[];
+  violations: string[];
+  warnings: string[];
+  issues: string[];
+  details?: Record<string, any>;
+}
+
+// API response types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    processingTime?: number;
+    apiVersion?: string;
+    timestamp?: string;
+  };
+}
+
+// Error handling types
+export interface ErrorDetails {
+  code: string;
+  message: string;
+  context?: Record<string, any>;
+  stack?: string;
+  timestamp?: string;
+}

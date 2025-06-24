@@ -1,7 +1,7 @@
 // Logo customization types
 export interface SVGElement {
   id: string;
-  type: 'path' | 'rect' | 'circle' | 'text' | 'polygon' | 'ellipse' | 'line' | 'g';
+  type: 'path' | 'rect' | 'circle' | 'text' | 'polygon' | 'ellipse' | 'line' | 'g' | 'image';
   attributes: Record<string, string | number>;
   content?: string; // For text elements
   children?: SVGElement[]; // For group elements

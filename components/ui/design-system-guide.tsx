@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from './button';
 
 export function DesignSystemGuide() {
   return (
@@ -140,23 +141,73 @@ export function DesignSystemGuide() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-xl mb-4">Buttons</h3>
+            <h3 className="text-xl mb-4">Button Variants</h3>
             <div className="space-y-6">
-              <div className="space-y-3">
-                <button className="btn-asymmetric">Asymmetric Button</button>
-                <p className="text-sm text-gray-500">Offset shadow with transform on hover/active</p>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button variant="primary">Primary</Button>
+                  <Button variant="secondary">Secondary</Button>
+                  <Button variant="ghost">Ghost</Button>
+                  <Button variant="destructive">Destructive</Button>
+                </div>
+                <p className="text-sm text-gray-500">Standard button variants</p>
               </div>
               
-              <div className="space-y-3">
-                <button className="btn-accent">Accent Button</button>
-                <p className="text-sm text-gray-500">Accent color with clipped corner</p>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button variant="asymmetric">Asymmetric</Button>
+                  <Button variant="accent">Accent Corner</Button>
+                  <Button variant="solid">Solid</Button>
+                  <Button variant="link">Link Button</Button>
+                </div>
+                <p className="text-sm text-gray-500">Special button variants</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button variant="primary" radius="asymmetric">Asymmetric Radius</Button>
+                  <Button variant="primary" radius="uneven">Uneven Radius</Button>
+                  <Button variant="primary" radius="full">Full Radius</Button>
+                </div>
+                <p className="text-sm text-gray-500">Radius variants</p>
               </div>
               
-              <div className="space-y-3">
-                <button className="bg-white border border-gray-300 px-4 py-2 rounded-accent transition-all duration-standard hover:border-accent">
-                  Bordered Button
-                </button>
-                <p className="text-sm text-gray-500">Simple border with accent on hover</p>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button variant="primary" size="sm">Small</Button>
+                  <Button variant="primary" size="default">Default</Button>
+                  <Button variant="primary" size="lg">Large</Button>
+                  <Button variant="primary" size="xl">Extra Large</Button>
+                </div>
+                <p className="text-sm text-gray-500">Size variants</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button variant="primary" isLoading>Loading</Button>
+                  <Button variant="primary" isLoading loadingText="Processing...">Submit</Button>
+                  <Button variant="primary" disabled>Disabled</Button>
+                </div>
+                <p className="text-sm text-gray-500">States</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button 
+                    variant="primary" 
+                    leftIcon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}
+                  >
+                    Left Icon
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    rightIcon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>}
+                  >
+                    Right Icon
+                  </Button>
+                  <Button variant="primary" width="full" className="max-w-[200px]">Full Width</Button>
+                </div>
+                <p className="text-sm text-gray-500">Icons and layout options</p>
               </div>
             </div>
           </div>

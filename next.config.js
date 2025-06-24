@@ -7,20 +7,20 @@ const nextConfig = {
   // Output standalone for optimized deployment on Vercel
   output: 'standalone',
   
-  // Type checking and linting settings
+  // Type checking settings - we want to address errors without failing builds in production
   typescript: {
-    // During development, enforce type checking
+    // In development: strict checking to catch issues early
     ...(process.env.NODE_ENV === 'development' ? {
       ignoreBuildErrors: false,
     } : {
-      // In production, don't block builds due to TS errors
-      // but still report them
+      // In production: don't block builds but log errors
+      // This allows deploying while still addressing TypeScript issues
       ignoreBuildErrors: true,
     }),
   },
   
+  // ESLint settings - same approach as TypeScript
   eslint: {
-    // Same approach for ESLint
     ...(process.env.NODE_ENV === 'development' ? {
       ignoreDuringBuilds: false,
     } : {
@@ -30,13 +30,16 @@ const nextConfig = {
   
   // Image optimization configuration
   images: {
-    domains: [],
+    // Allow external domains if needed
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
     // Optimize images and cache formats
     formats: ['image/avif', 'image/webp'],
   },
-  
-  // Enable strict mode for better development experience
-  reactStrictMode: true,
   
   // Reduce bundle size with file compression
   compress: true,
@@ -86,19 +89,16 @@ const nextConfig = {
     ];
   },
   
-  // Remove invalid rewrite for CORS preflight
+  // CORS and API route handling
   async rewrites() {
     return {
-      beforeFiles: [
-        // Remove invalid has/method rewrite for OPTIONS
-        // CORS preflight should be handled in API route or middleware
-      ],
+      beforeFiles: [],
       afterFiles: [],
       fallback: [],
     };
   },
 
-  // Webpack configuration optimized for Vercel
+  // Webpack configuration optimized for performance and compatibility
   webpack: (config, { dev, isServer }) => {
     const path = require('path');
     
@@ -108,7 +108,7 @@ const nextConfig = {
       '@': path.resolve(__dirname),
     };
     
-    // SVG handling
+    // SVG handling - ensure SVGs can be imported as React components
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
@@ -132,6 +132,23 @@ const nextConfig = {
       
       // Production optimizations
       if (!dev) {
+        // Improved chunk splitting for better performance
+        config.optimization.splitChunks = {
+          chunks: 'all',
+          cacheGroups: {
+            vendors: {
+              test: /[\\/]node_modules[\\/]/,
+              priority: -10,
+              reuseExistingChunk: true,
+            },
+            default: {
+              minChunks: 2,
+              priority: -20,
+              reuseExistingChunk: true,
+            },
+          },
+        };
+        
         // Ignore certain modules in the browser
         config.plugins.push(
           new (require('webpack').IgnorePlugin)({
@@ -144,18 +161,42 @@ const nextConfig = {
     return config;
   },
   
-  // Package optimization (no longer experimental in Next.js 15)
-  optimizePackageImports: ['@lucide-react', '@radix-ui/react-*'],
+  // Package optimization
+  optimizePackageImports: [
+    '@lucide-react', 
+    '@radix-ui/react-*',
+    'framer-motion',
+    'class-variance-authority'
+  ],
   
-  // Handle environment variables for different deployments
+  // Experimental features for better performance
+  experimental: {
+    // These settings improve performance with large components and server actions
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
+    serverComponentsExternalPackages: [
+      '@anthropic-ai/sdk',
+      'sharp',
+      'svgo',
+      'jszip'
+    ],
+    // Optimized production builds
+    optimizeCss: true,
+  },
+  
+  // Environment variables for the client
   env: {
     DEPLOYMENT_ENV: process.env.VERCEL ? 'production' : 'development',
     BUILD_TIME: new Date().toISOString(),
   },
   
-  // Vercel specific configuration
+  // Vercel-specific configuration for optimal deployment
   ...(process.env.VERCEL ? {
-    // Additional Vercel-specific settings go here
+    generateBuildId: async () => {
+      // Use a consistent build ID based on a timestamp for better caching
+      return `build-${Date.now()}`;
+    },
   } : {}),
 };
 
