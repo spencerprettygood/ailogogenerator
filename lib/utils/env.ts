@@ -237,5 +237,5 @@ export default env;
 // This module is for server-side use only. For client-side env access, use process.env.NEXT_PUBLIC_*
 
 if (typeof window !== 'undefined') {
-  throw new Error('lib/utils/env.ts must not be imported in client components or the /pages directory. Use process.env.NEXT_PUBLIC_* for client-side environment variables.');
+  throw new Error('lib/utils/env.ts must not be imported in client/browser code. Use NEXT_PUBLIC_ env vars for client-side logic.');
 }
