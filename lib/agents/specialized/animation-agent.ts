@@ -126,69 +126,216 @@ export class AnimationAgent extends BaseAgent {
   
   /**
    * Analyzes a logo and selects an appropriate animation type based on its characteristics
+   * Enhanced with more sophisticated analysis and brand context
    */
   private async selectAppropriateAnimation(svg: string, brandName: string): Promise<AnimationOptions> {
     try {
-      this.reportProgress(22, 'Analyzing SVG structure...');
+      this.reportProgress(22, 'Analyzing SVG structure and brand context...');
       
-      // Use regex to determine logo characteristics for server-side compatibility
+      // Comprehensive SVG structure analysis
       const hasPaths = /<path[^>]*>/i.test(svg);
       const hasText = /<text[^>]*>/i.test(svg);
+      const hasCircles = /<circle[^>]*>/i.test(svg);
+      const hasRects = /<rect[^>]*>/i.test(svg);
+      const hasPolygons = /<polygon[^>]*>/i.test(svg);
+      const hasGroups = /<g[^>]*>/i.test(svg);
+      const hasGradients = /<(?:linearGradient|radialGradient)[^>]*>/i.test(svg);
       
-      // Count root level elements as a rough proxy for complexity
-      const elementCount = (svg.match(/<(?:path|rect|circle|ellipse|line|polyline|polygon|text|g)[^>]*>/gi) || []).length;
-      const hasMultipleElements = elementCount > 3;
+      // Calculate element complexity
+      const pathCount = (svg.match(/<path[^>]*>/gi) || []).length;
+      const totalElements = (svg.match(/<(?:path|rect|circle|ellipse|line|polyline|polygon|text|g)[^>]*>/gi) || []).length;
+      const hasMultipleElements = totalElements > 3;
+      const isComplex = totalElements > 8 || pathCount > 5;
       
-      this.reportProgress(25, 'Determining best animation type...');
+      // Detect if elements have IDs (better for targeting specific elements)
+      const hasElementIds = svg.match(/id=["'][^"']*["']/gi);
+      const hasNamedGroups = hasElementIds && hasGroups;
       
-      // Select animation type based on logo characteristics
+      // Estimate SVG size/complexity
+      const svgSize = svg.length;
+      const isLargeSvg = svgSize > 5000;
+      
+      // Brand context analysis
+      const brandNameLower = brandName.toLowerCase();
+      const words = brandNameLower.split(/\s+|[_\-]/);
+      
+      // Industry/category detection based on name
+      const isTech = words.some(word => 
+        ['tech', 'digital', 'data', 'cyber', 'soft', 'app', 'web', 'net', 'code', 'ai', 'cloud'].includes(word)
+      );
+      
+      const isCreative = words.some(word => 
+        ['design', 'creative', 'art', 'studio', 'media', 'film', 'photo', 'vision', 'imagine'].includes(word)
+      );
+      
+      const isPlayful = words.some(word => 
+        ['fun', 'kids', 'play', 'joy', 'happy', 'bright', 'smile', 'game'].includes(word)
+      );
+      
+      const isLuxury = words.some(word => 
+        ['luxury', 'premium', 'elite', 'exclusive', 'prestige', 'gold', 'diamond'].includes(word)
+      );
+      
+      const isNature = words.some(word => 
+        ['eco', 'green', 'nature', 'organic', 'earth', 'bio', 'leaf', 'tree', 'water', 'sun'].includes(word)
+      );
+      
+      const isFinance = words.some(word => 
+        ['finance', 'bank', 'invest', 'capital', 'wealth', 'money', 'fund', 'asset'].includes(word)
+      );
+      
+      // Deeper SVG pattern analysis for specific logo types
+      const hasCircularPattern = hasCircles && pathCount < 3; // Likely a circular logo
+      const hasSquareShape = hasRects && !hasCircles && pathCount < 3; // Likely a square/rectangular logo
+      const isLettermark = hasText && totalElements < 4; // Likely just text/lettermark
+      const isSymbolWithText = hasText && (hasPaths || hasCircles || hasRects) && totalElements > 3; // Combined symbol & text
+      const isPureSymbol = !hasText && totalElements > 0; // Just a symbol, no text
+      
+      this.reportProgress(25, 'Determining optimal animation strategy...');
+      
+      // Advanced animation selection logic
       let animationType: AnimationType;
+      let animationOptions: Partial<AnimationOptions> = {};
       
-      if (hasPaths && !hasText) {
-        // Path-based logos without text work well with drawing animations
+      // Base animation selection on SVG structure and brand context
+      if (hasPaths && !hasText && pathCount < 5) {
+        // Simple path-based logos work well with drawing animations
         animationType = AnimationType.DRAW;
-      } else if (hasMultipleElements) {
-        // Complex logos with multiple elements work well with sequential animations
+        animationOptions = {
+          duration: 2000,
+          easing: 'ease-in-out'
+        };
+      } else if (hasNamedGroups && hasMultipleElements && !isComplex) {
+        // Logos with organized groups work well with sequential animations
         animationType = AnimationType.SEQUENTIAL;
-      } else if (hasText && !hasPaths) {
-        // Text-only logos work well with typewriter animations
-        animationType = AnimationType.TYPEWRITER;
-      } else if (brandName.toLowerCase().includes('tech') || 
-                brandName.toLowerCase().includes('digital') || 
-                brandName.toLowerCase().includes('data')) {
-        // Tech-related brands often look good with zoom-in animations
+        animationOptions = {
+          duration: 1800,
+          easing: 'ease-out',
+          stagger: 150 // 150ms between each element
+        };
+      } else if (isLettermark && !isComplex) {
+        // Text-only logos work well with typewriter or fade animations
+        if (brandNameLower.length < 8) {
+          animationType = AnimationType.TYPEWRITER;
+          animationOptions = {
+            duration: 2500,
+            easing: 'ease-in-out'
+          };
+        } else {
+          animationType = AnimationType.FADE_IN;
+          animationOptions = {
+            duration: 1200,
+            easing: 'ease-out'
+          };
+        }
+      } else if (isSymbolWithText && hasNamedGroups) {
+        // Symbol with text works well with staggered reveal
+        animationType = AnimationType.SEQUENTIAL;
+        animationOptions = {
+          duration: 1500,
+          easing: 'ease-out',
+          stagger: 250 // Longer delay between symbol and text
+        };
+      } else if (isPureSymbol && hasCircularPattern) {
+        // Circular symbols work well with spin or pulse
+        if (isPlayful) {
+          animationType = AnimationType.SPIN;
+          animationOptions = {
+            duration: 1500,
+            easing: 'ease-in-out',
+            iterations: 1
+          };
+        } else {
+          animationType = AnimationType.PULSE;
+          animationOptions = {
+            duration: 1800,
+            easing: 'ease-in-out',
+            iterations: 2
+          };
+        }
+      } else if (isPureSymbol && hasSquareShape) {
+        // Square/rectangular symbols work well with flip or zoom
         animationType = AnimationType.ZOOM_IN;
-      } else if (brandName.toLowerCase().includes('fun') || 
-                brandName.toLowerCase().includes('kids') || 
-                brandName.toLowerCase().includes('play')) {
-        // Playful brands work well with bounce animations
-        animationType = AnimationType.BOUNCE;
+        animationOptions = {
+          duration: 1200,
+          easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' // Slight overshoot
+        };
       } else {
-        // Default to fade-in for simple logos or unclassified cases
-        animationType = AnimationType.FADE_IN;
+        // Industry-specific defaults when structure analysis is inconclusive
+        if (isTech) {
+          // Tech brands benefit from modern, clean animations
+          animationType = AnimationType.ZOOM_IN;
+          animationOptions = {
+            duration: 1200,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)' // Expo-like easing
+          };
+        } else if (isCreative) {
+          // Creative brands benefit from more dynamic animations
+          animationType = isComplex ? AnimationType.SEQUENTIAL : AnimationType.MORPH;
+          animationOptions = {
+            duration: isComplex ? 2000 : 1800,
+            easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Springy, creative feel
+            stagger: isComplex ? 120 : undefined
+          };
+        } else if (isPlayful) {
+          // Playful brands benefit from fun, bouncy animations
+          animationType = AnimationType.BOUNCE;
+          animationOptions = {
+            duration: 1500,
+            easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)', // Elastic, playful bounce
+            iterations: 1
+          };
+        } else if (isLuxury) {
+          // Luxury brands benefit from subtle, elegant animations
+          animationType = AnimationType.FADE_IN;
+          animationOptions = {
+            duration: 1800,
+            easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // Subtle, refined easing
+          };
+        } else if (isNature) {
+          // Nature brands benefit from organic, flowing animations
+          animationType = hasMultipleElements ? AnimationType.SEQUENTIAL : AnimationType.FLOAT;
+          animationOptions = {
+            duration: 2200,
+            easing: 'cubic-bezier(0.42, 0, 0.58, 1)', // Natural, fluid motion
+            stagger: hasMultipleElements ? 180 : undefined
+          };
+        } else if (isFinance) {
+          // Finance brands benefit from stable, trustworthy animations
+          animationType = AnimationType.FADE_IN;
+          animationOptions = {
+            duration: 1200,
+            easing: 'ease-out' // Stable, predictable motion
+          };
+        } else {
+          // Default to fade-in for unclassified cases with a moderate duration
+          animationType = AnimationType.FADE_IN;
+          animationOptions = {
+            duration: 1200,
+            easing: 'ease-out'
+          };
+        }
       }
       
-      this.reportProgress(28, `Selected ${animationType} animation based on logo characteristics`);
+      this.reportProgress(28, `Selected ${animationType} animation based on comprehensive analysis`);
       
-      // Create animation options with appropriate timing for the selected type
-      const animationOptions: AnimationOptions = {
+      // Construct final animation options
+      const finalOptions: AnimationOptions = {
         type: animationType,
         timing: {
-          // Adjust duration and easing based on animation type
-          duration: animationType === AnimationType.DRAW ? 2000 : 
-                    animationType === AnimationType.SEQUENTIAL ? 1800 : 
-                    animationType === AnimationType.TYPEWRITER ? 2500 : 1200,
-          easing: animationType === AnimationType.BOUNCE ? 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 
-                  animationType === AnimationType.DRAW ? 'ease-in-out' : 'ease-out'
+          duration: animationOptions.duration || 1200,
+          easing: animationOptions.easing || 'ease-out',
+          delay: animationOptions.delay || 0,
+          iterations: animationOptions.iterations || 1
         }
       };
       
-      // Add additional options for specific animation types
-      if (animationType === AnimationType.SEQUENTIAL) {
-        animationOptions.stagger = 150; // 150ms between each element
+      // Add any additional type-specific options
+      if (animationOptions.stagger) {
+        finalOptions.stagger = animationOptions.stagger;
       }
       
-      return animationOptions;
+      return finalOptions;
     } catch (error) {
       console.error('Error selecting appropriate animation:', error);
       

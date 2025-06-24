@@ -10,6 +10,7 @@
  * - validateSVG: Validates SVG structure and content
  * - prepareSVGForAnimation: Prepares SVG specifically for animation
  */
+import { createMemoizedFunction } from '../../utils/cache-manager';
 
 /**
  * Security configuration for SVG sanitization
@@ -23,49 +24,167 @@ const SECURITY_CONFIG = {
     'video',
     'audio',
     'embed',
-    'object'
+    'object',
+    'use', // Potentially dangerous for referencing external content
+    'animate', // We'll handle animations ourselves
+    'set', // SMIL animation we'll handle
+    'handler' // Can contain scripts
   ],
   
   // Potentially harmful attributes that should be removed
   disallowedAttributes: [
-    'onload',
-    'onerror',
-    'onabort',
-    'onfocus',
-    'onblur',
-    'onchange',
-    'onclick',
-    'onmousedown',
-    'onmousemove',
-    'onmouseout',
-    'onmouseover',
-    'onmouseup',
-    'onkeydown',
-    'onkeypress',
-    'onkeyup',
-    'javascript:',
-    'data:',
-    'xlink:href'
+    // Event handlers
+    'onload', 'onerror', 'onabort', 'onfocus', 'onblur', 'onchange',
+    'onclick', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover',
+    'onmouseup', 'onkeydown', 'onkeypress', 'onkeyup', 'onunload',
+    'onscroll', 'onresize', 'onactivate', 'onbegin', 'onend', 'onrepeat',
+    
+    // Potentially harmful protocols and attributes
+    'javascript:', 'data:', 'vbscript:', 'xlink:href', 'href',
+    'formaction', 'action', 'content', 'poster', 'srcset',
+    
+    // Eval-related
+    'style', // We'll handle styles via classes
+    'externalResourcesRequired'
   ],
   
   // Maximum SVG size allowed (in bytes)
-  maxSvgSize: 1024 * 100, // 100KB
+  maxSvgSize: 1024 * 500, // 500KB
+  
+  // Allowed SVG elements (whitelist approach)
+  allowedElements: [
+    'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 
+    'polygon', 'text', 'tspan', 'defs', 'clipPath', 'mask', 'pattern', 
+    'linearGradient', 'radialGradient', 'stop', 'filter', 'feGaussianBlur',
+    'feOffset', 'feBlend', 'feColorMatrix', 'feComponentTransfer',
+    'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap',
+    'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG',
+    'feFuncR', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'fePointLight',
+    'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'title', 'desc'
+  ],
+  
+  // Allowed SVG attributes (whitelist approach)
+  allowedAttributes: [
+    'id', 'class', 'viewBox', 'width', 'height', 'x', 'y', 'cx', 'cy', 'r', 'rx', 'ry',
+    'd', 'points', 'transform', 'fill', 'fill-opacity', 'fill-rule', 'stroke', 
+    'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 
+    'stroke-dasharray', 'stroke-dashoffset', 'font-family', 'font-size', 
+    'font-weight', 'text-anchor', 'opacity', 'filter', 'clip-path', 'clip-rule',
+    'mask', 'visibility', 'dominant-baseline', 'stop-color', 'stop-opacity',
+    'offset', 'gradientTransform', 'gradientUnits', 'patternTransform',
+    'patternUnits', 'preserveAspectRatio', 'xmlns', 'version', 'x1', 'y1', 'x2', 'y2'
+  ]
 };
 
+// Cache size for sanitization function
+const SANITIZATION_CACHE_SIZE = 100;
+
 /**
- * Sanitize SVG content to remove potentially harmful elements and attributes
- * 
- * @param svgContent - The SVG content to sanitize
+ * Create a hash key for caching sanitized SVG
+ * @param svgContent SVG content to hash
+ * @returns A hash key for the SVG content
+ */
+function getSanitizationHashKey(svgContent: string): string {
+  const length = svgContent.length;
+  const prefix = svgContent.substring(0, 40);
+  const suffix = svgContent.substring(Math.max(0, length - 40));
+  return `${length}:${prefix}:${suffix}`;
+}
+
+/**
+ * Internal sanitization function that does the actual work
+ * @param svgContent The SVG content to sanitize
  * @returns Sanitized SVG content
  */
-export function sanitizeSVG(svgContent: string): string {
+function _sanitizeSVG(svgContent: string): string {
   // Check SVG size
   if (svgContent.length > SECURITY_CONFIG.maxSvgSize) {
     console.warn(`SVG size exceeds maximum allowed size (${SECURITY_CONFIG.maxSvgSize} bytes)`);
   }
   
-  // Always use regex-based sanitization for server-side compatibility
-  return regexSanitize(svgContent);
+  // If DOMParser is available, use DOM-based sanitization for better accuracy
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+      
+      // Check for parsing errors
+      const parserErrors = doc.querySelector('parsererror');
+      if (parserErrors) {
+        console.warn('SVG parsing error, falling back to regex sanitization');
+        return regexSanitize(svgContent);
+      }
+      
+      // Remove disallowed elements
+      SECURITY_CONFIG.disallowedElements.forEach(tagName => {
+        const elements = doc.getElementsByTagName(tagName);
+        for (let i = elements.length - 1; i >= 0; i--) {
+          if (elements[i].parentNode) {
+            elements[i].parentNode.removeChild(elements[i]);
+          }
+        }
+      });
+      
+      // Remove disallowed attributes from all elements
+      const allElements = doc.querySelectorAll('*');
+      allElements.forEach(el => {
+        for (let i = el.attributes.length - 1; i >= 0; i--) {
+          const attr = el.attributes[i];
+          const attrName = attr.name.toLowerCase();
+          
+          // Check if attribute contains disallowed strings
+          let isDisallowed = SECURITY_CONFIG.disallowedAttributes.some(badAttr => 
+            attrName === badAttr || 
+            attrName.startsWith(badAttr) || 
+            attr.value.includes(badAttr)
+          );
+          
+          // Use whitelist approach for extra security
+          if (isDisallowed || !SECURITY_CONFIG.allowedAttributes.includes(attrName)) {
+            el.removeAttribute(attr.name);
+          }
+        }
+      });
+      
+      // Verify only allowed elements remain, remove others
+      const walkNode = (node: Node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node as Element;
+          const tagName = el.tagName.toLowerCase();
+          
+          // If not in allowed list, remove the element
+          if (!SECURITY_CONFIG.allowedElements.includes(tagName)) {
+            if (el.parentNode) {
+              el.parentNode.removeChild(el);
+              return; // Don't process removed element's children
+            }
+          }
+        }
+        
+        // Process children (in reverse to safely remove them)
+        const children = Array.from(node.childNodes);
+        for (let i = children.length - 1; i >= 0; i--) {
+          walkNode(children[i]);
+        }
+      };
+      
+      walkNode(doc.documentElement);
+      
+      // Ensure SVG is the root element
+      const rootElement = doc.documentElement;
+      if (rootElement.tagName.toLowerCase() !== 'svg') {
+        throw new Error('Root element is not SVG');
+      }
+      
+      return new XMLSerializer().serializeToString(doc);
+    } catch (error) {
+      console.warn('DOM-based sanitization failed, falling back to regex:', error);
+      return regexSanitize(svgContent);
+    }
+  } else {
+    // For server-side or environments without DOM
+    return regexSanitize(svgContent);
+  }
 }
 
 /**
@@ -77,29 +196,63 @@ export function sanitizeSVG(svgContent: string): string {
 function regexSanitize(svgContent: string): string {
   let sanitized = svgContent;
   
-  // Remove disallowed elements
+  // Initial check: ensure it starts with an SVG tag
+  if (!sanitized.match(/<svg[^>]*>/i)) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>';
+  }
+  
+  // Remove disallowed elements - more robust pattern
   SECURITY_CONFIG.disallowedElements.forEach(element => {
+    // Handle elements with content
     const regex = new RegExp(`<${element}[^>]*>.*?<\\/${element}>`, 'gis');
     sanitized = sanitized.replace(regex, '');
     
-    // Also remove self-closing tags
+    // Handle self-closing elements
     const selfClosingRegex = new RegExp(`<${element}[^>]*\\/>`, 'gi');
     sanitized = sanitized.replace(selfClosingRegex, '');
+    
+    // Handle unclosed elements (safety cleanup)
+    const unclosedRegex = new RegExp(`<${element}[^>]*>`, 'gi');
+    sanitized = sanitized.replace(unclosedRegex, '');
   });
   
   // Remove disallowed attributes
   SECURITY_CONFIG.disallowedAttributes.forEach(attr => {
-    // Match attributes in the form name="value" or name='value' or name=value
+    // Match attributes in the form name="value" or name='value'
     const attrRegex = new RegExp(`\\s${attr}\\s*=\\s*(['"])(.*?)\\1`, 'gi');
     sanitized = sanitized.replace(attrRegex, '');
     
-    // Also match attributes without quotes
+    // Match attributes without quotes
     const attrNoQuotesRegex = new RegExp(`\\s${attr}\\s*=\\s*[^\\s>]+`, 'gi');
     sanitized = sanitized.replace(attrNoQuotesRegex, '');
+    
+    // Also check for inline event handlers without equals sign (e.g., onclick="...")
+    if (attr.startsWith('on')) {
+      const eventRegex = new RegExp(`\\s${attr}\\s*`, 'gi');
+      sanitized = sanitized.replace(eventRegex, ' ');
+    }
   });
+  
+  // Additional security: remove all attributes containing "javascript:"
+  sanitized = sanitized.replace(/\s+\w+\s*=\s*["']?[^"'>\s]*javascript:[^"'>\s]*["']?/gi, '');
+  
+  // Additional security: remove all attributes containing "data:"
+  sanitized = sanitized.replace(/\s+\w+\s*=\s*["']?[^"'>\s]*data:[^"'>\s]*["']?/gi, '');
+  
+  // Clean up duplicate whitespace
+  sanitized = sanitized.replace(/\s{2,}/g, ' ');
   
   return sanitized;
 }
+
+/**
+ * Memoized version of the sanitization function
+ * Creates a cached function that remembers results for recent inputs
+ */
+export const sanitizeSVG = createMemoizedFunction(_sanitizeSVG, {
+  maxSize: SANITIZATION_CACHE_SIZE,
+  getKey: getSanitizationHashKey
+});
 
 /**
  * Optimize SVG for animation performance

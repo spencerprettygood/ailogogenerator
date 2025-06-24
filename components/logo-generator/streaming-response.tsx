@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Message } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,9 @@ import { UserMessage } from './user-message';
 import { AssistantMessage } from './assistant-message';
 import { SystemMessage } from './system-message';
 import { EnhancedTypingIndicator } from './enhanced-typing-indicator';
-import LogoDisplay from './logo-display';
-import ProgressTracker from './progress-tracker';
+import { EnhancedLogoCard } from './enhanced-logo-card';
+import { ProgressTimeline } from './progress-timeline';
+import { StageTransition } from './stage-transition';
 import { Info, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
 
 interface ProgressStage {
@@ -186,199 +188,64 @@ export function StreamingResponse({
         </Card>
       )}
       
-      {/* Logo preview (shown in a more prominent way) */}
+      {/* Logo preview (shown in a more prominent way with EnhancedLogoCard) */}
       {previewSvg && (
-        <div className="flex flex-col items-center">
+        <motion.div 
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center justify-center mb-2">
             <Sparkles className="h-4 w-4 mr-2 text-primary" />
             <span className="text-sm font-medium">Your logo is taking shape...</span>
           </div>
-          <div className="bg-card border rounded-lg p-6 shadow-sm">
-            <LogoDisplay
-              svgCode={previewSvg}
-              variants={[]}
-              className="max-w-md"
-            />
-          </div>
-        </div>
+          <EnhancedLogoCard
+            logo={{ svgCode: previewSvg }}
+            brandName="Preview"
+            colorPalette={['#4A90E2', '#50E3C2', '#F39C12', '#E74C3C']}
+            className="max-w-md"
+            showControls={false}
+          />
+        </motion.div>
       )}
       
-      {/* Enhanced progress tracker with stages explanation */}
+      {/* Improved progress timeline with smooth animations */}
       {progressData && progressData.stages && (progressData.stages.length > 0 || isGenerating) && (
-        <Card className="border overflow-hidden">
-          {/* Compact progress view */}
-          <div className="p-4 bg-card">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  {progressData.estimatedTimeRemaining !== null 
-                    ? `Estimated time: ${formatTimeRemaining(progressData.estimatedTimeRemaining)}`
-                    : 'Generating your logo...'}
-                </span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="h-8 px-2"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                {showDetails ? (
-                  <>
-                    <span className="text-xs mr-1">Hide details</span>
-                    <ChevronUp className="h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xs mr-1">Show details</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {/* Overall progress bar */}
-            <div className="w-full bg-muted rounded-full h-2.5 mb-2">
-              <div 
-                className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-in-out"
-                style={{ width: `${typeof progressData.overallProgress === 'number' && !isNaN(progressData.overallProgress) ? progressData.overallProgress : 0}%` }}
-              />
-            </div>
-            <div className="text-xs text-right text-muted-foreground">
-              {Math.round(progressData.overallProgress || 0)}% complete
-            </div>
-          </div>
-          
-          {/* Detailed progress view */}
-          {showDetails && (
-            <div className="border-t p-4">
-              {Array.isArray(progressData.stages) && progressData.stages.length > 0 ? (
-                <ProgressTracker
-                  // Ensure each stage has a valid structure
-                  stages={progressData.stages.map(stage => {
-                    // Handle if stage is not an object
-                    if (typeof stage !== 'object' || stage === null) {
-                      return { 
-                        id: 'unknown', 
-                        name: 'Unknown Stage',
-                        status: 'pending',
-                        progress: 0
-                      };
-                    }
-                    
-                    // Clone the stage to avoid directly modifying props
-                    const normalizedStage = { ...stage };
-                    
-                    // Ensure required properties exist
-                    if (!('id' in normalizedStage)) {
-                      normalizedStage.id = 'unknown';
-                    }
-                    
-                    if (!('name' in normalizedStage) && !('label' in normalizedStage)) {
-                      normalizedStage.name = `Stage ${normalizedStage.id || 'Unknown'}`;
-                    } else if (!('name' in normalizedStage) && ('label' in normalizedStage)) {
-                      // Safely access label property
-                      const label = typeof normalizedStage.label === 'string' ? normalizedStage.label : `Stage ${normalizedStage.id || 'Unknown'}`;
-                      normalizedStage.name = label;
-                    }
-                    
-                    if (!('status' in normalizedStage)) {
-                      normalizedStage.status = 'pending';
-                    } else {
-                      // Normalize status values
-                      const status = normalizedStage.status;
-                      if (status === 'in_progress') {
-                        normalizedStage.status = 'in-progress';
-                      } else if (!['pending', 'in-progress', 'completed', 'error'].includes(String(status))) {
-                        normalizedStage.status = 'pending';
-                      }
-                    }
-                    
-                    // Ensure progress is a number
-                    if (!('progress' in normalizedStage) || typeof normalizedStage.progress !== 'number' || isNaN(normalizedStage.progress)) {
-                      normalizedStage.progress = 0;
-                    }
-                    
-                    return normalizedStage;
-                  })}
-                  currentStageId={progressData.currentStageId}
-                  overallProgress={progressData.overallProgress || 0}
-                  estimatedRemainingTime={progressData.estimatedTimeRemaining}
-                />
-              ) : (
-                <div className="text-xs text-muted-foreground">No progress stages available.</div>
-              )}
-
-              {/* Current stage explanation */}
-              {currentStage && (
-                <div className="mt-4 bg-muted/30 rounded-lg p-3">
-                  <div 
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleStageInfo(currentStage)}
-                  >
-                    <div className="flex items-center">
-                      <Info className="h-4 w-4 mr-2 text-primary" />
-                      <span className="font-medium text-sm">
-                        Stage {currentStage}: {stageHighlights[currentStage] || `Processing stage ${currentStage}`}
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      {showStageInfo[currentStage] ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  
-                  {showStageInfo[currentStage] && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      {currentStage === "A" && (
-                        <p>Analyzing your brand description to extract key design requirements including 
-                          colors, style preferences, industry context, and target audience. This helps create 
-                          a logo that perfectly matches your brand identity.</p>
-                      )}
-                      {currentStage === "B" && (
-                        <p>Creating multiple design concepts based on your requirements. We&apos;re exploring 
-                          different visual approaches, color schemes, and style directions to find the perfect
-                          representation of your brand.</p>
-                      )}
-                      {currentStage === "C" && (
-                        <p>Evaluating all design concepts against your requirements to select the most 
-                          effective direction. We&apos;re analyzing each option for brand alignment, 
-                          visual impact, and versatility.</p>
-                      )}
-                      {currentStage === "D" && (
-                        <p>Creating your custom SVG logo with precision vector graphics. We&apos;re crafting 
-                          every element with attention to detail, ensuring perfect shapes, 
-                          proportions, and visual harmony.</p>
-                      )}
-                      {currentStage === "E" && (
-                        <p>Optimizing your logo for performance and versatility. We&apos;re ensuring clean 
-                          vector paths, proper scaling behavior, and technical quality for 
-                          all usage scenarios.</p>
-                      )}
-                      {currentStage === "F" && (
-                        <p>Creating alternative versions of your logo for different contexts - 
-                          monochrome variants for single-color applications, simplified favicon
-                          for web browsers, and multiple size formats.</p>
-                      )}
-                      {currentStage === "G" && (
-                        <p>Developing comprehensive brand guidelines that document proper logo 
-                          usage, color codes, spacing requirements, and implementation recommendations.</p>
-                      )}
-                      {currentStage === "H" && (
-                        <p>Preparing all your assets for convenient download - organizing files, 
-                          creating appropriate formats, and packaging everything into a complete 
-                          brand asset bundle.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <ProgressTimeline
+            stages={progressData.stages}
+            currentStageId={progressData.currentStageId}
+            overallProgress={progressData.overallProgress || 0}
+            estimatedTimeRemaining={progressData.estimatedTimeRemaining}
+            className="mt-6"
+            onStageClick={(stageId) => {
+              // Track stage clicks if needed
+            }}
+          />
+        
+          {/* Stage transition animation */}
+          <StageTransition
+            currentStage={progressData.currentStageId}
+            previousStage={useMemo(() => {
+              // Get the previous stage from the current one
+              if (!progressData.currentStageId) return null;
+              
+              const currentIndex = progressData.stages.findIndex(
+                stage => stage.id === progressData.currentStageId
+              );
+              
+              if (currentIndex <= 0) return null;
+              return progressData.stages[currentIndex - 1].id;
+            }, [progressData.currentStageId, progressData.stages])}
+            progress={progressData.overallProgress || 0}
+            isGenerating={isGenerating}
+          />
+        </motion.div>
       )}
       
       {/* Response messages with real-time updates */}

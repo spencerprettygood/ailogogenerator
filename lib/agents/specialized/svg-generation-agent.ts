@@ -24,23 +24,42 @@ export class SVGGenerationAgent extends BaseAgent {
       }
     );
     
-    // Set the system prompt for this agent
-    this.systemPrompt = `You are a specialized SVG logo generation agent for an AI logo generator.
-    
-Your task is to generate a professional, production-ready SVG logo based on the selected design concept and specifications.
+    // Set the system prompt for this agent with advanced context management
+    this.systemPrompt = `You are a specialized SVG logo generation agent for an AI logo generator, with expertise in vector graphics, brand identity, and logo design principles.
 
-IMPORTANT REQUIREMENTS:
+## ROLE AND CAPABILITIES
+- You are a professional logo designer with deep expertise in SVG creation
+- You understand the principles of effective logo design: simplicity, memorability, versatility, appropriateness, and timelessness
+- You can translate brand concepts into visually compelling vector graphics
+- You generate optimized, clean SVG code that follows industry best practices
+
+## TECHNICAL REQUIREMENTS
 1. Create ONLY valid, optimized SVG code that follows best practices
 2. Use a viewBox of "0 0 300 300" for consistent scaling
 3. Keep the SVG code under 15KB
 4. Use ONLY the following SVG elements: svg, g, path, circle, rect, polygon, text, defs, linearGradient, radialGradient, stop
 5. Do NOT use: script, image, foreignObject, use, or any event handlers
-6. Ensure the logo is:
-   - Visually balanced
-   - Scalable without loss of quality
-   - Appropriate for the brand's identity
-   - Following the color palette from the concept
-   
+6. Optimize paths for minimum points while maintaining visual quality
+7. Use groups (<g>) appropriately to organize related elements
+8. Ensure proper nesting of elements and semantic structure
+9. Include descriptive element IDs that relate to their function (e.g., "logo-background", "brand-icon", "text-element")
+
+## DESIGN PRINCIPLES
+1. SIMPLICITY: Focus on a single, strong concept with minimal elements
+2. BALANCE: Create proper visual weight distribution and harmony
+3. SCALABILITY: Ensure the logo is recognizable at both large and small sizes
+4. COLOR THEORY: Use colors strategically to convey the right brand emotions and associations
+5. NEGATIVE SPACE: Utilize empty space effectively as part of the design
+6. VERSATILITY: Design with various applications in mind (print, digital, merchandise)
+7. DISTINCTIVENESS: Create a unique visual identity that stands out from competitors
+
+## BRAND CONTEXT INTEGRATION
+- Deeply analyze the brand name, industry, and target audience
+- Consider cultural and market context when designing
+- Ensure the logo visually communicates the brand's core values and personality
+- Choose appropriate typography that reinforces the brand's character
+
+## OUTPUT FORMAT
 You MUST return your response in the following JSON format:
 {
   "svg": "<!-- full SVG code here -->",
@@ -49,39 +68,117 @@ You MUST return your response in the following JSON format:
 
 The SVG code should be a complete, valid SVG with proper syntax and optimization.
 It must work when pasted directly into an HTML file or opened in a browser.
-Do NOT include any text before or after the JSON object.`;
+Do NOT include any text before or after the JSON object.
+
+## DESIGN PROCESS
+1. First, deeply analyze the brand requirements and selected concept
+2. Sketch multiple approaches mentally before selecting the strongest direction
+3. Implement the design with precision and attention to detail
+4. Optimize and refine the SVG code for performance and compatibility
+5. Provide a thoughtful design rationale that explains your creative decisions`;
   }
   
   /**
-   * Generate the prompt for SVG generation
+   * Generate the prompt for SVG generation with enhanced context and few-shot example
    */
   protected async generatePrompt(input: SVGGenerationAgentInput): Promise<string> {
     const { designSpec, selectedConcept } = input;
     
-    return `Please generate a professional SVG logo based on the following design specifications and selected concept:
+    // Get industry context
+    const industry = designSpec.industry || 'general';
+    
+    // Determine appropriate style based on industry and selected concept
+    const determinedStyle = selectedConcept.style || designSpec.style_preferences || 'modern, professional';
+    
+    // Process color palette
+    const colorPalette = selectedConcept.colors || designSpec.color_palette || 'blue, white, gray';
+    
+    // Extract key brand attributes
+    const brandAttributes = [];
+    if (designSpec.brand_description) {
+      // Try to extract key attributes from the description
+      const descriptionLower = designSpec.brand_description.toLowerCase();
+      if (descriptionLower.includes('innovative') || descriptionLower.includes('tech') || descriptionLower.includes('modern')) {
+        brandAttributes.push('innovative');
+      }
+      if (descriptionLower.includes('trust') || descriptionLower.includes('reliable') || descriptionLower.includes('secure')) {
+        brandAttributes.push('trustworthy');
+      }
+      if (descriptionLower.includes('friendly') || descriptionLower.includes('approachable')) {
+        brandAttributes.push('approachable');
+      }
+      if (descriptionLower.includes('luxury') || descriptionLower.includes('premium') || descriptionLower.includes('high-end')) {
+        brandAttributes.push('premium');
+      }
+      if (descriptionLower.includes('playful') || descriptionLower.includes('fun') || descriptionLower.includes('energetic')) {
+        brandAttributes.push('playful');
+      }
+    }
+    
+    // If no attributes were extracted, add some default ones
+    if (brandAttributes.length === 0) {
+      brandAttributes.push('professional', 'memorable');
+    }
+    
+    // Construct a more detailed prompt with enhanced context
+    return `Please generate a professional SVG logo based on the following design specifications and selected concept.
 
-BRAND DETAILS:
+## COMPREHENSIVE BRAND CONTEXT
 Brand Name: ${designSpec.brand_name}
+Industry: ${industry}
 Brand Description: ${designSpec.brand_description}
 Target Audience: ${designSpec.target_audience}
+Key Brand Attributes: ${brandAttributes.join(', ')}
 
-SELECTED CONCEPT:
-Name: ${selectedConcept.name}
-Description: ${selectedConcept.description}
-Style: ${selectedConcept.style}
-Colors: ${selectedConcept.colors}
-Imagery: ${selectedConcept.imagery}
+## DESIGN DIRECTION
+Selected Concept: ${selectedConcept.name}
+Concept Description: ${selectedConcept.description}
+Style Guidelines: ${determinedStyle}
+Color Palette: ${colorPalette}
+Visual Elements: ${selectedConcept.imagery || 'Abstract or typographic elements that represent the brand'}
 
-Additional Requirements:
-- The logo should be visually balanced with proper use of negative space
-- Use the viewBox "0 0 300 300"
-- Optimize the SVG code for file size and rendering performance
-- Ensure the logo is unique, memorable, and professionally executed
-- The logo should be simple enough to be recognizable at small sizes
-- The output must be a complete, valid SVG file that works in all modern browsers
-- Do not use filters or complex effects that might not render consistently
+## TECHNICAL SPECIFICATIONS
+- Create a scalable SVG using viewBox="0 0 300 300"
+- Ensure the logo is structured with proper nesting and grouping of elements
+- Use semantic IDs that describe the function of each element
+- Optimize paths to minimize file size while maintaining visual quality
+- Use appropriate groups (<g>) to organize related elements
+- Ensure all text is converted to paths for consistent rendering
+- Implement responsive design principles for different display sizes
 
-Please generate the SVG code for this logo and explain your design decisions.`;
+## DESIGN CONSIDERATIONS
+- Primary use cases: ${designSpec.primary_use_cases || 'Website, business cards, social media, marketing materials'}
+- Desired emotions: ${designSpec.desired_emotions || 'Trust, professionalism, innovation'}
+- Competitive differentiation: Create a distinctive design that stands out in the ${industry} industry
+- Simplicity: Focus on a single, strong concept that's immediately recognizable
+- Balance: Ensure proper visual weight distribution and use of negative space
+- Timelessness: Avoid overly trendy elements that may become quickly outdated
+
+## EXAMPLES AND REFERENCES
+Consider these formats (DO NOT copy these designs, just use as structural reference):
+
+EXAMPLE 1 - SIMPLE ICON WITH TYPOGRAPHY:
+- Main icon represents core business concept
+- Clean, readable typography using brand name
+- 2-3 colors maximum with intentional color psychology
+- Clear visual hierarchy between icon and text
+
+EXAMPLE 2 - ABSTRACT GEOMETRIC APPROACH:
+- Geometric shapes forming a cohesive abstract symbol
+- Limited color palette with strategic use of negative space
+- Mathematical precision in proportions and spacing
+- No text, pure visual representation
+
+EXAMPLE 3 - TYPOGRAPHIC LOGO:
+- Custom letterforms that create a distinctive wordmark
+- Creative manipulation of specific characters to create visual interest
+- Color used strategically to highlight key letters or elements
+- Typography that expresses brand personality
+
+## OUTPUT REQUIREMENTS
+Generate a complete, optimized SVG logo in JSON format with a thoughtful design rationale explaining your creative process, specific design choices, and how the logo embodies the brand identity.
+
+Ensure your design balances creativity with practicality, creating a logo that is both visually compelling and functionally effective across all use cases.`;
   }
   
   /**
