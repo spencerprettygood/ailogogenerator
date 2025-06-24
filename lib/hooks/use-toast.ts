@@ -34,3 +34,11 @@ export function useToast() {
 
   return { toast, toasts, dismiss };
 }
+
+export type { ToastProps, Toast };
+export const toast = (...args: Parameters<ReturnType<typeof useToast>["toast"]>) => {
+  // This is a static singleton for non-hook usage
+  // In a real app, you might want to use a context or event emitter
+  // For now, this is a no-op placeholder to avoid import errors
+  return undefined;
+};

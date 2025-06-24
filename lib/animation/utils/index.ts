@@ -5,6 +5,6 @@
  * Centralizing exports here makes imports cleaner in other modules.
  */
 
-export * from './svg-sanitizer';
 export * from './animation-utils';
-export * from './svg-optimizer';
+export { optimizeSVG as optimizeSVGFromSanitizer, sanitizeSVG, validateSVG, prepareSVGForAnimation, extractAnimatableElements, checkAnimationCompatibility } from './svg-sanitizer';
+export { optimizeSVG as optimizeSVGFromOptimizer, validateSVGForAnimation } from './svg-optimizer';

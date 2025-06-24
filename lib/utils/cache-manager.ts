@@ -611,7 +611,7 @@ export class CacheManager {
         if (now > item.expiresAt) {
           this.cache.delete(key);
           this.counts[item.type]--;
-          typeCleanupCounts[item.type]++;
+          typeCleanupCounts[item.type] = (typeCleanupCounts[item.type] || 0) + 1;
           cleaned++;
         }
       }
@@ -637,6 +637,38 @@ export class CacheManager {
       });
     }
   }
+}
+
+/**
+ * Utility to create a memoized function with a custom cache key and size
+ * @param fn The function to memoize
+ * @param options.maxSize Maximum cache size
+ * @param options.getKey Function to generate a cache key from arguments
+ */
+export function createMemoizedFunction<T extends (...args: any[]) => any>(
+  fn: T,
+  options: { maxSize?: number; getKey?: (...args: Parameters<T>) => string } = {}
+): T {
+  const cache = new Map<string, ReturnType<T>>();
+  const maxSize = options.maxSize || 100;
+  const getKey = options.getKey || ((...args) => JSON.stringify(args));
+
+  return ((...args: Parameters<T>) => {
+    const key = getKey(...args);
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+    const result = fn(...args);
+    cache.set(key, result);
+    if (cache.size > maxSize) {
+      // Remove oldest entry
+      const firstKey = cache.keys().next().value;
+      if (typeof firstKey === 'string') {
+        cache.delete(firstKey);
+      }
+    }
+    return result;
+  }) as T;
 }
 
 // Export a function to get the cache manager instance

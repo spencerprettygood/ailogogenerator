@@ -6,7 +6,7 @@
  * including environment validation, error reporting, and distributed caching.
  */
 
-import { env } from '@/lib/utils/env';
+import env, { validateEnv } from '@/lib/utils/env';
 import { errorReporter } from '@/lib/utils/error-reporter';
 import { cacheAdapter } from '@/lib/utils/cache-adapter';
 
@@ -17,7 +17,7 @@ import { cacheAdapter } from '@/lib/utils/cache-adapter';
 function initApp() {
   try {
     // Validate environment variables
-    env.validate();
+    validateEnv();
     
     // Initialize error reporting
     errorReporter.init();

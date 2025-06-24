@@ -6,7 +6,6 @@
  */
 
 import { z } from 'zod';
-import "server-only";
 
 /**
  * Schema for validating environment variables
@@ -24,8 +23,8 @@ const envSchema = z.object({
     .optional(),
   
   // API Keys (sensitive)
+  ANTHROPIC_API_KEY: z.string().min(20), // Make required, not optional
   CLAUDE_API_KEY: z.string().min(20).optional(),
-  ANTHROPIC_API_KEY: z.string().min(20),
   OPENAI_API_KEY: z.string().min(20).optional(),
   
   // API URLs
@@ -233,3 +232,10 @@ export const env: EnvWithHelpers = {
 };
 
 export default env;
+
+// WARNING: Do NOT import this file in client components or the /pages directory.
+// This module is for server-side use only. For client-side env access, use process.env.NEXT_PUBLIC_*
+
+if (typeof window !== 'undefined') {
+  throw new Error('lib/utils/env.ts must not be imported in client components or the /pages directory. Use process.env.NEXT_PUBLIC_* for client-side environment variables.');
+}

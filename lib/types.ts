@@ -330,3 +330,5 @@ export interface ErrorDetails {
   stack?: string;
   timestamp?: string;
 }
+
+export { MockupType } from './mockups/mockup-types';
