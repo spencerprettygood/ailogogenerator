@@ -54,8 +54,8 @@ export interface TextPlaceholder {
 export interface LogoPlacement {
   x: number; // percentage position from left (0-100)
   y: number; // percentage position from top (0-100)
-  width: number; // percentage of mockup width (0-100)
-  height: number; // percentage of mockup height (0-100)
+  inlineSize: number; // percentage of mockup width (0-100)
+  blockSize: number; // percentage of mockup height (0-100)
   preserveAspectRatio: boolean;
   rotation?: number; // degrees
   opacity?: number; // 0-1

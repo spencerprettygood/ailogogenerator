@@ -13,8 +13,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 10, // 10% from left
       y: 50, // 50% from top
-      width: 30, // 30% of card width
-      height: 30, // Auto-calculated based on logo aspect ratio
+      inlineSize: 30, // 30% of card width
+      blockSize: 30, // Auto-calculated based on logo aspect ratio
       preserveAspectRatio: true
     },
     colorVariants: ['#FFFFFF', '#000000', '#F5F5F5', '#2D3748'],
@@ -65,8 +65,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 5,
       y: 50,
-      width: 15,
-      height: 60,
+      inlineSize: 15,
+      blockSize: 60,
       preserveAspectRatio: true
     },
     colorVariants: ['#FFFFFF', '#F8FAFC', '#1E293B', '#0F172A'],
@@ -124,8 +124,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 50,
       y: 30,
-      width: 40,
-      height: 40,
+      inlineSize: 40,
+      blockSize: 40,
       preserveAspectRatio: true
     },
     colorVariants: ['#FFFFFF', '#000000', '#2563EB', '#DC2626', '#22C55E']
@@ -141,8 +141,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 50,
       y: 15,
-      width: 50,
-      height: 20,
+      inlineSize: 50,
+      blockSize: 20,
       preserveAspectRatio: true
     }
   },
@@ -157,8 +157,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 15,
       y: 70,
-      width: 20,
-      height: 40,
+      inlineSize: 20,
+      blockSize: 40,
       preserveAspectRatio: true
     },
     textPlaceholders: [
@@ -197,8 +197,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 50,
       y: 20,
-      width: 20,
-      height: 10,
+      inlineSize: 20,
+      blockSize: 10,
       preserveAspectRatio: true
     }
   },
@@ -213,8 +213,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
     logoPlacement: {
       x: 50,
       y: 30,
-      width: 50,
-      height: 30,
+      inlineSize: 50,
+      blockSize: 30,
       preserveAspectRatio: true
     },
     textPlaceholders: [

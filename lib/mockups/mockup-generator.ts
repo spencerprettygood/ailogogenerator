@@ -16,10 +16,10 @@ export function positionLogoOnMockup(
     : [0, 0, 300, 300];
   
   // Calculate logo dimensions based on template placement
-  const logoWidth = (template.logoPlacement.width / 100) * width;
+  const logoWidth = (template.logoPlacement.inlineSize / 100) * width;
   const logoHeight = template.logoPlacement.preserveAspectRatio 
-    ? logoWidth * (viewBox[3] / viewBox[2]) 
-    : (template.logoPlacement.height / 100) * height;
+    ? logoWidth / template.aspectRatio
+    : (template.logoPlacement.blockSize / 100) * height;
   
   // Calculate position
   const logoX = (template.logoPlacement.x / 100) * width;
