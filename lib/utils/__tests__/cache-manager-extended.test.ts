@@ -6,7 +6,7 @@ describe('CacheManager', () => {
   
   beforeEach(() => {
     // Reset the singleton instance for each test
-    // @ts-ignore - accessing private property for testing
+    // @ts-expect-error - accessing private property for testing
     CacheManager.instance = undefined;
     cacheManager = CacheManager.getInstance();
     
@@ -353,7 +353,7 @@ describe('CacheManager', () => {
       cacheManager.set('expire-test', 'value', 'generation');
       
       // Mock cache internals to simulate expiration
-      // @ts-ignore - accessing private property for testing
+      // @ts-expect-error - accessing private property for testing
       const internalCache = cacheManager.cache;
       
       // Manually expire the item

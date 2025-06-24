@@ -105,7 +105,7 @@ export interface MockupTemplate {
   textPlaceholders?: TextPlaceholder[];
   colorVariants?: string[]; // CSS color values for background
   customizableColors?: boolean;
-  metadata?: Record<string, any>; // Additional template-specific metadata
+  metadata?: Record<string, unknown>; // Additional template-specific metadata
   enhancedSettings?: {
     defaultLighting?: LightingEffects;
     defaultShadow?: ShadowEffects;

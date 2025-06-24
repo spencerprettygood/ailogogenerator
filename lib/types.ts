@@ -190,7 +190,7 @@ export interface ProgressLog {
   timestamp: number;
   message: string;
   type: 'info' | 'warning' | 'error' | 'success';
-  details?: any;
+  details?: unknown;
 }
 
 export interface WebSearchResultItem {

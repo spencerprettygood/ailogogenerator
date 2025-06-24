@@ -6,7 +6,7 @@
  * It includes caching at each stage for improved performance.
  */
 
-import { sanitizeSVG, optimizeSVG, validateSVG, extractAnimatableElements, checkAnimationCompatibility } from './utils';
+import { sanitizeSVG, optimizeSVGFromOptimizer as optimizeSVG, validateSVG, extractAnimatableElements, checkAnimationCompatibility } from './utils';
 import { AnimationType } from './types';
 import { Logger } from '../utils/logger';
 import { createMemoizedFunction } from '../utils/cache-manager';

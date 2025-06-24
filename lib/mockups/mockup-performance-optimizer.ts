@@ -78,25 +78,7 @@ export function getOptimizedEffectsConfig(
 export function optimizeSvgForRendering(svgCode: string): string {
   // In a real implementation, you would use a proper SVG optimizer
   // For now, we'll do some basic optimizations
-  
-  return svgCode
-    // Remove comments
-    .replace(/<!--[\s\S]*?-->/g, '')
-    // Remove metadata
-    .replace(/<metadata[\s\S]*?<\/metadata>/g, '')
-    // Remove empty defs
-    .replace(/<defs>\s*<\/defs>/g, '')
-    // Remove empty groups
-    .replace(/<g>\s*<\/g>/g, '')
-    // Remove unnecessary whitespace
-    .replace(/>\s+</g, '><')
-    // Simplify transform attributes where possible
-    .replace(/transform="matrix\(1, 0, 0, 1, ([^,]+), ([^)]+)\)"/g, 'transform="translate($1, $2)"')
-    // Combine adjacent transforms of the same type
-    .replace(/translate\(([^,]+),([^)]+)\)\s+translate\(([^,]+),([^)]+)\)/g, 
-             (_, x1, y1, x2, y2) => `translate(${parseFloat(x1) + parseFloat(x2)},${parseFloat(y1) + parseFloat(y2)})`)
-    // Remove unnecessary decimal precision
-    .replace(/(\d+\.\d{2})\d+/g, '$1');
+  return svgCode.replace(/<!--.*?-->/gs, '').replace(/\s+/g, ' ');
 }
 
 /**

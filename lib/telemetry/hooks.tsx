@@ -56,11 +56,11 @@ export function useRenderTracking(componentName: string) {
 /**
  * Higher-order component to add telemetry to any component
  */
-export function withTelemetry<T extends object>(
-  Component: React.ComponentType<T>,
+export function withTelemetry(
+  Component: React.ComponentType,
   componentName: string
 ) {
-  return function TelemetryWrappedComponent(props: T) {
+  return function TelemetryWrappedComponent(props: {}) {
     useRenderTracking(componentName);
     return <Component {...props} />;
   };

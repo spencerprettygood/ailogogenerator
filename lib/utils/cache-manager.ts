@@ -32,7 +32,7 @@ import { ErrorCategory, ErrorSeverity, createAppError, handleError } from './err
  * @property {string} key - The unique identifier for this cache item
  * @property {CacheType} type - The type of cached data (generation, asset, etc.)
  */
-interface LocalCacheItem<T = any> {
+interface LocalCacheItem<T = unknown> {
   data: T;
   expiresAt: number;
   createdAt: number;

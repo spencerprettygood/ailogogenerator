@@ -19,7 +19,7 @@ import {
   AnimatedSVGLogo,
   AnimationEasing
 } from '../types';
-import { sanitizeSVG, optimizeSVG, extractAnimatableElements } from '../utils';
+import { sanitizeSVG, optimizeSVGFromOptimizer as optimizeSVG, extractAnimatableElements } from '../utils';
 
 /**
  * CSS Animation Provider

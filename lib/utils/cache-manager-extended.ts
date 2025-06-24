@@ -114,7 +114,7 @@ export class ExtendedCacheManager extends CacheManager {
         }, 30 * 1000); // Check every 30 seconds
       } else if (typeof window !== 'undefined' && 'performance' in window) {
         // Use browser memory API if available
-        // @ts-ignore - MemoryInfo is not in standard TypeScript DOM lib
+        // @ts-expect-error - MemoryInfo is not in standard TypeScript DOM lib
         if (window.performance && window.performance.memory) {
           this.memoryMonitorInterval = setInterval(() => {
             this.checkBrowserMemoryUsage();
@@ -179,7 +179,7 @@ export class ExtendedCacheManager extends CacheManager {
     try {
       if (typeof window === 'undefined' || !window.performance) return;
       
-      // @ts-ignore - MemoryInfo is not in standard TypeScript DOM lib
+      // @ts-expect-error - MemoryInfo is not in standard TypeScript DOM lib
       const memory = window.performance.memory;
       if (!memory) return;
       

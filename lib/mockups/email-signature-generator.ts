@@ -60,7 +60,7 @@ export function generateEmailSignature(
     html = html.replace(/\{[A-Z_]+\}/g, '');
     
     return html;
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error, {
       category: ErrorCategory.EXTERNAL,
       context: {

@@ -5,7 +5,7 @@ describe('CacheManager', () => {
   
   beforeEach(() => {
     // Reset the singleton instance for each test
-    // @ts-ignore - accessing private property for testing
+    // @ts-expect-error - accessing private property for testing
     CacheManager.instance = undefined;
     cacheManager = CacheManager.getInstance();
     cacheManager.configure({
