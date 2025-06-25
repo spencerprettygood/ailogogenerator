@@ -4,17 +4,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sparkles, Send, FileImage } from 'lucide-react';
-import { FileUploadSimple } from './file-upload-simple';
+import { FileUpload as FileUploadUnified } from './file-upload-unified';
 
 interface SearchInterfaceProps {
-  onSubmit: (prompt: string, files?: File[]) => void;
+  onSubmitAction: (prompt: string, files?: File[]) => void;
   isGenerating: boolean;
   className?: string;
   placeholder?: string;
 }
 
 export function SearchInterface({
-  onSubmit,
+  onSubmitAction,
   isGenerating,
   className = '',
   placeholder = 'Describe your perfect logo...'
@@ -34,7 +34,7 @@ export function SearchInterface({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim() || files.length > 0) {
-      onSubmit(prompt, files);
+      onSubmitAction(prompt, files);
       setPrompt('');
       setFiles([]);
       setShowFileUpload(false);
@@ -94,7 +94,7 @@ export function SearchInterface({
           
           {showFileUpload && (
             <div className="px-4 pb-3">
-              <FileUploadSimple
+              <FileUploadUnified
                 onFilesChangeAction={handleFilesChange}
                 maxFiles={3}
                 maxFileSizeMb={10}

@@ -12,8 +12,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/lib/utils/env';
 
 // Use secure environment variables with validation
-const ADMIN_USERNAME = env.get('ADMIN_USERNAME');
-const ADMIN_PASSWORD = env.get('ADMIN_PASSWORD');
+// In development mode, provide default values if not configured
+const isDev = env.isDevelopment;
+const ADMIN_USERNAME = isDev ? (env.get('ADMIN_USERNAME', 'admin_user')) : env.get('ADMIN_USERNAME');
+const ADMIN_PASSWORD = isDev ? (env.get('ADMIN_PASSWORD', 'Admin_Password123!')) : env.get('ADMIN_PASSWORD');
 
 /**
  * Middleware handler function using Next.js 15 patterns

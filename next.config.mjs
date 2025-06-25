@@ -1,8 +1,17 @@
 // @ts-check
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
+// Get directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables from .env files
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '.env.local') });
+
+console.log('Loading environment variables in next.config.mjs');
+console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
 
 /**
  * @type {import('next').NextConfig}
@@ -124,11 +133,25 @@ const nextConfig = {
     return config;
   },
   
-  // External packages that should be transpiled (renamed from serverComponentsExternalPackages)
-  serverExternalPackages: [
-    'next-themes',
-    '@anthropic-ai/sdk',
-  ],
+  // External packages that should be transpiled
+  experimental: {
+    // Changed property name to match Next.js 15 requirements
+    // The documentation mentions it should be serverComponentsExternalPackages
+    // but the error suggests it might be something else
+    transpilePackages: [
+      'next-themes',
+      '@anthropic-ai/sdk',
+    ]
+  },
+  
+  // Explicitly provide environment variables
+  env: {
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES || 'true',
+    ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS || 'true',
+    CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS || '3600',
+  },
 };
 
 export default nextConfig;

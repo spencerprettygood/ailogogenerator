@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles, Upload, X } from 'lucide-react';
-import { FileUploadSimple } from './file-upload-simple';
+import { FileUpload as FileUploadUnified } from './file-upload-unified';
 
 interface PerplexitySearchProps {
   onSubmitAction: (prompt: string, files?: File[]) => void;
@@ -208,7 +208,7 @@ export function PerplexitySearch({
             className="absolute top-full left-0 right-0 mt-2 z-10"
           >
             <div className="bg-background border border-border rounded-xl p-4 shadow-lg">
-              <FileUploadSimple 
+              <FileUploadUnified 
                 onFilesChangeAction={handleFilesChange}
                 maxFiles={3}
                 acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}

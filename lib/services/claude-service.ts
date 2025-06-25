@@ -71,8 +71,8 @@ class ClaudeService {
 
   constructor() {
     try {
-      // Validate that we have the API key
-      if (!env.ANTHROPIC_API_KEY) {
+      // In development mode, allow missing API key
+      if (!env.ANTHROPIC_API_KEY && env.NODE_ENV !== 'development') {
         throw new Error('Missing ANTHROPIC_API_KEY environment variable');
       }
       
@@ -80,7 +80,7 @@ class ClaudeService {
       if (env.NODE_ENV === 'development') {
         console.log('Claude service initializing with:', {
           // Only show first few characters of the API key for debugging
-          apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 5)}...` : undefined,
+          apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 5)}...` : 'Using development fallback',
           environment: env.NODE_ENV
         });
       }
@@ -105,6 +105,15 @@ class ClaudeService {
   ): Promise<ClaudeResponse> {
     // Check if service is properly initialized
     if (!this.isInitialized) {
+      if (env.NODE_ENV === 'development') {
+        console.warn('Claude service is not properly initialized, but we are in development mode. Using mock response.');
+        // Return a mock response in development mode
+        return {
+          content: "This is a development mock response. Please set up the ANTHROPIC_API_KEY environment variable for real responses.",
+          tokensUsed: { input: 0, output: 0, total: 0 },
+          processingTime: 0
+        };
+      }
       throw new Error('Claude service is not properly initialized. Check your API key.');
     }
     

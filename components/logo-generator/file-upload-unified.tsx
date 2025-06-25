@@ -1,17 +1,21 @@
 'use client'
 
-// DEPRECATED: Use the new FileUpload component instead.
-// This file is retained temporarily for migration purposes and will be removed after all usages are updated.
-
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { FilePreview } from './file-preview';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { validateFiles } from '@/lib/file-validation';
-import type { FileUploadProps, FileValidationOptions } from '@/lib/types';
-import { FileUpload as FileUploadUnified } from './file-upload-unified';
+import { validateFiles, FileValidationRule } from '@/lib/file-validation';
+
+interface FileUploadUnifiedProps {
+  onFilesChange: (files: File[]) => void;
+  maxFiles?: number;
+  maxFileSizeMb?: number;
+  acceptedFileTypes?: string[];
+  className?: string;
+  disabled?: boolean;
+}
 
 export function FileUpload({
   onFilesChange,
@@ -19,12 +23,13 @@ export function FileUpload({
   maxFileSizeMb = 10,
   acceptedFileTypes = ['image/jpeg', 'image/png', 'image/webp'],
   className,
-  disabled,
-}: FileUploadProps) {
+  disabled = false,
+}: FileUploadUnifiedProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validationOptions: FileValidationOptions = useMemo(
+  const validationOptions: FileValidationRule = useMemo(
     () => ({
       maxCount: maxFiles,
       maxSize: maxFileSizeMb * 1024 * 1024,
@@ -33,23 +38,29 @@ export function FileUpload({
     [maxFiles, maxFileSizeMb, acceptedFileTypes]
   );
 
+  const handleFiles = (selectedFiles: File[]) => {
+    const allFiles = [...files, ...selectedFiles];
+    const validation = validateFiles(allFiles, validationOptions);
+    if (validation.isValid) {
+      setFiles(allFiles);
+      onFilesChange(allFiles);
+      setErrors([]);
+    } else {
+      setErrors(validation.errors);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    handleFiles(selectedFiles);
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      const currentFiles = files;
-      const allFiles = [...currentFiles, ...acceptedFiles];
-
-      const validation = validateFiles(allFiles, validationOptions);
-
-      if (validation.isValid) {
-        setFiles(allFiles);
-        if (onFilesChange) {
-          onFilesChange(allFiles);
-        }
-        setErrors([]);
-      } else {
-        setErrors(validation.errors);
-      }
-
+      handleFiles(acceptedFiles);
       if (fileRejections.length > 0) {
         const rejectionErrors = fileRejections.map(
           (rejection) =>
@@ -60,7 +71,7 @@ export function FileUpload({
         setErrors((prevErrors) => [...prevErrors, ...rejectionErrors]);
       }
     },
-    [files, onFilesChange, validationOptions]
+    [files, validationOptions]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -79,29 +90,25 @@ export function FileUpload({
   const removeFile = (index: number) => {
     const newFiles = files.filter((_, i) => i !== index);
     setFiles(newFiles);
-    if (onFilesChange) {
-      onFilesChange(newFiles);
-    }
+    onFilesChange(newFiles);
     setErrors([]);
   };
 
   const clearAll = () => {
     setFiles([]);
-    if (onFilesChange) {
-      onFilesChange([]);
-    }
+    onFilesChange([]);
     setErrors([]);
   };
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Upload Inspiration Images</h3>
+        <h3 className="text-lg font-medium">Upload Images</h3>
         <Button
           type="button"
           variant="outline"
-          onClick={open}
-          disabled={disabled || (files.length >= maxFiles)}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || files.length >= maxFiles}
         >
           <UploadCloud className="mr-2 h-4 w-4" />
           Select Files
@@ -119,24 +126,27 @@ export function FileUpload({
         )}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
-          <UploadCloud className="h-10 w-10" />
-          <p className="font-semibold">
-            {isDragActive
-              ? 'Drop the files here ...'
-              : 'Drag & drop files here, or click to select'}
-          </p>
-          <p className="text-xs">
-            Up to {maxFiles} images, {maxFileSizeMb}MB per file.
-          </p>
-          <p className="text-xs">
-            Supported types:{' '}
-            {acceptedFileTypes
-              .map((t: string) => t.split('/')[1])
-              .join(', ')
-              .toUpperCase()}
-          </p>
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={acceptedFileTypes.join(',')}
+          onChange={handleFileSelect}
+          className="hidden"
+          disabled={disabled}
+        />
+        <UploadCloud className="h-10 w-10" />
+        <p className="font-semibold">
+          {isDragActive
+            ? 'Drop the files here ...'
+            : 'Drag & drop files here, or click to select'}
+        </p>
+        <p className="text-xs">
+          Up to {maxFiles} images, {maxFileSizeMb}MB per file.
+        </p>
+        <p className="text-xs">
+          Supported types: {acceptedFileTypes.map((t) => t.split('/')[1]).join(', ').toUpperCase()}
+        </p>
       </div>
 
       {errors.length > 0 && (

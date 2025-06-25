@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sparkles, Send, FileImage, X } from 'lucide-react';
-import { FileUploadSimple } from './file-upload-simple';
+import { FileUpload as FileUploadUnified } from './file-upload-unified';
 
 // Common logo design terms for autocomplete
 const LOGO_DESIGN_TERMS = [
@@ -225,8 +225,8 @@ export function SearchInterfaceEnhanced({
           
           {showFileUpload && (
             <div className="px-4 pb-3">
-              <FileUploadSimple
-                onFilesChangeAction={handleFilesChange}
+              <FileUploadUnified
+                onFilesChange={handleFilesChange}
                 maxFiles={3}
                 maxFileSizeMb={10}
                 acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}

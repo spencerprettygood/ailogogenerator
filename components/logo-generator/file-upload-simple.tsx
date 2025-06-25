@@ -1,9 +1,13 @@
+// DEPRECATED: Use the new FileUpload component instead.
+// This file is retained temporarily for migration purposes and will be removed after all usages are updated.
+
 'use client'
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FileUpload as FileUploadUnified } from './file-upload-unified';
 
 interface FileUploadSimpleProps {
   onFilesChangeAction: (files: File[]) => void;

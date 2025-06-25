@@ -11,7 +11,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 // MessageList is imported but not used
 // import { MessageList } from './message-list';
 import { TypingIndicator } from './typing-indicator';
-import { FileUploadSimple as FileUpload } from './file-upload-simple';
+import { FileUpload as FileUploadUnified } from './file-upload-unified';
 import { Paperclip, Send, Loader2 } from 'lucide-react';
 
 // Pattern to detect the logo generation trigger command
@@ -32,30 +32,18 @@ export function ChatInterface({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [generationRequested, setGenerationRequested] = useState(false);
+  const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize the chat with the standard useChat hook
-  const { 
-    messages, 
-    input, 
-    handleInputChange, 
-    handleSubmit: submitChat, 
-    isLoading, 
-    error 
-  } = useChat({
-    api: '/api/chat',
-    onResponse: (response) => {
-      // Check response status
-      if (!response.ok) {
-        toast({
-          title: "API Error",
-          description: `Error ${response.status}: ${response.statusText}`,
-          variant: "destructive"
-        });
-      }
-    }
-  });
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    error,
+    status,
+  } = useChat({});
 
   // Scroll to bottom of messages when new messages are added
   useEffect(() => {
@@ -64,35 +52,44 @@ export function ChatInterface({
     }
   }, [messages]);
 
+  // Helper to extract text from message parts
+  function getMessageText(message: any) {
+    if (Array.isArray(message.parts)) {
+      return message.parts
+        .filter((part: any) => part.type === 'text' && typeof part.text === 'string')
+        .map((part: any) => part.text)
+        .join(' ');
+    }
+    return '';
+  }
+
   // Check for [GENERATE_LOGO] command in the latest assistant message
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (
-      lastMessage && 
-      lastMessage.role === 'assistant' && 
+      lastMessage &&
+      lastMessage.role === 'assistant' &&
       !generationRequested
     ) {
       // Check if message content contains the trigger pattern
-      const content = typeof lastMessage.content === 'string' ? lastMessage.content : '';
+      const content = getMessageText(lastMessage);
       const containsTrigger = GENERATE_LOGO_PATTERN.test(content);
-      
+
       if (containsTrigger) {
         // Extract the full prompt from all user messages
         const fullPrompt = messages
           .filter(msg => msg.role === 'user')
-          .map(msg => {
-            return typeof msg.content === 'string' ? msg.content : '';
-          })
+          .map(msg => getMessageText(msg))
           .join('\n\n');
-        
+
         // Trigger logo generation
         onSendMessageAction(fullPrompt, selectedFiles);
         setGenerationRequested(true);
         setSelectedFiles([]);
-        
+
         toast({
-          title: "Starting Logo Generation",
-          description: "Creating your logo based on our conversation..."
+          title: 'Starting Logo Generation',
+          description: 'Creating your logo based on our conversation...'
         });
       }
     }
@@ -102,9 +99,9 @@ export function ChatInterface({
   useEffect(() => {
     if (error) {
       toast({
-        title: "Chat Error",
-        description: error.message || "Something went wrong with the chat",
-        variant: "destructive"
+        title: 'Chat Error',
+        description: error.message || 'Something went wrong with the chat',
+        variant: 'destructive'
       });
     }
   }, [error, toast]);
@@ -113,25 +110,16 @@ export function ChatInterface({
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (input.trim() || selectedFiles.length > 0) {
-      // Process files if needed
-      if (selectedFiles.length > 0) {
-        // For now, we'll just pass them to the onSendMessageAction
-      }
-      
-      // Reset generation requested flag when sending a new message
+      sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] });
+      setInput('');
       setGenerationRequested(false);
-      
-      // Submit the chat message
-      submitChat(event);
     }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey && !isLoading && !isGenerating) {
-      const mockFormEvent = {
-        preventDefault: () => event.preventDefault(),
-      } as unknown as React.FormEvent<HTMLFormElement>;
-      handleFormSubmit(mockFormEvent);
+    if (event.key === 'Enter' && !event.shiftKey && !isGenerating) {
+      event.preventDefault();
+      handleFormSubmit(event as unknown as React.FormEvent<HTMLFormElement>);
     }
   };
 
@@ -142,7 +130,7 @@ export function ChatInterface({
     }
   };
 
-  const canSubmit = (input.trim() || selectedFiles.length > 0) && !isLoading && !isGenerating && !generationRequested;
+  const canSubmit = (input.trim() || selectedFiles.length > 0) && !isGenerating && !generationRequested;
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -154,38 +142,34 @@ export function ChatInterface({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map(message => {
-              return (
-                <div 
-                  key={message.id} 
-                  className={`p-3 rounded-lg ${
-                    message.role === 'user' 
-                      ? 'bg-primary text-primary-foreground ml-12' 
-                      : 'bg-muted mr-12'
-                  }`}
-                >
-                  <div className="font-semibold mb-1">
-                    {message.role === 'user' ? 'You' : 'AI Designer'}
-                  </div>
-                  <div className="whitespace-pre-wrap">
-                    {/* Display message content */}
-                    {typeof message.content === 'string' ? message.content : ''}
-                  </div>
+            {messages.map(message => (
+              <div
+                key={message.id}
+                className={`p-3 rounded-lg ${
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground ml-12'
+                    : 'bg-muted mr-12'
+                }`}
+              >
+                <div className="font-semibold mb-1">
+                  {message.role === 'user' ? 'You' : 'AI Designer'}
                 </div>
-              );
-            })}
+                <div className="whitespace-pre-wrap">
+                  {getMessageText(message)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-        {isLoading && <TypingIndicator />}
+        {/* Optionally show a typing indicator if status is streaming */}
+        {status === 'streaming' && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>
 
       {/* File Upload Area */}
       {showFileUpload && (
         <div className="border-t p-4">
-          <FileUpload
-            onFilesChangeAction={handleFilesChange}
-          />
+          <FileUploadUnified onFilesChangeAction={handleFilesChange} />
         </div>
       )}
 
@@ -196,11 +180,11 @@ export function ChatInterface({
             <Textarea
               ref={textareaRef}
               value={input}
-              onChange={handleInputChange}
+              onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Describe your logo requirements..."
               className="min-h-[80px] pr-12 resize-none"
-              disabled={isLoading || isGenerating || generationRequested}
+              disabled={isGenerating || generationRequested}
             />
             <Button
               type="button"
@@ -208,39 +192,29 @@ export function ChatInterface({
               size="icon"
               className="absolute bottom-2 right-2"
               onClick={() => setShowFileUpload(!showFileUpload)}
-              disabled={isLoading || isGenerating || generationRequested}
+              disabled={isGenerating || generationRequested}
             >
               <Paperclip className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
               {selectedFiles.length > 0 && `${selectedFiles.length} file(s) selected`}
               {input.length > 0 && ` • ${input.length} characters`}
             </div>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               disabled={!canSubmit}
               className="min-w-[100px]"
             >
-              {isLoading || isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isGenerating ? 'Generating...' : 'Thinking...'}
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send
-                </>
-              )}
+              Send
             </Button>
           </div>
         </form>
       </div>
-      
+
       <Toaster />
     </div>
   );
