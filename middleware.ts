@@ -62,7 +62,12 @@ export async function middleware(request: NextRequest) {
  * @param request Incoming request
  */
 function handleAdminAuth(request: NextRequest) {
-  // Check for Basic Auth credentials
+  // In development mode, allow access without authentication
+  if (isDev) {
+    return NextResponse.next();
+  }
+  
+  // Check for Basic Auth credentials in production
   const authHeader = request.headers.get('authorization');
   
   if (authHeader) {

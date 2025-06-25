@@ -5,12 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { AnimationType } from "@/lib/animation/types";
-import { useTheme } from "@/components/ui/theme-provider";
-import { LogoVariant, SVGLogo, AnimatedLogo } from "@/lib/types";
+import { useThemeSafe } from "@/components/providers/theme-fixed";
+import { SVGLogo } from "@/lib/types";
 import { SVGRenderer } from "./svg-renderer";
 import { cn } from "@/lib/utils";
 import { ErrorCategory, handleError } from "@/lib/utils/error-handler";
 import { Paragraph } from "@/components/ui/typography";
+
+// Define missing types locally for now
+interface LogoVariant {
+  id: string;
+  name?: string;
+  type?: string;
+  svgCode: string;
+  colorScheme?: string[];
+}
+
+interface AnimatedLogo {
+  id: string;
+  svgCode: string;
+  animationCSS?: string;
+  cssCode?: string;
+  duration?: number;
+}
 
 export interface LogoDisplayProps {
   /** Primary SVG logo */
@@ -98,8 +115,8 @@ function LogoDisplay({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Theme
-  const { isDark } = useTheme();
+  // Theme - with safe fallback
+  const { isDark } = useThemeSafe();
   
   // Background options with CSS classes - enhanced with semantic naming
   const backgrounds = [

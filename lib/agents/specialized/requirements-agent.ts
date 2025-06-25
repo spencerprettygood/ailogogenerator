@@ -3,12 +3,11 @@ import {
   AgentConfig, 
   AgentInput, 
   AgentOutput, 
-  DesignSpec, 
   RequirementsAgentInput, 
   RequirementsAgentOutput 
 } from '../../types-agents';
+import { DesignSpec, LogoBrief } from '../../types';
 import { detectIndustry } from '../../industry-templates';
-import { LogoBrief } from '../../types';
 
 /**
  * RequirementsAgent - Analyzes user brief to extract structured design requirements
@@ -59,7 +58,7 @@ Here are examples of high-quality inputs and outputs that show how to extract st
 User Brief: "I need a logo for my new tech startup called ByteWave. We're building a platform that helps companies manage their cloud infrastructure more efficiently. Our target users are IT professionals and CIOs at mid to large enterprises. I like clean, modern designs with maybe some blue colors since that feels trustworthy and tech-oriented."
 
 Expected Output:
-```json
+\`\`\`json
 {
   "brand_name": "ByteWave",
   "brand_description": "A platform that helps companies manage cloud infrastructure efficiently",
@@ -70,14 +69,14 @@ Expected Output:
   "additional_requests": "Design should convey efficiency and reliability",
   "industry": "Technology"
 }
-```
+\`\`\`
 
 ## Example 2: Local Bakery
 
 User Brief: "We're opening a neighborhood bakery called 'Flour & Joy' that specializes in artisanal sourdough and pastries made with organic ingredients. We want to attract health-conscious families and young professionals in our urban neighborhood. Something warm and inviting would be nice."
 
 Expected Output:
-```json
+\`\`\`json
 {
   "brand_name": "Flour & Joy",
   "brand_description": "Neighborhood bakery specializing in artisanal sourdough and organic pastries",
@@ -88,7 +87,7 @@ Expected Output:
   "additional_requests": "Emphasize organic and artisanal nature of products",
   "industry": "Food & Beverage"
 }
-```
+\`\`\`
 
 ## Example 3: Fitness Brand with Image
 
@@ -97,7 +96,7 @@ User Brief: "I'm launching 'FlexFit' - a fitness program for busy professionals 
 Image Description: "A modern fitness logo with dynamic angles, bold typography, and gradient colors from orange to red. The image shows an abstract representation of movement."
 
 Expected Output:
-```json
+\`\`\`json
 {
   "brand_name": "FlexFit",
   "brand_description": "Fitness program offering efficient 30-minute HIIT workouts and nutrition planning for busy professionals",
@@ -108,7 +107,7 @@ Expected Output:
   "additional_requests": "Convey energy and efficiency; incorporate elements from reference image",
   "industry": "Fitness & Health"
 }
-```
+\`\`\`
 
 Use these examples as a guide for how to properly extract and structure design requirements from user briefs.`;
   }

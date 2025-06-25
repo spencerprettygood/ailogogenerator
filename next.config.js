@@ -126,19 +126,20 @@ const nextConfig = {
     return config;
   },
   
+  // External packages that should not be bundled for server components
+  serverExternalPackages: [
+    '@anthropic-ai/sdk',
+    'sharp',
+    'svgo',
+    'jszip'
+  ],
+  
   // Experimental features for better performance
   experimental: {
     // These settings improve performance with large components and server actions
     serverActions: {
       bodySizeLimit: '5mb',
     },
-    // serverComponentsExternalPackages is deprecated, use serverExternalPackages
-    serverExternalPackages: [
-      '@anthropic-ai/sdk',
-      'sharp',
-      'svgo',
-      'jszip'
-    ],
     // Optimized production builds
     optimizeCss: true,
   },

@@ -57,33 +57,52 @@ export function StreamingResponse({
     "cached": "Retrieved from cache"
   });
   
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Calculate previous stage using useMemo (must be called unconditionally)
+  const previousStage = useMemo(() => {
+    // Get the previous stage from the current one
+    if (!progressData?.currentStageId || !progressData?.stages) return null;
+    
+    const currentIndex = progressData.stages.findIndex(
+      stage => stage.id === progressData.currentStageId
+    );
+    
+    if (currentIndex <= 0 || !progressData.stages) return null;
+    return progressData.stages[currentIndex - 1]?.id || null;
+  }, [progressData?.currentStageId, progressData?.stages]);
+  
+  // Pre-calculate all derived values unconditionally
+  const lastUserMessage = useMemo(() => {
+    return [...messages]
+      .reverse()
+      .find(message => message.role === 'user');
   }, [messages]);
   
-  // If there are no messages, return nothing
-  if (messages.length === 0) {
-    return null;
-  }
+  const lastUserFiles = useMemo(() => {
+    type MessageWithFiles = Message & { files?: File[] };
+    return (lastUserMessage as MessageWithFiles)?.files || [];
+  }, [lastUserMessage]);
   
-  // Get the last query message for display at the top
-  const lastUserMessage = [...messages]
-    .reverse()
-    .find(message => message.role === 'user');
-  // Support files property if present (for AppMessage compatibility)
-  type MessageWithFiles = Message & { files?: File[] };
-  const lastUserFiles = (lastUserMessage as MessageWithFiles)?.files || [];
+  const responseMessages = useMemo(() => {
+    return messages.length > 0 && lastUserMessage 
+      ? messages.filter((_, index) => 
+          index > messages.findIndex(m => m.id === lastUserMessage.id)
+        )
+      : messages;
+  }, [messages, lastUserMessage]);
   
-  // Get all response messages after the last user message
-  const responseMessages = messages.length > 0 && lastUserMessage 
-    ? messages.filter((_, index) => 
-        index > messages.findIndex(m => m.id === lastUserMessage.id)
-      )
-    : messages; // If there's no user message, show all messages
-    
-  // Get current stage info with safety checks
   const currentStage = progressData?.currentStageId || null;
+  
+  // Scroll to bottom when messages change (must be called unconditionally)
+  useEffect(() => {
+    if (messagesEndRef.current && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+  
+  // If there are no messages, return empty div instead of null to avoid hook order issues
+  if (messages.length === 0) {
+    return <div className="hidden" />;
+  }
   
   // Toggle stage info display
   const toggleStageInfo = (stageId: string) => {
@@ -231,17 +250,7 @@ export function StreamingResponse({
           {/* Stage transition animation */}
           <StageTransition
             currentStage={progressData.currentStageId}
-            previousStage={useMemo(() => {
-              // Get the previous stage from the current one
-              if (!progressData.currentStageId) return null;
-              
-              const currentIndex = progressData.stages.findIndex(
-                stage => stage.id === progressData.currentStageId
-              );
-              
-              if (currentIndex <= 0) return null;
-              return progressData.stages[currentIndex - 1].id;
-            }, [progressData.currentStageId, progressData.stages])}
+            previousStage={previousStage}
             progress={progressData.overallProgress || 0}
             isGenerating={isGenerating}
           />

@@ -582,6 +582,41 @@ export class CacheManager {
   }
   
   /**
+   * Cache an intermediate result for a specific session and agent
+   * 
+   * @param {string} sessionId - The session ID
+   * @param {string} agentId - The agent ID  
+   * @param {any} result - The intermediate result to cache
+   * @param {number} [ttl] - Optional custom TTL in milliseconds
+   * @returns {void}
+   */
+  public cacheIntermediateResult(sessionId: string, agentId: string, result: any, ttl?: number): void {
+    try {
+      const cacheKey = `intermediate:${sessionId}:${agentId}`;
+      this.set(cacheKey, result, 'intermediate', ttl);
+    } catch (error) {
+      this.logger.warn('Failed to cache intermediate result', { error, sessionId, agentId });
+    }
+  }
+
+  /**
+   * Retrieve a cached intermediate result for a specific session and agent
+   * 
+   * @param {string} sessionId - The session ID
+   * @param {string} agentId - The agent ID
+   * @returns {any|null} The cached intermediate result or null if not found
+   */
+  public getIntermediateResult(sessionId: string, agentId: string): any | null {
+    try {
+      const cacheKey = `intermediate:${sessionId}:${agentId}`;
+      return this.get<any>(cacheKey, 'intermediate');
+    } catch (error) {
+      this.logger.warn('Failed to retrieve cached intermediate result', { error, sessionId, agentId });
+      return null;
+    }
+  }
+  
+  /**
    * Clean up expired cache entries
    * 
    * This method iterates through all items in the cache and removes any

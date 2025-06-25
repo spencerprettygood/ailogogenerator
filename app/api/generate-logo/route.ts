@@ -17,10 +17,37 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
     // Generate session ID for the request
     const sessionId = nanoid();
     
-    // Initialize the response stream
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
+  // Initialize the response stream
+  const stream = new ReadableStream({
+    async start(controller) {
+      let controllerClosed = false;
+      
+      // Helper function to safely enqueue to controller
+      const safeEnqueue = (data: any) => {
+        if (!controllerClosed) {
+          try {
+            controller.enqueue(encoder.encode(JSON.stringify(data)));
+          } catch (error) {
+            console.error('Error enqueuing to controller:', error);
+            controllerClosed = true;
+          }
+        }
+      };
+      
+      // Helper function to safely close controller
+      const safeClose = () => {
+        if (!controllerClosed) {
+          try {
+            controller.close();
+            controllerClosed = true;
+          } catch (error) {
+            console.error('Error closing controller:', error);
+            controllerClosed = true;
+          }
+        }
+      };
+      
+      try {
           // Handle both FormData and JSON
           let prompt = '';
           let images: (File | Blob)[] = [];
