@@ -141,47 +141,17 @@ export function StreamingResponse({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.div 
-            className="flex items-center justify-center mb-3"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-          >
-            <div className="relative">
-              <Sparkles className="h-4 w-4 mr-2 text-primary" />
-              <motion.div
-                className="absolute inset-0"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{ 
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Sparkles className="h-4 w-4 mr-2 text-primary" />
-              </motion.div>
-            </div>
-            <span className="text-sm font-medium bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Your logo is taking shape...
-            </span>
-          </motion.div>
-          <motion.div
-            className="relative group"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-          >
-            <EnhancedLogoCard
-              logo={{ svgCode: previewSvg }}
-              brandName="Preview"
-              colorPalette={['#4A90E2', '#50E3C2', '#F39C12', '#E74C3C']}
-              className="max-w-md shadow-lg border-2 border-primary/20"
-              showControls={false}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </motion.div>
+          <div className="flex items-center justify-center mb-2">
+            <Sparkles className="h-4 w-4 mr-2 text-primary" />
+            <span className="text-sm font-medium">Your logo is taking shape...</span>
+          </div>
+          <EnhancedLogoCard
+            logo={{ svgCode: previewSvg }}
+            brandName="Preview"
+            colorPalette={['#4A90E2', '#50E3C2', '#F39C12', '#E74C3C']}
+            className="max-w-md"
+            showControls={false}
+          />
         </motion.div>
       )}
       

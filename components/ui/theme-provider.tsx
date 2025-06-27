@@ -1,162 +1,25 @@
 "use client";
 
-import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { type ThemeProviderProps } from "next-themes/dist/types";
-
-// Create a global context that will be accessible throughout the app
-export interface ThemeContextType {
-  theme: string;
-  setTheme: (theme: string) => void;
-  systemTheme?: string;
-  isDark: boolean;
-  resolvedTheme?: string; // The actual theme being used (resolves 'system')
-  forcedTheme?: string; // Forced theme override
-  toggleTheme: () => void; // Helper function to toggle between light/dark
-  accent: {
-    color: string;
-    cssVar: string;
-  };
-}
-
-const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
-
 /**
- * Enhanced ThemeProvider component with accent color support and improved context
- * 
- * @component
- * @example
- * // In layout.tsx
- * <ThemeProvider
- *   attribute="class"
- *   defaultTheme="system"
- *   enableSystem
- * >
- *   {children}
- * </ThemeProvider>
+ * DEPRECATED: This file is deprecated in favor of @/components/providers/theme-fixed
+ * Re-exporting the correct theme provider to maintain compatibility
  */
-export function ThemeProvider({ 
-  children,
-  ...props
-}: ThemeProviderProps) {
-  // Initialize the base theme context values
-  const [isContextReady, setIsContextReady] = React.useState(false);
-  
-  // Handle initial SSR and hydration
-  React.useEffect(() => {
-    setIsContextReady(true);
-  }, []);
-  
-  return (
-    <NextThemesProvider {...props}>
-      <ThemeContextProvider isContextReady={isContextReady}>
-        {children}
-      </ThemeContextProvider>
-    </NextThemesProvider>
-  );
+
+// Re-export everything from the fixed theme provider
+export {
+  ThemeProvider,
+  useTheme,
+  useThemeSafe,
+  default as ThemedLayout
+} from '@/components/providers/theme-fixed';
+
+// Legacy compatibility - redirect to the safe hook
+export function useThemeCompat() {
+  const { useThemeSafe } = require('@/components/providers/theme-fixed');
+  return useThemeSafe();
 }
 
-// Separate provider component to handle the context logic
-function ThemeContextProvider({ 
-  children, 
-  isContextReady 
-}: { 
-  children: React.ReactNode;
-  isContextReady: boolean;
-}) {
-  // Get the base theme values from next-themes
-  const { theme, setTheme, systemTheme, resolvedTheme, forcedTheme } = React.useContext(
-    // @ts-ignore - Next themes doesn't export its context type
-    NextThemesProvider.Context
-  );
-  
-  // Handle the initial SSR state where theme isn't yet available
-  const safeTheme = theme || 'system';
-  const safeSystemTheme = systemTheme || 'light';
-  
-  // Determine if current theme is dark
-  const isDark = React.useMemo(() => {
-    if (!isContextReady) {
-      // Use a safer default during SSR
-      return false;
-    }
-    
-    if (safeTheme === 'system') {
-      return safeSystemTheme === 'dark';
-    }
-    return safeTheme === 'dark';
-  }, [isContextReady, safeTheme, safeSystemTheme]);
-  
-  // Helper function to toggle theme
-  const toggleTheme = React.useCallback(() => {
-    setTheme(isDark ? 'light' : 'dark');
-  }, [isDark, setTheme]);
-  
-  // Define the accent color
-  const accent = React.useMemo(() => {
-    return {
-      color: '#ff4233', // The hex value of our accent color
-      cssVar: 'var(--accent)' // The CSS variable reference
-    };
-  }, []);
-  
-  // Create the context value
-  const contextValue = React.useMemo(() => ({
-    theme: safeTheme,
-    setTheme,
-    systemTheme: safeSystemTheme,
-    isDark,
-    resolvedTheme,
-    forcedTheme,
-    toggleTheme,
-    accent
-  }), [
-    safeTheme, 
-    setTheme, 
-    safeSystemTheme, 
-    isDark, 
-    resolvedTheme, 
-    forcedTheme, 
-    toggleTheme, 
-    accent
-  ]);
-  
-  return (
-    <ThemeContext.Provider value={contextValue}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-/**
- * Enhanced hook to access theme context with improved error handling and types
- * 
- * @returns {ThemeContextType} The theme context with robust APIs
- * @example
- * const { theme, setTheme, isDark, toggleTheme } = useTheme();
- * 
- * // Toggle theme with one call
- * <button onClick={toggleTheme}>
- *   Toggle theme
- * </button>
- */
-export function useTheme(): ThemeContextType {
-  const context = React.useContext(ThemeContext);
-  
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  
-  return context;
-}
-
-/**
- * Enhanced theme toggle button with smooth transitions and improved accessibility
- * 
- * @component
- * @example
- * <ThemeToggle />
- */
+// Fallback ThemeToggle component
 export function ThemeToggle({ 
   className,
   buttonClassName,
@@ -166,43 +29,32 @@ export function ThemeToggle({
   buttonClassName?: string;
   iconClassName?: string;
 }) {
-  const { isDark, toggleTheme } = useTheme();
+  const { useThemeSafe } = require('@/components/providers/theme-fixed');
+  const { isDark, setTheme } = useThemeSafe();
+  
+  const toggleTheme = () => {
+    setTheme(isDark ? 'light' : 'dark');
+  };
   
   return (
     <div className={className}>
       <button
         onClick={toggleTheme}
-        className={cn(
-          "p-2 rounded-md transition-colors",
-          "hover:bg-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none",
-          buttonClassName
-        )}
+        className={`p-2 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${buttonClassName || ''}`}
         aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
       >
         <div className="relative w-5 h-5">
-          {/* Use transform to create a smooth cross-fade effect */}
-          <SunIcon className={cn(
-            iconClassName,
-            "absolute top-0 left-0 transition-transform duration-300",
-            isDark ? "scale-100 rotate-0" : "scale-0 rotate-90"
-          )} />
-          <MoonIcon className={cn(
-            iconClassName,
-            "absolute top-0 left-0 transition-transform duration-300",
-            !isDark ? "scale-100 rotate-0" : "scale-0 rotate-90"
-          )} />
+          {isDark ? (
+            <SunIcon className={iconClassName} />
+          ) : (
+            <MoonIcon className={iconClassName} />
+          )}
         </div>
       </button>
     </div>
   );
 }
 
-// Utility for class names merging
-function cn(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
-
-// Enhanced icon components with better props handling
 function SunIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
     <svg

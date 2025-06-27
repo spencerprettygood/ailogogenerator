@@ -69,6 +69,23 @@ export function SearchInterfaceEnhanced({
     };
   }, []);
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    } else if (e.key === 'Tab' && showSuggestions && suggestions.length > 0) {
+      e.preventDefault();
+      // Auto-complete with first suggestion
+      const lastWord = prompt.split(' ').pop() || '';
+      const suggestion = suggestions[0];
+      const newPrompt = prompt.slice(0, prompt.length - lastWord.length) + suggestion;
+      setPrompt(newPrompt);
+      setShowSuggestions(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim() || files.length > 0) {
@@ -151,6 +168,7 @@ export function SearchInterfaceEnhanced({
               type="text"
               value={prompt}
               onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               placeholder={placeholder}
               className="pr-20 py-6 text-lg bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               disabled={isGenerating}
@@ -237,6 +255,17 @@ export function SearchInterfaceEnhanced({
           {files.length > 0 && (
             <div className="px-4 pb-3 text-sm text-muted-foreground">
               {files.length} image{files.length !== 1 ? 's' : ''} selected
+            </div>
+          )}
+
+          {/* Keyboard shortcuts hint */}
+          {!isGenerating && prompt.length > 0 && (
+            <div className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to generate • 
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Tab</kbd> to auto-complete • 
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Esc</kbd> to close suggestions
+              </p>
             </div>
           )}
         </form>

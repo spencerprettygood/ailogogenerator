@@ -24,11 +24,9 @@ import { AnimatedLogoDisplay } from './animated-logo-display';
 import { MockupPreviewSystem } from './mockup-preview-system';
 import { LogoFeedback, LiveFeedbackButton } from '@/components/feedback';
 import { FeedbackService } from '@/lib/services/feedback-service';
-import { LogoStorageService } from '@/lib/services/logo-storage-service';
 import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feedback';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
 
 import { 
   Message, 
@@ -168,14 +166,8 @@ export function LogoGeneratorApp() {
       await generateLogo(content, files, {
         includeAnimations,
         animationOptions: animationOptionsForApi,
-        includeUniquenessAnalysis,
-        includeMockups
-      });
-
-      // Success feedback
-      toast({
-        title: "Generation Started!",
-        description: "Your logo is being created with AI precision.",
+        includeUniquenessAnalysis
+        // Note: includeMockups would be added when backend supports it
       });
     } catch (err) {
       toast({
@@ -226,28 +218,12 @@ export function LogoGeneratorApp() {
       };
       setMessages(prev => [...prev, completionMessage]);
 
-      // Save to localStorage for persistence
-      const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
-      if (lastUserMessage) {
-        LogoStorageService.saveSession(
-          sessionId, 
-          hookAssets, 
-          lastUserMessage.content, 
-          {
-            includeAnimations,
-            includeUniquenessAnalysis,
-            includeMockups,
-            selectedAnimationOptions
-          }
-        );
-      }
-
       toast({
         title: "Generation Complete!",
         description: "Your logo package is ready for download.",
       });
     }
-  }, [hookAssets, sessionId, toast, messages, includeAnimations, includeUniquenessAnalysis, includeMockups, selectedAnimationOptions]);
+  }, [hookAssets, sessionId, toast]);
 
   React.useEffect(() => {
     if (error) {
@@ -426,145 +402,6 @@ export function LogoGeneratorApp() {
     return tabs;
   }, [hookAssets]);
 
-  // Enhanced progress tracking component
-  const EnhancedProgressTracker = ({ progress, stages, isGenerating }: {
-    progress: GenerationProgress | null;
-    stages?: ProgressStage[];
-    isGenerating: boolean;
-  }) => {
-    if (!progress && !isGenerating) return null;
-
-    return (
-      <motion.div 
-        className="bg-gradient-to-r from-muted/50 to-muted/30 rounded-lg p-4 border"
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        exit={{ opacity: 0, height: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
-              <div className="absolute inset-0 h-2 w-2 bg-primary rounded-full animate-ping opacity-75" />
-            </div>
-            <span className="text-sm font-medium">
-              {hookProgress?.message || 'Generating your logo...'}
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {hookProgress?.progress || 0}%
-          </span>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${hookProgress?.progress || 0}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
-          
-          {hookProgress?.estimatedTimeRemaining && (
-            <div className="text-xs text-muted-foreground text-center">
-              Estimated time remaining: {Math.ceil(hookProgress.estimatedTimeRemaining / 1000)}s
-            </div>
-          )}
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Enhanced button component with loading states
-  const EnhancedButton = ({ children, isLoading, disabled, className, onClick, ...props }: {
-    children: React.ReactNode;
-    isLoading?: boolean;
-    disabled?: boolean;
-    className?: string;
-    onClick?: () => void;
-    [key: string]: any;
-  }) => (
-    <Button
-      {...props}
-      disabled={disabled || isLoading}
-      onClick={onClick}
-      className={`transition-all duration-200 hover:shadow-lg ${className || ''}`}
-    >
-      {isLoading ? (
-        <motion.div
-          className="flex items-center space-x-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          <span>Generating...</span>
-        </motion.div>
-      ) : (
-        children
-      )}
-    </Button>
-  );
-
-  // Enhanced switch component with visual feedback
-  const EnhancedSwitch = ({ checked, onCheckedChange, disabled, className }: {
-    checked: boolean;
-    onCheckedChange: (checked: boolean) => void;
-    disabled?: boolean;
-    className?: string;
-  }) => (
-    <motion.div
-      whileHover={{ scale: disabled ? 1 : 1.05 }}
-      whileTap={{ scale: disabled ? 1 : 0.95 }}
-      className={className}
-    >
-      <Switch
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        disabled={disabled}
-        className="transition-all duration-200"
-      />
-    </motion.div>
-  );
-
-  // Enhanced error display component
-  const EnhancedErrorDisplay = ({ error, onRetry, isRetrying }: {
-    error: Error;
-    onRetry: () => void;
-    isRetrying?: boolean;
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="max-w-md mx-auto"
-    >
-      <Card className="border-destructive/20 bg-destructive/5">
-        <CardContent className="p-6 text-center space-y-4">
-          <div className="p-3 bg-destructive/10 rounded-full w-fit mx-auto">
-            <RefreshCw className="h-6 w-6 text-destructive" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-destructive mb-2">Generation Failed</h3>
-            <p className="text-sm text-muted-foreground">
-              {error.message || "An unexpected error occurred. Please try again."}
-            </p>
-          </div>
-          <EnhancedButton
-            onClick={onRetry}
-            isLoading={isRetrying}
-            variant="outline"
-            className="border-destructive/20 hover:bg-destructive/5"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </EnhancedButton>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-
   return (
     <ErrorBoundary>
       <LogoGeneratorContext.Provider value={contextValue}>
@@ -575,94 +412,35 @@ export function LogoGeneratorApp() {
             {/* Welcome Section */}
             {messages.length === 0 && (
               <div className="max-w-4xl mx-auto text-center space-y-8">
-                <motion.div 
-                  className="space-y-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                >
-                  {/* Hero Badge */}
-                  <div className="inline-flex items-center space-x-2 text-sm text-muted-foreground bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 px-4 py-2 rounded-full">
-                    <div className="relative">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <div className="absolute inset-0 animate-pulse">
-                        <Sparkles className="h-4 w-4 text-primary opacity-50" />
-                      </div>
-                    </div>
-                    <span className="font-medium">AI-Powered Logo Generation</span>
-                    <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                      Pro
-                    </Badge>
+                <div className="space-y-4">
+                  <div className="inline-flex items-center space-x-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    <Sparkles className="h-4 w-4" />
+                    <span>AI-Powered Logo Generation</span>
                   </div>
-
-                  {/* Main Heading */}
-                  <H1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-br from-foreground to-foreground/80 bg-clip-text">
+                  <H1 className="text-4xl lg:text-5xl font-bold">
                     Create Your Perfect Logo
                   </H1>
-
-                  {/* Subtitle */}
-                  <LargeText className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  <LargeText className="text-muted-foreground max-w-2xl mx-auto">
                     Describe your brand and get a professionally designed logo in seconds. 
-                    Choose exactly what you need from our comprehensive suite of design tools.
+                    Choose what you need and we'll generate exactly that.
                   </LargeText>
-
-                  {/* Feature Highlights */}
-                  <div className="flex flex-wrap justify-center gap-3 mt-8">
-                    {[
-                      { icon: Sparkles, text: "Instant Generation", color: "text-yellow-500" },
-                      { icon: Crown, text: "Professional Quality", color: "text-purple-500" },
-                      { icon: Package, text: "Complete Package", color: "text-blue-500" },
-                      { icon: PlayCircle, text: "Animated Logos", color: "text-green-500" }
-                    ].map((feature, index) => (
-                      <motion.div
-                        key={feature.text}
-                        className="flex items-center space-x-2 bg-muted/50 hover:bg-muted px-3 py-2 rounded-lg border transition-all duration-200"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
-                        whileHover={{ scale: 1.05 }}
-                      >
-                        <feature.icon className={`h-4 w-4 ${feature.color}`} />
-                        <span className="text-sm font-medium">{feature.text}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
+                </div>
 
                 {/* Generation Options */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.6 }}
-                >
-                  <Card className="max-w-2xl mx-auto text-left shadow-lg border-2 hover:border-primary/20 transition-all duration-300">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Settings className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold">Generation Options</h3>
-                            <p className="text-sm text-muted-foreground">Customize your logo package</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                          className="transition-all duration-200 hover:bg-primary/5"
-                        >
-                          <motion.div
-                            animate={{ rotate: showAdvancedOptions ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                          </motion.div>
-                          {showAdvancedOptions ? 'Hide' : 'Show'} Advanced
-                        </Button>
-                      </div>
-                    </CardHeader>
+                <Card className="max-w-2xl mx-auto text-left">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Generation Options</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        {showAdvancedOptions ? 'Hide' : 'Show'} Advanced
+                      </Button>
+                    </div>
+                  </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Basic Options */}
                     <div className="space-y-4">
@@ -676,10 +454,9 @@ export function LogoGeneratorApp() {
                             </p>
                           </div>
                         </div>
-                        <EnhancedSwitch
+                        <Switch
                           checked={includeAnimations}
                           onCheckedChange={setIncludeAnimations}
-                          disabled={isGenerating}
                         />
                       </div>
 
@@ -717,10 +494,9 @@ export function LogoGeneratorApp() {
                                 </p>
                               </div>
                             </div>
-                            <EnhancedSwitch
+                            <Switch
                               checked={includeUniquenessAnalysis}
                               onCheckedChange={setIncludeUniquenessAnalysis}
-                              disabled={isGenerating}
                             />
                           </div>
 
@@ -739,10 +515,9 @@ export function LogoGeneratorApp() {
                                 </div>
                               </div>
                             </div>
-                            <EnhancedSwitch
+                            <Switch
                               checked={includeMockups}
                               onCheckedChange={setIncludeMockups}
-                              disabled={isGenerating}
                             />
                           </div>
                         </div>
@@ -759,26 +534,19 @@ export function LogoGeneratorApp() {
                     </div>
                   </CardContent>
                 </Card>
-                </motion.div>
               </div>
             )}
           
             {/* Search Interface */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: messages.length === 0 ? 0.8 : 0, duration: 0.4 }}
-            >
-              <SearchInterfaceEnhanced 
-                onSubmit={handleSubmit}
-                isGenerating={isGenerating}
-                placeholder={messages.length === 0 
-                  ? "Describe your perfect logo (e.g., 'Modern tech startup logo with blue colors')" 
-                  : "Refine your logo or try a new design..."
-                }
-                className="mb-6"
-              />
-            </motion.div>
+            <SearchInterfaceEnhanced 
+              onSubmit={handleSubmit}
+              isGenerating={isGenerating}
+              placeholder={messages.length === 0 
+                ? "Describe your perfect logo (e.g., 'Modern tech startup logo with blue colors')" 
+                : "Refine your logo or try a new design..."
+              }
+              className="mb-6"
+            />
           
             {/* Suggestion chips - shown only when no messages */}
             {messages.length === 0 && (
@@ -792,15 +560,6 @@ export function LogoGeneratorApp() {
             {/* Response area */}
             {messages.length > 0 && (
               <div className="space-y-8">
-                {/* Enhanced Progress Indicator */}
-                {isGenerating && hookProgress && (
-                  <EnhancedProgressTracker 
-                    progress={hookProgress}
-                    stages={progressForTracker?.stages}
-                    isGenerating={isGenerating}
-                  />
-                )}
-                
                 <StreamingResponse 
                   messages={messages.map(m => ({
                     ...m,
@@ -814,62 +573,45 @@ export function LogoGeneratorApp() {
               
                 {/* Results area */}
                 {hookAssets && sessionId && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  >
-                    <Card className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6 shadow-lg">
-                      {/* Logo Feedback */}
-                      {showFeedback && (
-                        <motion.div 
-                          className="mb-6"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                        >
-                          <LogoFeedback
-                            logoId={sessionId}
-                            sessionId={sessionId}
-                            onClose={() => setShowFeedback(false)}
-                            onSubmit={submitFeedback}
-                          />
-                        </motion.div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Package className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <H2>Your Logo Package</H2>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {availableTabs.length} sections available • Generated in {sessionId ? '5.2s' : '0s'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setShowFeedback(true)}
-                            className="transition-all hover:bg-primary/5"
-                          >
-                            <Crown className="h-4 w-4 mr-2" />
-                            Rate Logo
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-muted-foreground hover:bg-muted/50 transition-all"
-                            onClick={handleReset}
-                          >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            New Logo
-                          </Button>
-                        </div>
+                  <Card className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
+                    {/* Logo Feedback */}
+                    {showFeedback && (
+                      <div className="mb-6">
+                        <LogoFeedback
+                          logoId={sessionId}
+                          sessionId={sessionId}
+                          onClose={() => setShowFeedback(false)}
+                          onSubmit={submitFeedback}
+                        />
                       </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <H2>Your Logo Package</H2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {availableTabs.length} sections available
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowFeedback(true)}
+                        >
+                          Rate Logo
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-muted-foreground"
+                          onClick={handleReset}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          New Logo
+                        </Button>
+                      </div>
+                    </div>
                   
                     <Tabs defaultValue="logo" className="w-full">
                       <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
@@ -967,16 +709,16 @@ export function LogoGeneratorApp() {
                       </TabsContent>
                     </Tabs>
                   </Card>
-                  </motion.div>
                 )}
               
-                {/* Enhanced error retry */}
+                {/* Error retry */}
                 {error && !isGenerating && (
-                  <EnhancedErrorDisplay
-                    error={error}
-                    onRetry={handleRetry}
-                    isRetrying={isGenerating}
-                  />
+                  <div className="flex justify-center">
+                    <Button onClick={handleRetry} variant="outline" className="mx-auto">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry Generation
+                    </Button>
+                  </div>
                 )}
               </div>
             )}

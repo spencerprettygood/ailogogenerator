@@ -18,23 +18,57 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => {
     setMounted(true)
+    
+    // Initialize theme from localStorage or system preference
+    try {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme) {
+        setThemeState(savedTheme)
+      } else {
+        // Check system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        setThemeState(prefersDark ? 'dark' : 'light')
+      }
+    } catch (error) {
+      console.warn('Failed to initialize theme:', error)
+    }
   }, [])
+  
+  // Save theme to localStorage and apply class
+  React.useEffect(() => {
+    if (!mounted) return
+    
+    try {
+      localStorage.setItem('theme', theme)
+      
+      // Apply theme class to document
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark')
+        document.documentElement.classList.remove('light')
+      } else {
+        document.documentElement.classList.add('light')
+        document.documentElement.classList.remove('dark')
+      }
+    } catch (error) {
+      console.warn('Failed to save theme:', error)
+    }
+  }, [theme, mounted])
   
   // Set up isDark calculation
   const isDark = theme === 'dark'
   
   // Create theme context value
-  const contextValue = {
+  const contextValue = React.useMemo(() => ({
     theme,
     setTheme: setThemeState,
     systemTheme: 'light',
     isDark
-  }
+  }), [theme, isDark])
   
   // Only show children after mounting to prevent hydration issues
   return (
     <ThemeContext.Provider value={contextValue}>
-      {mounted ? children : null}
+      {mounted ? children : <div className="min-h-screen bg-white" />}
     </ThemeContext.Provider>
   )
 }
