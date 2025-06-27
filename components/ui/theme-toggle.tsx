@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useThemeSafe } from "@/components/providers/theme-fixed";
 import { Button } from "./button";
 
 /**
@@ -14,7 +14,7 @@ import { Button } from "./button";
  * @returns ThemeToggle component
  */
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useThemeSafe();
   
   // Toggle between light and dark theme
   const toggleTheme = React.useCallback(() => {
