@@ -168,7 +168,7 @@ export class RequirementsAgent extends BaseAgent {
       'requirements', 
       ['requirements-analysis'],
       {
-        model: 'claude-3-5-haiku-20240307', // Use faster model for analysis
+        model: 'claude-3-haiku-20240307', // Use faster model for analysis
         temperature: 0.1, // Low temperature for consistent output
         maxTokens: 1000,
         ...config

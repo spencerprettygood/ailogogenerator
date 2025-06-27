@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Message } from '@/lib/types';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { UserMessage } from './user-message';
 import { AssistantMessage } from './assistant-message';
 import { SystemMessage } from './system-message';
@@ -11,7 +12,7 @@ import { EnhancedTypingIndicator } from './enhanced-typing-indicator';
 import { EnhancedLogoCard } from './enhanced-logo-card';
 import { ProgressTimeline } from './progress-timeline';
 import { StageTransition } from './stage-transition';
-import { Sparkles } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
 
 interface ProgressStage {
   id: string;
@@ -56,7 +57,7 @@ export function StreamingResponse({
     "cached": "Retrieved from cache"
   });
 
-  // ALL hooks must be called unconditionally at the top level
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY - NO EARLY RETURNS BEFORE THIS POINT
   const lastUserMessage = useMemo(() => 
     [...messages].reverse().find(message => message.role === 'user'), 
     [messages]
@@ -82,10 +83,16 @@ export function StreamingResponse({
     return progressData.stages[currentIndex - 1]?.id || null;
   }, [progressData]);
 
-  const currentStage = useMemo(() => progressData?.currentStageId || null, [progressData?.currentStageId]);
+  const currentStage = progressData?.currentStageId || null;
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Safely render message content
-  const renderMessageContent = useCallback((content: any) => {
+  const renderMessageContent = (content: any) => {
     if (content === null || content === undefined) return '';
     if (typeof content === 'string') return content;
     if (typeof content === 'object') {
@@ -97,13 +104,7 @@ export function StreamingResponse({
       }
     }
     return String(content);
-  }, []);
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  };
 
   // NOW we can do conditional rendering after all hooks are called
   if (messages.length === 0 && !isGenerating) {
@@ -123,7 +124,7 @@ export function StreamingResponse({
         <Card className="p-4 bg-muted/30">
           <div className="text-sm text-muted-foreground mb-1">Your query</div>
           <div className="font-medium">
-            {renderMessageContent(lastUserMessage.content)}
+{renderMessageContent(lastUserMessage.content)}
             {lastUserFiles.length > 0 && (
               <span className="text-sm text-muted-foreground ml-2">
                 (+ {lastUserFiles.length} image{lastUserFiles.length !== 1 ? 's' : ''})
@@ -133,7 +134,7 @@ export function StreamingResponse({
         </Card>
       )}
       
-      {/* Logo preview */}
+      {/* Logo preview (shown in a more prominent way with EnhancedLogoCard) */}
       {previewSvg && (
         <motion.div 
           className="flex flex-col items-center"
@@ -155,7 +156,7 @@ export function StreamingResponse({
         </motion.div>
       )}
       
-      {/* Progress timeline */}
+      {/* Improved progress timeline with smooth animations */}
       {progressData && progressData.stages && (progressData.stages.length > 0 || isGenerating) && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -183,14 +184,18 @@ export function StreamingResponse({
         </motion.div>
       )}
       
-      {/* Response messages */}
+      {/* Response messages with real-time updates */}
       <div className="space-y-4 mt-6">
         {responseMessages.map((message) => {
+          // Create a safe version of the message with properly handled content
           const safeMessage = {
             ...message,
+            // Ensure message has an id
             id: message.id || `msg-${Math.random().toString(36).substring(2, 9)}`
+            // Don't modify content here - let each component handle content properly
           };
 
+          // Render the appropriate message component based on role
           if (message.role === 'user') {
             return <UserMessage key={safeMessage.id} message={safeMessage} />;
           } else if (message.role === 'assistant') {

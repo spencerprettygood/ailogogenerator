@@ -5,7 +5,7 @@
 The AI Logo Generator was failing with errors when attempting to connect to the Claude API. The error message showed:
 
 ```
-Failed to generate response from Claude: model: claude-3-5-haiku-20240307
+Failed to generate response from Claude: model: claude-3-haiku-20240307
 ```
 
 This indicated that the system was unable to connect properly to the Claude API, possibly due to issues with the API key, model availability, or connection configuration.
@@ -14,7 +14,7 @@ This indicated that the system was unable to connect properly to the Claude API,
 
 ### 1. Model Compatibility Issues
 
-**Problem**: The application was attempting to use `claude-3-5-haiku-20240307`, which may not be properly accessible.
+**Problem**: The application was attempting to use `claude-3-haiku-20240307`, which may not be properly accessible.
 
 **Solution**:
 - Added model fallback mechanism to automatically try alternative models when the primary model fails

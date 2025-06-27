@@ -19,10 +19,10 @@ export class IndustryAnalysisService {
       temperature: 0.3,
       maxTokens: 1000,
       retryConfig: {
-        maxAttempts: 3,
-        baseDelay: 1000,
-        backoffFactor: 1.5,
-        maxDelay: 5000
+        maxRetries: 3,
+        initialDelay: 1000,
+        backoffMultiplier: 2,
+        maxDelay: 10000
       }
     });
     
@@ -78,10 +78,10 @@ export class IndustryAnalysisService {
       const result = await withRetry(
         () => this.agent.execute(input),
         {
-          maxAttempts: 3,
-          baseDelay: 1000,
-          backoffFactor: 1.5,
-          maxDelay: 5000
+          maxRetries: 3,
+          initialDelay: 1000,
+          backoffMultiplier: 2,
+          maxDelay: 10000
         }
       );
       
@@ -122,69 +122,30 @@ export class IndustryAnalysisService {
     this.logger.info('Starting industry detection', { brandName: designSpec.brand_name });
     
     try {
-      // Use a smaller model for fast industry detection
-      this.logger.debug('Initializing detection agent with Haiku model');
-      
-      const detectionAgent = new IndustryAnalysisAgent({
-        model: 'claude-3-5-haiku-20240307',
-        temperature: 0.1,
-        maxTokens: 150
-      });
-
       const input: IndustryAnalysisAgentInput = {
-        id: `industry-detection-${Date.now()}`,
+        id: 'industry-detection',
         brandName: designSpec.brand_name,
-        industry: '', // We're trying to detect this
-        designSpec
+        industry: designSpec.industry || '',
+        designSpec: designSpec,
       };
 
-      this.logger.debug('Executing industry detection');
-      
-      const result = await withRetry(
-        () => detectionAgent.execute(input),
-        {
-          maxAttempts: 2,
-          baseDelay: 500,
-          backoffFactor: 1.5,
-          maxDelay: 2000
-        }
-      );
+      const agent = new IndustryAnalysisAgent();
 
-      if (result.success && result.result) {
-        this.logger.info('Industry detection successful', { 
-          brandName: designSpec.brand_name,
-          detectedIndustry: result.result.industryName,
-          confidence: result.result.confidence || 0.7
-        });
-        
+      const output = await agent.execute(input);
+
+      if (output.success && output.result) {
         return {
-          industry: result.result.industryName,
-          confidence: result.result.confidence || 0.7 // Default to moderate confidence
+          industry: output.result.industryName,
+          confidence: output.result.confidence,
         };
       }
 
-      // Fallback to generic industry if detection fails
-      this.logger.warn('Industry detection failed to produce valid result, using fallback', {
-        brandName: designSpec.brand_name
-      });
-      
-      return {
-        industry: 'General Business',
-        confidence: 0.5
-      };
+      this.logger.warn('Industry detection failed, returning default.');
+      return { industry: 'Unknown', confidence: 0 };
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error('Industry detection failed with error', { 
-        brandName: designSpec.brand_name,
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      
-      // Fallback to generic industry on error
-      return {
-        industry: 'General Business',
-        confidence: 0.5
-      };
+      this.logger.error('Error in detectIndustry', { error });
+      return { industry: 'Unknown', confidence: 0 };
     }
   }
 }

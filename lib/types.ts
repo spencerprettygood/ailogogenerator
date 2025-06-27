@@ -1,4 +1,9 @@
-export interface LogoBrief {
+import { SVGDesignQualityScore } from './types-agents';
+import { AnimationOptions } from './animation/types';
+import { MockupInstance } from './mockups/mockup-types';
+
+// Base agent interfaces
+export interface AgentInput {
   prompt: string;
   image_uploads?: File[];
   industry?: string;
@@ -38,13 +43,13 @@ export interface Typography {
     heading?: {
       size: string;
       weight: number;
-      lineHeight: number;
+      blockSize: string; // Changed from lineHeight to blockSize
       letterSpacing?: string;
     };
     body?: {
       size: string;
       weight: number;
-      lineHeight: number;
+      blockSize: string; // Changed from lineHeight to blockSize
       letterSpacing?: string;
     };
   };
@@ -59,8 +64,8 @@ export interface LogoElement {
 
 export interface SVGLogo {
   svgCode: string;
-  width: number;
-  height: number;
+  inlineSize: number;
+  blockSize: number;
   elements: LogoElement[];
   colors: LogoColors;
   name: string;
@@ -80,6 +85,14 @@ export interface Message {
   id?: string;
 }
 
+export interface ProgressStage {
+  id: string;
+  label: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  progress: number; // 0-100
+  details?: string;
+}
+
 export interface GenerationProgress {
   status: 'queued' | 'analyzing' | 'generating' | 'refining' | 'completed' | 'failed';
   progress: number; // 0-100
@@ -87,7 +100,7 @@ export interface GenerationProgress {
   timeRemaining?: number; // in seconds
   stage?: string; // Stage identifier (A, B, C, etc.)
   estimatedTimeRemaining?: number; // in milliseconds
-  stages?: Array<Record<string, unknown>>; // Array of stage objects for multi-stage progress
+  stages?: ProgressStage[]; // Array of stage objects for multi-stage progress
   currentStageId?: string; // Current stage ID
 }
 
@@ -138,6 +151,7 @@ export interface GeneratedAssets {
   animationJs?: string;
   animationOptions?: AnimationOptions;
   uniquenessAnalysis?: IndustryAnalysis;
+  mockups?: MockupInstance[];
 }
 
 export interface GenerationResult {
@@ -230,6 +244,16 @@ export interface IndustryAnalysis {
   uniquenessScore: number; // 0-100
   conventionScore: number; // 0-100
   balanceAnalysis: string;
+  score: number;
+  potential_issues: PotentialIssue[];
+  verification_details: string;
+}
+
+export interface PotentialIssue {
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  elementType: 'color' | 'shape' | 'typography' | 'concept';
+  recommendations: string[];
 }
 
 export interface CompetitorLogo {
@@ -290,20 +314,30 @@ export enum PipelineStage {
   COMPLETE = 'complete'
 }
 
-export interface ProgressStage {
-  id: string;
-  label: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  progress: number; // 0-100
-}
-
 export interface SVGValidationResult {
   isValid: boolean;
   errors: string[];
   violations: string[];
   warnings: string[];
-  issues: string[];
+  issues: { severity: 'critical' | 'warning' | 'info'; message: string }[];
   details?: Record<string, any>;
+  securityScore?: number;
+  optimizationScore?: number;
+  accessibilityScore?: number;
+  overallScore?: number;
+  designQualityScore?: any; // Using any for now to avoid circular dependencies
+  designFeedback?: string;
+  repairedSvg?: string;
+  modifications?: string[];
+  accessibilityAssessment?: SVGAccessibilityAssessment;
+}
+
+export interface SVGAccessibilityAssessment {
+  contrastRatio: number;
+  colorBlindnessFriendly: boolean;
+  hasTitle: boolean;
+  hasDesc: boolean;
+  issues: { level: 'error' | 'warning' | 'info', message: string }[];
 }
 
 // API response types
@@ -330,5 +364,3 @@ export interface ErrorDetails {
   stack?: string;
   timestamp?: string;
 }
-
-export { MockupType } from './mockups/mockup-types';

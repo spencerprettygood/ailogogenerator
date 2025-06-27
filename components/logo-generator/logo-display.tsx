@@ -267,10 +267,13 @@ function LogoDisplay({
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!containerRef.current || e.touches.length !== 1) return;
     
+    const touch = e.touches[0];
+    if (!touch) return;
+
     setIsDragging(true);
     setDragStart({
-      x: e.touches[0].clientX - position.x,
-      y: e.touches[0].clientY - position.y
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
     });
   };
   
@@ -288,9 +291,12 @@ function LogoDisplay({
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isDragging || e.touches.length !== 1) return;
     
+    const touch = e.touches[0];
+    if (!touch) return;
+
     setPosition({
-      x: e.touches[0].clientX - dragStart.x,
-      y: e.touches[0].clientY - dragStart.y
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
     });
     
     // Prevent page scrolling while dragging
@@ -746,10 +752,10 @@ function LogoDisplay({
           svgContent={displaySvgContent}
           animationCSS={effectiveAnimationCSS}
           isPlaying={isPlaying}
-          background={currentBackground.value}
+          background={currentBackground?.value}
           zoom={zoom}
           position={position}
-          showGrid={currentBackground.value === "bg-transparent"}
+          showGrid={currentBackground?.value === "bg-transparent"}
           draggable={isDragging}
           className="w-full h-full"
           aspectRatio="1/1"
@@ -786,7 +792,7 @@ function LogoDisplay({
           aria-live="polite"
           aria-atomic="true"
         >
-          {currentBackground.name}
+          {currentBackground?.name}
         </div>
         
         {/* Keyboard controls helper - only shown when focused */}
@@ -822,7 +828,7 @@ function LogoDisplay({
                 variant="ghost" 
                 size="sm"
                 onClick={cycleBackground}
-                aria-label={`Change background (current: ${currentBackground.description})`}
+                aria-label={`Change background (current: ${currentBackground?.description})`}
               >
                 <PaletteIcon className="h-4 w-4" aria-hidden="true" />
               </Button>

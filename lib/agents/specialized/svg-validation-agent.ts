@@ -18,7 +18,7 @@ export class SVGValidationAgent extends BaseAgent {
       'svg-validation', 
       ['svg-validation'],
       {
-        model: 'claude-3-5-haiku-20240307', // Use faster model for validation
+        model: 'claude-3-haiku-20240307', // Use faster model for validation
         fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
         temperature: 0.1, // Low temperature for consistent, deterministic output
         maxTokens: 1000,
@@ -48,12 +48,12 @@ IMPORTANT REQUIREMENTS:
     if (!validationResult.issues || !Array.isArray(validationResult.issues)) {
       // Create a default issues array if one doesn't exist
       validationResult.issues = [
-        ...(validationResult.errors || []).map(error => ({
+        ...(validationResult.errors || []).map((error: any) => ({
           type: 'error',
           severity: 'high',
           message: String(error)
         })),
-        ...(validationResult.warnings || []).map(warning => ({
+        ...(validationResult.warnings || []).map((warning: any) => ({
           type: 'warning',
           severity: 'low',
           message: String(warning)
@@ -125,7 +125,7 @@ Return only the fixed SVG code without any explanations.`;
           error: {
             message: 'SVG validation failed',
             details: [
-              ...validationResult.issues.map(issue => `${issue.severity.toUpperCase()}: ${issue.message}`),
+              ...validationResult.issues.map((issue: any) => `${issue.severity.toUpperCase()}: ${issue.message}`),
               ...securityResult.errors
             ]
           }
@@ -147,7 +147,8 @@ Return only the fixed SVG code without any explanations.`;
           validation: validationResult,
           repair: repairResult,
           overallScore: Math.round((validationResult.securityScore + validationResult.accessibilityScore) / 2),
-          success: repairResult.issuesRemaining.filter(i => i.severity === 'critical').length === 0
+          success: repairResult.issuesRemaining.filter((i: any) => i.severity === 'critical').length === 0,
+          issuesRemaining: repairResult.issuesRemaining,
         };
       } else if (optimize) {
         // Just optimize without repair
@@ -196,8 +197,9 @@ Return only the fixed SVG code without any explanations.`;
           error: {
             message: 'SVG repair failed to fix all critical issues',
             details: processedResult.validation.issues
-              .filter(i => i.severity === 'critical')
-              .map(i => i.message)
+              .filter((i: any) => i.severity === 'critical')
+              .map((i: any) => i.message)
+              .join(', '),
           }
         };
       }
@@ -211,8 +213,8 @@ Return only the fixed SVG code without any explanations.`;
       const modifications: string[] = [];
       
       if (processedResult.repair) {
-        modifications.push(...processedResult.repair.issuesFixed.map(issue => 
-          `Fixed ${issue.severity} ${issue.type} issue: ${issue.message}`
+        modifications.push(...processedResult.repair.issuesFixed.map((issue: any) =>
+          `Fixed issue: ${issue.message}`
         ));
       }
       

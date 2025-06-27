@@ -177,11 +177,11 @@ export const modelSelectionTest: TestConfig = {
       implementation: {
         pipelineOptions: {
           models: {
-            stageA: 'claude-3-5-haiku-20240307',
+            stageA: 'claude-3-haiku-20240307',
             stageB: 'claude-3-5-sonnet-20240620',
-            stageC: 'claude-3-5-haiku-20240307',
+            stageC: 'claude-3-haiku-20240307',
             stageD: 'claude-3-5-sonnet-20240620',
-            stageF: 'claude-3-5-haiku-20240307',
+            stageF: 'claude-3-haiku-20240307',
             stageG: 'claude-3-5-sonnet-20240620'
           }
         }

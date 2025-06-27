@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 import { SVGValidationAgent } from '../svg-validation-agent';
 import { SVGValidator } from '../../../utils/svg-validator';
 import { InputSanitizer } from '../../../utils/security-utils';
@@ -26,7 +28,7 @@ describe('SVGValidationAgent', () => {
     
     // Create agent instance for testing
     agent = new SVGValidationAgent({
-      model: 'claude-3-5-haiku-20240307',
+      model: 'claude-3-haiku-20240307',
       temperature: 0.1,
       maxTokens: 1000
     });
@@ -306,7 +308,7 @@ describe('SVGValidationAgent', () => {
     // Mock the generatePrompt method to avoid actual API calls
     jest.spyOn(agent as any, 'generatePrompt').mockResolvedValue('mock prompt');
     jest.spyOn(agent as any, 'processResponse').mockImplementationOnce(
-      async (response: string, originalInput: any) => {
+      async (response: any, originalInput: any) => {
         // Call the original method with our simulated Claude response
         return (agent as any).processResponse.bind(agent)(claudeResponse, originalInput);
       }

@@ -16,7 +16,7 @@ export class SelectionAgent extends BaseAgent {
       'selection', 
       ['selection'],
       {
-        model: 'claude-3-5-haiku-20240307', // Use faster model for analysis
+        model: 'claude-3-haiku-20240307', // Use faster model for analysis
         temperature: 0.3, // Low temperature for consistent decision-making
         maxTokens: 1000,
         ...config
@@ -156,11 +156,11 @@ Imagery: ${concept.imagery}
             success: true,
             result: {
               selection: {
-                selectedConcept: manualConcept,
-                selectionRationale: "Manually selected by user.",
-                score: 100
+                selectedConcept: manualConcept!,
+                selectionRationale: 'User manually selected a concept',
+                score: 1.0, // Manual selection gets a perfect score
               }
-            }
+            },
           };
         }
       }

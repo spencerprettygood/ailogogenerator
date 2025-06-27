@@ -17,7 +17,7 @@ export class PackagingAgent extends BaseAgent {
       'packaging', 
       ['asset-packaging'],
       {
-        model: 'claude-3-5-haiku-20240307', // This agent doesn't primarily use Claude
+        model: 'claude-3-haiku-20240307', // This agent doesn't primarily use Claude
         fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
         temperature: 0.1,
         maxTokens: 500,

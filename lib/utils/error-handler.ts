@@ -47,22 +47,10 @@ export enum ErrorCategory {
   UI = 'ui',
   USER_INPUT = 'user_input',
   RENDERING = 'rendering',
-  
-  // Performance and resource errors
-  TIMEOUT = 'timeout',
-  RATE_LIMIT = 'rate_limit',
-  RESOURCE_EXHAUSTED = 'resource_exhausted',
-  
-  // SVG specific errors
   SVG = 'svg',
-  SVG_PARSING = 'svg_parsing',
-  SVG_VALIDATION = 'svg_validation',
-  SVG_RENDERING = 'svg_rendering',
-  ANIMATION = 'animation',
+  DOWNLOAD = 'download',
   
-  // General categories
-  UNEXPECTED = 'unexpected',
-  INTERNAL = 'internal',
+  // Unknown/generic errors
   UNKNOWN = 'unknown'
 }
 

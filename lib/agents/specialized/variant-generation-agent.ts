@@ -16,7 +16,7 @@ export class VariantGenerationAgent extends BaseAgent {
       'variant-generation', 
       ['variant-generation'],
       {
-        model: 'claude-3-5-haiku-20240307', // Use faster model for variant generation
+        model: 'claude-3-haiku-20240307', // Use faster model for variant generation
         temperature: 0.3,
         maxTokens: 2000,
         ...config

@@ -12,7 +12,7 @@ export function mockAnthropicResponse(content: string) {
     id: 'mock-response-id',
     type: 'message',
     role: 'assistant',
-    model: 'claude-3-5-haiku-20240307',
+    model: 'claude-3-haiku-20240307',
     content: [
       {
         type: 'text',

@@ -2,7 +2,10 @@
 
 import React, { useState, useCallback, useMemo, createContext, useContext } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+// import { Separator } from '@/components/ui/separator';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from "@/lib/hooks/use-toast";
 import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
@@ -15,36 +18,38 @@ import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
 import AnimationDownloadManager from './animation-download-manager';
-import FaviconDisplay from './FaviconDisplay';
-import DeliverablesOverview from './DeliverablesOverview';
-import { SmartFollowUps } from './smart-follow-ups';
-import { DesignCitations } from './design-citations';
-import { IndustrySelector } from './industry-selector';
-import { MockupPreviewSystem } from './mockup-preview-system';
-import { EnhancedMockupIntegration } from './enhanced-mockup-integration';
 import { AnimationSelector } from './animation-selector';
-import { AnimationShowcase } from './animation-showcase';
-import { AnimatedLogoDisplay } from './animated-logo-display';
-import { UniquenessToggle } from './uniqueness-toggle';
 import { UniquenessAnalysis } from './uniqueness-analysis';
+import { AnimatedLogoDisplay } from './animated-logo-display';
+import { MockupPreviewSystem } from './mockup-preview-system';
 import { LogoFeedback, LiveFeedbackButton } from '@/components/feedback';
 import { FeedbackService } from '@/lib/services/feedback-service';
+import { LogoStorageService } from '@/lib/services/logo-storage-service';
 import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feedback';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 import { 
   Message, 
   GenerationProgress, 
   GeneratedAssets, 
   MessageRole, 
-  SVGLogo,            
-  FileDownloadInfo,
-  AnimationExportOptions,
   ProgressStage,
-  AnimationOptions
+  AnimationOptions,
+  AnimationExportOptions
 } from '@/lib/types'; 
-import { RefreshCw, ArrowRight } from 'lucide-react';
-import { H1, H2, H3, H4, Paragraph, LargeText } from '@/components/ui/typography';
+import { 
+  RefreshCw, 
+  Sparkles, 
+  PlayCircle, 
+  Search, 
+  Package, 
+  Crown,
+  Settings,
+  Download,
+  Info
+} from 'lucide-react';
+import { H1, H2, Paragraph, LargeText } from '@/components/ui/typography';
 
 // Type definition for animation options
 interface GetAnimationsOptions extends Omit<AnimationOptions, 'timing'> {
@@ -53,14 +58,12 @@ interface GetAnimationsOptions extends Omit<AnimationOptions, 'timing'> {
   delay: number;
   iterations: number;
   direction: string;
-  [key: string]: any; // Allow additional properties
+  [key: string]: any;
 }
 
 interface AppMessage extends Message {
-  type?: MessageRole | 'system' | 'assistant';
   progress?: GenerationProgress;
   assets?: GeneratedAssets;
-  files?: File[];
 }
 
 // Create Logo Generator Context
@@ -76,21 +79,20 @@ interface LogoGeneratorContextType {
   handleRetry: () => void;
   handleReset: () => void;
   handleExportAnimation: (format: string, options?: AnimationExportOptions) => Promise<void>;
-  detectedIndustry: string;
-  selectedIndustry: string;
-  setSelectedIndustry: (industry: string) => void;
   includeAnimations: boolean;
   setIncludeAnimations: (include: boolean) => void;
   selectedAnimationOptions: GetAnimationsOptions | null;
   setSelectedAnimationOptions: (options: GetAnimationsOptions | null) => void;
   includeUniquenessAnalysis: boolean;
   setIncludeUniquenessAnalysis: (include: boolean) => void;
+  includeMockups: boolean;
+  setIncludeMockups: (include: boolean) => void;
   progressForTracker: {
     stages: ProgressStage[];
     currentStageId: string | null;
     overallProgress: number;
     estimatedTimeRemaining: number | null;
-  } | null;
+  } | null | undefined;
   showFeedback: boolean;
   setShowFeedback: (show: boolean) => void;
   submitFeedback: (feedback: LogoFeedbackType) => Promise<void>;
@@ -99,7 +101,6 @@ interface LogoGeneratorContextType {
 
 const LogoGeneratorContext = createContext<LogoGeneratorContextType | null>(null);
 
-// Hook to use Logo Generator Context
 export const useLogoGeneratorContext = () => {
   const context = useContext(LogoGeneratorContext);
   if (!context) {
@@ -110,13 +111,12 @@ export const useLogoGeneratorContext = () => {
 
 export function LogoGeneratorApp() {
   const [messages, setMessages] = useState<AppMessage[]>([]);
-  const [detectedIndustry, setDetectedIndustry] = useState<string>('general');
-  const [industryConfidence, setIndustryConfidence] = useState<number>(0);
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('general');
   const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
   const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<GetAnimationsOptions | null>(null);
   const [includeUniquenessAnalysis, setIncludeUniquenessAnalysis] = useState<boolean>(false);
+  const [includeMockups, setIncludeMockups] = useState<boolean>(false);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
   
   const { toast } = useToast();
   const {
@@ -131,12 +131,8 @@ export function LogoGeneratorApp() {
   } = useLogoGeneration();
 
   const handleSubmit = useCallback(async (content: string, files?: File[]) => {
-    // Reset industry detection for new generation
-    setDetectedIndustry('general');
-    setIndustryConfidence(0);
-    
     const userMessage: AppMessage = {
-      role: 'user',
+      role: MessageRole.USER,
       content,
       timestamp: new Date(),
       files,
@@ -145,8 +141,7 @@ export function LogoGeneratorApp() {
     setMessages(prev => [...prev, userMessage]);
 
     const systemMessage: AppMessage = {
-      role: 'system',
-      type: 'system',
+      role: MessageRole.SYSTEM,
       content: 'Starting logo generation...',
       timestamp: new Date(),
       id: generateId()
@@ -154,21 +149,26 @@ export function LogoGeneratorApp() {
     setMessages(prev => [...prev, systemMessage]);
 
     try {
-      // Include selected industry, animation options, and uniqueness analysis in the generation
-      await generateLogo(content, files, {
-        industry: selectedIndustry,
-        includeAnimations: includeAnimations,
-        animationOptions: selectedAnimationOptions ? {
-          type: selectedAnimationOptions.type,
+      let animationOptionsForApi: AnimationOptions | undefined;
+      if (includeAnimations && selectedAnimationOptions) {
+        const { duration, easing, delay, iterations, direction, ...rest } = selectedAnimationOptions;
+        animationOptionsForApi = {
+          ...rest,
           timing: {
-            duration: selectedAnimationOptions.duration,
-            easing: selectedAnimationOptions.easing,
-            delay: selectedAnimationOptions.delay,
-            iterations: selectedAnimationOptions.iterations,
-            direction: selectedAnimationOptions.direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse' | undefined
+            duration,
+            easing,
+            delay,
+            iterations,
+            direction: direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse',
           }
-        } : undefined,
-        includeUniquenessAnalysis: includeUniquenessAnalysis
+        };
+      }
+
+      await generateLogo(content, files, {
+        includeAnimations,
+        animationOptions: animationOptionsForApi,
+        includeUniquenessAnalysis,
+        includeMockups
       });
     } catch (err) {
       toast({
@@ -177,7 +177,7 @@ export function LogoGeneratorApp() {
         variant: "destructive"
       });
     }
-  }, [generateLogo, toast, selectedIndustry, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis]);
+  }, [generateLogo, toast, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis, includeMockups]);
 
   const handleSuggestionSelect = useCallback((prompt: string, files?: File[]) => {
     handleSubmit(prompt, files);
@@ -189,17 +189,16 @@ export function LogoGeneratorApp() {
 
       setMessages(prev => {
         const lastMessage = prev[prev.length - 1];
-        if (lastMessage && lastMessage.type === 'assistant' && lastMessage.progress) {
+        if (lastMessage && lastMessage.role === MessageRole.ASSISTANT && lastMessage.progress) {
           return prev.map((msg, index) => 
             index === prev.length - 1 
-              ? { ...msg, progress: currentProgressData, content: currentProgressData.message || '', role: 'assistant', type: 'assistant' }
+              ? { ...msg, progress: currentProgressData, content: currentProgressData.message || '', role: MessageRole.ASSISTANT }
               : msg
           );
         } else {
           return [...prev, {
             id: generateId(),
-            role: 'assistant',
-            type: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: currentProgressData.message || '',
             timestamp: new Date(),
             progress: currentProgressData
@@ -213,28 +212,42 @@ export function LogoGeneratorApp() {
     if (hookAssets && sessionId) {
       const completionMessage: AppMessage = {
         id: generateId(),
-        role: 'assistant',
-        type: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: '🎉 Your logo package is ready! You can preview it above and download all files below.',
         timestamp: new Date(),
         assets: hookAssets
       };
       setMessages(prev => [...prev, completionMessage]);
 
+      // Save to localStorage for persistence
+      const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
+      if (lastUserMessage) {
+        LogoStorageService.saveSession(
+          sessionId, 
+          hookAssets, 
+          lastUserMessage.content, 
+          {
+            includeAnimations,
+            includeUniquenessAnalysis,
+            includeMockups,
+            selectedAnimationOptions
+          }
+        );
+      }
+
       toast({
         title: "Generation Complete!",
         description: "Your logo package is ready for download.",
       });
     }
-  }, [hookAssets, sessionId, toast]);
+  }, [hookAssets, sessionId, toast, messages, includeAnimations, includeUniquenessAnalysis, includeMockups, selectedAnimationOptions]);
 
   React.useEffect(() => {
     if (error) {
       const errorMessageContent = error.message || "An unknown error occurred.";
       const errorMessage: AppMessage = {
         id: generateId(),
-        role: 'system',
-        type: 'system',
+        role: MessageRole.SYSTEM,
         content: `Error: ${errorMessageContent}`,
         timestamp: new Date()
       };
@@ -243,7 +256,7 @@ export function LogoGeneratorApp() {
   }, [error]);
 
   const handleRetry = useCallback(() => {
-    const lastUserMessage = [...messages].reverse().find(msg => msg.type === 'user');
+    const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
     if (lastUserMessage && lastUserMessage.content) {
       reset();
       setMessages([lastUserMessage]); 
@@ -285,7 +298,6 @@ export function LogoGeneratorApp() {
         throw new Error(data.error || 'Failed to export animation');
       }
       
-      // If successful, redirect to the download URL
       if (data.fileUrl) {
         window.location.href = data.fileUrl;
         
@@ -308,11 +320,9 @@ export function LogoGeneratorApp() {
     setMessages([]);
   }, [reset]);
 
-  // Process hookProgress to ensure it has the right structure for the ProgressTracker
   const progressForTracker = useMemo(() => {
     if (!hookProgress) return null;
 
-    // If hookProgress.stages exists and is an array, use it directly (for multi-stage progress)
     if ('stages' in hookProgress && Array.isArray(hookProgress.stages)) {
       return {
         stages: hookProgress.stages as ProgressStage[],
@@ -326,7 +336,6 @@ export function LogoGeneratorApp() {
       };
     }
 
-    // Otherwise, adapt single-stage progress to ProgressTracker format
     return {
       stages: [{
         id: hookProgress.stage ?? 'A',
@@ -342,7 +351,6 @@ export function LogoGeneratorApp() {
     };
   }, [hookProgress]);
 
-  // Handle feedback submission
   const submitFeedback = useCallback(async (feedback: LogoFeedbackType) => {
     try {
       await FeedbackService.submitLogoFeedback(feedback);
@@ -359,7 +367,6 @@ export function LogoGeneratorApp() {
     }
   }, [toast]);
 
-  // Handle issue feedback submission
   const submitIssueFeedback = useCallback(async (feedback: LiveFeedback) => {
     try {
       await FeedbackService.submitIssueFeedback(feedback);
@@ -376,7 +383,6 @@ export function LogoGeneratorApp() {
     }
   }, [toast]);
 
-  // Create context value
   const contextValue: LogoGeneratorContextType = {
     messages,
     isGenerating,
@@ -389,21 +395,29 @@ export function LogoGeneratorApp() {
     handleRetry,
     handleReset,
     handleExportAnimation,
-    detectedIndustry,
-    selectedIndustry,
-    setSelectedIndustry,
     includeAnimations,
     setIncludeAnimations,
-    selectedAnimationOptions: selectedAnimationOptions,
+    selectedAnimationOptions,
     setSelectedAnimationOptions,
     includeUniquenessAnalysis,
     setIncludeUniquenessAnalysis,
+    includeMockups,
+    setIncludeMockups,
     progressForTracker,
     showFeedback,
     setShowFeedback,
     submitFeedback,
     submitIssueFeedback
   };
+
+  // Calculate available tabs based on generated assets
+  const availableTabs = useMemo(() => {
+    const tabs = ['logo', 'download'];
+    if (hookAssets?.animatedSvg) tabs.splice(1, 0, 'animation');
+    if (hookAssets?.mockups && hookAssets.mockups.length > 0) tabs.splice(-1, 0, 'mockups');
+    if (hookAssets?.uniquenessAnalysis) tabs.splice(-1, 0, 'uniqueness');
+    return tabs;
+  }, [hookAssets]);
 
   return (
     <ErrorBoundary>
@@ -412,348 +426,337 @@ export function LogoGeneratorApp() {
           <Header />
           
           <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 space-y-8">
-          {/* Welcome card - shown only when no messages */}
-          {messages.length === 0 && (
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              {/* No sparkles icon */}
-              
-              <div className="space-y-2">
-                <H1 className="text-center">AI Logo Generator</H1>
-                <LargeText className="text-muted-foreground max-w-xl mx-auto">
-                  Describe your brand and get a professionally designed logo in seconds. Add colors, style preferences, or upload reference images for inspiration.
-                </LargeText>
-              </div>
-            </div>
-          )}
-          
-          {/* Enhanced Search Interface with Perplexity-inspired UI */}
-          <SearchInterfaceEnhanced 
-            onSubmit={handleSubmit}
-            isGenerating={isGenerating}
-            placeholder="Describe your perfect logo..."
-            className="mb-6"
-          />
-          
-          {/* Suggestion chips - shown only when no messages */}
-          {messages.length === 0 && (
-            <>
-              <div className="max-w-xl mx-auto mt-6 mb-4">
-                <IndustrySelector
-                  detectedIndustry={detectedIndustry}
-                  detectedConfidence={industryConfidence}
-                  onSelectIndustry={setSelectedIndustry}
-                />
-              </div>
-              
-              <div className="max-w-xl mx-auto mt-6 mb-4 space-y-4">
-                <div className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    id="includeAnimations"
-                    checked={includeAnimations}
-                    onChange={(e) => setIncludeAnimations(e.target.checked)}
-                    className="mr-2"
-                  />
-                  <label htmlFor="includeAnimations" className="text-sm font-medium">
-                    Include animations for digital use
-                  </label>
+            {/* Welcome Section */}
+            {messages.length === 0 && (
+              <div className="max-w-4xl mx-auto text-center space-y-8">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center space-x-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    <Sparkles className="h-4 w-4" />
+                    <span>AI-Powered Logo Generation</span>
+                  </div>
+                  <H1 className="text-4xl lg:text-5xl font-bold">
+                    Create Your Perfect Logo
+                  </H1>
+                  <LargeText className="text-muted-foreground max-w-2xl mx-auto">
+                    Describe your brand and get a professionally designed logo in seconds. 
+                    Choose what you need and we'll generate exactly that.
+                  </LargeText>
                 </div>
-                
-                {includeAnimations && (
-                  <div className="space-y-4">
-                    <AnimationSelector
-                      onSelectAnimation={(options) => {
-                        const convertedOptions: GetAnimationsOptions = {
-                          ...options,
-                          type: options.type,
-                          duration: options.timing?.duration || 1000,
-                          easing: options.timing?.easing || 'ease',
-                          delay: options.timing?.delay || 0,
-                          iterations: options.timing?.iterations || 1,
-                          direction: options.timing?.direction || 'normal',
-                        };
-                        setSelectedAnimationOptions(convertedOptions);
-                      }}
-                      className="mt-4"
-                    />
-                    
-                    {/* Animation showcase button */}
-                    <div className="flex justify-center mt-2">
+
+                {/* Generation Options */}
+                <Card className="max-w-2xl mx-auto text-left">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Generation Options</h3>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          const showcaseElement = document.getElementById('animation-showcase');
-                          if (showcaseElement) {
-                            showcaseElement.scrollIntoView({ behavior: 'smooth' });
-                          }
-                        }}
+                        onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
                       >
-                        Explore Animation Gallery
+                        <Settings className="h-4 w-4 mr-2" />
+                        {showAdvancedOptions ? 'Hide' : 'Show'} Advanced
                       </Button>
                     </div>
-                  </div>
-                )}
-                
-                <UniquenessToggle
-                  enabled={includeUniquenessAnalysis}
-                  onToggle={setIncludeUniquenessAnalysis}
-                  className="mt-4"
-                />
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Basic Options */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <PlayCircle className="h-5 w-5 text-primary" />
+                          <div>
+                            <Label className="text-base font-medium">Animations</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Add motion effects for digital use
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={includeAnimations}
+                          onCheckedChange={setIncludeAnimations}
+                        />
+                      </div>
+
+                      {includeAnimations && (
+                        <div className="ml-8 pl-4 border-l-2 border-muted">
+                          <AnimationSelector
+                            onSelectAnimation={(options) => {
+                              const flatOptions: GetAnimationsOptions = {
+                                type: options.type,
+                                duration: options.timing.duration,
+                                easing: String(options.timing.easing || 'ease'),
+                                delay: options.timing.delay || 0,
+                                iterations: options.timing.iterations || 1,
+                                direction: String(options.timing.direction || 'normal')
+                              };
+                              setSelectedAnimationOptions(flatOptions);
+                            }}
+                            className="text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {showAdvancedOptions && (
+                      <>
+                        <div className="border-t my-4" />
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Search className="h-5 w-5 text-primary" />
+                              <div>
+                                <Label className="text-base font-medium">Uniqueness Analysis</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Compare against industry competitors
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={includeUniquenessAnalysis}
+                              onCheckedChange={setIncludeUniquenessAnalysis}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Package className="h-5 w-5 text-primary" />
+                              <div>
+                                <Label className="text-base font-medium">Mockups</Label>
+                                <div className="flex items-center space-x-2">
+                                  <p className="text-sm text-muted-foreground">
+                                    See your logo in real contexts
+                                  </p>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Beta
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={includeMockups}
+                              onCheckedChange={setIncludeMockups}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex items-start space-x-2 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg">
+                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">Smart Generation</p>
+                        <p>We only generate the assets you select, saving time and resources. 
+                        You can always add more features after generation.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+            )}
+          
+            {/* Search Interface */}
+            <SearchInterfaceEnhanced 
+              onSubmit={handleSubmit}
+              isGenerating={isGenerating}
+              placeholder={messages.length === 0 
+                ? "Describe your perfect logo (e.g., 'Modern tech startup logo with blue colors')" 
+                : "Refine your logo or try a new design..."
+              }
+              className="mb-6"
+            />
+          
+            {/* Suggestion chips - shown only when no messages */}
+            {messages.length === 0 && (
               <SuggestionChips
                 suggestions={DEFAULT_LOGO_SUGGESTIONS}
                 onSelectSuggestion={handleSuggestionSelect}
                 className="mt-6"
               />
-            </>
-          )}
+            )}
           
-          {/* Response area */}
-          {messages.length > 0 && (
-            <div className="space-y-8">
-              <StreamingResponse 
-                messages={messages.map(m => ({
-                  ...m,
-                  // Ensure role is always a string for StreamingResponse
-                  role: typeof m.role === 'string' ? m.role : (typeof m.type === 'string' ? m.type : 'system'),
-                  // Pass content directly to each component, let the components handle proper rendering
-                  content: m.content
-                }))}
-                isGenerating={isGenerating}
-                previewSvg={preview}
-                progressData={progressForTracker}
-              />
+            {/* Response area */}
+            {messages.length > 0 && (
+              <div className="space-y-8">
+                <StreamingResponse 
+                  messages={messages.map(m => ({
+                    ...m,
+                    role: m.role,
+                    content: m.content
+                  }))}
+                  isGenerating={isGenerating}
+                  previewSvg={preview}
+                  progressData={progressForTracker}
+                />
               
-              {/* Results area */}
-              {hookAssets && sessionId && (
-                <div className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
-                  {/* Logo Feedback */}
-                  {showFeedback && (
-                    <div className="mb-6">
-                      <LogoFeedback
-                        logoId={sessionId}
-                        sessionId={sessionId}
-                        onClose={() => setShowFeedback(false)}
-                        onSubmit={submitFeedback}
-                      />
+                {/* Results area */}
+                {hookAssets && sessionId && (
+                  <Card className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
+                    {/* Logo Feedback */}
+                    {showFeedback && (
+                      <div className="mb-6">
+                        <LogoFeedback
+                          logoId={sessionId}
+                          sessionId={sessionId}
+                          onClose={() => setShowFeedback(false)}
+                          onSubmit={submitFeedback}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <H2>Your Logo Package</H2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {availableTabs.length} sections available
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowFeedback(true)}
+                        >
+                          Rate Logo
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-muted-foreground"
+                          onClick={handleReset}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          New Logo
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <H2>Your Logo Package</H2>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowFeedback(true)}
-                      >
-                        Rate Logo
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-muted-foreground"
-                        onClick={handleReset}
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        New Logo
-                      </Button>
-                    </div>
-                  </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Logo display */}
-                    <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center">
-                      {hookAssets.animatedSvg && hookAssets.animationCss ? (
-                        <div className="space-y-4">
+                    <Tabs defaultValue="logo" className="w-full">
+                      <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
+                        {availableTabs.includes('logo') && <TabsTrigger value="logo">Logo</TabsTrigger>}
+                        {availableTabs.includes('animation') && <TabsTrigger value="animation">Animation</TabsTrigger>}
+                        {availableTabs.includes('mockups') && <TabsTrigger value="mockups">Mockups</TabsTrigger>}
+                        {availableTabs.includes('uniqueness') && <TabsTrigger value="uniqueness">Uniqueness</TabsTrigger>}
+                        {availableTabs.includes('download') && <TabsTrigger value="download"><Download className="h-4 w-4 mr-2" />Download</TabsTrigger>}
+                      </TabsList>
+                      
+                      <TabsContent value="logo" className="space-y-4">
+                        <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center min-h-[300px]">
+                          <LogoDisplay
+                            svgCode={hookAssets.primaryLogoSVG?.svgCode || undefined}
+                            variants={hookAssets.primaryLogoSVG ? [{ 
+                              id: 'primary', 
+                              name: 'Primary', 
+                              svgCode: hookAssets.primaryLogoSVG.svgCode, 
+                              type: 'color' 
+                            }] : []}
+                            className="max-w-full"
+                          />
+                        </div>
+                      </TabsContent>
+                      
+                      {hookAssets?.animatedSvg && (
+                        <TabsContent value="animation" className="space-y-4">
                           <AnimatedLogoDisplay
                             svgCode={hookAssets.animatedSvg}
                             cssCode={hookAssets.animationCss}
                             jsCode={hookAssets.animationJs}
-                            className="max-w-full"
+                            className="max-w-full bg-muted/30 rounded-lg p-6"
                             showControls={true}
                           />
-                          <div className="text-xs text-center text-muted-foreground">
-                            Animated SVG logo (for digital use)
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Animated version for digital and web use
+                            </p>
+                            <AnimationDownloadManager
+                              animatedSvg={hookAssets.animatedSvg}
+                              animationCss={hookAssets.animationCss}
+                              animationJs={hookAssets.animationJs}
+                              animationOptions={hookAssets.animationOptions}
+                              brandName={hookAssets.brandName || "Your Brand"}
+                              onExport={handleExportAnimation}
+                            />
                           </div>
-                        </div>
-                      ) : (
-                        <LogoDisplay
-                          svgCode={hookAssets.primaryLogoSVG?.svgCode || undefined}
-                          variants={hookAssets.primaryLogoSVG ? [{ id: 'primary', name: 'Primary', svgCode: hookAssets.primaryLogoSVG.svgCode, type: 'color' }] : []}
-                          className="max-w-full"
-                        />
-                      )}
-                    </div>
-                    
-                    {/* Download manager */}
-                    <div>
-                      <DownloadManager
-                        files={hookAssets.individualFiles || []} 
-                        packageUrl={hookAssets.zipPackageUrl}
-                        brandName={hookAssets.brandName || "Your Brand"}
-                        onDownloadFileAction={(file: FileDownloadInfo) => console.log('Download file:', file.id)}
-                        onDownloadAllAction={() => console.log('Download all')}
-                      />
-                      
-                      {/* Animation Download Manager - shown only when animation is available */}
-                      {hookAssets.animatedSvg && (
-                        <div className="mt-4">
-                          <AnimationDownloadManager
-                            animatedSvg={hookAssets.animatedSvg}
-                            animationCss={hookAssets.animationCss}
-                            animationJs={hookAssets.animationJs}
-                            animationOptions={hookAssets.animationOptions}
-                            brandName={hookAssets.brandName || "Your Brand"}
-                            onExport={handleExportAnimation}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Smart follow-ups and refinements */}
-                  <div className="grid md:grid-cols-2 gap-6 mt-8">
-                    <SmartFollowUps 
-                      onSelectFollowUp={(prompt: string) => { handleSubmit(prompt); }}
-                      brandName={hookAssets.brandName || "Your Brand"}
-                      styleType="modern"
-                      colorPalette="blue"
-                    />
-                    
-                    <DesignCitations />
-                  </div>
-                  
-                  {/* Uniqueness Analysis */}
-                  {hookAssets.uniquenessAnalysis && (
-                    <div className="mt-8 border-t pt-6">
-                      <UniquenessAnalysis 
-                        analysis={hookAssets.uniquenessAnalysis} 
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Enhanced Mockup Preview System */}
-                  <div className="mt-8 border-t pt-6">
-                    <H3 className="mb-4">Visualize Your Logo</H3>
-                    <div className="flex flex-col gap-4">
-                      <Tabs defaultValue="realistic">
-                        <TabsList>
-                          <TabsTrigger value="realistic">Realistic Mockups</TabsTrigger>
-                          <TabsTrigger value="standard">Standard Mockups</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="realistic">
-                          <EnhancedMockupIntegration 
-                            logo={hookAssets.primaryLogoSVG?.svgCode || ''}
-                            brandName={hookAssets.brandName || 'Your Brand'}
-                          />
                         </TabsContent>
-                        <TabsContent value="standard">
+                      )}
+                      
+                      {hookAssets?.mockups && hookAssets.mockups.length > 0 && (
+                        <TabsContent value="mockups" className="space-y-4">
                           <MockupPreviewSystem 
                             logo={hookAssets.primaryLogoSVG?.svgCode || ''}
                             brandName={hookAssets.brandName || 'Your Brand'}
                             onDownload={(mockupId, format) => {
                               console.log(`Download mockup ${mockupId} in ${format} format`);
-                              // You can implement additional download tracking here
+                              toast({
+                                title: "Mockup Downloaded",
+                                description: `${mockupId} mockup downloaded in ${format} format`,
+                              });
                             }}
                           />
                         </TabsContent>
-                      </Tabs>
-                    </div>
-                  </div>
-                  
-                  {/* Animation Showcase Section */}
-                  <div id="animation-showcase" className="mt-8 border-t pt-6">
-                    <H3 className="mb-4">Animation Options</H3>
-                    <AnimationShowcase
-                        onSelectAnimation={(animationOptions) => {
-                          const convertedOptions: GetAnimationsOptions = {
-                            ...animationOptions,
-                            type: animationOptions.type,
-                            duration: animationOptions.timing?.duration || 1000,
-                            easing: animationOptions.timing?.easing || 'ease',
-                            delay: animationOptions.timing?.delay || 0,
-                            iterations: animationOptions.timing?.iterations || 1,
-                            direction: animationOptions.timing?.direction || 'normal',
-                          };
-                          setSelectedAnimationOptions(convertedOptions);
-                          toast({
-                            title: "Animation Selected",
-                            description: "Animation has been applied to your logo."
-                          });
-                        }}
-                        svgPreview={hookAssets.primaryLogoSVG?.svgCode || null}
-                      />
-                  </div>
-                  
-                  {/* What's next? */}
-                  <div className="mt-8 border-t pt-6">
-                    <H3 className="mb-3">What&rsquo;s next?</H3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <H4 className="flex items-center m-0">
-                          Download your assets
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </H4>
-                        <Paragraph className="text-sm text-muted-foreground mt-1">
-                          Get all logo variants in SVG, PNG, and ICO formats.
-                        </Paragraph>
-                      </Card>
+                      )}
                       
-                      <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <H4 className="flex items-center m-0">
-                          Try variations
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </H4>
-                        <Paragraph className="text-sm text-muted-foreground mt-1">
-                          Explore different styles, colors, and layouts.
-                        </Paragraph>
-                      </Card>
+                      {hookAssets?.uniquenessAnalysis && (
+                        <TabsContent value="uniqueness" className="space-y-4">
+                          <UniquenessAnalysis 
+                            analysis={hookAssets.uniquenessAnalysis} 
+                          />
+                        </TabsContent>
+                      )}
                       
-                      <Card className="p-4 hover:bg-muted/30 transition-colors">
-                        <H4 className="flex items-center m-0">
-                          Create brand guidelines
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </H4>
-                        <Paragraph className="text-sm text-muted-foreground mt-1">
-                          Get a complete brand package with usage guidelines.
-                        </Paragraph>
-                      </Card>
-                    </div>
-                  </div>
-                </div>
-              )}
+                      <TabsContent value="download" className="space-y-4">
+                        <DownloadManager
+                          files={hookAssets.individualFiles || []} 
+                          packageUrl={hookAssets.zipPackageUrl}
+                          brandName={hookAssets.brandName || "Your Brand"}
+                          onDownloadFileAction={(file) => {
+                            console.log('Downloading file:', file.id);
+                            toast({
+                              title: "Download Started",
+                              description: `Downloading ${file.name}`,
+                            });
+                          }}
+                          onDownloadAllAction={() => {
+                            console.log('Downloading all files');
+                            toast({
+                              title: "Package Download Started",
+                              description: "Downloading complete logo package",
+                            });
+                          }}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </Card>
+                )}
               
-              {/* Error retry */}
-              {error && !isGenerating && (
-                <div className="flex justify-center">
-                  <Button onClick={handleRetry} variant="outline" className="mx-auto">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry Generation
-                  </Button>
-                </div>
-              )}
-            </div>
+                {/* Error retry */}
+                {error && !isGenerating && (
+                  <div className="flex justify-center">
+                    <Button onClick={handleRetry} variant="outline" className="mx-auto">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry Generation
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+        
+          {/* Live Feedback Button */}
+          {sessionId && (
+            <LiveFeedbackButton
+              sessionId={sessionId}
+              currentStage={hookProgress?.stage || undefined}
+              onSubmit={submitIssueFeedback}
+            />
           )}
-        </main>
         
-        {/* Live Feedback Button */}
-        {sessionId && (
-          <LiveFeedbackButton
-            sessionId={sessionId}
-            currentStage={hookProgress?.stage || undefined}
-            onSubmit={submitIssueFeedback}
-          />
-        )}
-        
-        <Toaster />
-      </div>
+          <Toaster />
+        </div>
       </LogoGeneratorContext.Provider>
     </ErrorBoundary>
   );
 }
 
-// Create a separate provider component for better code organization
 export function LogoGeneratorProvider() {
   return <LogoGeneratorApp />;
 }

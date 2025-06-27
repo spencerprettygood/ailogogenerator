@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import { logoAPI } from '../api'; // Adjusted import path
 import { streamProcessor } from '../streaming'; // Adjusted import path
-import { GenerationProgress, GeneratedAssets, PipelineStage } from '../types';
+import { GenerationProgress, GeneratedAssets, PipelineStage, AnimationOptions } from '../types';
 
 export interface LogoGenerationOptions {
   industry?: string;
   includeAnimations?: boolean;
-  animationOptions?: Record<string, unknown>; // Will be properly typed when imported
+  animationOptions?: AnimationOptions;
   includeUniquenessAnalysis?: boolean;
+  includeMockups?: boolean;
 }
 
 export interface UseLogoGenerationReturn {
@@ -59,14 +60,10 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
           // If from cache, immediately set progress to 100%
           if (isCached) {
             const cachedProgress: GenerationProgress = {
-              currentStage: PipelineStage.CACHED,
-              stageProgress: 100,
-              overallProgress: 100,
-              statusMessage: 'Retrieved from cache',
-              // Backward compatibility fields
-              stage: PipelineStage.CACHED,
+              status: 'completed',
               progress: 100,
               message: 'Retrieved from cache',
+              stage: PipelineStage.CACHED,
               estimatedTimeRemaining: 0,
             };
             setProgress(cachedProgress);

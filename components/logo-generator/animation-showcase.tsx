@@ -103,7 +103,7 @@ export const AnimationShowcase: React.FC<AnimationShowcaseProps> = ({
                   {createPreview(template)}
                   
                   <Button 
-                    onClick={() => onSelectAnimation(template.defaultOptions)}
+                    onClick={() => onSelectAnimationAction(template.defaultOptions)}
                     className="w-full mt-3"
                     size="sm"
                   >
@@ -127,7 +127,7 @@ export const AnimationShowcase: React.FC<AnimationShowcaseProps> = ({
                     {createPreview(template)}
                     
                     <Button 
-                      onClick={() => onSelectAnimation(template.defaultOptions)}
+                      onClick={() => onSelectAnimationAction(template.defaultOptions)}
                       className="w-full mt-3"
                       size="sm"
                     >

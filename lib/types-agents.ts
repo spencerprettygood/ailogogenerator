@@ -8,17 +8,9 @@ export interface AgentInput {
 }
 
 export interface AgentOutput {
-  success: boolean;
-  result?: any;
-  error?: {
-    message: string;
-    details?: unknown;
-  };
-  tokensUsed?: number;
-  processingTime?: number;
 }
 
-export type ClaudeModel = 'claude-3-5-sonnet-20240620' | 'claude-3-5-haiku-20240307' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307';
+export type ClaudeModel = 'claude-3-5-sonnet-20240620' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307';
 
 export interface AgentConfig {
   model: ClaudeModel;
@@ -178,41 +170,31 @@ export interface SVGValidationAgentInput extends AgentInput {
   optimize?: boolean;
 }
 
-export interface SVGDesignQualityScore {
-  colorHarmony: number;       // 0-100 score for color theory implementation
-  composition: number;        // 0-100 score for layout and balance
-  visualWeight: number;       // 0-100 score for visual weight distribution
-  typography: number;         // 0-100 score for typography quality (if present)
-  negativeSpace: number;      // 0-100 score for use of negative space
-  overallAesthetic: number;   // Weighted average of above scores
-  technicalQuality: number;   // Combined score from base validator (security, accessibility, optimization)
-  designSuggestions: string[]; // Specific suggestions for improvement
-}
-
-export interface SVGValidationAgentOutput extends AgentOutput {
+export interface SVGValidationResultOutput extends AgentOutput {
   result?: {
     svg: string;
     isValid: boolean;
     modifications?: string[];
-    // Technical validation scores
     securityScore?: number;
     accessibilityScore?: number;
     optimizationScore?: number;
     overallScore?: number;
-    // Design quality assessment
     designQualityScore?: SVGDesignQualityScore;
     designFeedback?: string;
-    // Optimization metrics
-    optimizationResults?: {
-      originalSize: number;
-      optimizedSize: number;
-      reductionPercent: number;
-    };
+    issues?: { severity: 'critical' | 'warning' | 'info'; message: string }[];
   };
 }
 
+export interface SVGDesignQualityScore {
+  balance: number;
+  harmony: number;
+  symmetry: number;
+  simplicity: number;
+  clarity: number;
+  overall: number;
+}
+
 export interface VariantGenerationAgentInput extends AgentInput {
-  svg: string;
   designSpec: DesignSpec;
   brandName: string;
   includeAnimations?: boolean;

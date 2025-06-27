@@ -7,6 +7,8 @@ import {
   SVGValidationAgentOutput 
 } from '../../types-agents';
 import { SVGAccessibilityValidator, SVGAccessibilityScore } from '../../utils/svg-accessibility-validator';
+import { SVGValidationResult, SVGAccessibilityAssessment } from '../../types';
+import { SVGDesignQualityScore } from '../../types-agents';
 
 /**
  * SVGAccessibilityAgent - Validates and improves SVG accessibility
@@ -17,7 +19,7 @@ export class SVGAccessibilityAgent extends BaseAgent {
       'svg-accessibility', 
       ['svg-validation', 'design-theory'],
       {
-        model: 'claude-3-5-haiku-20240307', // Use faster model for validation
+        model: 'claude-3-haiku-20240307', // Use faster model for validation
         temperature: 0.1, // Low temperature for consistent, deterministic output
         maxTokens: 1000,
         ...config
@@ -235,24 +237,22 @@ Return only the improved SVG code without any explanations.`;
     
     // 4. Add viewBox if missing
     if (!/<svg[^>]*viewBox\s*=/i.test(improvedSvg)) {
-      const widthMatch = improvedSvg.match(/width\s*=\s*["']([0-9.]+)/i);
-      const heightMatch = improvedSvg.match(/height\s*=\s*["']([0-9.]+)/i);
+      const widthMatch = improvedSvg.match(/width="([\d\.]+)"/);
+      const heightMatch = improvedSvg.match(/height="([\d\.]+)"/);
       
       if (widthMatch && heightMatch) {
         const width = parseFloat(widthMatch[1]);
         const height = parseFloat(heightMatch[1]);
-        
-        improvedSvg = improvedSvg.replace(
-          /<svg([^>]*?)>/i, 
-          `<svg$1 viewBox="0 0 ${width} ${height}">`
-        );
-      } else {
-        // Default viewBox if dimensions are not specified
-        improvedSvg = improvedSvg.replace(
-          /<svg([^>]*?)>/i, 
-          '<svg$1 viewBox="0 0 100 100">'
-        );
-      }
+        if (width > 0 && height > 0) {
+            const aspectRatio = width / height;
+            
+            // Set a default viewBox based on the aspect ratio
+            improvedSvg = improvedSvg.replace(
+              /<svg([^>]*?)>/i, 
+              `<svg$1 viewBox="0 0 ${width} ${height}">`
+            );
+        }
+      } 
     }
     
     // 5. Add missing aria-labels to interactive elements
