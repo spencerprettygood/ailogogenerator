@@ -24,7 +24,8 @@ import {
   AnimationTrigger
 } from './types';
 import { AnimationRegistry } from './animation-registry';
-import { sanitizeSVG, optimizeSVG, validateSVG, extractAnimatableElements } from './utils';
+import { sanitizeSVG, validateSVG, extractAnimatableElements } from './utils';
+// optimizeSVG is not exported directly from utils/index, use optimizeSVGFromSanitizer or optimizeSVGFromOptimizer if needed
 import { Logger } from '../utils/logger';
 import { withRetry } from '../retry';
 import { CSSAnimationProvider } from './providers/css-provider';
@@ -590,6 +591,9 @@ export class SVGAnimationService {
    * Generate CSS for pulse animation
    */
   private generatePulseCss(animationId: string, options: AnimationOptions): string {
+    const iterationCount = typeof options.timing.iterations === 'number'
+      ? (options.timing.iterations === Infinity ? 'infinite' : options.timing.iterations)
+      : 'infinite';
     return `
       @keyframes ${animationId}_pulse {
         0% { transform: scale(1); }
@@ -601,7 +605,7 @@ export class SVGAnimationService {
         animation: ${animationId}_pulse ${options.timing.duration}ms ${options.timing.easing || 'ease-in-out'};
         animation-fill-mode: forwards;
         animation-delay: ${options.timing.delay || 0}ms;
-        animation-iteration-count: ${options.timing.iterations || 'infinite'};
+        animation-iteration-count: ${iterationCount};
         will-change: transform;
         transform: translateZ(0);
       }
@@ -743,7 +747,7 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1500,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 'infinite'
+        iterations: Infinity
       },
       trigger: AnimationTrigger.LOAD
     },
@@ -820,7 +824,7 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 800,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 'infinite'
+        iterations: Infinity
       },
       trigger: AnimationTrigger.HOVER
     },

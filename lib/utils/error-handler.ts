@@ -22,6 +22,7 @@ export enum ErrorSeverity {
 /**
  * Error categories for better organization and filtering
  */
+// Unified ErrorCategory enum for all error handling (sync with lib/types.ts)
 export enum ErrorCategory {
   // Infrastructure errors
   NETWORK = 'network',
@@ -29,29 +30,45 @@ export enum ErrorCategory {
   AUTHENTICATION = 'authentication',
   AUTHORIZATION = 'authorization',
   STORAGE = 'storage',
-  
+  RATE_LIMIT = 'rate_limit',
+  TIMEOUT = 'timeout',
+  RESOURCE_EXHAUSTED = 'resource_exhausted',
+
   // Application logic errors
   VALIDATION = 'validation',
   BUSINESS_LOGIC = 'business_logic',
-  
+
   // Resource errors
   NOT_FOUND = 'not_found',
   CONFLICT = 'conflict',
-  
+
   // External service errors
   API = 'api',
   CLAUDE_API = 'claude_api',
   EXTERNAL = 'external',
-  
+
   // Client errors
   UI = 'ui',
   USER_INPUT = 'user_input',
   RENDERING = 'rendering',
   SVG = 'svg',
+  SVG_PARSING = 'svg_parsing',
+  SVG_VALIDATION = 'svg_validation',
+  SVG_RENDERING = 'svg_rendering',
+  ANIMATION = 'animation',
   DOWNLOAD = 'download',
-  
+
+  // System errors
+  INTERNAL = 'internal',
+  UNEXPECTED = 'unexpected',
+
   // Unknown/generic errors
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
+
+  // API error categories for middleware mapping
+  VALIDATION_ERROR = 'validation_error',
+  AUTHENTICATION_ERROR = 'authentication_error',
+  INTERNAL_SERVER_ERROR = 'internal_server_error',
 }
 
 /**
@@ -123,9 +140,15 @@ const categoryToStatusCode: Record<ErrorCategory, HttpStatusCode> = {
   [ErrorCategory.UI]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.USER_INPUT]: HttpStatusCode.BAD_REQUEST,
   [ErrorCategory.RENDERING]: HttpStatusCode.INTERNAL_SERVER_ERROR,
+  [ErrorCategory.DOWNLOAD]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.UNEXPECTED]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.INTERNAL]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR
+  ,
+  // API error categories for middleware mapping
+  [ErrorCategory.VALIDATION_ERROR]: HttpStatusCode.BAD_REQUEST,
+  [ErrorCategory.AUTHENTICATION_ERROR]: HttpStatusCode.UNAUTHORIZED,
+  [ErrorCategory.INTERNAL_SERVER_ERROR]: HttpStatusCode.INTERNAL_SERVER_ERROR
 };
 
 /**
@@ -155,9 +178,15 @@ const categoryToErrorCode: Record<ErrorCategory, ErrorCode> = {
   [ErrorCategory.UI]: ErrorCode.INTERNAL_ERROR,
   [ErrorCategory.USER_INPUT]: ErrorCode.BAD_REQUEST,
   [ErrorCategory.RENDERING]: ErrorCode.INTERNAL_ERROR,
+  [ErrorCategory.DOWNLOAD]: ErrorCode.INTERNAL_ERROR,
   [ErrorCategory.UNEXPECTED]: ErrorCode.UNEXPECTED_ERROR,
   [ErrorCategory.INTERNAL]: ErrorCode.INTERNAL_ERROR,
   [ErrorCategory.UNKNOWN]: ErrorCode.UNEXPECTED_ERROR
+  ,
+  // API error categories for middleware mapping
+  [ErrorCategory.VALIDATION_ERROR]: ErrorCode.VALIDATION_FAILED,
+  [ErrorCategory.AUTHENTICATION_ERROR]: ErrorCode.UNAUTHORIZED,
+  [ErrorCategory.INTERNAL_SERVER_ERROR]: ErrorCode.INTERNAL_ERROR
 };
 
 /**

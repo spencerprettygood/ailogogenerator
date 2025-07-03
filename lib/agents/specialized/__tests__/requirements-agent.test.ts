@@ -112,8 +112,8 @@ describe('RequirementsAgent', () => {
     
     expect(detectIndustryMethod('We need a logo for our new banking app')).toBe('Finance');
     expect(detectIndustryMethod('Our AI startup is launching next month')).toBe('Technology');
-    expect(detectIndustryMethod('We're opening a new restaurant in downtown')).toBe('Food & Beverage');
-    expect(detectIndustryMethod('Our medical clinic needs a new brand identity')).toBe('Healthcare');
+    expect(detectIndustryMethod("We're opening a new restaurant in downtown")).toBe('Food & Beverage');
+    expect(detectIndustryMethod("Our medical clinic needs a new brand identity")).toBe('Healthcare');
     expect(detectIndustryMethod('Just a generic company with no specific keywords')).toBe(null);
   });
 

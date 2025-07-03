@@ -34,7 +34,7 @@ export default function TestMockupsPage() {
       </Card>
       
       <EnhancedMockupIntegration
-        logo={TEST_SVG_LOGOS[selectedLogo]}
+        logo={TEST_SVG_LOGOS[selectedLogo] || TEST_SVG_LOGOS.simple || ''}
         brandName={`Test ${selectedLogo.charAt(0).toUpperCase() + selectedLogo.slice(1)} Brand`}
       />
       

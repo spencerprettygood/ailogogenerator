@@ -7,7 +7,27 @@ export interface AgentInput {
   [key: string]: any;
 }
 
-export interface AgentOutput {
+export interface AgentOutput<T = any> {
+  success: boolean;
+  result?: T;
+  error?: {
+    message: string;
+    details?: any;
+    retryable?: boolean;
+  };
+  tokensUsed?: number;
+  processingTime?: number;
+}
+
+export interface OrchestratorOptions {
+  maxConcurrentAgents: number;
+  timeoutMs: number;
+  retryFailedAgents: boolean;
+  maxRetries: number;
+  debugMode: boolean;
+  retryStrategy: AgentRetryStrategy;
+  initialRetryDelayMs: number;
+  cacheTTLSeconds: number;
 }
 
 export type ClaudeModel = 'claude-3-5-sonnet-20240620' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307';
@@ -66,7 +86,8 @@ export type AgentCapability =
   'design-theory' |
   'industry-analysis' |
   'animation-generation' |
-  'animation';
+  'animation' |
+  'uniqueness-verification';
 
 // Agent message types
 export interface AgentMessage {
@@ -148,6 +169,13 @@ export interface SVGGenerationAgentInput extends AgentInput {
 }
 
 export interface DesignPrinciple {
+  goldenRatio: string;
+  colorTheory: string;
+  visualHierarchy: string;
+  technicalExcellence: string;
+}
+
+export interface IndustryDesignPrinciple {
   colorTheory: string;
   composition: string;
   visualWeight: string;
@@ -161,6 +189,38 @@ export interface SVGGenerationAgentOutput extends AgentOutput {
     designRationale: string;
     designPrinciples?: DesignPrinciple;
   };
+}
+
+export interface IndustryTemplateSVGAgentOutput extends AgentOutput {
+  result?: {
+    svg: string;
+    designRationale: string;
+    designPrinciples?: IndustryDesignPrinciple;
+    industryTemplate?: string;
+  };
+}
+
+export interface UniquenessVerificationAgentInput extends AgentInput {
+  logo: { svgCode: string };
+  industry?: string;
+  brandName: string;
+  existingLogos?: { svgCode: string }[];
+}
+
+export interface UniquenessVerificationResult {
+  isUnique: boolean;
+  uniquenessScore: number; // 0-100
+  similarityIssues: {
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+    elementType: 'shape' | 'color' | 'typography' | 'composition' | 'concept';
+    recommendations: string[];
+  }[];
+  recommendations: string[];
+}
+
+export interface UniquenessVerificationAgentOutput extends AgentOutput {
+  result?: UniquenessVerificationResult;
 }
 
 export interface SVGValidationAgentInput extends AgentInput {
@@ -429,10 +489,12 @@ export interface OrchestratorOptions {
   maxConcurrentAgents: number;
   timeoutMs: number;
   retryFailedAgents: boolean;
-  maxRetries?: number;
+  maxRetries: number;
   debugMode: boolean;
-  retryStrategy?: AgentRetryStrategy;
-  initialRetryDelayMs?: number;
+  retryStrategy: AgentRetryStrategy;
+  initialRetryDelayMs: number;
+  cacheTTLSeconds: number;
+  useCache: boolean;
 }
 
 export interface OrchestratorContext {

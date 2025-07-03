@@ -13,7 +13,7 @@ import { MockupService } from '@/lib/mockups/mockup-service';
 export function MockupSelector({
   templates,
   selectedTemplateId,
-  onSelectTemplate,
+  onSelectTemplateAction,
   logo,
   brandName = 'Brand Name',
   className = ''
@@ -37,7 +37,9 @@ export function MockupSelector({
     [MockupType.MOBILE_APP]: 'Mobile Apps',
     [MockupType.LETTERHEAD]: 'Letterheads',
     [MockupType.BILLBOARD]: 'Billboards',
-    [MockupType.PACKAGING]: 'Packaging'
+    [MockupType.PACKAGING]: 'Packaging',
+    [MockupType.EMAIL_SIGNATURE]: 'Email Signatures',
+    [MockupType.FAVICON]: 'Favicons'
   };
 
   return (
@@ -62,7 +64,7 @@ export function MockupSelector({
                         ? "border-primary shadow-md" 
                         : "border-transparent hover:border-muted"
                     )}
-                    onClick={() => onSelectTemplate(template.id)}
+                    onClick={() => onSelectTemplateAction(template.id)}
                   >
                     <div className="relative w-48 h-32">
                       <Image

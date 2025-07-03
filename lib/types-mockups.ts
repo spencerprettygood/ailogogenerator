@@ -17,8 +17,8 @@ import {
 } from "./mockups/mockup-types";
 
 // Re-export from mockup-types.ts
-export { 
-  MockupType, 
+export { MockupType };
+export type { 
   MockupTemplate, 
   TextPlaceholder, 
   LogoPlacement,
@@ -32,9 +32,9 @@ export {
  */
 export interface MockupSelectorProps {
   templates: MockupTemplate[];
-  selectedTemplateId?: string;
-  onSelectTemplate: (templateId: string) => void;
-  logo: SVGLogo | string;
+  selectedTemplateId: string;
+  onSelectTemplateAction: (id: string) => void;
+  logo?: SVGLogo | string;
   brandName?: string;
   className?: string;
 }

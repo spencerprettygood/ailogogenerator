@@ -105,16 +105,9 @@ class ClaudeService {
   ): Promise<ClaudeResponse> {
     // Check if service is properly initialized
     if (!this.isInitialized) {
-      if (env.NODE_ENV === 'development') {
-        console.warn('Claude service is not properly initialized, but we are in development mode. Using mock response.');
-        // Return a mock response in development mode
-        return {
-          content: "This is a development mock response. Please set up the ANTHROPIC_API_KEY environment variable for real responses.",
-          tokensUsed: { input: 0, output: 0, total: 0 },
-          processingTime: 0
-        };
-      }
-      throw new Error('Claude service is not properly initialized. Check your API key.');
+      throw new Error(
+        'Claude service is not properly configured. Please set ANTHROPIC_API_KEY environment variable.'
+      );
     }
     
     const startTime = Date.now();
@@ -123,9 +116,10 @@ class ClaudeService {
       systemPrompt = "You are a helpful AI assistant.",
       temperature = 0.7,
       maxTokens = 1024,
-      model = 'claude-3-5-sonnet-20240620',
+      model: modelOption,
       stopSequences = [],
     } = options;
+    const model: ClaudeModel = modelOption || 'claude-3-5-sonnet-20240620';
     
     try {
       // Sanitize and validate input
@@ -155,26 +149,28 @@ class ClaudeService {
       let result;
       // Create a list of models to try, starting with the specified model and then the fallbacks
       const fallbackModels = options.fallbackModels || ['claude-3-sonnet-20240229'];
-      const modelsToTry = [attemptedModel, ...fallbackModels];
+      const modelsToTry = [model, ...fallbackModels];
       
       // Keep track of errors for better reporting
       const errors: Record<string, unknown> = {};
       
       // Try each model in sequence until one succeeds
       for (let i = 0; i < modelsToTry.length; i++) {
-        attemptedModel = modelsToTry[i];
+        // Defensive: ensure attemptedModel is always a valid ClaudeModel
+        const modelToTry = (modelsToTry[i] || 'claude-3-5-sonnet-20240620') as ClaudeModel;
+        attemptedModel = modelToTry;
         try {
           console.log(`Attempting to use model: ${attemptedModel}`);
-          
+          // anthropic() should be called with one argument (the model string)
           result = await generateText({
-            model: anthropic(attemptedModel, this.getAnthropicConfig(attemptedModel)),
+            model: anthropic(attemptedModel),
             messages: messages,
             system: systemPrompt,
             maxOutputTokens: maxTokens,
             temperature: temperature,
             stopSequences: stopSequences,
+            // Pass config if supported by generateText or set globally if needed
           });
-          
           // If successful, break out of the loop
           console.log(`Successfully used model: ${attemptedModel}`);
           break;

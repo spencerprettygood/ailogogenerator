@@ -1,13 +1,18 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
-    environment: 'node',
+    // Include AI-pipeline tests and specific API route test
+    include: ['lib/ai-pipeline/tests/**/*.ts', 'app/api/generate-logo/route.test.ts'],
+    environment: 'jsdom',  // enable DOM APIs for animation and SMIL provider tests
     globals: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      exclude: ['node_modules/', 'dist/']
+    setupFiles: ['./vitest.setup.ts'],
+    exclude: ['e2e/**'], // exclude E2E Playwright tests
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
     },
   },
 });

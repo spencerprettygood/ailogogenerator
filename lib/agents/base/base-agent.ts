@@ -96,6 +96,30 @@ export abstract class BaseAgent implements Agent {
   setProgressCallback(callback: (percent: number, message: string) => void): void {
     this.progressCallback = callback;
   }
+
+  /**
+   * Log a message and optionally a status
+   * This will also be sent to the progress callback if available
+   */
+  protected log(message: string, level: 'info' | 'error' | 'warn' = 'info'): void {
+    const logMessage = `[${this.type}] ${message}`;
+    switch (level) {
+      case 'error':
+        console.error(logMessage);
+        break;
+      case 'warn':
+        console.warn(logMessage);
+        break;
+      default:
+        console.log(logMessage);
+        break;
+    }
+
+    if (this.progressCallback) {
+      // Using a convention: -1 for log messages without a specific percentage
+      this.progressCallback(-1, message);
+    }
+  }
   
   /**
    * Report progress of the agent's execution
@@ -138,16 +162,27 @@ export abstract class BaseAgent implements Agent {
       this.reportProgress(5, 'Starting execution...');
       
       // Generate the prompt for this specific task
+      this.reportProgress(10, 'Generating prompt...');
       const prompt = await this.generatePrompt(input);
-      this.reportProgress(15, 'Generated prompt...');
       
-      // Determine which system prompt to use
-      const systemPrompt = this.config.systemPromptOverride || this.systemPrompt;
-      
-      // Call Claude API with retry logic
-      this.reportProgress(20, 'Calling AI model...');
-      const result = await this.callWithRetry(prompt, systemPrompt);
-      this.reportProgress(60, 'Received response from AI model...');
+      let result = {
+        content: '',
+        tokensUsed: { input: 0, output: 0, total: 0 }
+      };
+
+      // If a prompt is generated, call the AI model. Otherwise, skip to processing.
+      if (prompt) {
+        this.reportProgress(15, 'Generated prompt, preparing AI call...');
+        // Determine which system prompt to use
+        const systemPrompt = this.config.systemPromptOverride || this.systemPrompt;
+        
+        // Call Claude API with retry logic
+        this.reportProgress(20, 'Calling AI model...');
+        result = await this.callWithRetry(prompt, systemPrompt);
+        this.reportProgress(60, 'Received response from AI model...');
+      } else {
+        this.reportProgress(60, 'Skipping AI model call, proceeding with local processing...');
+      }
       
       // Process the response
       this.reportProgress(70, 'Processing response...');

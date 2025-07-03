@@ -1,8 +1,8 @@
+import { SVGLogo } from '@/lib/types';
 import { 
   MockupTemplate, 
-  MockupType, 
-  SVGLogo 
-} from '@/lib/types';
+  MockupType
+} from './mockup-types';
 import { 
   generateRealisticMockupSvg, 
   svgToRealisticDataUrl, 

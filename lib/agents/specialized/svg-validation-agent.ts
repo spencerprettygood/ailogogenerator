@@ -2,12 +2,12 @@ import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput, 
   SVGValidationAgentInput, 
-  SVGValidationAgentOutput 
+  SVGValidationResultOutput 
 } from '../../types-agents';
 import { InputSanitizer } from '../../utils/security-utils';
-import { SVGValidator } from '../../utils/svg-validator';
+import { SVGValidator, SVGValidationResult, SVGRepairResult } from '../../utils/svg-validator';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
 
 /**
  * SVGValidationAgent - Validates and repairs SVG for security and quality
@@ -65,13 +65,28 @@ IMPORTANT REQUIREMENTS:
   }
   
   /**
-   * Generate the prompt for SVG validation
-   * This agent doesn't primarily use prompts, but can request Claude's help for repair
+   * Generate the prompt for SVG validation.
+   * This agent only generates a prompt if automated repair fails and a manual repair is needed.
    */
   protected async generatePrompt(input: SVGValidationAgentInput): Promise<string> {
     const { svg, brandName, repair = true } = input;
+
+    // First, try to validate and repair automatically
+    const validationResult = SVGValidator.validate(svg);
+    if (validationResult.isValid) {
+      return ''; // No need for AI intervention
+    }
+
+    if (repair) {
+      const repairResult = SVGValidator.repair(svg);
+      const reValidation = SVGValidator.validate(repairResult.svg);
+      if (reValidation.isValid) {
+        return ''; // Automated repair was successful
+      }
+    }
     
-    // Only used if repair is needed and automated tools aren't sufficient
+    // If automated repair fails, generate a prompt for Claude
+    this.log('Automated SVG repair failed, escalating to AI model.', 'warn');
     return `Please fix the following SVG logo for "${brandName}" to ensure it's valid, secure, and optimized.
 Issues to address:
 - Ensure proper SVG structure with valid XML
@@ -92,167 +107,108 @@ Return only the fixed SVG code without any explanations.`;
    * Process SVG validation and repair
    * This is a hybrid approach using both built-in validation and Claude for complex repairs
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationAgentOutput> {
+  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationResultOutput> {
     const input = originalInput as SVGValidationAgentInput;
     const { svg, repair = true, optimize = true } = input;
     
     try {
       // Step 1: Use comprehensive SVG validator for initial validation
-      const validationResult = this.ensureValidationIssues(SVGValidator.validate(svg));
-      
-      // Basic security check with InputSanitizer for backward compatibility
-      const securityResult = InputSanitizer.validateSVG(svg);
+      const validationResult = SVGValidator.validate(svg);
       
       // If valid and no repair/optimization needed, return early
-      if (validationResult.isValid && securityResult.isValid && !repair && !optimize) {
+      if (validationResult.isValid && !repair && !optimize) {
         return {
           success: true,
           result: {
             svg,
             isValid: true,
-            securityScore: validationResult.securityScore,
-            accessibilityScore: validationResult.accessibilityScore,
-            optimizationScore: validationResult.optimizationScore,
-            modifications: []
+            ...this.extractScores(validationResult)
           }
         };
       }
-      
-      // Step 2: If invalid but repair isn't requested, return validation result with detailed issues
-      if ((!validationResult.isValid || !securityResult.isValid) && !repair) {
-        return {
-          success: false,
-          error: {
-            message: 'SVG validation failed',
-            details: [
-              ...validationResult.issues.map((issue: any) => `${issue.severity.toUpperCase()}: ${issue.message}`),
-              ...securityResult.errors
-            ]
-          }
-        };
-      }
-      
-      // Step 3: Apply comprehensive automated repairs using SVGValidator
-      let processedResult;
-      
-      if (repair && optimize) {
-        // Use the single-call process method that does validation, repair, and optimization
-        processedResult = this.ensureValidationIssues(SVGValidator.process(svg));
-      } else if (repair) {
-        // Just repair without optimization
-        const repairResult = this.ensureValidationIssues(SVGValidator.repair(svg));
-        processedResult = {
-          original: svg,
-          processed: repairResult.repaired,
-          validation: validationResult,
-          repair: repairResult,
-          overallScore: Math.round((validationResult.securityScore + validationResult.accessibilityScore) / 2),
-          success: repairResult.issuesRemaining.filter((i: any) => i.severity === 'critical').length === 0,
-          issuesRemaining: repairResult.issuesRemaining,
-        };
-      } else if (optimize) {
-        // Just optimize without repair
-        const optimizationResult = this.ensureValidationIssues(SVGValidator.optimize(svg));
-        processedResult = {
-          original: svg,
-          processed: optimizationResult.optimized,
-          validation: validationResult,
-          optimization: optimizationResult,
-          overallScore: validationResult.optimizationScore,
-          success: validationResult.isValid
-        };
-      } else {
-        // Neither repair nor optimize (should never reach here due to early return)
-        processedResult = {
-          original: svg,
-          processed: svg,
-          validation: validationResult,
-          success: validationResult.isValid
-        };
-      }
-      
-      // If automated repair wasn't sufficient, use Claude for complex repair
-      if (!processedResult.success && responseContent) {
-        // Extract SVG from Claude's response
-        const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
-        if (svgMatch) {
-          const claudeRepairedSvg = svgMatch[0];
-          
-          // Validate the Claude-repaired SVG
-          const claudeValidation = SVGValidator.validate(claudeRepairedSvg);
-          
-          if (claudeValidation.isValid) {
-            // If Claude's repair is valid, use it
-            processedResult.processed = claudeRepairedSvg;
-            processedResult.success = true;
-            processedResult.claudeRepair = true;
-          }
+
+      let processedSvg = svg;
+      let modifications: string[] = [];
+
+      // Step 2: Repair if requested
+      if (repair && !validationResult.isValid) {
+        const repairResult = SVGValidator.repair(svg);
+        processedSvg = repairResult.svg;
+        modifications.push(...repairResult.modifications);
+
+        // If automated repair failed and we have a response from Claude, use it.
+        if (responseContent) {
+            const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
+            if (svgMatch) {
+                const claudeRepairedSvg = svgMatch[0];
+                const claudeValidation = SVGValidator.validate(claudeRepairedSvg);
+                if (claudeValidation.isValid) {
+                    this.log('Using AI-repaired SVG.');
+                    processedSvg = claudeRepairedSvg;
+                    modifications.push('Repaired by AI model after automated repair failed.');
+                } else {
+                    this.log('AI repair was also invalid, using automated repair attempt.', 'warn');
+                }
+            }
         }
       }
-      
-      // Step 4: Final check and return results
-      if (!processedResult.success) {
+
+      // Step 3: Optimize if requested
+      if (optimize) {
+        const optimizationResult = SVGValidator.optimize(processedSvg);
+        processedSvg = optimizationResult.svg;
+        modifications.push(...optimizationResult.optimizations);
+      }
+
+      // Step 4: Final validation and return
+      const finalValidation = SVGValidator.validate(processedSvg);
+
+      if (!finalValidation.isValid) {
+        this.log('SVG remains invalid after all processing steps.', 'error');
         return {
           success: false,
-          error: {
-            message: 'SVG repair failed to fix all critical issues',
-            details: processedResult.validation.issues
-              .filter((i: any) => i.severity === 'critical')
-              .map((i: any) => i.message)
-              .join(', '),
-          }
+          error: handleError({
+            error: 'SVG validation and repair failed',
+            category: ErrorCategory.SVG,
+            details: { 
+              validationIssues: finalValidation.issues?.map(i => i.message) || ['Unknown validation error'],
+              originalSvg: svg.substring(0, 200) + '...'
+            },
+            retryable: false,
+          }),
         };
       }
-      
-      // Calculate file size details
-      const originalSize = Buffer.byteLength(svg, 'utf8');
-      const processedSize = Buffer.byteLength(processedResult.processed, 'utf8');
-      const reductionPercent = Math.round((1 - (processedSize / originalSize)) * 100);
-      
-      // Extract modifications list
-      const modifications: string[] = [];
-      
-      if (processedResult.repair) {
-        modifications.push(...processedResult.repair.issuesFixed.map((issue: any) =>
-          `Fixed issue: ${issue.message}`
-        ));
-      }
-      
-      if (processedResult.optimization) {
-        modifications.push(...processedResult.optimization.optimizations);
-      }
-      
-      if (processedResult.claudeRepair) {
-        modifications.push('Applied advanced Claude-based SVG repair');
-      }
-      
-      // Return the fully processed result
+
       return {
         success: true,
         result: {
-          svg: processedResult.processed,
+          svg: processedSvg,
           isValid: true,
           modifications,
-          securityScore: processedResult.validation.securityScore,
-          accessibilityScore: processedResult.validation.accessibilityScore,
-          optimizationScore: processedResult.validation.optimizationScore,
-          overallScore: processedResult.overallScore,
-          optimizationResults: {
-            originalSize,
-            optimizedSize: processedSize,
-            reductionPercent
-          }
-        }
+          ...this.extractScores(finalValidation)
+        },
+        tokensUsed: this.metrics.tokenUsage.total,
+        processingTime: this.metrics.executionTime,
       };
+
     } catch (error) {
-      console.error('Failed to process SVG validation:', error);
       return {
         success: false,
-        error: {
-          message: 'SVG validation process failed',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: error instanceof Error ? error.message : String(error),
+          category: ErrorCategory.SVG,
+          details: { originalSvg: svg.substring(0, 200) + '...' },
+          retryable: true,
+        }),
       };
     }
+  }
+
+  private extractScores(validationResult: SVGValidationResult) {
+      return {
+        securityScore: validationResult.securityScore,
+        accessibilityScore: validationResult.accessibilityScore,
+        optimizationScore: validationResult.optimizationScore,
+      };
   }
 }

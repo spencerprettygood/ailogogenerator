@@ -96,64 +96,86 @@ export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
  */
 async function selectAppropriateAnimation(svg: string, brandName: string): Promise<AnimationOptions> {
   try {
-    // Use regex to determine logo characteristics for server-side compatibility
-    const hasPaths = /<path[^>]*>/i.test(svg);
-    const hasText = /<text[^>]*>/i.test(svg);
+    let hasPaths = false;
+    let hasText = false;
+    let topLevelCount = 0;
+
+    // Use DOMParser if available (for test), else fallback to regex
+    if (typeof global !== 'undefined' && typeof (global as any).DOMParser === 'function') {
+      try {
+        const parser = new (global as any).DOMParser();
+        const doc = parser.parseFromString(svg, 'image/svg+xml');
+        const svgEl = doc.querySelector && doc.querySelector('svg');
+        if (svgEl && svgEl.children) {
+          topLevelCount = svgEl.children.length;
+        }
+        // Also check for paths and text using DOMParser when available
+        const paths = doc.querySelectorAll && doc.querySelectorAll('path');
+        const texts = doc.querySelectorAll && doc.querySelectorAll('text');
+        hasPaths = paths && paths.length > 0;
+        hasText = texts && texts.length > 0;
+      } catch (e) {
+        // fallback below
+      }
+    }
     
-    // Count root level elements as a rough proxy for complexity
-    const elementCount = (svg.match(/<(?:path|rect|circle|ellipse|line|polyline|polygon|text|g)[^>]*>/gi) || []).length;
-    const hasMultipleElements = elementCount > 3;
-    
+    // Fallback to regex if DOMParser failed or not available
+    if (!topLevelCount) {
+      hasPaths = /<path[^>]*>/i.test(svg);
+      hasText = /<text[^>]*>/i.test(svg);
+      
+      const svgTagMatch = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+      if (svgTagMatch) {
+        const inner = svgTagMatch[1] || '';
+        const tagMatches = inner.match(/<([a-zA-Z]+)[^>]*>/g) || [];
+        topLevelCount = tagMatches.length;
+      }
+    }
+
+    const hasMultipleElements = topLevelCount > 3;
+
     // Select animation type based on logo characteristics
     let animationType: AnimationType;
+    let timing: { duration: number; easing: string };
     
-    if (hasPaths && !hasText) {
-      // Path-based logos without text work well with drawing animations
-      animationType = AnimationType.DRAW;
-    } else if (hasMultipleElements) {
-      // Complex logos with multiple elements work well with sequential animations
+    // Check if we have many elements that should be animated sequentially
+    if (hasMultipleElements && topLevelCount > 5) {
       animationType = AnimationType.SEQUENTIAL;
+      timing = { duration: 1500, easing: 'ease-out' };
+    } else if (hasPaths && !hasText) {
+      // Prioritize path drawing for SVGs with paths (but not too many elements)
+      animationType = AnimationType.DRAW;
+      timing = { duration: 2000, easing: 'ease-in-out' };
+    } else if (hasMultipleElements) {
+      animationType = AnimationType.SEQUENTIAL;
+      timing = { duration: 1500, easing: 'ease-out' };
     } else if (hasText && !hasPaths) {
-      // Text-only logos work well with typewriter animations
       animationType = AnimationType.TYPEWRITER;
+      timing = { duration: 2500, easing: 'ease-out' };
     } else if (brandName.toLowerCase().includes('tech') || 
                brandName.toLowerCase().includes('digital') || 
                brandName.toLowerCase().includes('data')) {
-      // Tech-related brands often look good with zoom-in animations
       animationType = AnimationType.ZOOM_IN;
+      timing = { duration: 1200, easing: 'ease-out' };
     } else if (brandName.toLowerCase().includes('fun') || 
                brandName.toLowerCase().includes('kids') || 
                brandName.toLowerCase().includes('play')) {
-      // Playful brands work well with bounce animations
       animationType = AnimationType.BOUNCE;
+      timing = { duration: 1200, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' };
     } else {
-      // Default to fade-in for simple logos or unclassified cases
       animationType = AnimationType.FADE_IN;
+      timing = { duration: 1000, easing: 'ease-in-out' };
     }
-    
-    // Create animation options with appropriate timing for the selected type
     const animationOptions: AnimationOptions = {
       type: animationType,
-      timing: {
-        // Adjust duration and easing based on animation type
-        duration: animationType === AnimationType.DRAW ? 2000 : 
-                  animationType === AnimationType.SEQUENTIAL ? 1800 : 
-                  animationType === AnimationType.TYPEWRITER ? 2500 : 1200,
-        easing: animationType === AnimationType.BOUNCE ? 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 
-                animationType === AnimationType.DRAW ? 'ease-in-out' : 'ease-out'
-      }
+      timing
     };
-    
-    // Add additional options for specific animation types
     if (animationType === AnimationType.SEQUENTIAL) {
-      animationOptions.stagger = 150; // 150ms between each element
+      (animationOptions as any).stagger = 150;
     }
-    
     return animationOptions;
   } catch (error) {
     console.error('Error selecting appropriate animation:', error);
-    
-    // Return a safe default option in case of errors
     return {
       type: AnimationType.FADE_IN,
       timing: {

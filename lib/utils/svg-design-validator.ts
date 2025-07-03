@@ -100,7 +100,7 @@ export class SVGDesignValidator extends SVGValidator {
     
     // If design assessment is requested, add it to the result
     if (assessDesign) {
-      const designQuality = this.assessDesignQuality(processResult.svg ?? processResult.processed ?? '');
+      const designQuality = this.assessDesignQuality(processResult.processed ?? '');
       return {
         svg: processResult.processed ?? '',
         validation: processResult.validation,
@@ -293,8 +293,10 @@ export class SVGDesignValidator extends SVGValidator {
     if (hslColors.length >= 2) {
       for (let i = 0; i < hslColors.length; i++) {
         for (let j = i + 1; j < hslColors.length; j++) {
-          if (hslColors[i] && hslColors[j]) {
-            const hueDiff = Math.abs(hslColors[i].h - hslColors[j].h);
+          const colorI = hslColors[i];
+          const colorJ = hslColors[j];
+          if (colorI && colorJ) {
+            const hueDiff = Math.abs(colorI.h - colorJ.h);
             if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
               isComplementary = true;
               break;
@@ -312,18 +314,16 @@ export class SVGDesignValidator extends SVGValidator {
       for (let i = 0; i < hues.length; i++) {
         for (let j = i + 1; j < hues.length; j++) {
           for (let k = j + 1; k < hues.length; k++) {
-            if (hues[i] !== undefined && hues[j] !== undefined) {
-              const diff1 = Math.abs((hues[j] - hues[i] + 360) % 360);
-              if (hues[k] !== undefined && hues[j] !== undefined) {
-                const diff2 = Math.abs((hues[k] - hues[j] + 360) % 360);
-                if (hues[i] !== undefined && hues[k] !== undefined) {
-                  const diff3 = Math.abs((hues[i] - hues[k] + 360) % 360);
+            const hueI = hues[i];
+            const hueJ = hues[j];
+            const hueK = hues[k];
+            if (hueI !== undefined && hueJ !== undefined && hueK !== undefined) {
+              const diff1 = Math.abs((hueJ - hueI + 360) % 360);
+              const diff2 = Math.abs((hueK - hueJ + 360) % 360);
                   
-                  if (Math.abs(diff1 - 120) <= 20 && Math.abs(diff2 - 120) <= 20) {
-                    isTriadic = true;
-                    break;
-                  }
-                }
+              if (Math.abs(diff1 - 120) <= 20 && Math.abs(diff2 - 120) <= 20) {
+                isTriadic = true;
+                break;
               }
             }
           }
@@ -342,8 +342,10 @@ export class SVGDesignValidator extends SVGValidator {
       
       for (let i = 0; i < hues.length; i++) {
         for (let j = i + 1; j < hues.length; j++) {
-          if (hues[i] !== undefined && hues[j] !== undefined) {
-            const hueDiff = Math.abs(hues[i] - hues[j]);
+          const hueI = hues[i];
+          const hueJ = hues[j];
+          if (hueI !== undefined && hueJ !== undefined) {
+            const hueDiff = Math.abs(hueI - hueJ);
             if (Math.abs(hueDiff - 180) <= 20 || Math.abs(hueDiff - 540) <= 20) {
               complementaryPairs++;
             }
@@ -372,11 +374,11 @@ export class SVGDesignValidator extends SVGValidator {
   private static convertColorToHSL(color: string): { h: number, s: number, l: number } {
     // Default HSL values
     let h = 0, s = 0, l = 0;
-    
+    // Always declare r, g, b at the top so they are in scope for the whole function
+    let r = 0, g = 0, b = 0;
+
     // Handle hex colors
     if (color.startsWith('#')) {
-      let r = 0, g = 0, b = 0;
-      
       if (color.length === 4) {
         // #RGB format
         if (color && color[1] && color[2] && color[3]) {
@@ -390,23 +392,23 @@ export class SVGDesignValidator extends SVGValidator {
         g = parseInt(color.substring(3, 5), 16) / 255;
         b = parseInt(color.substring(5, 7), 16) / 255;
       }
-      
+
       const max = Math.max(r, g, b);
       const min = Math.min(r, g, b);
       const d = max - min;
-      
+
       // Calculate hue
       if (d === 0) h = 0;
       else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
       else if (max === g) h = ((b - r) / d + 2) * 60;
       else if (max === b) h = ((r - g) / d + 4) * 60;
-      
+
       // Calculate lightness
       l = (max + min) / 2;
-      
+
       // Calculate saturation
       s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-      
+
       // Convert to percentages
       s = s * 100;
       l = l * 100;
@@ -415,58 +417,13 @@ export class SVGDesignValidator extends SVGValidator {
     else if (color.startsWith('rgb')) {
       const match = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (match && match[1] && match[2] && match[3]) {
-        const r = parseInt(match[1], 10) / 255;
-        const g = parseInt(match[2], 10) / 255;
-        const b = parseInt(match[3], 10) / 255;
-        
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const d = max - min;
-        
-        // Calculate hue
-        if (d === 0) h = 0;
-        else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
-        else if (max === g) h = ((b - r) / d + 2) * 60;
-        else if (max === b) h = ((r - g) / d + 4) * 60;
-        
-        // Calculate lightness
-        l = (max + min) / 2;
-        
-        // Calculate saturation
-        s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-        
-        // Convert to percentages
-        s = s * 100;
-        l = l * 100;
+        r = parseInt(match[1], 10) / 255;
+        g = parseInt(match[2], 10) / 255;
+        b = parseInt(match[3], 10) / 255;
       }
     }
-    // Handle named colors with a simplified mapping
-    else {
-      // This is a simplified approach - a real implementation would have a complete mapping
-      const namedColorMap: Record<string, { h: number, s: number, l: number }> = {
-        'black': { h: 0, s: 0, l: 0 },
-        'white': { h: 0, s: 0, l: 100 },
-        'red': { h: 0, s: 100, l: 50 },
-        'green': { h: 120, s: 100, l: 50 },
-        'blue': { h: 240, s: 100, l: 50 },
-        'yellow': { h: 60, s: 100, l: 50 },
-        'cyan': { h: 180, s: 100, l: 50 },
-        'magenta': { h: 300, s: 100, l: 50 },
-        'gray': { h: 0, s: 0, l: 50 },
-        'orange': { h: 30, s: 100, l: 50 },
-        'purple': { h: 270, s: 100, l: 50 },
-        'pink': { h: 330, s: 100, l: 70 },
-        'brown': { h: 30, s: 60, l: 40 },
-      };
-      
-      if (namedColorMap[color.toLowerCase()]) {
-        const colorValues = namedColorMap[color.toLowerCase()];
-        h = colorValues.h;
-        s = colorValues.s;
-        l = colorValues.l;
-      }
-    }
-    
+
+    // Return HSL object
     return { h, s, l };
   }
   
@@ -486,8 +443,12 @@ export class SVGDesignValidator extends SVGValidator {
     // Sort luminances
     luminances.sort((a, b) => a - b);
     
+    if (luminances.length < 2 || luminances[0] === undefined || luminances[luminances.length - 1] === undefined) {
+      return 0;
+    }
+
     // Check contrast ratio between lightest and darkest colors
-    const contrastRatio = (luminances[luminances.length - 1] + 0.05) / (luminances[0] + 0.05);
+    const contrastRatio = (luminances[luminances.length - 1]! + 0.05) / (luminances[0]! + 0.05);
     
     // WCAG 2.0 guidelines: 
     // - 4.5:1 for normal text
@@ -534,29 +495,13 @@ export class SVGDesignValidator extends SVGValidator {
     else if (color.startsWith('rgb')) {
       const match = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (match && match[1] && match[2] && match[3]) {
-        const r = parseInt(match[1], 10) / 255;
-        const g = parseInt(match[2], 10) / 255;
-        const b = parseInt(match[3], 10) / 255;
+        let r_val = parseInt(match[1], 10) / 255;
+        let g_val = parseInt(match[2], 10) / 255;
+        let b_val = parseInt(match[3], 10) / 255;
         
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const d = max - min;
-        
-        // Calculate hue
-        if (d === 0) h = 0;
-        else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
-        else if (max === g) h = ((b - r) / d + 2) * 60;
-        else if (max === b) h = ((r - g) / d + 4) * 60;
-        
-        // Calculate lightness
-        l = (max + min) / 2;
-        
-        // Calculate saturation
-        s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-        
-        // Convert to percentages
-        s = s * 100;
-        l = l * 100;
+        r = r_val;
+        g = g_val;
+        b = b_val;
       }
     }
     
@@ -579,8 +524,8 @@ export class SVGDesignValidator extends SVGValidator {
     let score = 70; // Start with a default score
     
     // Check for viewBox attribute
-    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
-    if (!viewBoxMatch) {
+    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
+    if (!viewBoxMatch || !viewBoxMatch[1]) {
       score -= 20; // Significant deduction for missing viewBox
     } else {
       const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
@@ -588,30 +533,32 @@ export class SVGDesignValidator extends SVGValidator {
       // Check if viewBox has 4 values
       if (viewBox.length === 4) {
         const [x, y, width, height] = viewBox;
-        
-        // Check for golden ratio proportions (approximately 1:1.618)
-        const ratio = width / height;
-        const goldenRatio = 1.618;
-        
-        if (Math.abs(ratio - goldenRatio) < 0.2 || Math.abs(ratio - 1/goldenRatio) < 0.2) {
-          score += 10; // Bonus for golden ratio proportions
-        }
-        
-        // Check if it's square (good for logos)
-        if (Math.abs(ratio - 1) < 0.1) {
-          score += 5; // Bonus for square aspect ratio
+
+        if (width !== undefined && height !== undefined && height > 0) {
+          // Check for golden ratio proportions (approximately 1:1.618)
+          const ratio = width / height;
+          const goldenRatio = 1.618;
+          
+          if (Math.abs(ratio - goldenRatio) < 0.2 || Math.abs(ratio - 1/goldenRatio) < 0.2) {
+            score += 10; // Bonus for golden ratio proportions
+          }
+          
+          // Check if it's square (good for logos)
+          if (Math.abs(ratio - 1) < 0.1) {
+            score += 5; // Bonus for square aspect ratio
+          }
         }
       }
     }
     
     // Analyze distribution of elements by checking coordinate ranges in paths
-    const pathMatch = svgContent.match(/d\s*=\s*["']([^"']*)["']/gi);
+    const pathMatch = svgContent.match(/d\s*=\s*['"]([^"']*)['']/gi);
     if (pathMatch && pathMatch.length > 0) {
       // Simple heuristic - check if paths are well-distributed throughout the viewBox
       const coordinates: number[] = [];
       
       for (const path of pathMatch) {
-        const pathData = path.match(/d\s*=\s*["']([^"']*)["']/i);
+        const pathData = path.match(/d\s*=\s*['"]([^"']*)['"]/i);
         if (pathData && pathData[1]) {
           // Extract numbers from path data
           const numbers = pathData[1].match(/-?\d+(?:\.\d+)?/g);
@@ -628,16 +575,18 @@ export class SVGDesignValidator extends SVGValidator {
         const range = max - min;
         
         // If coordinates are spread across at least 50% of the available space, consider it well-distributed
-        if (viewBoxMatch) {
+        if (viewBoxMatch && viewBoxMatch[1]) {
           const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
           if (viewBox.length === 4) {
             const [, , width, height] = viewBox;
-            const maxDimension = Math.max(width, height);
-            
-            if (range > maxDimension * 0.5) {
-              score += 10; // Bonus for well-distributed elements
-            } else if (range < maxDimension * 0.3) {
-              score -= 10; // Deduction for concentrated elements
+            if (width !== undefined && height !== undefined) {
+              const maxDimension = Math.max(width, height);
+              
+              if (range > maxDimension * 0.5) {
+                score += 10; // Bonus for well-distributed elements
+              } else if (range < maxDimension * 0.3) {
+                score -= 10; // Deduction for concentrated elements
+              }
             }
           }
         }
@@ -646,66 +595,68 @@ export class SVGDesignValidator extends SVGValidator {
     
     // Check for rule of thirds by analyzing positioning of key elements
     // This is a simplified approximation
-    if (pathMatch && pathMatch.length > 0 && viewBoxMatch) {
+    if (pathMatch && pathMatch.length > 0 && viewBoxMatch && viewBoxMatch[1]) {
       const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
       if (viewBox.length === 4) {
         const [, , width, height] = viewBox;
         
-        // Define rule of thirds lines
-        const thirdH1 = height / 3;
-        const thirdH2 = 2 * height / 3;
-        const thirdW1 = width / 3;
-        const thirdW2 = 2 * width / 3;
-        
-        // Intersections of thirds
-        const intersections = [
-          { x: thirdW1, y: thirdH1 },
-          { x: thirdW2, y: thirdH1 },
-          { x: thirdW1, y: thirdH2 },
-          { x: thirdW2, y: thirdH2 }
-        ];
-        
-        // Simplistic check for elements near rule of thirds intersections
-        let hasElementsAtIntersections = false;
-        
-        for (const path of pathMatch) {
-          const pathData = path.match(/d\s*=\s*["']([^"']*)["']/i);
-          if (pathData && pathData[1]) {
-            // Extract move commands (starting points)
-            const moveCommands = pathData[1].match(/[Mm]\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/g);
-            
-            if (moveCommands) {
-              for (const command of moveCommands) {
-                const coords = command.match(/(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/);
-                if (coords) {
-                  const x = parseFloat(coords[1]);
-                  const y = parseFloat(coords[2]);
-                  
-                  // Check if this point is near any intersection
-                  for (const intersection of intersections) {
-                    const distance = Math.sqrt(
-                      Math.pow(x - intersection.x, 2) + 
-                      Math.pow(y - intersection.y, 2)
-                    );
+        if (width !== undefined && height !== undefined) {
+          // Define rule of thirds lines
+          const thirdH1 = height / 3;
+          const thirdH2 = 2 * height / 3;
+          const thirdW1 = width / 3;
+          const thirdW2 = 2 * width / 3;
+          
+          // Intersections of thirds
+          const intersections = [
+            { x: thirdW1, y: thirdH1 },
+            { x: thirdW2, y: thirdH1 },
+            { x: thirdW1, y: thirdH2 },
+            { x: thirdW2, y: thirdH2 }
+          ];
+          
+          // Simplistic check for elements near rule of thirds intersections
+          let hasElementsAtIntersections = false;
+          
+          for (const path of pathMatch) {
+            const pathData = path.match(/d\s*=\s*['"]([^"']*)['"]/i);
+            if (pathData && pathData[1]) {
+              // Extract move commands (starting points)
+              const moveCommands = pathData[1].match(/[Mm]\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/g);
+              
+              if (moveCommands) {
+                for (const command of moveCommands) {
+                  const coords = command.match(/(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/);
+                  if (coords && coords[1] && coords[2]) {
+                    const x = parseFloat(coords[1]);
+                    const y = parseFloat(coords[2]);
                     
-                    // If within 10% of width/height, consider it aligned with rule of thirds
-                    if (distance < Math.min(width, height) * 0.1) {
-                      hasElementsAtIntersections = true;
-                      break;
+                    // Check if this point is near any intersection
+                    for (const intersection of intersections) {
+                      const distance = Math.sqrt(
+                        Math.pow(x - intersection.x, 2) + 
+                        Math.pow(y - intersection.y, 2)
+                      );
+                      
+                      // If within 10% of width/height, consider it aligned with rule of thirds
+                      if (distance < Math.min(width, height) * 0.1) {
+                        hasElementsAtIntersections = true;
+                        break;
+                      }
                     }
+                    
+                    if (hasElementsAtIntersections) break;
                   }
-                  
-                  if (hasElementsAtIntersections) break;
                 }
               }
+              
+              if (hasElementsAtIntersections) break;
             }
-            
-            if (hasElementsAtIntersections) break;
           }
-        }
-        
-        if (hasElementsAtIntersections) {
-          score += 10; // Bonus for elements at rule of thirds intersections
+          
+          if (hasElementsAtIntersections) {
+            score += 10; // Bonus for elements at rule of thirds intersections
+          }
         }
       }
     }
@@ -724,13 +675,17 @@ export class SVGDesignValidator extends SVGValidator {
     let score = 75; // Start with a default score
     
     // Extract viewBox dimensions
-    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
-    if (!viewBoxMatch) return score;
+    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
+    if (!viewBoxMatch || !viewBoxMatch[1]) return score;
     
     const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
     if (viewBox.length !== 4) return score;
     
     const [x, y, width, height] = viewBox;
+
+    if (x === undefined || y === undefined || width === undefined || height === undefined) {
+      return score;
+    }
     
     // Divide the canvas into quadrants
     const centerX = x + width / 2;
@@ -749,8 +704,8 @@ export class SVGDesignValidator extends SVGValidator {
     if (pathMatch) {
       for (const path of pathMatch) {
         // Extract d attribute
-        const dMatch = path.match(/d\s*=\s*["']([^"']*)["']/i);
-        if (dMatch) {
+        const dMatch = path.match(/d\s*=\s*['"]([^"']*)['"]/i);
+        if (dMatch && dMatch[1]) {
           const pathData = dMatch[1];
           
           // Extract coordinates from path data
@@ -760,7 +715,7 @@ export class SVGDesignValidator extends SVGValidator {
           if (coordMatches) {
             for (const coord of coordMatches) {
               const parts = coord.match(/(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/);
-              if (parts) {
+              if (parts && parts[1] && parts[2]) {
                 coordinates.push({
                   x: parseFloat(parts[1]),
                   y: parseFloat(parts[2])
@@ -790,10 +745,10 @@ export class SVGDesignValidator extends SVGValidator {
     if (circleMatch) {
       for (const circle of circleMatch) {
         // Extract cx and cy attributes
-        const cxMatch = circle.match(/cx\s*=\s*["']([^"']*)["']/i);
-        const cyMatch = circle.match(/cy\s*=\s*["']([^"']*)["']/i);
+        const cxMatch = circle.match(/cx\s*=\s*['"]([^"']*)['"]/i);
+        const cyMatch = circle.match(/cy\s*=\s*['"]([^"']*)['"]/i);
         
-        if (cxMatch && cyMatch) {
+        if (cxMatch && cxMatch[1] && cyMatch && cyMatch[1]) {
           const cx = parseFloat(cxMatch[1]);
           const cy = parseFloat(cyMatch[1]);
           
@@ -816,12 +771,12 @@ export class SVGDesignValidator extends SVGValidator {
     if (rectMatch) {
       for (const rect of rectMatch) {
         // Extract x, y, width, height attributes
-        const xMatch = rect.match(/x\s*=\s*["']([^"']*)["']/i);
-        const yMatch = rect.match(/y\s*=\s*["']([^"']*)["']/i);
-        const wMatch = rect.match(/width\s*=\s*["']([^"']*)["']/i);
-        const hMatch = rect.match(/height\s*=\s*["']([^"']*)["']/i);
+        const xMatch = rect.match(/x\s*=\s*['"]([^"']*)['"]/i);
+        const yMatch = rect.match(/y\s*=\s*['"]([^"']*)['"]/i);
+        const wMatch = rect.match(/width\s*=\s*['"]([^"']*)['"]/i);
+        const hMatch = rect.match(/height\s*=\s*['"]([^"']*)['"]/i);
         
-        if (xMatch && yMatch && wMatch && hMatch) {
+        if (xMatch && xMatch[1] && yMatch && yMatch[1] && wMatch && wMatch[1] && hMatch && hMatch[1]) {
           const rectX = parseFloat(xMatch[1]);
           const rectY = parseFloat(yMatch[1]);
           const rectW = parseFloat(wMatch[1]);
@@ -948,16 +903,26 @@ export class SVGDesignValidator extends SVGValidator {
     if (fontSizes.length > 1) {
       // Sort font sizes
       fontSizes.sort((a, b) => a - b);
-      
-      // Check for appropriate size differences between smallest and largest
-      const ratio = fontSizes[fontSizes.length - 1] / fontSizes[0];
-      
-      if (ratio > 1.5 && ratio < 4) {
-        score += 10; // Good size hierarchy
-      } else if (ratio <= 1.2) {
-        score -= 10; // Too little contrast between sizes
-      } else if (ratio >= 5) {
-        score -= 5; // Too much contrast between sizes
+
+      let ratio: number | undefined = undefined;
+      if (
+        fontSizes &&
+        fontSizes.length > 1 &&
+        typeof fontSizes[0] === 'number' &&
+        typeof fontSizes[fontSizes.length - 1] === 'number' &&
+        fontSizes[0] !== 0
+      ) {
+        ratio = (fontSizes[fontSizes.length - 1] as number) / (fontSizes[0] as number);
+      }
+
+      if (ratio !== undefined) {
+        if (ratio > 1.5 && ratio < 4) {
+          score += 10; // Good size hierarchy
+        } else if (ratio <= 1.2) {
+          score -= 10; // Too little contrast between sizes
+        } else if (ratio >= 5) {
+          score -= 5; // Too much contrast between sizes
+        }
       }
     }
     
@@ -974,27 +939,28 @@ export class SVGDesignValidator extends SVGValidator {
           textTooSmall = true;
         }
       }
-      
+
       // Check if text is well-positioned within the viewBox
       const xMatch = textElement.match(/x\s*=\s*["']([^"']*)["']/i);
       const yMatch = textElement.match(/y\s*=\s*["']([^"']*)["']/i);
-      
-      if (xMatch && yMatch) {
+
+      if (xMatch && xMatch[1] && yMatch && yMatch[1]) {
         const x = parseFloat(xMatch[1]);
         const y = parseFloat(yMatch[1]);
-        
+
         // Extract viewBox dimensions
-        const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
-        if (viewBoxMatch) {
+        const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
+        if (viewBoxMatch && viewBoxMatch[1]) {
           const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
           if (viewBox.length === 4) {
             const [minX, minY, width, height] = viewBox;
-            
             // Check if text is too close to the edge
-            const margin = Math.min(width, height) * 0.05; // 5% margin
-            if (x < minX + margin || x > minX + width - margin || 
-                y < minY + margin || y > minY + height - margin) {
-              textWellPositioned = false;
+            if (typeof width === 'number' && typeof height === 'number' && typeof minX === 'number' && typeof minY === 'number') {
+              const margin = Math.min(width, height) * 0.05; // 5% margin
+              if (x < minX + margin || x > minX + width - margin ||
+                  y < minY + margin || y > minY + height - margin) {
+                textWellPositioned = false;
+              }
             }
           }
         }
@@ -1034,14 +1000,14 @@ export class SVGDesignValidator extends SVGValidator {
     let score = 70; // Start with a default score
     
     // Extract viewBox dimensions
-    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
-    if (!viewBoxMatch) return score;
+    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
+    if (!viewBoxMatch || !viewBoxMatch[1]) return score;
     
     const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
     if (viewBox.length !== 4) return score;
     
     const [, , width, height] = viewBox;
-    const totalArea = width * height;
+    const totalArea = (typeof width === 'number' && typeof height === 'number') ? width * height : 0;
     
     // Estimate filled area based on path, rect, circle elements
     let estimatedFilledArea = 0;
@@ -1049,10 +1015,10 @@ export class SVGDesignValidator extends SVGValidator {
     // Check rectangles
     const rectElements = svgContent.match(/<rect[^>]*>/gi) || [];
     for (const rect of rectElements) {
-      const widthMatch = rect.match(/width\s*=\s*["']([^"']*)["']/i);
-      const heightMatch = rect.match(/height\s*=\s*["']([^"']*)["']/i);
+      const widthMatch = rect.match(/width\s*=\s*['"]([^"']*)['"]/i);
+      const heightMatch = rect.match(/height\s*=\s*['"]([^"']*)['"]/i);
       
-      if (widthMatch && heightMatch) {
+      if (widthMatch && widthMatch[1] && heightMatch && heightMatch[1]) {
         const rectWidth = parseFloat(widthMatch[1]);
         const rectHeight = parseFloat(heightMatch[1]);
         
@@ -1065,9 +1031,9 @@ export class SVGDesignValidator extends SVGValidator {
     // Check circles
     const circleElements = svgContent.match(/<circle[^>]*>/gi) || [];
     for (const circle of circleElements) {
-      const rMatch = circle.match(/r\s*=\s*["']([^"']*)["']/i);
+      const rMatch = circle.match(/r\s*=\s*['"]([^"']*)['"]/i);
       
-      if (rMatch) {
+      if (rMatch && rMatch[1]) {
         const radius = parseFloat(rMatch[1]);
         
         if (!isNaN(radius)) {
@@ -1125,8 +1091,8 @@ export class SVGDesignValidator extends SVGValidator {
    */
   private static hasElementClustering(svgContent: string): boolean {
     // Extract viewBox dimensions
-    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
-    if (!viewBoxMatch) return false;
+    const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
+    if (!viewBoxMatch || !viewBoxMatch[1]) return false;
     
     const viewBox = viewBoxMatch[1].split(/\s+/).map(Number);
     if (viewBox.length !== 4) return false;
@@ -1139,12 +1105,12 @@ export class SVGDesignValidator extends SVGValidator {
     // Check rectangles
     const rectElements = svgContent.match(/<rect[^>]*>/gi) || [];
     for (const rect of rectElements) {
-      const xMatch = rect.match(/x\s*=\s*["']([^"']*)["']/i);
-      const yMatch = rect.match(/y\s*=\s*["']([^"']*)["']/i);
-      const widthMatch = rect.match(/width\s*=\s*["']([^"']*)["']/i);
-      const heightMatch = rect.match(/height\s*=\s*["']([^"']*)["']/i);
+      const xMatch = rect.match(/x\s*=\s*['"]([^"']*)['"]/i);
+      const yMatch = rect.match(/y\s*=\s*['"]([^"']*)['"]/i);
+      const widthMatch = rect.match(/width\s*=\s*['"]([^"']*)['"]/i);
+      const heightMatch = rect.match(/height\s*=\s*['"]([^"']*)['"]/i);
       
-      if (xMatch && yMatch && widthMatch && heightMatch) {
+      if (xMatch && xMatch[1] && yMatch && yMatch[1] && widthMatch && widthMatch[1] && heightMatch && heightMatch[1]) {
         const x = parseFloat(xMatch[1]);
         const y = parseFloat(yMatch[1]);
         const rectWidth = parseFloat(widthMatch[1]);
@@ -1162,10 +1128,10 @@ export class SVGDesignValidator extends SVGValidator {
     // Check circles
     const circleElements = svgContent.match(/<circle[^>]*>/gi) || [];
     for (const circle of circleElements) {
-      const cxMatch = circle.match(/cx\s*=\s*["']([^"']*)["']/i);
-      const cyMatch = circle.match(/cy\s*=\s*["']([^"']*)["']/i);
+      const cxMatch = circle.match(/cx\s*=\s*['"]([^"']*)['"]/i);
+      const cyMatch = circle.match(/cy\s*=\s*['"]([^"']*)['"]/i);
       
-      if (cxMatch && cyMatch) {
+      if (cxMatch && cxMatch[1] && cyMatch && cyMatch[1]) {
         const cx = parseFloat(cxMatch[1]);
         const cy = parseFloat(cyMatch[1]);
         
@@ -1176,15 +1142,15 @@ export class SVGDesignValidator extends SVGValidator {
     }
     
     // Check path starting points (simplified)
-    const pathElements = svgContent.match(/<path[^>]*d\s*=\s*["']([^"']*)["']/gi) || [];
+    const pathElements = svgContent.match(/<path[^>]*d\s*=\s*['"]([^"']*)['"]/gi) || [];
     for (const path of pathElements) {
-      const dMatch = path.match(/d\s*=\s*["']([^"']*)["']/i);
+      const dMatch = path.match(/d\s*=\s*['"]([^"']*)['"]/i);
       if (dMatch && dMatch[1]) {
         // Look for M commands which are starting points
         const moveMatch = dMatch[1].match(/[Mm]\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)/);
         if (moveMatch) {
-          const x = parseFloat(moveMatch[1]);
-          const y = parseFloat(moveMatch[2]);
+          const x = moveMatch && moveMatch[1] ? parseFloat(moveMatch[1]) : 0;
+          const y = moveMatch && moveMatch[2] ? parseFloat(moveMatch[2]) : 0;
           
           if (!isNaN(x) && !isNaN(y)) {
             elementCoordinates.push({ x, y });
@@ -1204,11 +1170,22 @@ export class SVGDesignValidator extends SVGValidator {
     
     for (let i = 0; i < elementCoordinates.length; i++) {
       for (let j = i + 1; j < elementCoordinates.length; j++) {
-        const dist = Math.sqrt(
-          Math.pow(elementCoordinates[i].x - elementCoordinates[j].x, 2) +
-          Math.pow(elementCoordinates[i].y - elementCoordinates[j].y, 2)
-        );
-        
+        const coordI = elementCoordinates[i];
+        const coordJ = elementCoordinates[j];
+        let dist = 0;
+        if (
+          coordI !== undefined &&
+          coordJ !== undefined &&
+          typeof coordI.x === 'number' &&
+          typeof coordI.y === 'number' &&
+          typeof coordJ.x === 'number' &&
+          typeof coordJ.y === 'number'
+        ) {
+          dist = Math.sqrt(
+            Math.pow(coordI.x - coordJ.x, 2) +
+            Math.pow(coordI.y - coordJ.y, 2)
+          );
+        }
         totalDistance += dist;
         pairCount++;
       }
@@ -1218,7 +1195,7 @@ export class SVGDesignValidator extends SVGValidator {
     
     // Calculate the threshold for clustering
     // Use 15% of the average dimension as a threshold
-    const threshold = (width + height) / 2 * 0.15;
+    const threshold = (typeof width === 'number' && typeof height === 'number') ? (width + height) / 2 * 0.15 : 0;
     
     // If average distance is less than threshold, elements are clustered
     return avgDistance < threshold;
@@ -1268,7 +1245,7 @@ export class SVGDesignValidator extends SVGValidator {
     
     // Composition suggestions
     if (compositionScore < 70) {
-      const viewBoxMatch = svgContent.match(/viewBox\s*=\s*["']([^"']*)["']/i);
+      const viewBoxMatch = svgContent.match(/viewBox\s*=\s*['"]([^"']*)['"]/i);
       
       if (!viewBoxMatch) {
         suggestions.push('Add a proper viewBox attribute for consistent scaling');

@@ -2,42 +2,45 @@ import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput, 
   SVGValidationAgentInput,
-  SVGValidationAgentOutput 
+  SVGValidationResultOutput 
 } from '../../types-agents';
 import { SVGAccessibilityValidator, SVGAccessibilityScore } from '../../utils/svg-accessibility-validator';
-import { SVGValidationResult, SVGAccessibilityAssessment } from '../../types';
-import { SVGDesignQualityScore } from '../../types-agents';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
+import { safeJsonParse } from '../../utils/json-utils';
 
 /**
  * SVGAccessibilityAgent - Validates and improves SVG accessibility
+ * 
+ * This agent performs comprehensive accessibility assessment and applies
+ * both automated and AI-assisted improvements to SVG logos for better
+ * accessibility compliance (WCAG 2.1).
  */
 export class SVGAccessibilityAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
     super(
       'svg-accessibility', 
-      ['svg-validation', 'design-theory'],
+      ['svg-validation'],
       {
-        model: 'claude-3-haiku-20240307', // Use faster model for validation
+        model: 'claude-3-haiku-20240307', // Use efficient model for accessibility analysis
         temperature: 0.1, // Low temperature for consistent, deterministic output
-        maxTokens: 1000,
+        maxTokens: 2048, // Increased for detailed accessibility improvements
         ...config
       }
     );
     
-    // Initialize system prompt for when Claude's help is needed for complex repairs
-    this.systemPrompt = `You are an SVG Accessibility Specialist who helps improve SVG logos for accessibility.
+    this.systemPrompt = `You are an SVG Accessibility Specialist who improves SVG logos for WCAG 2.1 compliance.
 
 Your task is to analyze the SVG code and provide specific improvements for:
-1. Color contrast - Ensure sufficient contrast ratios for WCAG compliance
+1. Color contrast - Ensure sufficient contrast ratios for WCAG AA/AAA compliance
 2. Text alternatives - Add appropriate title, desc, and aria attributes
 3. Semantic structure - Use proper grouping and roles for screen readers
-4. Scalability - Ensure readability at small sizes
-5. Interactive elements - Make interactive elements keyboard accessible
+4. Scalability - Ensure readability at small sizes (16x16px minimum)
+5. Interactive elements - Make any interactive elements keyboard accessible
 
-Always preserve the original design intent while making your improvements.
-Only provide the improved SVG code without explanation.`;
+IMPORTANT: You must return ONLY the improved SVG code without any explanation or markdown formatting.
+Preserve the original design intent while making accessibility improvements.
+If the SVG cannot be improved, return the original SVG unchanged.`;
   }
   
   /**
@@ -51,45 +54,60 @@ Only provide the improved SVG code without explanation.`;
     const accessibilityScore = accessibilityResult.accessibilityAssessment;
     
     let issuesPrompt = '';
+    let needsAIImprovement = false;
     
     if (accessibilityScore) {
-      // Add details about the specific accessibility issues
+      const issues: string[] = [];
+      
       if (accessibilityScore.colorContrast < 70) {
-        issuesPrompt += '- Improve color contrast for better visibility\n';
+        issues.push('- Improve color contrast for better visibility (current score: ' + accessibilityScore.colorContrast + '/100)');
+        needsAIImprovement = true;
       }
       
       if (accessibilityScore.textAlternatives < 70) {
-        issuesPrompt += '- Add appropriate text alternatives (title, desc, aria-label)\n';
+        issues.push('- Add appropriate text alternatives (title, desc, aria-label) (current score: ' + accessibilityScore.textAlternatives + '/100)');
+        needsAIImprovement = true;
       }
       
       if (accessibilityScore.semanticStructure < 70) {
-        issuesPrompt += '- Improve semantic structure for screen readers\n';
+        issues.push('- Improve semantic structure for screen readers (current score: ' + accessibilityScore.semanticStructure + '/100)');
+        needsAIImprovement = true;
       }
       
       if (accessibilityScore.scalability < 70) {
-        issuesPrompt += '- Enhance scalability for better rendering at small sizes\n';
+        issues.push('- Enhance scalability for better rendering at small sizes (current score: ' + accessibilityScore.scalability + '/100)');
+        needsAIImprovement = true;
       }
       
       if (accessibilityScore.interactiveElements < 70) {
-        issuesPrompt += '- Make interactive elements more accessible\n';
+        issues.push('- Make interactive elements more accessible (current score: ' + accessibilityScore.interactiveElements + '/100)');
+        needsAIImprovement = true;
+      }
+      
+      if (issues.length > 0) {
+        issuesPrompt = issues.join('\n');
+      }
+      
+      // Add specific suggestions from the validator
+      if (accessibilityScore.accessibilitySuggestions && accessibilityScore.accessibilitySuggestions.length > 0) {
+        issuesPrompt += '\n\nSpecific suggestions:\n' + accessibilityScore.accessibilitySuggestions.map(s => `- ${s}`).join('\n');
       }
     }
     
-    // If no specific issues were found, use a general prompt
-    if (!issuesPrompt) {
-      issuesPrompt = '- General accessibility improvements\n';
+    // If no significant issues were found or the score is already high, we may not need AI improvement
+    if (!needsAIImprovement || (accessibilityScore && accessibilityScore.overallAccessibility >= 80)) {
+      // Return empty prompt to signal that we should use automated improvements only
+      return '';
     }
     
     return `Please improve the accessibility of this SVG logo for "${brandName}".
 
 Issues to address:
-${issuesPrompt}
+${issuesPrompt || '- General accessibility improvements'}
 
 Here's the SVG to improve:
 
-\`\`\`svg
 ${svg}
-\`\`\`
 
 Return only the improved SVG code without any explanations.`;
   }
@@ -97,7 +115,7 @@ Return only the improved SVG code without any explanations.`;
   /**
    * Process SVG accessibility assessment and improvement
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationAgentOutput> {
+  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationResultOutput> {
     const input = originalInput as SVGValidationAgentInput;
     const { svg, brandName } = input;
     
@@ -105,7 +123,7 @@ Return only the improved SVG code without any explanations.`;
       // Step 1: Get comprehensive accessibility assessment
       const accessibilityResult = SVGAccessibilityValidator.validateAccessibility(svg);
       
-      // Step 2: If we don't need improvements, return the assessment
+      // Step 2: If we already have good accessibility, return the assessment
       if (accessibilityResult.accessibilityAssessment && 
           accessibilityResult.accessibilityAssessment.overallAccessibility >= 80) {
         return {
@@ -115,25 +133,28 @@ Return only the improved SVG code without any explanations.`;
             isValid: accessibilityResult.isValid,
             accessibilityScore: accessibilityResult.accessibilityAssessment.overallAccessibility,
             designFeedback: this.generateAccessibilityFeedback(accessibilityResult.accessibilityAssessment),
-            accessibilityAssessment: accessibilityResult.accessibilityAssessment
-          }
+            modifications: ['No modifications needed - accessibility score already high']
+          },
+          tokensUsed: this.metrics.tokenUsage.total,
+          processingTime: this.metrics.executionTime,
         };
       }
       
-      // Step 3: If we have Claude's response, try to use it for improvements
+      // Step 3: Try to use AI improvements if available
       let improvedSvg = svg;
       let improvedByAI = false;
+      const modifications: string[] = [];
       
-      if (responseContent) {
-        // Extract SVG from Claude's response
-        const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
+      if (responseContent && responseContent.trim()) {
+        // Extract SVG from AI response
+        const svgMatch = responseContent.match(/<svg[\s\S]*?<\/svg>/);
         if (svgMatch) {
           const candidateSvg = svgMatch[0];
           
           // Validate the candidate SVG
           const candidateValidation = SVGAccessibilityValidator.validateAccessibility(candidateSvg);
           
-          // Only use Claude's improved version if it's valid and has better accessibility
+          // Only use AI's improved version if it's valid and has better accessibility
           if (candidateValidation.isValid && 
               candidateValidation.accessibilityAssessment &&
               accessibilityResult.accessibilityAssessment &&
@@ -141,26 +162,19 @@ Return only the improved SVG code without any explanations.`;
               accessibilityResult.accessibilityAssessment.overallAccessibility) {
             improvedSvg = candidateSvg;
             improvedByAI = true;
+            modifications.push('Applied AI-based accessibility improvements');
           }
         }
       }
       
-      // Step 4: If Claude didn't improve it, apply automated improvements
+      // Step 4: If AI didn't improve it significantly, apply automated improvements
       if (!improvedByAI) {
         improvedSvg = this.applyAutomatedAccessibilityImprovements(svg, brandName);
+        modifications.push('Applied automated accessibility improvements');
       }
       
       // Step 5: Get final assessment of the improved SVG
       const finalAssessment = SVGAccessibilityValidator.validateAccessibility(improvedSvg);
-      
-      // Generate a list of modifications made
-      const modifications: string[] = [];
-      
-      if (improvedByAI) {
-        modifications.push('Applied AI-based accessibility improvements');
-      } else {
-        modifications.push('Applied automated accessibility improvements');
-      }
       
       // Return the improved SVG with accessibility assessment
       return {
@@ -170,18 +184,20 @@ Return only the improved SVG code without any explanations.`;
           isValid: finalAssessment.isValid,
           modifications,
           accessibilityScore: finalAssessment.accessibilityAssessment?.overallAccessibility || 0,
-          designFeedback: this.generateAccessibilityFeedback(finalAssessment.accessibilityAssessment),
-          accessibilityAssessment: finalAssessment.accessibilityAssessment
-        }
+          designFeedback: this.generateAccessibilityFeedback(finalAssessment.accessibilityAssessment)
+        },
+        tokensUsed: this.metrics.tokenUsage.total,
+        processingTime: this.metrics.executionTime,
       };
     } catch (error) {
-      console.error('Failed to process SVG accessibility:', error);
       return {
         success: false,
-        error: {
-          message: 'SVG accessibility process failed',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: 'SVG accessibility process failed',
+          category: ErrorCategory.SVG,
+          details: { originalError: error instanceof Error ? error.message : String(error) },
+          retryable: true,
+        }),
       };
     }
   }
@@ -235,22 +251,19 @@ Return only the improved SVG code without any explanations.`;
       );
     }
     
-    // 4. Add viewBox if missing
+    // 4. Add viewBox if missing (improves scalability)
     if (!/<svg[^>]*viewBox\s*=/i.test(improvedSvg)) {
       const widthMatch = improvedSvg.match(/width="([\d\.]+)"/);
       const heightMatch = improvedSvg.match(/height="([\d\.]+)"/);
       
       if (widthMatch && heightMatch) {
-        const width = parseFloat(widthMatch[1]);
-        const height = parseFloat(heightMatch[1]);
+        const width = widthMatch[1] ? parseFloat(widthMatch[1]) : 0;
+        const height = heightMatch[1] ? parseFloat(heightMatch[1]) : 0;
         if (width > 0 && height > 0) {
-            const aspectRatio = width / height;
-            
-            // Set a default viewBox based on the aspect ratio
-            improvedSvg = improvedSvg.replace(
-              /<svg([^>]*?)>/i, 
-              `<svg$1 viewBox="0 0 ${width} ${height}">`
-            );
+          improvedSvg = improvedSvg.replace(
+            /<svg([^>]*?)>/i, 
+            `<svg$1 viewBox="0 0 ${width} ${height}">`
+          );
         }
       } 
     }
@@ -266,23 +279,27 @@ Return only the improved SVG code without any explanations.`;
       }
     );
     
-    // 6. Convert absolute font sizes to relative where needed
-    improvedSvg = improvedSvg.replace(
-      /font-size\s*=\s*["'](\d+)["']/gi,
-      (match, size) => {
-        const fontSize = parseInt(size, 10);
-        if (fontSize < 10) {
-          // Convert small font sizes to em units
-          return `font-size="${fontSize / 10}em"`;
-        }
-        return match;
-      }
-    );
-    
-    // 7. Increase thin stroke widths for better visibility
+    // 6. Improve stroke widths for better visibility at small sizes
     improvedSvg = improvedSvg.replace(
       /stroke-width\s*=\s*["'](0\.\d+|0|1)["']/gi,
       'stroke-width="1.5"'
+    );
+    
+    // 7. Ensure focusable elements have appropriate attributes
+    improvedSvg = improvedSvg.replace(
+      /<(circle|rect|path|polygon)([^>]*?)>/gi,
+      (match, tagName, attributes) => {
+        // Only add focusable attributes if the element has interactive attributes
+        if (attributes.includes('onclick') || attributes.includes('href')) {
+          if (!attributes.includes('tabindex')) {
+            attributes += ' tabindex="0"';
+          }
+          if (!attributes.includes('role')) {
+            attributes += ' role="button"';
+          }
+        }
+        return `<${tagName}${attributes}>`;
+      }
     );
     
     return improvedSvg;

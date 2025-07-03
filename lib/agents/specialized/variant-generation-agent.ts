@@ -2,10 +2,12 @@ import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput, 
   VariantGenerationAgentInput, 
   VariantGenerationAgentOutput 
 } from '../../types-agents';
+import { SVGValidator } from '../../utils/svg-validator';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
+import { safeJsonParse } from '../../utils/json-utils';
 
 /**
  * VariantGenerationAgent - Creates monochrome variants and favicon from the main logo
@@ -37,6 +39,7 @@ IMPORTANT REQUIREMENTS:
 6. Ensure all SVGs have proper viewBox attributes
 
 You MUST return your variants in the following JSON format:
+\`\`\`json
 {
   "variants": {
     "monochrome": {
@@ -48,6 +51,7 @@ You MUST return your variants in the following JSON format:
     }
   }
 }
+\`\`\`
 
 For monochrome variants:
 - Convert all colors to either pure black (#000000) or pure white (#FFFFFF)
@@ -76,107 +80,119 @@ Do NOT include any text before or after the JSON object.`;
 ${svg}
 \`\`\`
 
-Create:
-1. A pure black monochrome version (all visible elements in #000000)
-2. A pure white monochrome version (all visible elements in #FFFFFF)
-3. A simplified favicon version that works well at 16x16 pixels
-
-Maintain the core identity and recognizability of the logo while adapting it appropriately for each variant.
-Ensure all SVG variants are valid, optimized, and follow best practices.`;
+Follow the instructions in the system prompt to generate the variants in the correct JSON format.`;
   }
   
   /**
    * Process the response from Claude
    */
   protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<VariantGenerationAgentOutput> {
-    try {
-      // Clean and parse the JSON response
-      const cleanedContent = responseContent.trim();
-      
-      // Try to extract JSON from response if it's not pure JSON
-      let jsonContent = cleanedContent;
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[0];
-      }
-      
-      const variantData = JSON.parse(jsonContent);
-      
-      // Validate the variants structure
-      if (!variantData.variants || 
-          !variantData.variants.monochrome || 
-          !variantData.variants.favicon ||
-          !variantData.variants.monochrome.black ||
-          !variantData.variants.monochrome.white ||
-          !variantData.variants.favicon.svg) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid variants format: missing required fields',
-            details: variantData
-          }
-        };
-      }
-      
-      // Basic validation of SVG content for each variant
-      const blackSvg = variantData.variants.monochrome.black;
-      const whiteSvg = variantData.variants.monochrome.white;
-      const faviconSvg = variantData.variants.favicon.svg;
-      
-      // Validate SVG structure
-      for (const [name, svg] of [
-        ['black monochrome', blackSvg], 
-        ['white monochrome', whiteSvg], 
-        ['favicon', faviconSvg]
-      ]) {
-        if (!svg.includes('<svg') || !svg.includes('</svg>')) {
-          return {
-            success: false,
-            error: {
-              message: `Invalid ${name} SVG: missing SVG tags`,
-              details: { svgPreview: svg.substring(0, 100) + '...' }
-            }
-          };
-        }
-      }
-      
-      // For this demo, we're just mocking the PNG generation
-      // In a real implementation, this would use Sharp.js to convert SVGs to PNGs
-      const mockPngVariants = {
-        size256: 'data:image/png;base64,mockPngData256',
-        size512: 'data:image/png;base64,mockPngData512',
-        size1024: 'data:image/png;base64,mockPngData1024'
-      };
-      
-      // Mock ICO generation
-      const mockIco = 'data:image/x-icon;base64,mockIcoData';
-      
-      // If everything is valid, return the processed result
-      return {
-        success: true,
-        result: {
-          variants: {
-            monochrome: {
-              black: blackSvg,
-              white: whiteSvg
-            },
-            favicon: {
-              svg: faviconSvg,
-              ico: mockIco
-            },
-            pngVariants: mockPngVariants
-          }
-        }
-      };
-    } catch (error) {
-      console.error('Failed to process variant generation agent response:', error);
+    const parsed = safeJsonParse(responseContent);
+
+    if (!parsed || typeof parsed !== 'object') {
       return {
         success: false,
-        error: {
-          message: 'Failed to parse variant generation output',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: 'Invalid JSON response from AI. The response was not a valid object.',
+          category: ErrorCategory.API,
+          details: { responseContent },
+          retryable: true,
+        }),
       };
     }
+
+    // Validate variants structure
+    if (!parsed.variants || typeof parsed.variants !== 'object') {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Missing or invalid variants structure in AI response',
+          category: ErrorCategory.API,
+          details: { parsed },
+          retryable: true,
+        }),
+      };
+    }
+
+    const { variants } = parsed;
+
+    // Validate monochrome variants
+    if (!variants.monochrome || 
+        !variants.monochrome.black || 
+        !variants.monochrome.white) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Missing monochrome variants (black or white) in AI response',
+          category: ErrorCategory.API,
+          details: { variants },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate favicon variant
+    if (!variants.favicon || !variants.favicon.svg) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Missing favicon variant in AI response',
+          category: ErrorCategory.API,
+          details: { variants },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate SVG content for each variant
+    const svgVariants = [
+      { name: 'black monochrome', svg: variants.monochrome.black },
+      { name: 'white monochrome', svg: variants.monochrome.white },
+      { name: 'favicon', svg: variants.favicon.svg }
+    ];
+
+    for (const { name, svg } of svgVariants) {
+      if (typeof svg !== 'string') {
+        return {
+          success: false,
+          error: handleError({
+            error: `Invalid ${name} SVG: must be a string`,
+            category: ErrorCategory.SVG,
+            details: { name, svg },
+            retryable: true,
+          }),
+        };
+      }
+
+      const validationResult = SVGValidator.validate(svg);
+      if (!validationResult.isValid) {
+        this.log(`Warning: ${name} SVG failed validation: ${validationResult.errors?.join(', ')}`, 'warn');
+        // Continue execution but log the warning
+      }
+    }
+
+    this.log('Successfully generated and validated SVG variants.');
+    return {
+      success: true,
+      result: {
+        variants: {
+          monochrome: {
+            black: variants.monochrome.black,
+            white: variants.monochrome.white
+          },
+          favicon: {
+            svg: variants.favicon.svg,
+            ico: '', // Placeholder for future implementation
+          },
+          pngVariants: {
+            size256: '', // Placeholder for future implementation
+            size512: '', // Placeholder for future implementation
+            size1024: '' // Placeholder for future implementation
+          }
+        }
+      },
+      tokensUsed: this.metrics.tokenUsage.total,
+      processingTime: this.metrics.executionTime,
+    };
   }
 }

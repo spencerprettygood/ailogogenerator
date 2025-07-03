@@ -359,22 +359,21 @@ export class LogoGenerationPipeline {
       const index = this.options.manualConceptSelection;
       const concepts = stageBOutput.moodboard.concepts;
       
-      if (index < 0 || index >= concepts.length) {
+      // Defensive: ensure index is valid and concept exists
+      if (index < 0 || index >= concepts.length || !concepts[index]) {
         throw new Error(`Invalid manual concept selection index: ${index}`);
       }
-      
       // Create a manual selection result
       const manualOutput: StageCOutput = {
         success: true,
         selection: {
-          selectedConcept: concepts[index],
+          selectedConcept: concepts[index]!,
           selectionRationale: "Manually selected by user.",
           score: 100
         },
         tokensUsed: 0,
         processingTime: 0
       };
-      
       this.stageOutputs[stageName] = manualOutput;
       this.log(`Using manually selected concept ${index}`);
     } else {
@@ -613,9 +612,7 @@ export class LogoGenerationPipeline {
       guidelines: {
         html: stageGOutput.html,
         plainText: '' // Optionally generate plain text from HTML if needed
-      },
-      designRationale: stageDOutput.result.designRationale, // Add design rationale
-      industryContext: stageDOutput.result.industryContext // Add industry context
+      }
     };
     
     // Add enhanced variants if available in the output
@@ -662,8 +659,7 @@ export class LogoGenerationPipeline {
       svg: stageDOutput.result.svg,
       brandName: stageAOutput.designSpec.brand_name,
       animationOptions: this.options.animationOptions,
-      autoSelectAnimation: !this.options.animationOptions, // Auto-select if no specific options provided
-      industry: this.options.industry // Pass industry context for better animation selection
+      autoSelectAnimation: !this.options.animationOptions // Auto-select if no specific options provided
     };
     
     const output = await animateLogo(input);
@@ -700,7 +696,7 @@ export class LogoGenerationPipeline {
     const input: UniquenessAnalysisInput = {
       svg: stageDOutput.result.svg,
       designSpec: stageAOutput.designSpec,
-      industry: this.options.industry || stageAOutput.designSpec.industry // Use provided industry if available
+      industry: this.options.industry // Use provided industry if available
     };
     
     const output = await analyzeLogoUniqueness(input);

@@ -6,52 +6,40 @@
  * This agent extends the enhanced SVG generation agent with industry-specific
  * design templates and styling guidance, applying best practices for each
  * industry category.
- * 
- * @author AILogoGenerator Team
- * @version 1.0.0
- * @copyright 2024
  */
 
 import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput, 
   SVGGenerationAgentInput, 
-  SVGGenerationAgentOutput,
-  DesignPrinciple
+  IndustryTemplateSVGAgentOutput
 } from '../../types-agents';
 import { 
   detectIndustry, 
   getIndustryTemplate, 
-  IndustryCategory,
   getDesignPrinciplesForIndustry
 } from '../../industry-templates';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
+import { safeJsonParse } from '../../utils/json-utils';
+import { SVGValidator } from '../../utils/svg-validator';
 
 /**
- * @class IndustryTemplateSVGAgent
- * @description Creates production-ready SVG logos using industry-specific design templates
- * 
- * @extends BaseAgent
+ * IndustryTemplateSVGAgent - Creates production-ready SVG logos using industry-specific design templates
  */
 export class IndustryTemplateSVGAgent extends BaseAgent {
-  /**
-   * @constructor
-   * @param {Partial<AgentConfig>} [config] - Optional configuration overrides
-   */
   constructor(config?: Partial<AgentConfig>) {
     super(
       'industry-template-svg', 
-      ['svg-generation', 'design-theory', 'industry-templates'],
+      ['svg-generation'],
       {
         model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
         temperature: 0.5, // Balanced temperature for creativity with consistency
-        maxTokens: 4000, // Larger token limit for SVG generation
+        maxTokens: 4096, // Increased token limit for industry-specific generation
         ...config
       }
     );
     
-    // Set the system prompt for this agent with industry templates focus
     this.systemPrompt = `You are an expert SVG logo generation agent with specialized knowledge of industry-specific design best practices.
     
 Your task is to generate a professional, production-ready SVG logo based on the selected design concept and specifications, applying industry-appropriate design templates and principles to create truly exceptional results.
@@ -81,7 +69,8 @@ INDUSTRY-SPECIFIC DESIGN GUIDANCE:
 
 Apply the industry-specific template that best matches the brand's industry, using appropriate color schemes, composition techniques, typography, and symbolic elements.
 
-You MUST return your response in the following JSON format:
+You MUST return your response as a single, valid JSON object enclosed in \`\`\`json tags:
+\`\`\`json
 {
   "svg": "<!-- full SVG code here -->",
   "designRationale": "explanation of your design decisions",
@@ -95,25 +84,21 @@ You MUST return your response in the following JSON format:
     "industrySpecific": "explanation of industry-specific elements applied"
   }
 }
+\`\`\`
 
 The SVG code should be a complete, valid SVG with proper syntax and optimization.
-It must work when pasted directly into an HTML file or opened in a browser.
-Do NOT include any text before or after the JSON object.`;
+It must work when pasted directly into an HTML file or opened in a browser.`;
   }
   
   /**
-   * @method generatePrompt
-   * @description Generate the prompt for industry-specific SVG generation
-   * @param {SVGGenerationAgentInput} input - Input containing design specs and selected concept
-   * @returns {Promise<string>} The generated prompt
-   * @protected
+   * Generate the prompt for industry-specific SVG generation
    */
   protected async generatePrompt(input: SVGGenerationAgentInput): Promise<string> {
     const { designSpec, selectedConcept } = input;
     
     // Detect industry if not already specified
     let industry = designSpec.industry || '';
-    let industryConfidence = designSpec.industry_confidence || 0;
+    let industryConfidence = (designSpec as any).industry_confidence || 0;
     
     if (!industry) {
       const detectionResult = detectIndustry(designSpec.brand_description);
@@ -121,11 +106,20 @@ Do NOT include any text before or after the JSON object.`;
       industryConfidence = detectionResult.confidenceScore;
     }
     
-    // Get industry template
-    const industryTemplate = getIndustryTemplate(industry);
-    
-    // Get design principles for the industry
-    const designPrinciples = getDesignPrinciplesForIndustry(industry);
+    // Get industry template and design principles
+    const industryTemplate = getIndustryTemplate(industry) || {
+      name: 'General',
+      description: 'General business industry',
+      commonColors: [],
+      commonStyles: []
+    };
+    const designPrinciples = getDesignPrinciplesForIndustry(industry) || {
+      colorTheory: 'Use harmonious color combinations appropriate for the brand',
+      composition: 'Apply balanced layout principles',
+      visualWeight: 'Balance elements for visual stability',
+      typography: 'Use appropriate typography for the brand',
+      negativeSpace: 'Use negative space effectively'
+    };
     
     // Build industry-specific recommendations
     const colorRecommendations = industryTemplate.commonColors.length > 0 
@@ -138,43 +132,33 @@ Do NOT include any text before or after the JSON object.`;
     
     return `Please generate a professional SVG logo based on the following design specifications and selected concept, applying industry-specific design templates:
 
-BRAND DETAILS:
-Brand Name: ${designSpec.brand_name}
-Brand Description: ${designSpec.brand_description}
-Target Audience: ${designSpec.target_audience}
-Industry: ${industryTemplate.name} (${industryConfidence.toFixed(2)} confidence)
-Industry Description: ${industryTemplate.description}
+# Brand Details
+- **Brand Name:** ${designSpec.brand_name}
+- **Brand Description:** ${designSpec.brand_description}
+- **Target Audience:** ${designSpec.target_audience}
+- **Industry:** ${industryTemplate.name} (${industryConfidence.toFixed(2)} confidence)
+- **Industry Description:** ${industryTemplate.description}
 
-SELECTED CONCEPT:
-Name: ${selectedConcept.name}
-Description: ${selectedConcept.description}
-Style: ${selectedConcept.style}
-Colors: ${selectedConcept.colors}
-Imagery: ${selectedConcept.imagery}
+# Selected Concept
+- **Name:** ${selectedConcept.name}
+- **Description:** ${selectedConcept.description}
+- **Style:** ${selectedConcept.style}
+- **Colors:** ${selectedConcept.colors}
+- **Imagery:** ${selectedConcept.imagery}
 
-INDUSTRY-SPECIFIC DESIGN TEMPLATE:
-Industry: ${industryTemplate.name}
-${colorRecommendations}
-${styleRecommendations}
+# Industry-Specific Design Template
+- **Industry:** ${industryTemplate.name}
+- **Color Recommendations:** ${colorRecommendations}
+- **Style Recommendations:** ${styleRecommendations}
 
-DESIGN PRINCIPLES FOR ${industryTemplate.name.toUpperCase()}:
+# Design Principles for ${industryTemplate.name.toUpperCase()}
+- **Color Theory:** ${designPrinciples.colorTheory}
+- **Composition:** ${designPrinciples.composition}
+- **Visual Weight:** ${designPrinciples.visualWeight}
+- **Typography:** ${designPrinciples.typography}
+- **Negative Space:** ${designPrinciples.negativeSpace}
 
-COLOR THEORY:
-${designPrinciples.colorTheory}
-
-COMPOSITION:
-${designPrinciples.composition}
-
-VISUAL WEIGHT:
-${designPrinciples.visualWeight}
-
-TYPOGRAPHY:
-${designPrinciples.typography}
-
-NEGATIVE SPACE:
-${designPrinciples.negativeSpace}
-
-TECHNICAL REQUIREMENTS:
+# Technical Requirements
 - Use the viewBox "0 0 300 300"
 - Optimize the SVG code for file size and rendering performance
 - Ensure the logo is accessible with appropriate contrast
@@ -182,120 +166,99 @@ TECHNICAL REQUIREMENTS:
 - Include title and desc elements for screen readers
 - Limit file size to under 15KB
 
-Please generate a complete, production-ready SVG logo applying these industry-specific design principles, along with a detailed design rationale explaining your decisions. Be sure to incorporate appropriate industry-specific design elements and best practices for ${industryTemplate.name}.`;
+Please generate a complete, production-ready SVG logo applying these industry-specific design principles, along with a detailed design rationale explaining your decisions. Be sure to incorporate appropriate industry-specific design elements and best practices for ${industryTemplate.name}. Respond with your JSON object inside \`\`\`json tags.`;
   }
   
   /**
-   * @method processResponse
-   * @description Process the response from Claude
-   * @param {string} responseContent - Raw response from the AI
-   * @param {AgentInput} originalInput - The original input to the agent
-   * @returns {Promise<SVGGenerationAgentOutput>} Processed output
-   * @protected
+   * Process the response from the AI
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGGenerationAgentOutput> {
-    try {
-      // Clean and parse the JSON response
-      const cleanedContent = responseContent.trim();
-      
-      // Try to extract JSON from response if it's not pure JSON
-      let jsonContent = cleanedContent;
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[0];
-      }
-      
-      const svgData = JSON.parse(jsonContent);
-      
-      // Validate the svg and designRationale fields
-      if (!svgData.svg || !svgData.designRationale) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid SVG generation output: missing required fields',
-            details: svgData
-          }
-        };
-      }
-      
-      // Basic validation of SVG content
-      const svgContent = svgData.svg;
-      if (!svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid SVG: missing SVG tags',
-            details: { svgPreview: svgContent.substring(0, 100) + '...' }
-          }
-        };
-      }
-      
-      // Check for disallowed elements
-      const disallowedElements = ['script', 'image', 'foreignObject', 'use'];
-      for (const element of disallowedElements) {
-        if (svgContent.includes(`<${element}`)) {
-          return {
-            success: false,
-            error: {
-              message: `Invalid SVG: contains disallowed element: ${element}`,
-              details: { element }
-            }
-          };
-        }
-      }
-      
-      // Check for event handlers
-      if (svgContent.match(/\son\w+=/i)) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid SVG: contains event handlers',
-            details: { svgPreview: svgContent.substring(0, 100) + '...' }
-          }
-        };
-      }
-      
-      // Check file size
-      const svgSize = Buffer.byteLength(svgContent, 'utf8');
-      if (svgSize > 15 * 1024) { // 15KB limit
-        return {
-          success: false,
-          error: {
-            message: `SVG exceeds size limit: ${Math.round(svgSize / 1024)}KB (max 15KB)`,
-            details: { size: svgSize }
-          }
-        };
-      }
-      
-      // Extract design principles if available
-      const designPrinciples = svgData.designPrinciples || {
-        colorTheory: '',
-        composition: '',
-        visualWeight: '',
-        typography: '',
-        negativeSpace: '',
-        industrySpecific: ''
-      };
-      
-      // If everything is valid, return the processed result
-      return {
-        success: true,
-        result: {
-          svg: svgContent,
-          designRationale: svgData.designRationale,
-          designPrinciples,
-          industryTemplate: svgData.industryTemplate || 'general'
-        }
-      };
-    } catch (error) {
-      console.error('Failed to process Industry Template SVG agent response:', error);
+  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<IndustryTemplateSVGAgentOutput> {
+    const parsed = safeJsonParse(responseContent);
+
+    if (!parsed || typeof parsed !== 'object') {
       return {
         success: false,
-        error: {
-          message: 'Failed to parse SVG generation output',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: 'Invalid JSON response from AI. The response was not a valid object.',
+          category: ErrorCategory.API,
+          details: { responseContent },
+          retryable: true,
+        }),
       };
     }
+
+    // Validate required fields
+    const requiredFields = ['svg', 'designRationale', 'industryTemplate', 'designPrinciples'];
+    const missingFields = requiredFields.filter(field => !(field in parsed) || !parsed[field]);
+
+    if (missingFields.length > 0) {
+      return {
+        success: false,
+        error: handleError({
+          error: `AI response is missing required fields: ${missingFields.join(', ')}`,
+          category: ErrorCategory.API,
+          details: { parsedResponse: parsed, missingFields },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate SVG content
+    const svgContent = parsed.svg;
+    if (!svgContent || typeof svgContent !== 'string') {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Invalid SVG content in AI response',
+          category: ErrorCategory.SVG,
+          details: { svgContent },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate SVG structure and security
+    const svgValidation = SVGValidator.validate(svgContent);
+    if (!svgValidation.isValid) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Generated SVG failed validation',
+          category: ErrorCategory.SVG,
+          details: { 
+            validationErrors: svgValidation.errors,
+            svgContent: svgContent.substring(0, 200) + '...'
+          },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate design principles structure
+    const designPrinciples = parsed.designPrinciples;
+    if (!designPrinciples || typeof designPrinciples !== 'object') {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Invalid design principles structure in AI response',
+          category: ErrorCategory.API,
+          details: { designPrinciples },
+          retryable: true,
+        }),
+      };
+    }
+
+    this.log('Successfully generated and validated industry-specific SVG logo.');
+    return {
+      success: true,
+      result: {
+        svg: svgContent,
+        designRationale: parsed.designRationale,
+        designPrinciples: designPrinciples,
+        industryTemplate: parsed.industryTemplate || 'general'
+      },
+      tokensUsed: this.metrics.tokenUsage.total,
+      processingTime: this.metrics.executionTime,
+    };
   }
 }

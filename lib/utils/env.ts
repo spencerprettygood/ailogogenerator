@@ -37,9 +37,10 @@ const envSchema = z.object({
     .optional(),
   
   // API Keys (sensitive)
-  ANTHROPIC_API_KEY: isDevelopment() 
+  // Anthropic API Key: optional in development and test with dummy default, required in production
+  ANTHROPIC_API_KEY: (getNodeEnv() !== 'production')
     ? z.string().min(20).optional().default('dummy-key-for-development-only')
-    : z.string().min(20), // Optional in development with dummy default, required in production
+    : z.string().min(20),
   CLAUDE_API_KEY: z.string().min(20).optional(),
   OPENAI_API_KEY: z.string().min(20).optional(),
   
@@ -65,6 +66,12 @@ const envSchema = z.object({
   
   // Cache Settings
   CACHE_TTL_SECONDS: z.coerce.number().int().positive().optional().default(3600),
+  
+  // Database Configuration
+  POSTGRES_URL: z.string().url().optional(),
+  POSTGRES_URL_NON_POOLING: z.string().url().optional(),
+  POSTGRES_DATABASE: z.string().optional(),
+  DATABASE_URL: z.string().url().optional(),
 });
 
 /**
@@ -241,7 +248,7 @@ export function getEnvBool(key: keyof Env, defaultValue = false): boolean {
 }
 
 // Basic validated environment variables
-let validatedEnv;
+let validatedEnv: { ANTHROPIC_API_KEY: string; ANTHROPIC_API_URL: string; NODE_ENV: "development" | "production" | "test"; RATE_LIMIT_MAX: number; RATE_LIMIT_WINDOW_SECONDS: number; ENABLE_ANIMATION_FEATURES: boolean; ENABLE_MOCKUPS: boolean; CACHE_TTL_SECONDS: number; ADMIN_USERNAME?: string | undefined; ADMIN_PASSWORD?: string | undefined; CLAUDE_API_KEY?: string | undefined; OPENAI_API_KEY?: string | undefined; NEXT_PUBLIC_APP_URL?: string | undefined; VERCEL_URL?: string | undefined; VERCEL_ENV?: "preview" | "development" | "production" | undefined; DEPLOYMENT_ENV?: string | undefined; POSTGRES_URL?: string | undefined; POSTGRES_URL_NON_POOLING?: string | undefined; POSTGRES_DATABASE?: string | undefined; DATABASE_URL?: string | undefined; };
 
 // In browser context or development mode, provide mock environment if needed
 if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
@@ -258,6 +265,9 @@ if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
       // Provide minimal mock values that are needed for client rendering
       NODE_ENV: 'development',
       ANTHROPIC_API_KEY: 'dummy-key-for-development-only',
+      ANTHROPIC_API_URL: 'https://api.anthropic.com',
+      RATE_LIMIT_MAX: 100,
+      RATE_LIMIT_WINDOW_SECONDS: 3600,
       ENABLE_ANIMATION_FEATURES: true,
       ENABLE_MOCKUPS: true,
       CACHE_TTL_SECONDS: 3600,

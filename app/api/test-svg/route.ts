@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
     // Create a test SVG generation agent
     const agent = new SVGGenerationAgent({
       // Using all the fallback models we configured
-      fallbackModels: ['claude-3-5-sonnet-20240229', 'claude-3-opus-20240229'],
+      fallbackModels: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'],
       temperature: 0.7
     });
     
     // Initialize the agent
     await agent.initialize({
       sessionId: nanoid(10),
-      brief: { brand_name: 'Test Brand', brief: prompt },
+      brief: { prompt },
       sharedMemory: new Map()
     });
     

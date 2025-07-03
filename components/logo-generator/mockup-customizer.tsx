@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MockupTemplate } from '@/lib/types';
+import { MockupTemplate, TextPlaceholder } from '@/lib/types-mockups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,8 @@ import { RefreshCw } from 'lucide-react';
 interface MockupCustomizerProps {
   template: MockupTemplate;
   brandName: string;
-  onUpdateCustomText: (customText: Record<string, string>) => void;
-  onUpdateColorVariant: (colorVariant: string) => void;
+  onUpdateCustomTextAction: (customText: Record<string, string>) => void;
+  onUpdateColorVariantAction: (colorVariant: string) => void;
   selectedColorVariant?: string;
   initialCustomText?: Record<string, string>;
   className?: string;
@@ -23,8 +23,8 @@ interface MockupCustomizerProps {
 export function MockupCustomizer({
   template,
   brandName,
-  onUpdateCustomText,
-  onUpdateColorVariant,
+  onUpdateCustomTextAction,
+  onUpdateColorVariantAction,
   selectedColorVariant,
   initialCustomText = {},
   className = ''
@@ -34,13 +34,13 @@ export function MockupCustomizer({
   const handleTextChange = (id: string, value: string) => {
     const updatedText = { ...customText, [id]: value };
     setCustomText(updatedText);
-    onUpdateCustomText(updatedText);
+    onUpdateCustomTextAction(updatedText);
   };
 
   const handleReset = () => {
     const defaultValues: Record<string, string> = {};
     
-    template.textPlaceholders?.forEach(placeholder => {
+    template.textPlaceholders?.forEach((placeholder: TextPlaceholder) => {
       let defaultText = placeholder.default;
       // Replace {BRAND_NAME} placeholder with actual brand name
       defaultText = defaultText.replace('{BRAND_NAME}', brandName);
@@ -48,7 +48,7 @@ export function MockupCustomizer({
     });
     
     setCustomText(defaultValues);
-    onUpdateCustomText(defaultValues);
+    onUpdateCustomTextAction(defaultValues);
   };
 
   return (
@@ -82,7 +82,7 @@ export function MockupCustomizer({
                       : 'border-transparent'
                   }`}
                   style={{ backgroundColor: color }}
-                  onClick={() => onUpdateColorVariant(color)}
+                  onClick={() => onUpdateColorVariantAction(color)}
                   title={color}
                 />
               ))}
@@ -94,7 +94,7 @@ export function MockupCustomizer({
         {template.textPlaceholders && template.textPlaceholders.length > 0 && (
           <div className="space-y-3">
             <Label className="text-xs font-medium">Text Elements</Label>
-            {template.textPlaceholders.map((placeholder) => {
+            {template.textPlaceholders.map((placeholder: TextPlaceholder) => {
               const defaultValue = placeholder.default.replace('{BRAND_NAME}', brandName);
               const value = customText[placeholder.id] || defaultValue;
               

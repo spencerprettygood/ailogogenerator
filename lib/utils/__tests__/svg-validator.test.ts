@@ -154,7 +154,7 @@ describe('SVGValidator', () => {
       </svg>`;
       
       const optimizationResult = SVGValidator.optimize(unoptimizedSvg);
-      expect(optimizationResult.fileSize.after).toBeLessThan(optimizationResult.fileSize.before);
+      expect(optimizationResult.optimizedSize).toBeLessThan(optimizationResult.originalSize);
       expect(optimizationResult.optimizations.length).toBeGreaterThan(0);
       expect(optimizationResult.optimized).not.toContain('<!--');
       expect(optimizationResult.optimized).not.toContain('  ');

@@ -1,3 +1,48 @@
+// Compatibility: Provide isAnimatable and sanitizeSVGForAnimation for legacy/test imports
+/**
+ * Checks if an SVG is animatable (simple heuristic: must have at least one animatable element)
+ */
+export function isAnimatable(svgContent: string): { animatable: boolean; complexity: 'simple' | 'moderate' | 'complex'; issues: string[] } {
+  // Heuristic: SVG is animatable if it has at least one path, circle, rect, polygon, or text
+  const animatableTags = ['path', 'circle', 'rect', 'polygon', 'text'];
+  const issues: string[] = [];
+  let count = 0;
+  for (const tag of animatableTags) {
+    const matches = svgContent.match(new RegExp(`<${tag}[^>]*>`, 'gi'));
+    if (matches) count += matches.length;
+  }
+  if (count === 0) {
+    issues.push('No animatable elements found');
+  }
+  let complexity: 'simple' | 'moderate' | 'complex' = 'simple';
+  if (count > 10) complexity = 'moderate';
+  if (count > 50) complexity = 'complex';
+  return { animatable: count > 0, complexity, issues };
+}
+
+/**
+ * Sanitizes SVG for animation (alias for sanitizeSVG)
+ */
+export function sanitizeSVGForAnimation(svgContent: string): { svg: string; isModified: boolean; modifications: string[]; errors: string[]; warnings: string[] } {
+  try {
+    const sanitized = sanitizeSVG(svgContent);
+    return {
+      svg: sanitized,
+      isModified: sanitized !== svgContent,
+      modifications: sanitized !== svgContent ? ['Sanitized for animation'] : [],
+      errors: [],
+      warnings: []
+    };
+  } catch (e) {
+    return {
+      svg: svgContent,
+      isModified: false,
+      modifications: [],
+      errors: [e instanceof Error ? e.message : String(e)],
+      warnings: []
+    };
+  }
+}
 /**
  * SVG Sanitizer and Optimizer
  * 
@@ -119,8 +164,9 @@ function _sanitizeSVG(svgContent: string): string {
       SECURITY_CONFIG.disallowedElements.forEach(tagName => {
         const elements = doc.getElementsByTagName(tagName);
         for (let i = elements.length - 1; i >= 0; i--) {
-          if (elements[i].parentNode) {
-            elements[i].parentNode.removeChild(elements[i]);
+          const el = elements[i];
+          if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
           }
         }
       });
@@ -130,6 +176,7 @@ function _sanitizeSVG(svgContent: string): string {
       allElements.forEach(el => {
         for (let i = el.attributes.length - 1; i >= 0; i--) {
           const attr = el.attributes[i];
+          if (!attr) continue;
           const attrName = attr.name.toLowerCase();
           
           // Check if attribute contains disallowed strings
@@ -164,7 +211,10 @@ function _sanitizeSVG(svgContent: string): string {
         // Process children (in reverse to safely remove them)
         const children = Array.from(node.childNodes);
         for (let i = children.length - 1; i >= 0; i--) {
-          walkNode(children[i]);
+          const child = children[i];
+          if (child) {
+            walkNode(child);
+          }
         }
       };
       
@@ -289,8 +339,8 @@ function ensureViewBox(svgContent: string): string {
     const heightMatch = svgContent.match(/height\s*=\s*["']([^"']+)["']/);
     
     if (widthMatch && heightMatch) {
-      const width = parseFloat(widthMatch[1]);
-      const height = parseFloat(heightMatch[1]);
+      const width = parseFloat(widthMatch[1] ?? '0');
+      const height = parseFloat(heightMatch[1] ?? '0');
       
       // Add viewBox attribute to opening svg tag
       return svgContent.replace(

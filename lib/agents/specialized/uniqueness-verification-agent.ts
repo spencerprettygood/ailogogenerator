@@ -4,104 +4,37 @@
  */
 
 import { BaseAgent } from '../base/base-agent';
-import { withRetry } from '../../retry';
 import { 
-  AgentCapability, 
   AgentConfig, 
-  AgentInput
+  AgentInput,
+  UniquenessVerificationAgentInput,
+  UniquenessVerificationAgentOutput,
+  UniquenessVerificationResult
 } from '../../types-agents';
-import { SVGLogo } from '../../types';
-import { ErrorCategory, handleError } from '../../utils/error-handler';
-
-/**
- * Interface for uniqueness verification input
- */
-export interface UniquenessVerificationInput extends AgentInput {
-  logo: SVGLogo;
-  industry?: string;
-  brandName: string;
-  existingLogos?: SVGLogo[];
-}
-
-/**
- * Interface for uniqueness verification results
- */
-export interface UniquenessVerificationResult {
-  isUnique: boolean;
-  uniquenessScore: number; // 0-100
-  similarityIssues: {
-    description: string;
-    severity: 'low' | 'medium' | 'high';
-    elementType: 'shape' | 'color' | 'typography' | 'composition' | 'concept';
-    recommendations: string[];
-  }[];
-  recommendations: string[];
-}
-
-/**
- * Interface for uniqueness verification output
- */
-export interface UniquenessVerificationOutput {
-  success: boolean;
-  result?: UniquenessVerificationResult;
-  error?: {
-    message: string;
-    details?: any;
-  };
-  tokensUsed?: number;
-}
+import { handleError, ErrorCategory } from '../../utils/error-handler';
+import { safeJsonParse } from '../../utils/json-utils';
 
 /**
  * Agent that verifies logo uniqueness against existing designs
  */
 export class UniquenessVerificationAgent extends BaseAgent {
-  constructor(config?: AgentConfig) {
-    super({
-      model: 'claude-3-5-sonnet-20240620',
-      temperature: 0.2,
-      maxTokens: 2000,
-      ...config
-    });
-
-    this.type = 'uniqueness-verification';
-    this.capabilities = ['uniqueness-verification'];
-  }
-
-  protected async preparePrompt(input: UniquenessVerificationInput): Promise<string> {
-    const { logo, industry, brandName, existingLogos } = input;
+  constructor(config?: Partial<AgentConfig>) {
+    super(
+      'uniqueness-verification', 
+      ['uniqueness-verification'],
+      {
+        model: 'claude-3-5-sonnet-20240620',
+        temperature: 0.2,
+        maxTokens: 2000,
+        ...config
+      }
+    );
     
-    // Extract logo SVG code for analysis
-    const svgCode = logo.svgCode;
-    
-    // Prepare existing logos for comparison if available
-    let existingLogosSection = '';
-    if (existingLogos && existingLogos.length > 0) {
-      existingLogosSection = `
-## Existing Logos for Comparison
-${existingLogos.map((existing, index) => `
-### Logo ${index + 1}
-\`\`\`svg
-${existing.svgCode.substring(0, 500)}... (truncated)
-\`\`\`
-`).join('\n')}
-`;
-    }
-
-    const prompt = `
+    this.systemPrompt = `
 # Logo Uniqueness Verification Task
 
-## Context
-- Brand Name: "${brandName}"
-- Industry: "${industry || 'Not specified'}"
-- Logo SVG: 
-\`\`\`svg
-${svgCode}
-\`\`\`
-
-${existingLogosSection}
-
 ## Your Task
-Analyze the provided logo design and verify its uniqueness, ensuring it doesn't closely resemble existing logos or violate design principles that could lead to trademark conflicts.
+Analyze the provided logo design and verify its uniqueness, ensuring it doesn't closely resemble existing designs or violate design principles that could lead to trademark conflicts.
 
 1. Examine the logo's distinctive visual elements including:
    - Basic shapes and their arrangement
@@ -154,105 +87,95 @@ Provide your analysis in JSON format with the following structure:
 - Be specific about which elements reduce uniqueness
 - Provide actionable recommendations for improvement
 `;
+  }
+
+  protected async generatePrompt(input: UniquenessVerificationAgentInput): Promise<string> {
+    const { logo, industry, brandName, existingLogos } = input;
+    
+    // Extract logo SVG code for analysis
+    const svgCode = logo.svgCode;
+    
+    // Prepare existing logos for comparison if available
+    let existingLogosSection = '';
+    if (existingLogos && existingLogos.length > 0) {
+      existingLogosSection = `
+## Existing Logos for Comparison
+${existingLogos.map((existing: { svgCode: string }, index: number) => `
+### Logo ${index + 1}
+\`\`\`svg
+${existing.svgCode.substring(0, 500)}... (truncated)
+\`\`\`
+`).join('\n')}
+`;
+    }
+
+    const prompt = `
+## Context
+- Brand Name: "${brandName}"
+- Industry: "${industry || 'Not specified'}"
+- Logo SVG: 
+\`\`\`svg
+${svgCode}
+\`\`\`
+
+${existingLogosSection}
+
+Please perform the uniqueness verification task based on the instructions in the system prompt.
+`;
 
     return prompt;
   }
 
-  async execute(input: AgentInput): Promise<UniquenessVerificationOutput> {
-    const typedInput = input as UniquenessVerificationInput;
-    
-    // Validate input
-    if (!typedInput.logo || !typedInput.logo.svgCode) {
+  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<UniquenessVerificationAgentOutput> {
+    const parsedResult = safeJsonParse(responseContent);
+
+    if (!parsedResult || typeof parsedResult !== 'object') {
       return {
         success: false,
-        error: {
-          message: 'Missing required input: logo SVG is required'
-        }
+        error: handleError({
+          error: 'Invalid JSON response from AI. The response was not a valid object.',
+          category: ErrorCategory.API,
+          details: { responseContent },
+          retryable: true,
+        }),
       };
     }
 
-    try {
-      this.status = 'working';
-      
-      const prompt = await this.preparePrompt(typedInput);
-      
-      const response = await withRetry(
-        () => this.executePrompt(prompt),
-        {
-          maxAttempts: this.config.retryConfig?.maxAttempts || 3,
-          baseDelay: this.config.retryConfig?.baseDelay || 1000,
-          backoffFactor: this.config.retryConfig?.backoffFactor || 1.5,
-          maxDelay: this.config.retryConfig?.maxDelay || 5000
-        }
-      );
-
-      // Extract JSON from response
-      const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || 
-                        response.match(/{[\s\S]*}/) ||
-                        null;
-                        
-      if (!jsonMatch) {
-        throw new Error('Failed to parse JSON response from model');
-      }
-
-      const jsonString = jsonMatch[1] || jsonMatch[0];
-      const parsedResult = JSON.parse(jsonString) as UniquenessVerificationResult;
-
-      // Validate the result has the required fields
-      if (!this.validateResult(parsedResult)) {
-        throw new Error('Uniqueness verification result is missing required fields');
-      }
-
-      this.status = 'completed';
-      
-      return {
-        success: true,
-        result: parsedResult,
-        tokensUsed: this.metrics.tokenUsage.total
-      };
-    } catch (error) {
-      this.status = 'failed';
-      
-      handleError(error, {
-        category: ErrorCategory.AI,
-        context: {
-          agent: 'UniquenessVerificationAgent',
-          operation: 'execute',
-          brandName: typedInput.brandName
-        }
-      });
-      
+    // Validate required fields
+    if (typeof parsedResult.isUnique !== 'boolean' || 
+        typeof parsedResult.uniquenessScore !== 'number' ||
+        !Array.isArray(parsedResult.similarityIssues) ||
+        !Array.isArray(parsedResult.recommendations)) {
       return {
         success: false,
-        error: {
-          message: `Uniqueness verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          details: error
-        }
+        error: handleError({
+          error: 'AI response has invalid structure. Missing or incorrect type for required fields.',
+          category: ErrorCategory.API,
+          details: { parsedResult },
+          retryable: true,
+        }),
       };
     }
-  }
 
-  private validateResult(result: any): boolean {
-    // Check for required fields
-    const requiredFields = [
-      'isUnique',
-      'uniquenessScore',
-      'similarityIssues',
-      'recommendations'
-    ];
+    // Validate uniqueness score range
+    if (parsedResult.uniquenessScore < 0 || parsedResult.uniquenessScore > 100) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Invalid uniqueness score. Score must be between 0 and 100.',
+          category: ErrorCategory.API,
+          details: { uniquenessScore: parsedResult.uniquenessScore },
+          retryable: true,
+        }),
+      };
+    }
 
-    const hasRequiredFields = requiredFields.every(field => field in result);
-    
-    // Validate types
-    const typesValid = 
-      typeof result.isUnique === 'boolean' &&
-      typeof result.uniquenessScore === 'number' &&
-      Array.isArray(result.similarityIssues) &&
-      Array.isArray(result.recommendations);
-      
-    // Validate score range
-    const scoreValid = result.uniquenessScore >= 0 && result.uniquenessScore <= 100;
-    
-    return hasRequiredFields && typesValid && scoreValid;
+    this.log('Successfully processed uniqueness verification result.');
+    return {
+      success: true,
+      result: parsedResult as UniquenessVerificationResult,
+      tokensUsed: this.metrics.tokenUsage.total,
+      processingTime: this.metrics.executionTime,
+    };
   }
 }

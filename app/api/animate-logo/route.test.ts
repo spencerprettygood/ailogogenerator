@@ -7,11 +7,7 @@ import { AnimationType, AnimationEasing, AnimationTrigger } from '@/lib/animatio
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-vi.mock('@/lib/animation/animation-service', () => ({
-  SVGAnimationService: {
-    animateSVG: vi.fn()
-  }
-}));
+
 
 vi.mock('@/lib/utils/svg-validator', () => ({
   SVGValidator: {
@@ -78,10 +74,14 @@ describe('Animate Logo API', () => {
       expect(data.error).toContain('Invalid animation type');
     });
 
+
     it('should return 400 when SVG is invalid', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: false,
-        errors: ['Invalid SVG format']
+        errors: ['Invalid SVG format'],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       const req = createMockRequest({ 
@@ -95,10 +95,14 @@ describe('Animate Logo API', () => {
       expect(data.error).toContain('Invalid SVG content');
     });
 
+
     it('should return 400 when SVG is not animatable', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: true,
-        errors: []
+        errors: [],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       vi.mocked(isAnimatable).mockReturnValue({
@@ -118,10 +122,14 @@ describe('Animate Logo API', () => {
       expect(data.error).toContain('SVG is not animatable');
     });
 
+
     it('should return 400 when SVG sanitization fails', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: true,
-        errors: []
+        errors: [],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       vi.mocked(isAnimatable).mockReturnValue({
@@ -149,10 +157,14 @@ describe('Animate Logo API', () => {
       expect(data.error).toContain('Error sanitizing SVG');
     });
 
+
     it('should return 500 when animation service fails', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: true,
-        errors: []
+        errors: [],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       vi.mocked(isAnimatable).mockReturnValue({
@@ -169,7 +181,7 @@ describe('Animate Logo API', () => {
         warnings: []
       });
 
-      vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+      vi.spyOn(SVGAnimationService.prototype, 'animateSVG').mockResolvedValue({
         success: false,
         error: {
           message: 'Animation service error',
@@ -188,10 +200,14 @@ describe('Animate Logo API', () => {
       expect(data.error).toContain('Failed to animate SVG');
     });
 
+
     it('should successfully animate SVG and return results', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: true,
-        errors: []
+        errors: [],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       vi.mocked(isAnimatable).mockReturnValue({
@@ -208,7 +224,7 @@ describe('Animate Logo API', () => {
         warnings: []
       });
 
-      vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+      vi.spyOn(SVGAnimationService.prototype, 'animateSVG').mockResolvedValue({
         success: true,
         result: {
           originalSvg: sampleSvg,
@@ -243,10 +259,14 @@ describe('Animate Logo API', () => {
       expect(data.processingTime).toBe(50);
     });
 
+
     it('should include warnings in the response when SVG has issues', async () => {
       vi.mocked(SVGValidator.validate).mockReturnValue({
         isValid: true,
-        errors: []
+        errors: [],
+        violations: {},
+        warnings: [],
+        issues: []
       });
 
       vi.mocked(isAnimatable).mockReturnValue({
@@ -263,7 +283,7 @@ describe('Animate Logo API', () => {
         warnings: ['Some elements had missing IDs']
       });
 
-      vi.mocked(SVGAnimationService.animateSVG).mockResolvedValue({
+      vi.spyOn(SVGAnimationService.prototype, 'animateSVG').mockResolvedValue({
         success: true,
         result: {
           originalSvg: sampleSvg,
@@ -290,6 +310,7 @@ describe('Animate Logo API', () => {
       expect(response.status).toBe(200);
       expect(data.warnings).toContain('Complex gradients may affect performance');
     });
+
 
     it('should handle unexpected errors gracefully', async () => {
       vi.mocked(SVGValidator.validate).mockImplementation(() => {

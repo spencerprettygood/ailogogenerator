@@ -720,12 +720,12 @@ function LogoDisplay({
             </h3>
           )}
           {description && (
-            <Paragraph 
+            <p 
               className="text-sm text-muted-foreground"
               id={`${id}-description`}
             >
               {description}
-            </Paragraph>
+            </p>
           )}
         </div>
       )}

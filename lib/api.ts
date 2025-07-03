@@ -76,18 +76,20 @@ export class LogoGeneratorAPI {
         return response.body;
       } else {
         // No files, use JSON approach for better caching
+        const payload = {
+          prompt: brief,
+          industry: options?.industry,
+          includeAnimations: options?.includeAnimations || false,
+          animationOptions: options?.animationOptions,
+          includeUniquenessAnalysis: options?.includeUniquenessAnalysis || false,
+        };
+        
         const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            prompt: brief,
-            industry: options?.industry,
-            includeAnimations: options?.includeAnimations || false,
-            animationOptions: options?.animationOptions,
-            includeUniquenessAnalysis: options?.includeUniquenessAnalysis || false,
-          }),
+          body: JSON.stringify(payload),
         });
         
         if (!response.ok) {

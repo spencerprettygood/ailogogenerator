@@ -1,5 +1,5 @@
-import { MockupTemplate, SVGLogo } from '@/lib/types';
-import { LogoPlacement } from './mockup-types';
+import { SVGLogo } from '@/lib/types';
+import { MockupTemplate, LogoPlacement, TextPlaceholder } from './mockup-types';
 
 /**
  * Enhanced mockup generator with realistic effects
@@ -184,7 +184,7 @@ export function positionLogoWithEffects(
   
   // Parse the SVG to get its viewBox
   const viewBoxMatch = logoSvg.match(/viewBox=["']([^"']*)["']/);
-  const viewBox = viewBoxMatch 
+  const viewBox = viewBoxMatch && viewBoxMatch[1]
     ? viewBoxMatch[1].split(/\s+/).map(Number) 
     : [0, 0, 300, 300];
   
@@ -356,7 +356,7 @@ export function renderRealisticTextPlaceholders(
   
   const textElements: string[] = [];
   
-  template.textPlaceholders.forEach(placeholder => {
+  template.textPlaceholders.forEach((placeholder: TextPlaceholder) => {
     // Get text, replace {BRAND_NAME} with actual brand name
     let text = customText[placeholder.id] || placeholder.default;
     text = text.replace('{BRAND_NAME}', brandName);
@@ -397,7 +397,7 @@ export function renderRealisticTextPlaceholders(
           filter="url(#text-shadow-${placeholder.id})"
           ${maxWidth ? `textLength="${maxWidth}" lengthAdjust="spacingAndGlyphs"` : ''}
         >
-          ${lines.map((line, i) => 
+          ${lines.map((line: string, i: number) => 
             `<tspan x="${x}" dy="${i === 0 ? 0 : placeholder.fontSize * 1.2}">${line}</tspan>`
           ).join('')}
         </text>
@@ -416,7 +416,7 @@ export function renderRealisticTextPlaceholders(
 function extractSvgContent(svgString: string): string {
   // Match everything between <svg> and </svg>
   const contentMatch = svgString.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
-  return contentMatch ? contentMatch[1] : svgString;
+  return contentMatch && contentMatch[1] ? contentMatch[1] : svgString;
 }
 
 /**
@@ -459,8 +459,8 @@ export async function convertRealisticMockupToPng(
       
       // Calculate height based on SVG's aspect ratio
       const svgMatch = svgString.match(/viewBox=["']([^"']*)["']/);
-      const viewBox = svgMatch ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
-      const aspectRatio = viewBox[2] / viewBox[3];
+      const viewBox = svgMatch && svgMatch[1] ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
+      const aspectRatio = (viewBox[2] || 1000) / (viewBox[3] || 1000);
       
       const height = width / aspectRatio;
       

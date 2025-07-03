@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useMemo, createContext, useContext } from 'react';
+import React, { useState, useCallback, useMemo, createContext, useContext, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -37,7 +37,9 @@ import {
   MessageRole, 
   ProgressStage,
   AnimationOptions,
-  AnimationExportOptions
+  AnimationExportOptions,
+  AnimationEasing,
+  AnimationDirection
 } from '@/lib/types'; 
 import { 
   RefreshCw, 
@@ -65,6 +67,13 @@ interface GetAnimationsOptions extends Omit<AnimationOptions, 'timing'> {
 interface AppMessage extends Message {
   progress?: GenerationProgress;
   assets?: GeneratedAssets;
+  sessionId?: string;
+  generationOptions?: {
+    includeAnimations: boolean;
+    includeUniquenessAnalysis: boolean;
+    includeMockups: boolean;
+    selectedAnimationOptions: GetAnimationsOptions | null;
+  };
 }
 
 // Create Logo Generator Context
@@ -128,7 +137,8 @@ export function LogoGeneratorApp() {
     assets: hookAssets,
     sessionId,
     error,
-    reset
+    reset,
+    fromCache,
   } = useLogoGeneration();
 
   const handleSubmit = useCallback(async (content: string, files?: File[]) => {
@@ -150,38 +160,34 @@ export function LogoGeneratorApp() {
     setMessages(prev => [...prev, systemMessage]);
 
     try {
-      let animationOptionsForApi: AnimationOptions | undefined;
-      if (includeAnimations && selectedAnimationOptions) {
-        const { duration, easing, delay, iterations, direction, ...rest } = selectedAnimationOptions;
-        animationOptionsForApi = {
-          ...rest,
-          timing: {
-            duration,
-            easing,
-            delay,
-            iterations,
-            direction: direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse',
-          }
-        };
-      }
-
       await generateLogo(content, files, {
         includeAnimations,
-        animationOptions: animationOptionsForApi,
+        animationOptions: selectedAnimationOptions ? {
+          ...selectedAnimationOptions,
+          timing: {
+            duration: selectedAnimationOptions.duration,
+            easing: selectedAnimationOptions.easing as AnimationEasing,
+            delay: selectedAnimationOptions.delay,
+            iterations: selectedAnimationOptions.iterations,
+            direction: selectedAnimationOptions.direction as AnimationDirection,
+          }
+        } : undefined,
         includeUniquenessAnalysis,
-        includeMockups
-      });
-
-      // Success feedback
-      toast({
-        title: "Generation Started!",
-        description: "Your logo is being created with AI precision.",
+        includeMockups,
       });
     } catch (err) {
+      const errorId = generateId();
+      const errorMessage: AppMessage = {
+        id: errorId,
+        role: MessageRole.SYSTEM,
+        content: `An unexpected error occurred: ${(err as Error).message}`,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
       toast({
-        title: "Generation Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
-        variant: "destructive"
+        title: 'Error',
+        description: (err as Error).message,
+        variant: 'destructive',
       });
     }
   }, [generateLogo, toast, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis, includeMockups]);
@@ -190,97 +196,17 @@ export function LogoGeneratorApp() {
     handleSubmit(prompt, files);
   }, [handleSubmit]);
 
-  React.useEffect(() => {
-    if (hookProgress) {
-      const currentProgressData = hookProgress as GenerationProgress;
-
-      setMessages(prev => {
-        const lastMessage = prev[prev.length - 1];
-        if (lastMessage && lastMessage.role === MessageRole.ASSISTANT && lastMessage.progress) {
-          return prev.map((msg, index) => 
-            index === prev.length - 1 
-              ? { ...msg, progress: currentProgressData, content: currentProgressData.message || '', role: MessageRole.ASSISTANT }
-              : msg
-          );
-        } else {
-          return [...prev, {
-            id: generateId(),
-            role: MessageRole.ASSISTANT,
-            content: currentProgressData.message || '',
-            timestamp: new Date(),
-            progress: currentProgressData
-          }];
-        }
-      });
-    }
-  }, [hookProgress]);
-
-  React.useEffect(() => {
-    if (hookAssets && sessionId) {
-      const completionMessage: AppMessage = {
-        id: generateId(),
-        role: MessageRole.ASSISTANT,
-        content: '🎉 Your logo package is ready! You can preview it above and download all files below.',
-        timestamp: new Date(),
-        assets: hookAssets
-      };
-      setMessages(prev => [...prev, completionMessage]);
-
-      // Save to localStorage for persistence
-      const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
-      if (lastUserMessage) {
-        LogoStorageService.saveSession(
-          sessionId, 
-          hookAssets, 
-          lastUserMessage.content, 
-          {
-            includeAnimations,
-            includeUniquenessAnalysis,
-            includeMockups,
-            selectedAnimationOptions
-          }
-        );
-      }
-
-      toast({
-        title: "Generation Complete!",
-        description: "Your logo package is ready for download.",
-      });
-    }
-  }, [hookAssets, sessionId, toast, messages, includeAnimations, includeUniquenessAnalysis, includeMockups, selectedAnimationOptions]);
-
-  React.useEffect(() => {
-    if (error) {
-      const errorMessageContent = error.message || "An unknown error occurred.";
-      const errorMessage: AppMessage = {
-        id: generateId(),
-        role: MessageRole.SYSTEM,
-        content: `Error: ${errorMessageContent}`,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    }
-  }, [error]);
-
   const handleRetry = useCallback(() => {
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
     if (lastUserMessage && lastUserMessage.content) {
       reset();
-      setMessages([lastUserMessage]); 
-      handleSubmit(
-        lastUserMessage.content,
-        lastUserMessage.files
-      );
+      handleSubmit(lastUserMessage.content, lastUserMessage.files);
     }
   }, [messages, reset, handleSubmit]);
   
   const handleExportAnimation = useCallback(async (format: string, options?: AnimationExportOptions) => {
     if (!hookAssets?.animatedSvg) {
-      toast({
-        title: "Animation Export Failed",
-        description: "No animated logo available for export.",
-        variant: "destructive"
-      });
+      toast({ title: 'No Animation Available', description: 'Please generate a logo with animation first.', variant: 'destructive' });
       return;
     }
     
@@ -308,24 +234,89 @@ export function LogoGeneratorApp() {
       if (data.fileUrl) {
         window.location.href = data.fileUrl;
         
-        toast({
-          title: "Export Successful",
-          description: `Your animated logo has been exported in ${format.toUpperCase()} format.`
-        });
+        toast({ title: 'Export Successful', description: `Animation exported as ${format}.` });
       }
     } catch (err) {
-      toast({
-        title: "Export Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred during export",
-        variant: "destructive"
-      });
+      toast({ title: 'Export Failed', description: (err as Error).message, variant: 'destructive' });
     }
   }, [hookAssets, toast]);
 
   const handleReset = useCallback(() => {
     reset();
     setMessages([]);
+    setShowFeedback(false);
   }, [reset]);
+
+  useEffect(() => {
+    if (hookProgress) {
+      setMessages(prevMessages => {
+        const lastMessage = prevMessages[prevMessages.length - 1];
+        if (lastMessage && lastMessage.role === MessageRole.SYSTEM && !lastMessage.assets) {
+          const updatedMessage = { ...lastMessage, progress: hookProgress };
+          return [...prevMessages.slice(0, -1), updatedMessage];
+        }
+        // If there is no system message to update, we don't add a new one here.
+        // The system message is added in handleSubmit.
+        return prevMessages;
+      });
+    }
+  }, [hookProgress]);
+
+  useEffect(() => {
+    if (hookAssets && sessionId) {
+      const finalMessage: AppMessage = {
+        id: generateId(),
+        role: MessageRole.SYSTEM,
+        content: fromCache ? 'Logo generation complete (from cache).' : 'Logo generation complete!',
+        timestamp: new Date(),
+        assets: hookAssets,
+        sessionId: sessionId,
+        progress: { status: 'completed', progress: 100, message: 'Done', stage: 'Done' },
+        generationOptions: {
+          includeAnimations,
+          includeUniquenessAnalysis,
+          includeMockups,
+          selectedAnimationOptions,
+        }
+      };
+
+      setMessages(prev => {
+        const lastMessage = prev[prev.length - 1];
+        // Replace the last message if it was a system progress message
+        if (lastMessage && lastMessage.role === MessageRole.SYSTEM && !lastMessage.assets) {
+          return [...prev.slice(0, -1), finalMessage];
+        }
+        return [...prev, finalMessage];
+      });
+
+      setShowFeedback(true);
+      toast({
+        title: 'Success!',
+        description: 'Your new logo has been generated.',
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hookAssets, sessionId, fromCache, toast]); // Dependencies are stable, but ESLint might complain.
+
+  useEffect(() => {
+    if (error) {
+      const errorId = generateId();
+      const errorMessage: AppMessage = {
+        id: errorId,
+        role: MessageRole.SYSTEM,
+        content: `An error occurred: ${error.message}`,
+        timestamp: new Date(),
+      };
+      setMessages(prev => {
+         const lastMessage = prev[prev.length - 1];
+         // Replace the last message if it was a system progress message
+        if (lastMessage && lastMessage.role === MessageRole.SYSTEM && !lastMessage.assets) {
+           return [...prev.slice(0, -1), errorMessage];
+        }
+        return [...prev, errorMessage];
+      });
+    }
+  }, [error]);
 
   const progressForTracker = useMemo(() => {
     if (!hookProgress) return null;

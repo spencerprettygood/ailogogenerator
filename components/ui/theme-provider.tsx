@@ -5,19 +5,19 @@
  * Re-exporting the correct theme provider to maintain compatibility
  */
 
-// Re-export everything from the fixed theme provider
-export {
-  ThemeProvider,
-  useTheme,
-  useThemeSafe,
-  default as ThemedLayout
+// Import and re-export from the fixed theme provider
+import {
+  ThemeProvider as FixedThemeProvider,
+  useTheme as fixedUseTheme,
+  useThemeSafe as fixedUseThemeSafe,
+  default as FixedThemedLayout
 } from '@/components/providers/theme-fixed';
 
-// Legacy compatibility - redirect to the safe hook
-export function useThemeCompat() {
-  const { useThemeSafe } = require('@/components/providers/theme-fixed');
-  return useThemeSafe();
-}
+// Re-export with safe versions
+export const ThemeProvider = FixedThemeProvider;
+export const useTheme = fixedUseTheme; // This is already safe in theme-fixed
+export const useThemeSafe = fixedUseThemeSafe;
+export default FixedThemedLayout;
 
 // Fallback ThemeToggle component
 export function ThemeToggle({ 
@@ -29,8 +29,7 @@ export function ThemeToggle({
   buttonClassName?: string;
   iconClassName?: string;
 }) {
-  const { useThemeSafe } = require('@/components/providers/theme-fixed');
-  const { isDark, setTheme } = useThemeSafe();
+  const { isDark, setTheme } = fixedUseThemeSafe();
   
   const toggleTheme = () => {
     setTheme(isDark ? 'light' : 'dark');

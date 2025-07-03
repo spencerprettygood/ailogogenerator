@@ -1,4 +1,5 @@
-import { MockupTemplate, SVGLogo } from '@/lib/types';
+import { SVGLogo } from '@/lib/types';
+import { MockupTemplate } from './mockup-types';
 
 /**
  * Positions an SVG logo on a mockup template, applying necessary transformations
@@ -11,8 +12,8 @@ export function positionLogoOnMockup(
 ): string {
   // Parse the SVG to get its viewBox
   const viewBoxMatch = logoSvg.match(/viewBox=["']([^"']*)["']/);
-  const viewBox = viewBoxMatch 
-    ? viewBoxMatch[1].split(/\s+/).map(Number) 
+  const viewBox = viewBoxMatch && viewBoxMatch[1]
+    ? viewBoxMatch[1].split(/\s+/).map(Number)
     : [0, 0, 300, 300];
   
   // Calculate logo dimensions based on template placement
@@ -67,13 +68,13 @@ export function renderTextPlaceholders(
   
   template.textPlaceholders.forEach(placeholder => {
     // Get text, replace {BRAND_NAME} with actual brand name
-    let text = customText[placeholder.id] || placeholder.default;
+    let text = customText[placeholder.id] || placeholder.default || '';
     text = text.replace('{BRAND_NAME}', brandName);
     
     // Calculate position and dimensions
     const x = (placeholder.x / 100) * width;
     const y = (placeholder.y / 100) * height;
-    const maxWidth = (placeholder.maxWidth / 100) * width;
+    const maxWidth = placeholder.maxWidth ? (placeholder.maxWidth / 100) * width : width * 0.8;
     
     // Split text into lines if it contains newlines
     const lines = text.split('\\n');
@@ -89,7 +90,7 @@ export function renderTextPlaceholders(
         text-anchor="middle"
         ${maxWidth ? `textLength="${maxWidth}" lengthAdjust="spacingAndGlyphs"` : ''}
       >
-        ${lines.map((line, i) => 
+        ${lines.map((line: string, i: number) => 
           `<tspan x="${x}" dy="${i === 0 ? 0 : placeholder.fontSize * 1.2}">${line}</tspan>`
         ).join('')}
       </text>
@@ -107,7 +108,7 @@ export function renderTextPlaceholders(
 function extractSvgContent(svgString: string): string {
   // Match everything between <svg> and </svg>
   const contentMatch = svgString.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
-  return contentMatch ? contentMatch[1] : svgString;
+  return contentMatch ? contentMatch[1] ?? '' : svgString;
 }
 
 /**
@@ -200,8 +201,10 @@ export async function convertMockupToPng(
       
       // Calculate height based on SVG's aspect ratio
       const svgMatch = svgString.match(/viewBox=["']([^"']*)["']/);
-      const viewBox = svgMatch ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
-      const aspectRatio = viewBox[2] / viewBox[3];
+      const viewBox = (svgMatch && svgMatch[1]) ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
+      const aspectRatio = (viewBox[2] !== undefined && viewBox[3] !== undefined && viewBox[3] !== 0)
+        ? viewBox[2] / viewBox[3]
+        : 1;
       
       const height = width / aspectRatio;
       

@@ -17,7 +17,8 @@ export function generateAnimationId(): string {
  * @returns Default animation options
  */
 export function createDefaultAnimationOptions(type: AnimationType): AnimationOptions {
-  const defaultOptions: Record<AnimationType, Partial<AnimationOptions>> = {
+  // Only specify defaults for a subset of AnimationType - use Partial to avoid exhaustive key requirement
+  const defaultOptions: Partial<Record<AnimationType, Partial<AnimationOptions>>> = {
     [AnimationType.FADE_IN]: {
       timing: {
         duration: 1000,
@@ -190,4 +191,99 @@ export function generateKeyframes(type: AnimationType, options?: Partial<Animati
         100% { opacity: 1; }
       `;
   }
+}
+
+/**
+ * Detect support for various animation features
+ */
+export function detectAnimationSupport(): { css: boolean; smil: boolean; webAnimations: boolean } {
+  return {
+    css: isBrowserSupported('css-animations'),
+    smil: isBrowserSupported('smil'),
+    webAnimations: isBrowserSupported('web-animations-api'),
+  };
+}
+
+/**
+ * Generate JS code snippet to check browser compatibility for an animation type
+ */
+export function generateBrowserCompatibilityCheck(
+  type: 'css' | 'smil' | 'web-animations'
+): string {
+  switch (type) {
+    case 'css':
+      return `
+        function checkCSS() {
+          return (
+            'animation' in document.documentElement.style ||
+            'webkitAnimation' in document.documentElement.style ||
+            'MozAnimation' in document.documentElement.style ||
+            'OAnimation' in document.documentElement.style
+          );
+        }
+      `;
+    case 'smil':
+      return `
+        function checkSMIL() {
+          var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+          return !!svg && 'animate' in svg && svg.createElementNS;
+        }
+      `;
+    case 'web-animations':
+      return `
+        function checkWebAnimations() {
+          return 'animate' in Element.prototype;
+        }
+      `;
+    default:
+      return '';
+  }
+}
+
+/**
+ * Convert timing options to CSS animation shorthand
+ */
+export function convertTimingToCSS(options: {
+  duration: number;
+  delay?: number;
+  easing: AnimationEasing | string;
+  iterations?: number | 'infinite' | undefined;
+  direction?: string;
+}): string {
+  const parts: string[] = [];
+  parts.push(`${options.duration}ms`);
+  if (options.delay) parts.push(`${options.delay}ms`);
+  parts.push(`${options.easing}`);
+  if (options.iterations !== undefined) {
+    parts.push(options.iterations === Infinity || options.iterations === 'infinite' ? 'infinite' : `${options.iterations}`);
+  }
+  if (options.direction) parts.push(options.direction);
+  return `animation: ${parts.join(' ')};`;
+}
+
+/**
+ * Convert timing options to SMIL animation attributes
+ */
+export function convertTimingToSMIL(options: {
+  duration: number;
+  delay?: number;
+  easing: AnimationEasing | string;
+  iterations?: number | 'infinite' | undefined;
+}): Record<string, string> {
+  const attrs: Record<string, string> = {
+    dur: `${options.duration}ms`,
+    fill: 'freeze',
+  };
+  if (options.delay) attrs.begin = `${options.delay}ms`;
+  if (options.iterations !== undefined) {
+    attrs.repeatCount =
+      options.iterations === Infinity || options.iterations === 'infinite'
+        ? 'indefinite'
+        : `${options.iterations}`;
+  }
+  // Only add calcMode for non-linear easing
+  if (options.easing !== AnimationEasing.LINEAR && options.easing !== 'linear') {
+    attrs.calcMode = 'paced';
+  }
+  return attrs;
 }

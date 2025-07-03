@@ -2,12 +2,12 @@ import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput,
   SVGValidationAgentInput,
-  SVGValidationAgentOutput
+  SVGValidationResultOutput,
+  SVGDesignQualityScore
 } from '../../types-agents';
-import { InputSanitizer } from '../../utils/security-utils';
-import { SVGDesignValidator, SVGDesignQualityScore } from '../../utils/svg-design-validator';
+import { SVGDesignValidator } from '../../utils/svg-design-validator';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
 
 /**
  * Enhanced SVG Validation Agent with Design Quality Assessment
@@ -20,16 +20,15 @@ export class SVGDesignValidationAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
     super(
       'svg-design-validation', 
-      ['svg-validation', 'design-theory'],
+      ['svg-validation'],
       {
         model: 'claude-3-5-sonnet-20240620', // Use full model for detailed design feedback
         temperature: 0.2, // Low temperature for consistent, deterministic output
-        maxTokens: 1500,
+        maxTokens: 2048, // Increased for comprehensive design feedback
         ...config
       }
     );
     
-    // System prompt for when AI-assisted repair or enhancement is needed
     this.systemPrompt = `You are an expert SVG logo design validator with advanced training in design theory and technical SVG validation.
 
 Your task is to analyze SVG logos and provide detailed feedback on both technical quality and design aesthetics.
@@ -61,16 +60,24 @@ When asked to repair SVG code:
 - Optimize file size without compromising visual quality
 - Ensure accessibility features are properly implemented
 
-Your output should be clear, actionable, and demonstrate both technical expertise and design sensibility.`;
+Return ONLY the improved SVG code without any explanations if repair is needed.`;
   }
   
   /**
    * Generate the prompt for SVG validation and design assessment
    */
   protected async generatePrompt(input: SVGValidationAgentInput): Promise<string> {
-    const { svg, brandName, repair = true, assessDesign = true } = input;
+    const { svg, brandName, repair = true } = input;
     
-    // Base validation prompt
+    // First, run design validation to see if we need AI assistance
+    const validationResult = SVGDesignValidator.validateDesignQuality(svg);
+    
+    // If the SVG is already high quality and valid, don't need AI assistance
+    const designQuality = (validationResult as any).designQualityScore;
+    if (validationResult.isValid && designQuality && designQuality.overallAesthetic > 80) {
+      return ''; // Signal that we don't need AI processing
+    }
+    
     let prompt = `Please analyze this SVG logo for "${brandName}" and provide detailed feedback on both technical quality and design aesthetics.
 
 Technical assessment:
@@ -79,11 +86,7 @@ Technical assessment:
 - Is the file optimized for size and performance?
 - Is it accessible with proper title and description elements?
 
-`;
-
-    // Add design assessment portion if requested
-    if (assessDesign) {
-      prompt += `Design quality assessment:
+Design quality assessment:
 - Color Harmony: Evaluate the color palette, harmony principles used, and psychological effectiveness
 - Composition: Assess balance, golden ratio application, rule of thirds, visual hierarchy
 - Visual Weight: Analyze distribution of elements, emphasis, eye flow, and overall balance
@@ -91,21 +94,16 @@ Technical assessment:
 - Negative Space: Assess intentional use of negative space, figure-ground relationship, and breathing room
 
 `;
-    }
 
-    // Add repair instructions if requested
-    if (repair) {
-      prompt += `If there are issues with the SVG, please provide specific suggestions for improvement. If the issues are severe, please provide repaired SVG code that fixes the problems while maintaining the original design intent.
+    if (repair && !validationResult.isValid) {
+      prompt += `The SVG has validation issues. Please provide repaired SVG code that fixes the problems while maintaining the original design intent.
 
 `;
     }
 
-    // Add the SVG code to analyze
     prompt += `Here's the SVG to analyze:
 
-\`\`\`svg
 ${svg}
-\`\`\`
 
 Please provide a comprehensive analysis with actionable feedback.`;
 
@@ -115,142 +113,91 @@ Please provide a comprehensive analysis with actionable feedback.`;
   /**
    * Process SVG validation, design assessment, and repair
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationAgentOutput> {
+  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationResultOutput> {
     const input = originalInput as SVGValidationAgentInput;
-    const { svg, repair = true, optimize = true, assessDesign = true } = input;
+    const { svg, repair = true, optimize = true } = input;
     
     try {
       // Step 1: Run comprehensive SVG validation and design quality assessment
-      const validationResult = assessDesign 
-        ? SVGDesignValidator.validateDesignQuality(svg)
-        : SVGDesignValidator.validate(svg);
+      const processResult = SVGDesignValidator.processWithDesignAssessment(svg, { repair, optimize });
       
-      // If valid and no repair/optimization needed, return early
-      if (validationResult.isValid && !repair && !optimize) {
+      // Step 2: If automated processing was successful, use those results
+      if (processResult.success) {
         return {
           success: true,
           result: {
-            svg,
+            svg: processResult.svg,
             isValid: true,
-            securityScore: validationResult.securityScore,
-            accessibilityScore: validationResult.accessibilityScore,
-            optimizationScore: validationResult.optimizationScore,
-            designQualityScore: (validationResult as any).designQualityScore,
-            modifications: []
-          }
+            securityScore: processResult.validation.securityScore,
+            accessibilityScore: processResult.validation.accessibilityScore,
+            optimizationScore: processResult.validation.optimizationScore,
+            designQualityScore: processResult.designQuality as any,
+            designFeedback: this.formatDesignFeedback(processResult.designQuality as any),
+            modifications: (processResult.repair as any)?.modifications || []
+          },
+          tokensUsed: this.metrics.tokenUsage.total,
+          processingTime: this.metrics.executionTime,
         };
       }
       
-      // Step 2: If invalid but repair isn't requested, return validation result with detailed issues
-      if (!validationResult.isValid && !repair) {
-        return {
-          success: false,
-          error: {
-            message: 'SVG validation failed',
-            details: validationResult.errors,
-            designQualityScore: (validationResult as any).designQualityScore
-          }
-        };
-      }
-      
-      // Step 3: Apply comprehensive automated repairs and design assessment
-      const processResult = assessDesign
-        ? SVGDesignValidator.processWithDesignAssessment(svg, { repair, optimize })
-        : SVGDesignValidator.process(svg, { repair, optimize });
-      
-      // Step 4: If automated repair failed, use Claude's assistance for complex repair
-      if (!processResult.success && responseContent) {
-        // Extract SVG from Claude's response
-        const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
+      // Step 3: If automated repair failed, try to use AI-assisted repair
+      if (responseContent && responseContent.trim()) {
+        const svgMatch = responseContent.match(/<svg[\s\S]*?<\/svg>/);
         if (svgMatch) {
-          const claudeRepairedSvg = svgMatch[0];
+          const aiRepairedSvg = svgMatch[0];
           
-          // Validate the Claude-repaired SVG
-          const claudeValidation = assessDesign
-            ? SVGDesignValidator.validateDesignQuality(claudeRepairedSvg)
-            : SVGDesignValidator.validate(claudeRepairedSvg);
+          // Validate the AI-repaired SVG
+          const aiValidation = SVGDesignValidator.validateDesignQuality(aiRepairedSvg);
           
-          if (claudeValidation.isValid) {
-            // If Claude's repair is valid, use it and update results
-            processResult.svg = claudeRepairedSvg;
-            processResult.success = true;
-            
-            // Extract Claude's design feedback for insights
-            const designFeedbackMatch = responseContent.match(/Design quality assessment:([\s\S]*?)(?:If there are issues|Here's the repaired SVG|$)/i);
-            const designFeedback = designFeedbackMatch ? designFeedbackMatch[1].trim() : '';
+          if (aiValidation.isValid) {
+            // Extract design feedback from AI response
+            const designFeedbackMatch = responseContent.match(/Design quality assessment:([\s\S]*?)(?:The SVG has validation|Here's the SVG|$)/i);
+            const designFeedback = designFeedbackMatch?.[1]?.trim() || '';
             
             return {
               success: true,
               result: {
-                svg: claudeRepairedSvg,
+                svg: aiRepairedSvg,
                 isValid: true,
-                securityScore: claudeValidation.securityScore,
-                accessibilityScore: claudeValidation.accessibilityScore,
-                optimizationScore: claudeValidation.optimizationScore,
-                designQualityScore: (claudeValidation as any).designQualityScore,
-                designFeedback: designFeedback,
-                modifications: ['Applied Claude-assisted repair with design enhancements']
-              }
+                securityScore: aiValidation.securityScore,
+                accessibilityScore: aiValidation.accessibilityScore,
+                optimizationScore: aiValidation.optimizationScore,
+                designQualityScore: (aiValidation as any).designQualityScore,
+                designFeedback: designFeedback || this.formatDesignFeedback((aiValidation as any).designQualityScore),
+                modifications: ['Applied AI-assisted design and technical improvements']
+              },
+              tokensUsed: this.metrics.tokenUsage.total,
+              processingTime: this.metrics.executionTime,
             };
           }
         }
       }
       
-      // Step 5: Return processed results
-      if (!processResult.success) {
-        return {
-          success: false,
-          error: {
-            message: 'SVG repair failed to fix all critical issues',
-            details: validationResult.errors
-          }
-        };
-      }
+      // Step 4: If both automated and AI repair failed, return the validation issues
+      const validationResult = SVGDesignValidator.validateDesignQuality(svg);
       
-      // Calculate file size details
-      const originalSize = Buffer.byteLength(svg, 'utf8');
-      const processedSize = Buffer.byteLength(processResult.svg, 'utf8');
-      const reductionPercent = Math.round((1 - (processedSize / originalSize)) * 100);
-      
-      // Extract design quality score if present
-      const designQualityScore = (processResult as any).designQuality || null;
-      
-      // Build the final result with design quality information
-      const result: SVGValidationAgentOutput = {
-        success: true,
-        result: {
-          svg: processResult.svg,
-          isValid: true,
-          securityScore: validationResult.securityScore,
-          accessibilityScore: validationResult.accessibilityScore,
-          optimizationScore: validationResult.optimizationScore,
-          designQualityScore,
-          modifications: [],
-          optimizationResults: {
-            originalSize,
-            optimizedSize: processedSize,
-            reductionPercent
-          }
-        }
-      };
-      
-      // Extract design feedback from Claude's response if available
-      if (responseContent) {
-        const designFeedbackMatch = responseContent.match(/Design quality assessment:([\s\S]*?)(?:If there are issues|Here's the repaired SVG|$)/i);
-        if (designFeedbackMatch && designFeedbackMatch[1]) {
-          result.result!.designFeedback = designFeedbackMatch[1].trim();
-        }
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('Failed to process SVG design validation:', error);
       return {
         success: false,
-        error: {
-          message: 'SVG design validation process failed',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: 'SVG validation and repair failed to fix all critical issues',
+          category: ErrorCategory.SVG,
+          details: { 
+            validationErrors: validationResult.errors,
+            designQuality: (validationResult as any).designQualityScore
+          },
+          retryable: true,
+        }),
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'SVG design validation process failed',
+          category: ErrorCategory.SVG,
+          details: { originalError: error instanceof Error ? error.message : String(error) },
+          retryable: true,
+        }),
       };
     }
   }
@@ -261,24 +208,28 @@ Please provide a comprehensive analysis with actionable feedback.`;
    * @param designQualityScore - The design quality score object
    * @returns Formatted design feedback as a string
    */
-  private formatDesignFeedback(designQualityScore: SVGDesignQualityScore): string {
-    if (!designQualityScore) return '';
+  private formatDesignFeedback(designQualityScore?: any): string {
+    if (!designQualityScore) return 'Design quality assessment not available.';
     
-    return `## SVG Design Quality Assessment
-
-### Overall Scores
-- Overall Aesthetic Quality: ${designQualityScore.overallAesthetic}/100
-- Technical Quality: ${designQualityScore.technicalQuality}/100
-
-### Design Dimension Scores
-- Color Harmony: ${designQualityScore.colorHarmony}/100
-- Composition: ${designQualityScore.composition}/100
-- Visual Weight Distribution: ${designQualityScore.visualWeight}/100
-- Typography Quality: ${designQualityScore.typography}/100
-- Negative Space Utilization: ${designQualityScore.negativeSpace}/100
-
-### Design Improvement Suggestions
-${designQualityScore.designSuggestions.map(suggestion => `- ${suggestion}`).join('\n')}
-`;
+    const lines = [
+      '## SVG Design Quality Assessment',
+      '',
+      '### Overall Scores',
+      `- Overall Quality: ${designQualityScore.overall || 'N/A'}/100`,
+      `- Balance: ${designQualityScore.balance || 'N/A'}/100`,
+      `- Harmony: ${designQualityScore.harmony || 'N/A'}/100`,
+      '',
+      '### Design Dimension Scores',
+      `- Symmetry: ${designQualityScore.symmetry || 'N/A'}/100`,
+      `- Simplicity: ${designQualityScore.simplicity || 'N/A'}/100`,
+      `- Clarity: ${designQualityScore.clarity || 'N/A'}/100`,
+    ];
+    
+    if (designQualityScore.suggestions && Array.isArray(designQualityScore.suggestions) && designQualityScore.suggestions.length > 0) {
+      lines.push('', '### Design Improvement Suggestions');
+      lines.push(...designQualityScore.suggestions.map((suggestion: string) => `- ${suggestion}`));
+    }
+    
+    return lines.join('\n');
   }
 }

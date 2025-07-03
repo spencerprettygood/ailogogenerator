@@ -73,14 +73,16 @@ export class StreamProcessor {
       // Handle progress updates
       if (data.type === 'progress' && data.progress) {
         callbacks.onProgress({
-          currentStage: data.progress.currentStage,
-          stageProgress: data.progress.stageProgress,
-          overallProgress: data.progress.overallProgress,
-          statusMessage: data.progress.statusMessage,
-          // Backward compatibility
-          stage: data.progress.currentStage,
-          progress: data.progress.stageProgress,
-          message: data.progress.statusMessage
+            currentStageId: data.progress.currentStageId || data.progress.currentStage,
+            currentStage: data.progress.currentStage || data.progress.currentStageId, // Backward compatibility
+            stageProgress: data.progress.stageProgress,
+            overallProgress: data.progress.overallProgress || data.progress.progress,
+            statusMessage: data.progress.statusMessage || data.progress.message,
+            // Backward compatibility
+            stage: data.progress.currentStage,
+            progress: data.progress.stageProgress,
+            message: data.progress.statusMessage,
+            status: 'completed'
         });
       }
       

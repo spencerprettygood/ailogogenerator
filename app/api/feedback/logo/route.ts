@@ -24,26 +24,52 @@ export async function POST(request: NextRequest): Promise<NextResponse<FeedbackR
       );
     }
     
-    // TODO: In a production environment, store the feedback in a database
-    // For now, we'll just log it and return a success response
+    // Store feedback in database
+    try {
+      const { databaseService } = await import('@/lib/services/database-service');
+      
+      const savedFeedback = await databaseService.createFeedback({
+        generationId: feedback.sessionId,
+        type: 'logo',
+        rating: feedback.overallRating,
+        feedbackText: JSON.stringify({
+          logoId: feedback.logoId,
+          designQualityRating: feedback.designQualityRating,
+          relevanceRating: feedback.relevanceRating,
+          uniquenessRating: feedback.uniquenessRating,
+          feedbackCategories: feedback.feedbackCategories,
+          additionalComments: feedback.additionalComments
+        })
+      });
+      
+      // Log the feedback for monitoring
+      logger.info('Logo feedback received and stored', { 
+        feedbackId: savedFeedback.id,
+        sessionId: feedback.sessionId,
+        logoId: feedback.logoId,
+        overallRating: feedback.overallRating
+      });
     
-    // Generate a unique ID for the feedback (in production, this would come from the database)
-    const feedbackId = `feedback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    
-    // Log the feedback (replace with database storage in production)
-    logger.info('Logo feedback received', { 
-      feedbackId,
-      sessionId: feedback.sessionId,
-      logoId: feedback.logoId,
-      overallRating: feedback.overallRating
-    });
-    
-    // Return a success response
-    return NextResponse.json({
-      success: true,
-      message: 'Feedback received successfully',
-      feedbackId
-    });
+      // Return a success response
+      return NextResponse.json({
+        success: true,
+        message: 'Feedback received successfully',
+        feedbackId: savedFeedback.id
+      });
+      
+    } catch (error) {
+      // Log the error
+      logger.error('Error processing logo feedback', { error });
+      
+      // Return an error response
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Failed to process feedback. Please try again later.' 
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     // Log the error
     logger.error('Error processing logo feedback', { error });

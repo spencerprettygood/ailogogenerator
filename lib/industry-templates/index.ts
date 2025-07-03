@@ -12,7 +12,7 @@
  * @copyright 2024
  */
 
-import { DesignPrinciple } from '../types-agents';
+import { IndustryDesignPrinciple } from '../types-agents';
 
 /**
  * Industry category definition
@@ -24,7 +24,7 @@ export interface IndustryCategory {
   keywords: string[];
   commonColors: string[];
   commonStyles: string[];
-  designPrinciples: DesignPrinciple;
+  designPrinciples: IndustryDesignPrinciple;
 }
 
 /**
@@ -860,7 +860,12 @@ export function detectIndustry(description: string): IndustryDetectionResult {
   }
   
   // Calculate confidence score based on keyword matches
-  const [primaryIndustry, primaryMatches] = sortedIndustries[0];
+  const sortedIndustriesEntry = sortedIndustries[0];
+  if (!sortedIndustriesEntry) {
+    return { primaryIndustry: 'general', confidenceScore: 0.3 };
+  }
+  
+  const [primaryIndustry, primaryMatches] = sortedIndustriesEntry;
   const totalMatches = Object.values(industryMatches)
     .reduce((sum, { count }) => sum + count, 0);
   
@@ -899,7 +904,14 @@ export function getIndustryTemplate(industryId: string): IndustryCategory | unde
  * @param {string} industryId - The industry ID
  * @returns {DesignPrinciple} The design principles for the industry
  */
-export function getDesignPrinciplesForIndustry(industryId: string): DesignPrinciple {
+export function getDesignPrinciplesForIndustry(industryId: string): IndustryDesignPrinciple {
   const template = getIndustryTemplate(industryId);
-  return template ? template.designPrinciples : INDUSTRY_TEMPLATES['general'].designPrinciples;
+  const generalTemplate = INDUSTRY_TEMPLATES['general'];
+  return template?.designPrinciples || generalTemplate?.designPrinciples || {
+    colorTheory: 'Use appropriate colors for the brand',
+    composition: 'Apply balanced layout principles',
+    visualWeight: 'Balance elements for visual stability',
+    typography: 'Use appropriate typography for the brand',
+    negativeSpace: 'Use negative space effectively'
+  };
 }

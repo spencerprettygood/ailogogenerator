@@ -1,3 +1,14 @@
+import { AnimationTrigger } from '../../../lib/animation/types';
+/**
+ * GET handler for supported animation types, easing functions, and triggers
+ */
+export async function GET() {
+  return NextResponse.json({
+    supportedAnimationTypes: Object.values(AnimationType),
+    supportedEasingFunctions: Object.values(AnimationEasing),
+    supportedTriggers: Object.values(AnimationTrigger)
+  }, { status: 200 });
+}
 import { NextRequest, NextResponse } from 'next/server';
 import { defaultAnimationService } from '../../../lib/animation';
 import { AnimationOptions, AnimationType, AnimationEasing } from '../../../lib/animation/types';

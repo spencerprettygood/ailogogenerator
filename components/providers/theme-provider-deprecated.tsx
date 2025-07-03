@@ -40,22 +40,32 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 import { useTheme as useNextTheme } from "next-themes";
 
 export function useTheme() {
-  const { theme, setTheme, systemTheme } = useNextTheme();
-  
-  // Check if current theme is dark (either explicitly set to dark or system preference is dark)
-  const isDark = React.useMemo(() => {
-    if (theme === 'system' && systemTheme) {
-      return systemTheme === 'dark';
-    }
-    return theme === 'dark';
-  }, [theme, systemTheme]);
-  
-  return {
-    theme,
-    setTheme,
-    systemTheme,
-    isDark,
-  };
+  try {
+    const { theme, setTheme, systemTheme } = useNextTheme();
+    
+    // Check if current theme is dark (either explicitly set to dark or system preference is dark)
+    const isDark = React.useMemo(() => {
+      if (theme === 'system' && systemTheme) {
+        return systemTheme === 'dark';
+      }
+      return theme === 'dark';
+    }, [theme, systemTheme]);
+
+    return {
+      theme: theme || 'light',
+      setTheme: setTheme || (() => {}),
+      systemTheme: systemTheme || 'light',
+      isDark: isDark || false,
+    };
+  } catch (error) {
+    console.warn('Theme provider error, using safe defaults:', error);
+    return {
+      theme: 'light',
+      setTheme: () => {},
+      systemTheme: 'light',
+      isDark: false,
+    };
+  }
 }
 
 /**

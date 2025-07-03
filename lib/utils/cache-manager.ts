@@ -45,13 +45,13 @@ interface LocalCacheItem<T = unknown> {
  * @type {CacheType}
  * @description Enum-like type for different categories of cached data
  */
-type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
+export type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
 
 /**
  * @interface CacheConfig
  * @description Configuration options for the cache manager
  */
-interface CacheConfig {
+export interface CacheConfig {
   /** Whether the cache is enabled */
   enabled: boolean;
   
@@ -304,42 +304,76 @@ export class CacheManager {
    * @param {number} [ttl] - Optional custom TTL in milliseconds
    * @returns {void}
    */
-  private set<T>(key: string, value: T, type: CacheType, ttl?: number): void {
+  public set<T>(key: string, value: T, type: CacheType, ttl?: number): void {
     if (!this.config.enabled) {
       return;
     }
-    
-    // If cache is at capacity, evict least recently used item
+
+    // If cache is full, evict the least recently used item
     if (this.cache.size >= this.config.maxItems) {
-      this.evictLRU();
+      this.evict();
     }
     
-    // Calculate TTL
-    const expiresAt = Date.now() + (ttl || this.config.ttl[type] || this.config.defaultTTL);
+    const now = Date.now();
+    const expiresAt = now + (ttl || this.config.ttl[type] || this.config.defaultTTL);
     
-    // Create cache item
-    const item: LocalCacheItem<T> = {
+    const newItem: LocalCacheItem<T> = {
       data: value,
       expiresAt,
-      createdAt: Date.now(),
-      lastAccessed: Date.now(),
+      createdAt: now,
       key,
-      type
+      type,
+      lastAccessed: now
     };
     
-    // Store in cache
-    this.cache.set(key, item);
+    // If the key already exists, decrement old type count
+    if (this.cache.has(key)) {
+      const oldItem = this.cache.get(key);
+      if (oldItem) {
+        this.counts[oldItem.type] = Math.max(0, this.counts[oldItem.type] - 1);
+      }
+    }
+
+    this.cache.set(key, newItem);
+    this.counts[type] = (this.counts[type] || 0) + 1;
+    this.logger.info(`Set item in cache`, { key, type, ttl });
+  }
+  
+  /**
+   * Get a value from the cache
+   * 
+   * @template T The type of data to retrieve
+   * @param {string} key - The key of the item to retrieve
+   * @param {CacheType} type - The type of cache to access
+   * @returns {T | null} The cached data or null if not found/expired
+   */
+  public get<T>(key: string, type: CacheType): T | null {
+    if (!this.config.enabled) {
+      return null;
+    }
     
-    // Update count
-    this.counts[type]++;
+    const item = this.cache.get(key);
     
-    this.logger.debug(`Cache set: ${key} (${type})`, { ttl: ttl || this.config.ttl[type] });
+    if (item && item.type === type) {
+      if (item.expiresAt > Date.now()) {
+        this.hits[type]++;
+        item.lastAccessed = Date.now();
+        this.cache.set(key, item); // Update last accessed time
+        return item.data as T;
+      } else {
+        // Item has expired, delete it
+        this.delete(key, type);
+      }
+    }
+    
+    this.misses[type]++;
+    return null;
   }
   
   /**
    * Evict the least recently used item from the cache
    */
-  private evictLRU(): void {
+  private evict(): void {
     let oldestItem: LocalCacheItem | null = null;
     let oldestKey: string | null = null;
     
@@ -359,91 +393,6 @@ export class CacheManager {
       }
       
       this.logger.debug(`Cache evicted LRU item: ${oldestKey} (${removedType})`);
-    }
-  }
-  
-  /**
-   * Retrieve a value from the cache
-   * 
-   * @template T Expected type of the cached data
-   * @param {string} key - The key to look up
-   * @param {CacheType} type - The type of data being retrieved
-   * @returns {T|null} The cached value or null if not found
-   */
-  private get<T>(key: string, type: CacheType): T | null {
-    if (!this.config.enabled) {
-      this.misses[type]++;
-      return null;
-    }
-    
-    const item = this.cache.get(key);
-    
-    if (!item) {
-      this.misses[type]++;
-      return null;
-    }
-    
-    // Check if expired
-    if (Date.now() > item.expiresAt) {
-      this.cache.delete(key);
-      this.counts[type]--;
-      this.misses[type]++;
-      return null;
-    }
-    
-    // Update last accessed time
-    item.lastAccessed = Date.now();
-    
-    // Register hit
-    this.hits[type]++;
-    
-    return item.data as T;
-  }
-  
-  /**
-   * Generate a cache key for a logo brief to ensure consistent lookups
-   * 
-   * @param {LogoBrief} brief - The logo brief to generate a key for
-   * @returns {string} A deterministic cache key
-   */
-  private generateBriefKey(brief: LogoBrief): string {
-    try {
-      // Start with the prompt
-      const components = [
-        brief.prompt.trim().toLowerCase().replace(/\s+/g, ' ')
-      ];
-      
-      // Add industry if specified
-      if (brief.industry) {
-        components.push(`industry:${brief.industry}`);
-      }
-      
-      // Add uniqueness preference if specified
-      if (typeof brief.uniqueness_preference === 'number') {
-        components.push(`uniqueness:${brief.uniqueness_preference}`);
-      }
-      
-      // Add animation flag if specified
-      if (brief.includeAnimations) {
-        components.push('animated:true');
-        
-        // Add animation options if specified
-        if (brief.animationOptions) {
-          components.push(`animation:${brief.animationOptions.type}`);
-        }
-      }
-      
-      // Add uniqueness analysis flag if specified
-      if (brief.includeUniquenessAnalysis) {
-        components.push('uniqueness_analysis:true');
-      }
-      
-      // Join and hash
-      return `brief:${components.join('|')}`;
-    } catch (error) {
-      this.logger.warn('Error generating brief key', { error, brief });
-      // Fallback to a simple timestamp-based key to avoid cache collisions
-      return `brief:${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     }
   }
   
@@ -615,6 +564,61 @@ export class CacheManager {
       return null;
     }
   }
+
+  /**
+   * Delete an item from the cache
+   *
+   * @param {string} key - The key of the item to delete
+   * @param {CacheType} type - The type of cache to access
+   * @returns {boolean} True if an item was deleted, false otherwise
+   */
+  public delete(key: string, type: CacheType): boolean {
+    const item = this.cache.get(key);
+    if (item && item.type === type) {
+      this.cache.delete(key);
+      this.counts[type] = Math.max(0, this.counts[type] - 1);
+      this.logger.info(`Deleted item from cache`, { key, type });
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+   * Invalidate a specific cache entry
+   * 
+   * @param {string} key - The cache key to invalidate
+   * @param {CacheType} type - The type of cache entry
+   * @returns {boolean} True if the item was removed, false if it didn't exist
+   */
+  public invalidate(key: string, type: CacheType): boolean {
+    const item = this.cache.get(key);
+    if (item && item.type === type) {
+      this.cache.delete(key);
+      this.counts[type]--;
+      this.logger.debug(`Invalidated cache entry: ${key} (type: ${type})`);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Invalidate all cache entries of a specific type
+   * 
+   * @param {CacheType} type - The type of cache entries to invalidate
+   * @returns {number} Number of items removed
+   */
+  public invalidateType(type: CacheType): number {
+    let removed = 0;
+    for (const [key, item] of this.cache.entries()) {
+      if (item.type === type) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+    this.counts[type] = 0;
+    this.logger.info(`Invalidated ${removed} cache entries of type: ${type}`);
+    return removed;
+  }
   
   /**
    * Clean up expired cache entries
@@ -670,6 +674,38 @@ export class CacheManager {
         logLevel: 'warn',
         silent: true // Don't report this to monitoring systems
       });
+    }
+  }
+
+  /**
+   * Generate a consistent key from a logo brief
+   *
+   * @param {LogoBrief} brief - The logo brief
+   * @returns {string} A unique key for the brief
+   */
+  private generateBriefKey(brief: LogoBrief): string {
+    try {
+      // Sort keys for consistency
+      const sortedBrief = Object.keys(brief)
+        .sort()
+        .reduce((acc, key) => {
+          (acc as any)[key] = (brief as any)[key];
+          return acc;
+        }, {} as LogoBrief);
+
+      const briefString = JSON.stringify(sortedBrief);
+      // Simple hash function (not crypto-secure, but fine for a key)
+      let hash = 0;
+      for (let i = 0; i < briefString.length; i++) {
+        const char = briefString.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return `generation:${hash}`;
+    } catch (error) {
+      this.logger.error('Failed to generate brief key', { error });
+      // Fallback to a simpler key if stringification fails
+      return `generation:${brief.prompt}`;
     }
   }
 }

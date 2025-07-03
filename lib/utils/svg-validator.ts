@@ -395,6 +395,11 @@ export class SVGValidator {
       score -= 5;
     }
     
+    // Check for editor-specific metadata/attributes
+    if (/inkscape:|sodipodi:|xmlns:i="http:\/\/ns.adobe.com\/AdobeIllustrator\/10.0\/"|sketch:type/i.test(svgContent)) {
+      score -= 10;
+    }
+    
     // Check for precision of decimal values
     const decimalMatches = svgContent.match(/\d+\.\d{3,}/g);
     if (decimalMatches && decimalMatches.length > 0) {
@@ -850,15 +855,17 @@ export class SVGValidator {
     
     while ((match = tagPattern.exec(fixedSvg)) !== null) {
       const fullTag = match[0];
-      const tagName = match[1].toLowerCase();
+      const tagName = match[1]?.toLowerCase();
       
-      if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
-        // Opening tag
-        unclosedTags.push(tagName);
-      } else if (fullTag.startsWith('</')) {
-        // Closing tag
-        if (unclosedTags.length > 0) {
-          unclosedTags.pop();
+      if (tagName) {
+        if (!fullTag.includes('/>') && !fullTag.startsWith('</')) {
+          // Opening tag
+          unclosedTags.push(tagName);
+        } else if (fullTag.startsWith('</')) {
+          // Closing tag
+          if (unclosedTags.length > 0) {
+            unclosedTags.pop();
+          }
         }
       }
     }

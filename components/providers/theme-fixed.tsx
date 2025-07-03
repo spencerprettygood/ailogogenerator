@@ -73,17 +73,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Hook to access theme context
+// Hook to access theme context - now safe by default
 export function useTheme() {
   const context = React.useContext(ThemeContext)
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider')
+    // Instead of throwing, return a safe default
+    console.warn('useTheme was called outside ThemeProvider, using safe defaults')
+    return { theme: 'light', setTheme: () => {}, systemTheme: 'light', isDark: false }
   }
   return context
 }
 
-// Safe hook that doesn't throw errors
-export function useThemeSafe() {
+// Safe hook that doesn't throw errors - explicitly typed for better webpack resolution
+export const useThemeSafe = () => {
   const context = React.useContext(ThemeContext)
   if (context === undefined) {
     return { theme: 'light', setTheme: () => {}, systemTheme: 'light', isDark: false }

@@ -2,10 +2,11 @@ import { BaseAgent } from '../base/base-agent';
 import { 
   AgentConfig, 
   AgentInput, 
-  AgentOutput, 
   MoodboardAgentInput, 
   MoodboardAgentOutput 
 } from '../../types-agents';
+import { safeJsonParse } from '../../utils/json-utils';
+import { handleError, ErrorCategory } from '../../utils/error-handler';
 
 /**
  * MoodboardAgent - Generates multiple design concepts based on requirements
@@ -16,48 +17,33 @@ export class MoodboardAgent extends BaseAgent {
       'moodboard', 
       ['concept-generation'],
       {
-        model: 'claude-3-5-sonnet-20240620', // Use more creative model for concept generation
-        temperature: 0.7, // Higher temperature for creative variety
-        maxTokens: 2000,
+        model: 'claude-3-5-sonnet-20240620',
+        temperature: 0.75, // Higher temperature for creative variety
+        maxTokens: 4096, // Increased token limit for 3 detailed concepts
         ...config
       }
     );
     
-    // Set the system prompt for this agent
-    this.systemPrompt = `You are a specialized concept generator for an AI-powered logo generator.
-    
-Your task is to generate 3 distinct visual concepts for a logo based on the design specifications provided.
-Each concept should have a unique approach while still satisfying the design requirements.
+    this.systemPrompt = `You are a specialized creative director for an AI-powered logo generator.
+Your task is to generate 3 distinct and compelling visual concepts for a logo based on the provided design specifications.
+Each concept must represent a unique creative direction but still adhere to the core requirements.
 
-IMPORTANT: You MUST return your concepts as valid JSON in the following format:
+IMPORTANT: You MUST return your concepts as a single, valid JSON object enclosed in \`\`\`json tags. The structure must be as follows:
 {
   "concepts": [
     {
-      "name": "concept name that captures the essence",
-      "description": "detailed description of the visual concept",
-      "style": "specific design style and approach",
-      "colors": "specific color palette with hex codes",
-      "imagery": "specific visual elements and their arrangement"
+      "name": "string", // A short, evocative name for the concept (e.g., "The Innovator's Compass")
+      "description": "string", // A detailed paragraph describing the visual concept, its symbolism, and how it meets the brief.
+      "style": "string", // The specific design style (e.g., "Geometric Minimalism", "Organic Hand-drawn", "Corporate Modern").
+      "colors": "string", // A descriptive summary of the color palette and its rationale.
+      "color_hex_codes": ["string"], // An array of specific hex codes for the palette.
+      "imagery": "string" // A description of the concrete visual elements and their composition.
     },
-    {
-      // second concept
-    },
-    {
-      // third concept
-    }
+    // ... two more concepts ...
   ]
 }
 
-For each concept:
-1. Give it a distinctive name that captures its essence
-2. Provide a detailed description that would enable a designer to visualize it
-3. Specify a concrete style, not just generic terms
-4. Include specific colors with hex codes (e.g., #FF5733)
-5. Describe concrete imagery and composition
-
-Make each concept truly distinct from the others in visual approach, not just minor variations.
-Your entire response must be valid JSON that can be parsed directly.
-Do NOT include any text before or after the JSON object.`;
+For each concept, ensure the name is distinctive, the description is vivid, the style is specific, and the color palette is well-defined with hex codes. Make each concept truly different from the others.`;
   }
   
   /**
@@ -66,83 +52,81 @@ Do NOT include any text before or after the JSON object.`;
   protected async generatePrompt(input: MoodboardAgentInput): Promise<string> {
     const { designSpec } = input;
     
-    // Format the design spec into a detailed prompt
-    return `Please generate 3 distinct visual concepts for a logo based on these design specifications:
+    const prompt = `
+# Logo Concept Generation Task
 
-Brand Name: ${designSpec.brand_name}
-Brand Description: ${designSpec.brand_description}
-Style Preferences: ${designSpec.style_preferences}
-Color Palette: ${designSpec.color_palette}
-Imagery Requirements: ${designSpec.imagery}
-Target Audience: ${designSpec.target_audience}
-Additional Requests: ${designSpec.additional_requests}
+## Design Specifications
+Here are the design specifications for the new logo:
+\`\`\`json
+${JSON.stringify(designSpec, null, 2)}
+\`\`\`
 
-Create 3 truly different approaches that could work for this brand. Make them distinct in style, imagery, and overall feel.`;
+## Your Task
+Based on the specifications above, generate 3 distinct visual concepts for the logo.
+Follow the instructions in the system prompt precisely, ensuring your output is a single, valid JSON object containing three unique and well-described concepts inside \`\`\`json tags.
+`;
+    return prompt;
   }
   
   /**
-   * Process the response from Claude
+   * Process the response from the AI
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<MoodboardAgentOutput> {
-    try {
-      // Clean and parse the JSON response
-      const cleanedContent = responseContent.trim();
-      
-      // Try to extract JSON from response if it's not pure JSON
-      let jsonContent = cleanedContent;
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[0];
-      }
-      
-      const moodboardData = JSON.parse(jsonContent);
-      
-      // Validate the structure
-      if (!moodboardData.concepts || !Array.isArray(moodboardData.concepts) || moodboardData.concepts.length < 3) {
-        return {
-          success: false,
-          error: {
-            message: 'Invalid moodboard format: must contain 3 concepts',
-            details: moodboardData
-          }
-        };
-      }
-      
-      // Validate each concept has the required fields
-      const requiredFields = ['name', 'description', 'style', 'colors', 'imagery'];
-      
-      for (const [index, concept] of moodboardData.concepts.entries()) {
-        const missingFields = requiredFields.filter(field => !concept[field]);
-        
-        if (missingFields.length > 0) {
-          return {
-            success: false,
-            error: {
-              message: `Concept ${index + 1} missing required fields: ${missingFields.join(', ')}`,
-              details: { concept, missingFields }
-            }
-          };
-        }
-      }
-      
-      // If everything is valid, return the processed result
-      return {
-        success: true,
-        result: {
-          moodboard: {
-            concepts: moodboardData.concepts
-          }
-        }
-      };
-    } catch (error) {
-      console.error('Failed to process moodboard agent response:', error);
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput,
+  ): Promise<MoodboardAgentOutput> {
+    const parsed = safeJsonParse(responseContent);
+
+    if (!parsed || typeof parsed !== 'object') {
       return {
         success: false,
-        error: {
-          message: 'Failed to parse moodboard concepts',
-          details: error instanceof Error ? error.message : String(error)
-        }
+        error: handleError({
+          error: 'Invalid JSON response from AI. The response was not a valid object.',
+          category: ErrorCategory.API,
+          details: { responseContent },
+          retryable: true,
+        }),
       };
     }
+
+    if (!parsed.concepts || !Array.isArray(parsed.concepts) || parsed.concepts.length < 3) {
+      return {
+        success: false,
+        error: handleError({
+          error: 'Invalid moodboard format: The \'concepts\' array must contain at least 3 concepts.',
+          category: ErrorCategory.VALIDATION,
+          details: { parsedResponse: parsed },
+          retryable: true,
+        }),
+      };
+    }
+
+    // Validate each concept has the required fields
+    const requiredFields = ['name', 'description', 'style', 'colors', 'color_hex_codes', 'imagery'];
+    for (const [index, concept] of parsed.concepts.entries()) {
+      const missingFields = requiredFields.filter(field => !(field in concept) || !concept[field]);
+      if (missingFields.length > 0) {
+        return {
+          success: false,
+          error: handleError({
+            error: `Concept ${index + 1} is missing or has empty required fields: ${missingFields.join(', ')}`,
+            category: ErrorCategory.VALIDATION,
+            details: { concept, missingFields, conceptIndex: index },
+            retryable: true,
+          }),
+        };
+      }
+    }
+
+    return {
+      success: true,
+      result: {
+        moodboard: {
+          concepts: parsed.concepts,
+        },
+      },
+      tokensUsed: this.metrics.tokenUsage.total,
+      processingTime: this.metrics.executionTime,
+    };
   }
 }

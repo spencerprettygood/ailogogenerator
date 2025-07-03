@@ -7,7 +7,7 @@ import { CacheManager } from '@/lib/utils/cache-manager';
 import { performanceMonitor } from '@/lib/utils/performance-monitor';
 import { withPerformanceMonitoring } from '@/lib/middleware/performance-middleware';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export const POST = withPerformanceMonitoring(async function POST(req: NextRequest) {
   try {
@@ -99,9 +99,17 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             try {
               const text = await req.text();
               const body = JSON.parse(text);
-              prompt = body.prompt || '';
-              images = body.images || [];
-              industry = body.industry || '';
+              const briefFromRequest = body.brief || {};
+              
+              // Support both top-level prompt and brief.prompt
+              prompt = body.prompt || briefFromRequest.prompt || '';
+              
+              // Support both top-level images and brief.image_uploads
+              images = body.images || briefFromRequest.image_uploads || [];
+              
+              // Support both top-level industry and brief.industry
+              industry = body.industry || briefFromRequest.industry || '';
+              
               includeAnimations = body.includeAnimations || false;
               animationOptions = body.animationOptions || null;
             } catch (parseError) {
@@ -203,7 +211,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             industry: industry || undefined,
             includeAnimations: includeAnimations,
             animationOptions: (animationOptions && typeof animationOptions === 'object' && 'type' in animationOptions && 'timing' in animationOptions)
-              ? animationOptions as AnimationOptions
+              ? animationOptions as unknown as AnimationOptions
               : undefined
           };
           

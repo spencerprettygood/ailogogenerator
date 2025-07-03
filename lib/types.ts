@@ -1,6 +1,28 @@
+// Error categories for error handling middleware
+export enum ErrorCategory {
+  VALIDATION_ERROR = 'validation_error',
+  AUTHENTICATION_ERROR = 'authentication_error',
+  NOT_FOUND = 'not_found',
+  INTERNAL_SERVER_ERROR = 'internal_server_error',
+  // Add more as needed for future error types
+}
 import { SVGDesignQualityScore } from './types-agents';
-import { AnimationOptions } from './animation/types';
-import { MockupInstance } from './mockups/mockup-types';
+import { AnimationOptions as AnimationConfig, AnimationEasing, AnimationDirection } from './animation/types';
+import { MockupInstance, MockupTemplate } from './mockups/mockup-types';
+
+export { AnimationEasing, AnimationDirection };
+export type { MockupTemplate, MockupInstance };
+export type AnimationOptions = AnimationConfig;
+
+export interface LogoBrief {
+  prompt: string;
+  image_uploads?: File[];
+  industry?: string;
+  uniqueness_preference?: number; // 0-10, higher means more unique
+  includeAnimations?: boolean;
+  animationOptions?: AnimationOptions;
+  includeUniquenessAnalysis?: boolean;
+}
 
 // Base agent interfaces
 export interface AgentInput {
@@ -102,6 +124,11 @@ export interface GenerationProgress {
   estimatedTimeRemaining?: number; // in milliseconds
   stages?: ProgressStage[]; // Array of stage objects for multi-stage progress
   currentStageId?: string; // Current stage ID
+  // Backward compatibility properties
+  currentStage?: string; // Alias for currentStageId
+  overallProgress?: number; // Alias for progress
+  stageProgress?: number; // Progress within current stage
+  statusMessage?: string; // Alias for message
 }
 
 export interface FileDownloadInfo {
@@ -113,7 +140,7 @@ export interface FileDownloadInfo {
   description?: string;
   isPrimary?: boolean;
   icon?: string;
-  category?: 'logo' | 'favicon' | 'guideline' | 'animation' | 'package' | 'other';
+  category?: 'logo' | 'favicon' | 'guideline' | 'animation' | 'mockup' | 'package' | 'other';
 }
 
 export interface DownloadManagerProps {
@@ -155,10 +182,44 @@ export interface GeneratedAssets {
 }
 
 export interface GenerationResult {
+  logoPngUrls?: {
+    size256: string;
+    size512: string;
+    size1024: string;
+  };
+  transparentPngUrls?: {
+    size256: string;
+    size512: string;
+    size1024: string;
+  };
+  monochromePngUrls?: {
+    black: {
+      size256: string;
+      size512: string;
+    };
+    white: {
+      size256: string;
+      size512: string;
+    };
+  };
+  monochromeVariants?: {
+    blackSvg: string;
+    whiteSvg: string;
+  };
+  faviconUrls?: {
+    ico: string;
+    png: string;
+    svg: string;
+  };
   success: boolean;
   id?: string;
   brandName?: string;
   logos?: SVGLogo[];
+  logoSvg?: string; // Backward compatibility
+  designRationale?: string;
+  industryContext?: string;
+  downloadUrl?: string; // Download URL for generated assets
+  brandGuidelinesUrl?: string; // URL to brand guidelines
   favicon?: {
     svg: string;
     png32?: Buffer | string;
@@ -171,6 +232,13 @@ export interface GenerationResult {
     details?: string;
   };
   processingTime?: number; // in milliseconds
+  // Animation-related fields (for compatibility with orchestrator output)
+  animatedSvg?: string;
+  animationCss?: string;
+  animationJs?: string;
+  animationOptions?: AnimationOptions;
+  uniquenessAnalysis?: import("@/lib/ai-pipeline/stages/stage-uniqueness-analysis").UniquenessAnalysisResult;
+  mockups?: MockupInstance[];
 }
 
 export interface DesignGuidelines {
@@ -279,25 +347,6 @@ export interface AnimationExportOptions {
   loop?: boolean;
 }
 
-export interface AnimationOptions {
-  type: string; // 'fade', 'rotate', 'pulse', etc.
-  timing: {
-    duration: number; // in seconds
-    delay?: number; // in seconds
-    easing?: string;
-    iterations?: number;
-    direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
-  };
-  trigger?: string; // 'load', 'hover', 'click'
-  elements?: string[];
-  stagger?: number;
-  customKeyframes?: string;
-  customCSS?: string;
-  jsCode?: string;
-  transformOrigin?: string;
-  sequenceOrder?: string[];
-}
-
 export enum PipelineStage {
   IDLE = 'idle',
   A = 'distillation',
@@ -363,4 +412,66 @@ export interface ErrorDetails {
   context?: Record<string, any>;
   stack?: string;
   timestamp?: string;
+}
+
+// Component Props Types
+export interface BackgroundSelectorProps {
+  backgrounds: Array<{
+    id: string;
+    name: string;
+    gradient: string;
+    previewStyle: React.CSSProperties;
+  }>;
+  selectedBackgroundId?: string;
+  onBackgroundChange?: (backgroundId: string) => void;
+  className?: string;
+}
+
+export interface FileItemProps {
+  file: File;
+  onRemove: () => void;
+  className?: string;
+}
+
+export interface FileUploadProps {
+  onFilesChange: (files: File[]) => void;
+  maxFiles?: number;
+  acceptedTypes?: string[];
+  className?: string;
+}
+
+export interface FileValidationOptions {
+  maxSizeBytes?: number;
+  allowedTypes?: string[];
+  allowedExtensions?: string[];
+}
+
+export interface VariantSwitcherProps {
+  variants: Array<{
+    id: string;
+    name: string;
+    svgCode: string;
+    previewUrl?: string;
+  }>;
+  selectedVariantId?: string;
+  onVariantChange?: (variantId: string) => void;
+  className?: string;
+}
+
+export interface MockupPreviewProps {
+  logo: string | SVGLogo;
+  template: MockupTemplate;
+  customText?: Record<string, string>;
+  selectedColorVariant?: string;
+  brandName?: string;
+  className?: string;
+  onDownload?: () => void;
+}
+
+// MockupTemplate, MockupType, LogoPlacement, and TextPlaceholder are now defined in lib/mockups/mockup-types.ts
+
+export interface ColorVariant {
+  id: string;
+  name: string;
+  colors: Record<string, string>;
 }

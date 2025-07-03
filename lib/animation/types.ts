@@ -96,6 +96,16 @@ export enum AnimationTrigger {
 }
 
 /**
+ * Defines the direction of the animation playback.
+ */
+export enum AnimationDirection {
+  NORMAL = 'normal',
+  REVERSE = 'reverse',
+  ALTERNATE = 'alternate',
+  ALTERNATE_REVERSE = 'alternate-reverse',
+}
+
+/**
  * Configuration for animation timing parameters
  * 
  * Controls how long animations last, when they start, and how they repeat.
@@ -208,11 +218,15 @@ export interface AnimationResponse {
     message: string;
     /** Detailed error information for debugging */
     details?: string;
+    /** Error code for categorization */
+    code?: string;
   };
   /** Number of AI tokens used (if applicable) */
   tokensUsed?: number;
   /** Time taken to process the animation in milliseconds */
   processingTime?: number;
+  /** Whether the result was returned from cache */
+  fromCache?: boolean;
 }
 
 /**

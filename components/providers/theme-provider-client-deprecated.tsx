@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { type ThemeProviderProps } from 'next-themes/dist/types'
+import type { ThemeProviderProps } from 'next-themes'
 import { useTheme as useNextTheme } from 'next-themes'
 
 /**
@@ -32,24 +32,34 @@ export function ThemeProviderClient({ children, ...props }: ThemeProviderProps) 
  * </button>
  */
 export function useTheme() {
-  // Use the hook from next-themes directly
-  const { theme, setTheme, systemTheme } = useNextTheme()
-  
-  // Check if current theme is dark (either explicitly set to dark or system preference is dark)
-  const isDark = React.useMemo(() => {
-    if (!theme) return false;
+  try {
+    // Use the hook from next-themes directly
+    const { theme, setTheme, systemTheme } = useNextTheme()
     
-    if (theme === 'system' && systemTheme) {
-      return systemTheme === 'dark'
+    // Check if current theme is dark (either explicitly set to dark or system preference is dark)
+    const isDark = React.useMemo(() => {
+      if (!theme) return false;
+      
+      if (theme === 'system' && systemTheme) {
+        return systemTheme === 'dark'
+      }
+      return theme === 'dark'
+    }, [theme, systemTheme])
+    
+    return {
+      theme: theme || 'system',
+      setTheme: setTheme || (() => {}),
+      systemTheme: systemTheme || 'light',
+      isDark: isDark || false,
     }
-    return theme === 'dark'
-  }, [theme, systemTheme])
-  
-  return {
-    theme: theme || 'system',
-    setTheme: setTheme || (() => {}),
-    systemTheme: systemTheme || 'light',
-    isDark: isDark || false,
+  } catch (error) {
+    console.warn('Theme provider error, using safe defaults:', error);
+    return {
+      theme: 'light',
+      setTheme: () => {},
+      systemTheme: 'light',
+      isDark: false,
+    };
   }
 }
 
