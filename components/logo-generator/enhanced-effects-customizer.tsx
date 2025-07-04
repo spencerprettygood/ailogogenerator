@@ -216,7 +216,7 @@ export function EnhancedEffectsCustomizer({
                     onValueChange={(value) => applyChanges({ 
                       perspectiveTransform: { 
                         ...(localConfig.perspectiveTransform || { rotateY: 0, rotateZ: 0, translateZ: 0 }),
-                        rotateX: value[0] 
+                        rotateX: value[0] || 0 
                       } 
                     })}
                   />
@@ -238,7 +238,7 @@ export function EnhancedEffectsCustomizer({
                     onValueChange={(value) => applyChanges({ 
                       perspectiveTransform: { 
                         ...(localConfig.perspectiveTransform || { rotateX: 0, rotateZ: 0, translateZ: 0 }),
-                        rotateY: value[0] 
+                        rotateY: value[0] || 0 
                       } 
                     })}
                   />
@@ -260,7 +260,7 @@ export function EnhancedEffectsCustomizer({
                     onValueChange={(value) => applyChanges({ 
                       perspectiveTransform: { 
                         ...(localConfig.perspectiveTransform || { rotateX: 0, rotateY: 0, translateZ: 0 }),
-                        rotateZ: value[0] 
+                        rotateZ: value[0] || 0 
                       } 
                     })}
                   />

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LogoDisplay } from "./logo-display";
+import LogoDisplay from "./logo-display";
 import { AnimationType } from "@/lib/animation/types";
 
 // Sample SVG for testing

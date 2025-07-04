@@ -69,9 +69,9 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
     if (!message.progress) return null;
     
     // Extract progress information with type safety
-    const stage = typeof message.progress.stage === 'string' ? message.progress.stage : 'unknown';
-    const progressMessage = typeof message.progress.message === 'string' ? message.progress.message : 'Processing...';
-    const progressValue = typeof message.progress.progress === 'number' ? message.progress.progress : 0;
+    const stage = message.progress.stage ?? 'unknown';
+    const progressMessage = message.progress.message ?? 'Processing...';
+    const progressValue = message.progress.progress ?? 0;
     
     return (
       <div className="mt-3 space-y-2">

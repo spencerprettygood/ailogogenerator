@@ -80,7 +80,7 @@ async function testCacheAdapter() {
   // Test get operation
   const retrieved = await cacheAdapter.get(testKey);
   
-  if (!retrieved || retrieved.data.test !== true) {
+  if (!retrieved || (retrieved.data as any)?.test !== true) {
     throw new Error('Cache adapter test failed: data mismatch');
   }
   

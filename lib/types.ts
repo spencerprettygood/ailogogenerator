@@ -14,8 +14,49 @@ export { AnimationEasing, AnimationDirection };
 export type { MockupTemplate, MockupInstance };
 export type AnimationOptions = AnimationConfig;
 
+export interface MessageProgress {
+  stage?: string;
+  message: string;
+  progress: number;
+}
+
+export interface ProgressStage {
+  id: string;
+  label: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  progress: number; // 0-100
+  details?: string;
+}
+
+export interface ProgressLog {
+  timestamp: number;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  details?: unknown;
+}
+
+export interface PipelineProgress {
+  status: 'queued' | 'analyzing' | 'generating' | 'refining' | 'completed' | 'failed';
+  progress: number; // 0-100, overall progress
+  overallProgress?: number; // For backward compatibility
+  message: string;
+  currentStage: string;
+  stage?: string; // for compatibility with MessageProgress
+  stageProgress: number; // 0-100, progress within the current stage
+  timeRemaining?: number; // in seconds
+  estimatedTimeRemaining?: number; // in milliseconds
+  stages?: ProgressStage[];
+  logs?: ProgressLog[];
+  startTime?: number;
+}
+
+export type GenerationProgress = PipelineProgress;
+
 export interface LogoBrief {
   prompt: string;
+  style?: string;
+  colors?: string[];
+  font?: string;
   image_uploads?: File[];
   industry?: string;
   uniqueness_preference?: number; // 0-10, higher means more unique
@@ -91,6 +132,10 @@ export interface SVGLogo {
   elements: LogoElement[];
   colors: LogoColors;
   name: string;
+  // Add width/height aliases for compatibility with existing code
+  width?: number;         // Alias for inlineSize
+  height?: number;        // Alias for blockSize
+  svg?: string;           // Legacy alias for svgCode for backward compatibility
 }
 
 export enum MessageRole {
@@ -101,52 +146,37 @@ export enum MessageRole {
 
 export interface Message {
   role: MessageRole;
-  content: string;
+  content: string | any[] | Record<string, any>;
   timestamp: Date;
   files?: File[];
   id?: string;
+  progress?: MessageProgress;
+  assets?: GeneratedAssets;
 }
 
-export interface ProgressStage {
+export interface ExtendedFile extends Omit<File, 'name'> {
   id: string;
-  label: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'error';
-  progress: number; // 0-100
-  details?: string;
-}
-
-export interface GenerationProgress {
-  status: 'queued' | 'analyzing' | 'generating' | 'refining' | 'completed' | 'failed';
-  progress: number; // 0-100
-  message: string;
-  timeRemaining?: number; // in seconds
-  stage?: string; // Stage identifier (A, B, C, etc.)
-  estimatedTimeRemaining?: number; // in milliseconds
-  stages?: ProgressStage[]; // Array of stage objects for multi-stage progress
-  currentStageId?: string; // Current stage ID
-  // Backward compatibility properties
-  currentStage?: string; // Alias for currentStageId
-  overallProgress?: number; // Alias for progress
-  stageProgress?: number; // Progress within current stage
-  statusMessage?: string; // Alias for message
+  name: string;
+  status?: 'pending' | 'downloading' | 'completed' | 'error';
+  isPrimary?: boolean;
 }
 
 export interface FileDownloadInfo {
   id: string;
   name: string;
-  type: 'svg' | 'png' | 'ico' | 'html' | 'pdf' | 'zip' | 'css' | 'js';
-  size?: number;
   url: string;
-  description?: string;
+  size: number;
+  status: 'pending' | 'downloading' | 'completed' | 'error';
   isPrimary?: boolean;
-  icon?: string;
-  category?: 'logo' | 'favicon' | 'guideline' | 'animation' | 'mockup' | 'package' | 'other';
+  // Add missing properties that are being accessed
+  type: string;           // File MIME type
+  category?: string;      // File category ('animation', 'mockup', etc)
 }
 
 export interface DownloadManagerProps {
   files: FileDownloadInfo[];
   packageUrl?: string;
-  onDownloadFileAction: (file: FileDownloadInfo) => void;
+  onDownloadFileAction: (fileId: string) => void;
   onDownloadAllAction: () => void;
   brandName?: string;
   includeFavicon?: boolean;
@@ -179,6 +209,12 @@ export interface GeneratedAssets {
   animationOptions?: AnimationOptions;
   uniquenessAnalysis?: IndustryAnalysis;
   mockups?: MockupInstance[];
+  // Legacy properties for backward compatibility
+  pngVersions?: {
+    size256?: string | Blob | Uint8Array;
+    size512?: string | Blob | Uint8Array;
+    size1024?: string | Blob | Uint8Array;
+  };
 }
 
 export interface GenerationResult {
@@ -237,7 +273,7 @@ export interface GenerationResult {
   animationCss?: string;
   animationJs?: string;
   animationOptions?: AnimationOptions;
-  uniquenessAnalysis?: import("@/lib/ai-pipeline/stages/stage-uniqueness-analysis").UniquenessAnalysisResult;
+  uniquenessAnalysis?: import("./ai-pipeline/stages/stage-uniqueness-analysis").UniquenessAnalysisResult;
   mockups?: MockupInstance[];
 }
 
@@ -256,23 +292,6 @@ export interface DesignGuidelines {
     dontList: string[];
   };
   rationale: string;
-}
-
-export interface PipelineProgress {
-  currentStage: string;
-  stageProgress: number; // 0-100
-  overallProgress: number; // 0-100
-  statusMessage: string;
-  estimatedTimeRemaining?: number; // in milliseconds
-  startTime?: number; // timestamp when generation started
-  logs?: ProgressLog[];
-}
-
-export interface ProgressLog {
-  timestamp: number;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  details?: unknown;
 }
 
 export interface WebSearchResultItem {
@@ -389,6 +408,77 @@ export interface SVGAccessibilityAssessment {
   issues: { level: 'error' | 'warning' | 'info', message: string }[];
 }
 
+// A/B Testing Types
+export enum TestComponent {
+  LOGO_GENERATION_UI = 'logo_generation_ui',
+  ONBOARDING_FLOW = 'onboarding_flow',
+  PRICING_PAGE = 'pricing_page',
+}
+
+export enum TestMetric {
+  CONVERSION_RATE = 'conversion_rate',
+  ENGAGEMENT = 'engagement',
+  USER_SATISFACTION = 'user_satisfaction',
+  TIME_TO_CONVERT = 'time_to_convert',
+  TOKEN_EFFICIENCY = 'token_efficiency',
+}
+
+export enum FeedbackSource {
+  SURVEY = 'survey',
+  DIRECT_FEEDBACK = 'direct_feedback',
+  USAGE_ANALYTICS = 'usage_analytics',
+}
+
+export enum TestVariant {
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  D = 'D',
+}
+
+export interface VariantConfig {
+  name: string;
+  description: string;
+}
+
+export interface MetricResult {
+    mean: number;
+    median?: number;
+    standardDeviation?: number;
+    confidenceInterval?: [number, number];
+}
+
+export interface TestConfig {
+  id: string;
+  name: string;
+  description: string;
+  component: TestComponent;
+  variants: {
+      [key in TestVariant]?: VariantConfig;
+  };
+  metrics: TestMetric[];
+  feedbackSources: FeedbackSource[];
+  minimumSampleSize: number;
+  maxDurationDays: number;
+  confidenceThreshold: number;
+}
+
+export interface TestResults {
+  testId: string;
+  status: 'running' | 'completed' | 'paused';
+  sampleSize: { [key in TestVariant]?: number };
+  winner?: TestVariant;
+  winnerConfidence?: number;
+  metrics: {
+    [key in TestMetric]?: {
+      [key in TestVariant]?: MetricResult;
+    };
+  };
+  insights: string[];
+  recommendations: string[];
+}
+
+
 // API response types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -414,6 +504,31 @@ export interface ErrorDetails {
   timestamp?: string;
 }
 
+export interface ApplicationError {
+  errorId: string;      // Unique identifier for this error instance
+  message: string;      // Human-readable error message
+  category: string;     // Error category for grouping similar errors
+  code: string;         // Error code for programmatic handling
+  context?: Record<string, any>; // Additional context for debugging
+  timestamp: string;    // When the error occurred
+  isOperational: boolean; // Whether this is an expected operational error
+  isRetryable: boolean;   // Whether the operation can be retried
+  requestId?: string;     // Associated request ID for tracing
+  stack?: string;         // Stack trace in development
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: {
+    message: string;
+    code: string;
+    category?: string;
+    context?: Record<string, any>;
+    timestamp: string;
+    requestId?: string;
+  };
+}
+
 // Component Props Types
 export interface BackgroundSelectorProps {
   backgrounds: Array<{
@@ -428,8 +543,8 @@ export interface BackgroundSelectorProps {
 }
 
 export interface FileItemProps {
-  file: File;
-  onRemove: () => void;
+  file: ExtendedFile | FileDownloadInfo;
+  onDownloadAction?: (fileId: string) => void;
   className?: string;
 }
 
@@ -438,12 +553,19 @@ export interface FileUploadProps {
   maxFiles?: number;
   acceptedTypes?: string[];
   className?: string;
+  // For backward compatibility with deprecated components
+  acceptedFileTypes?: string[];
+  maxFileSizeMb?: number;
+  disabled?: boolean;
 }
 
 export interface FileValidationOptions {
   maxSizeBytes?: number;
   allowedTypes?: string[];
   allowedExtensions?: string[];
+  // For react-dropzone and validation
+  maxSize?: number;
+  maxCount?: number;
 }
 
 export interface VariantSwitcherProps {
@@ -489,5 +611,185 @@ export interface LogoStage {
 export interface StagePreview {
   stageId: string;
   previewData: string;
+  contentType?: 'svg' | 'png' | 'html';
+  content?: string; // Alias for previewData
   timestamp: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface EffectsConfig {
+  applyLighting: boolean;
+  lightDirection: 'top' | 'left' | 'right' | 'bottom';
+  lightIntensity: number;
+  applyPerspective: boolean;
+  perspectiveTransform?: {
+    rotateX: number;
+    rotateY: number;
+    rotateZ: number;
+    translateZ: number;
+  };
+  applyShadow: boolean;
+  shadowBlur: number;
+  shadowOpacity: number;
+}
+
+
+// API response types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    processingTime?: number;
+    apiVersion?: string;
+    timestamp?: string;
+  };
+}
+
+// Error handling types
+export interface ErrorDetails {
+  code: string;
+  message: string;
+  context?: Record<string, any>;
+  stack?: string;
+  timestamp?: string;
+}
+
+export interface ApplicationError {
+  errorId: string;      // Unique identifier for this error instance
+  message: string;      // Human-readable error message
+  category: string;     // Error category for grouping similar errors
+  code: string;         // Error code for programmatic handling
+  context?: Record<string, any>; // Additional context for debugging
+  timestamp: string;    // When the error occurred
+  isOperational: boolean; // Whether this is an expected operational error
+  isRetryable: boolean;   // Whether the operation can be retried
+  requestId?: string;     // Associated request ID for tracing
+  stack?: string;         // Stack trace in development
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: {
+    message: string;
+    code: string;
+    category?: string;
+    context?: Record<string, any>;
+    timestamp: string;
+    requestId?: string;
+  };
+}
+
+// Component Props Types
+export interface BackgroundSelectorProps {
+  backgrounds: Array<{
+    id: string;
+    name: string;
+    gradient: string;
+    previewStyle: React.CSSProperties;
+  }>;
+  selectedBackgroundId?: string;
+  onBackgroundChange?: (backgroundId: string) => void;
+  className?: string;
+}
+
+export interface FileItemProps {
+  file: ExtendedFile | FileDownloadInfo;
+  onDownloadAction?: (fileId: string) => void;
+  className?: string;
+}
+
+export interface FileUploadProps {
+  onFilesChange: (files: File[]) => void;
+  maxFiles?: number;
+  acceptedTypes?: string[];
+  className?: string;
+  // For backward compatibility with deprecated components
+  acceptedFileTypes?: string[];
+  maxFileSizeMb?: number;
+  disabled?: boolean;
+}
+
+export interface FileValidationOptions {
+  maxSizeBytes?: number;
+  allowedTypes?: string[];
+  allowedExtensions?: string[];
+  // For react-dropzone and validation
+  maxSize?: number;
+  maxCount?: number;
+}
+
+export interface VariantSwitcherProps {
+  variants: Array<{
+    id: string;
+    name: string;
+    svgCode: string;
+    previewUrl?: string;
+  }>;
+  selectedVariantId?: string;
+  onVariantChange?: (variantId: string) => void;
+  className?: string;
+}
+
+export interface MockupPreviewProps {
+  logo: string | SVGLogo;
+  template: MockupTemplate;
+  customText?: Record<string, string>;
+  selectedColorVariant?: string;
+  brandName?: string;
+  className?: string;
+  onDownload?: () => void;
+}
+
+// MockupTemplate, MockupType, LogoPlacement, and TextPlaceholder are now defined in lib/mockups/mockup-types.ts
+
+export interface ColorVariant {
+  id: string;
+  name: string;
+  colors: Record<string, string>;
+}
+
+// Legacy stage interfaces for backward compatibility
+export interface LogoStage {
+  id: string;
+  name: string;
+  duration?: number;
+  progress: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  estimatedTime?: number;
+}
+
+export interface StagePreview {
+  stageId: string;
+  previewData: string;
+  contentType?: 'svg' | 'png' | 'html';
+  content?: string; // Alias for previewData
+  timestamp: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface EffectsConfig {
+  applyLighting: boolean;
+  lightDirection: 'top' | 'left' | 'right' | 'bottom';
+  lightIntensity: number;
+  applyPerspective: boolean;
+  perspectiveTransform?: {
+    rotateX: number;
+    rotateY: number;
+    rotateZ: number;
+    translateZ: number;
+  };
+  applyShadow: boolean;
+  shadowBlur: number;
+  shadowOpacity: number;
 }

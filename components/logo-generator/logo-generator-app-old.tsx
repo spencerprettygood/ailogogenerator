@@ -25,6 +25,7 @@ import { LogoFeedback, LiveFeedbackButton } from '@/components/feedback';
 import { FeedbackService } from '@/lib/services/feedback-service';
 import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feedback';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AnimationEasing } from '@/lib/animation/types';
 
 import { 
   Message, 
@@ -33,7 +34,9 @@ import {
   MessageRole, 
   ProgressStage,
   AnimationOptions,
-  AnimationExportOptions
+  AnimationExportOptions,
+  FileDownloadInfo,
+  SVGLogo,
 } from '@/lib/types'; 
 import { RefreshCw } from 'lucide-react';
 import { H1, H2, Paragraph, LargeText } from '@/components/ui/typography';
@@ -96,6 +99,79 @@ export const useLogoGeneratorContext = () => {
   return context;
 };
 
+const transformAssetsToFiles = (assets: GeneratedAssets | null): FileDownloadInfo[] => {
+  if (!assets) return [];
+  const files: FileDownloadInfo[] = [];
+
+  // From primary SVG logo
+  if (assets.primaryLogoSVG) {
+    const logo = assets.primaryLogoSVG;
+    files.push({
+      id: logo.name || 'primary-logo-svg',
+      name: logo.name ? `${logo.name}.svg` : 'primary-logo.svg',
+      size: logo.svgCode.length,
+      type: 'image/svg+xml',
+      category: 'Logo',
+      url: `data:image/svg+xml;base64,${typeof btoa !== 'undefined' ? btoa(logo.svgCode) : Buffer.from(logo.svgCode).toString('base64')}`,
+      status: 'pending',
+      isPrimary: true,
+    });
+  }
+
+  // From other logos
+  assets.logos?.forEach((logo, i) => {
+    // Avoid duplicating primary if it's in the list
+    if (logo.svgCode === assets.primaryLogoSVG?.svgCode) return;
+    files.push({
+      id: logo.name || `logo-svg-${i}`,
+      name: logo.name ? `${logo.name}.svg` : `logo-variant-${i}.svg`,
+      size: logo.svgCode.length,
+      type: 'image/svg+xml',
+      category: 'Logo Variant',
+      url: `data:image/svg+xml;base64,${typeof btoa !== 'undefined' ? btoa(logo.svgCode) : Buffer.from(logo.svgCode).toString('base64')}`,
+      status: 'pending',
+    });
+  });
+
+  // From pngVersions (legacy)
+  if (assets.pngVersions) {
+    for (const [sizeKey, url] of Object.entries(assets.pngVersions)) {
+      if (url && typeof url === 'string') {
+        files.push({
+          id: `logo-png-${sizeKey}`,
+          name: `${assets.brandName || 'logo'}-${sizeKey}.png`,
+          size: 0, // Size is unknown from URL
+          type: 'image/png',
+          category: 'Logo (Raster)',
+          url: url,
+          status: 'pending',
+        });
+      }
+    }
+  }
+
+  // From individual files (preferred way for multiple formats)
+  if (assets.individualFiles) {
+    files.push(...assets.individualFiles.map(f => ({ ...f, status: 'pending' } as FileDownloadInfo)));
+  }
+
+  // From zip package
+  if (assets.zipPackageUrl) {
+    files.push({
+      id: 'package-zip',
+      name: `${assets.brandName || 'logo'}-package.zip`,
+      size: 0, // Size is unknown from URL
+      type: 'application/zip',
+      category: 'Complete Package',
+      url: assets.zipPackageUrl,
+      status: 'pending',
+      isPrimary: true, // Often the main download
+    });
+  }
+
+  return files;
+};
+
 export function LogoGeneratorApp() {
   const [messages, setMessages] = useState<AppMessage[]>([]);
   const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
@@ -141,7 +217,7 @@ export function LogoGeneratorApp() {
           ...rest,
           timing: {
             duration,
-            easing,
+            easing: easing as AnimationEasing,
             delay,
             iterations,
             direction: direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse',
@@ -225,7 +301,7 @@ export function LogoGeneratorApp() {
 
   const handleRetry = useCallback(() => {
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
-    if (lastUserMessage && lastUserMessage.content) {
+    if (lastUserMessage && typeof lastUserMessage.content === 'string') {
       reset();
       setMessages([lastUserMessage]); 
       handleSubmit(
@@ -360,6 +436,8 @@ export function LogoGeneratorApp() {
         : null
     };
   }, [hookProgress]);
+
+  const filesForManager = useMemo(() => transformAssetsToFiles(hookAssets), [hookAssets]);
 
   const submitFeedback = useCallback(async (feedback: LogoFeedbackType) => {
     try {
@@ -723,7 +801,7 @@ export function LogoGeneratorApp() {
                           <span>Analysis</span>
                         </TabsTrigger>
                       )}
-                      <TabsTrigger value="download" className="flex items-center space-x-2">
+                      <TabsTrigger value="downloads">
                         <RefreshCw className="h-4 w-4" />
                         <span>Download</span>
                       </TabsTrigger>
@@ -826,29 +904,22 @@ export function LogoGeneratorApp() {
                         </div>
                       </TabsContent>
                     )}
-                    <TabsContent value="download" className="mt-6">
-                      <div className="space-y-4">
-                        <div className="text-center mb-6">
-                          <H2 className="text-xl mb-2">Download Your Assets</H2>
-                          <Paragraph className="text-muted-foreground">
-                            Get all your logo files in the formats you need
-                          </Paragraph>
-                        </div>
-                        <DownloadManager
-                          files={hookAssets.individualFiles || []} 
-                          packageUrl={hookAssets.zipPackageUrl}
-                          brandName={hookAssets.brandName || "Your Brand"}
-                          onDownloadFileAction={(file) => {
-                            console.log('Downloading file:', file.id);
-                            // TODO: Implement actual download
-                          }}
-                          onDownloadAllAction={() => {
-                            console.log('Downloading all files');
-                            // TODO: Implement package download
-                          }}
-                        />
-                      </div>
-                    </TabsContent>
+                    <TabsContent value="downloads">
+            <DownloadManager 
+              files={filesForManager}
+              packageUrl={hookAssets?.zipPackageUrl}
+              onDownloadFileAction={(fileId: string) => {
+                console.log('Downloading file:', fileId);
+                // Implement actual download logic here
+              }}
+              onDownloadAllAction={() => {
+                  if(hookAssets?.zipPackageUrl) {
+                      window.open(hookAssets.zipPackageUrl, '_blank');
+                  }
+              }}
+              brandName="YourBrand"
+            />
+          </TabsContent>
                   </Tabs>
                 </Card>
               )}

@@ -34,7 +34,7 @@ export function EnhancedMockupPreviewSystem({
 }: EnhancedMockupPreviewSystemProps) {
   // State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
-    initialTemplateId || (templates.length > 0 ? templates[0].id : '')
+    initialTemplateId || (templates?.[0]?.id ?? '')
   );
   const [customText, setCustomText] = useState<Record<string, string>>({});
   const [selectedBackgroundId, setSelectedBackgroundId] = useState<string | undefined>(undefined);
@@ -224,8 +224,8 @@ export function EnhancedMockupPreviewSystem({
                 <MockupCustomizer
                   template={selectedTemplate}
                   brandName={brandName}
-                  onUpdateCustomText={handleUpdateCustomText}
-                  onUpdateColorVariant={() => {}}
+                  onUpdateCustomTextAction={handleUpdateCustomText}
+                  onUpdateColorVariantAction={() => {}}
                   selectedColorVariant={undefined}
                   initialCustomText={customText}
                 />
@@ -286,6 +286,7 @@ export function EnhancedMockupPreviewSystem({
                     templates={typeTemplates}
                     selectedTemplateId={selectedTemplateId}
                     onSelectTemplate={handleSelectTemplate}
+                    onSelectTemplateAction={handleSelectTemplate}
                     logo={logo}
                     brandName={brandName}
                   />

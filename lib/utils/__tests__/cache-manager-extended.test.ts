@@ -19,7 +19,7 @@ describe('CacheManager', () => {
         asset: 1000,
         progress: 1000
       },
-      // maxSize: {
+      maxSize: {
         generation: 3, // Small size for testing eviction
         intermediate: 3,
         asset: 3,
@@ -53,7 +53,7 @@ describe('CacheManager', () => {
           asset: 10000,
           progress: 1000
         },
-        // maxSize: {
+        maxSize: {
           generation: 10,
           intermediate: 20,
           asset: 5,
@@ -332,7 +332,7 @@ describe('CacheManager', () => {
         ttl: {
           generation: 5000
         },
-        // maxSize: {
+        maxSize: {
           generation: 10
         }
       });

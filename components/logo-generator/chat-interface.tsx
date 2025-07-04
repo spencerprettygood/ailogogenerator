@@ -169,7 +169,7 @@ export function ChatInterface({
       {/* File Upload Area */}
       {showFileUpload && (
         <div className="border-t p-4">
-          <FileUploadUnified onFilesChangeAction={handleFilesChange} />
+          <FileUploadUnified onFilesChange={handleFilesChange} />
         </div>
       )}
 

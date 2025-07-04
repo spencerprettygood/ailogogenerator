@@ -8,8 +8,8 @@ import { Check } from 'lucide-react';
 
 const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
   backgrounds,
-  selectedBackground,
-  onSelectBackgroundAction,
+  selectedBackgroundId,
+  onBackgroundChange,
 }) => {
   if (!backgrounds || backgrounds.length === 0) {
     return null;
@@ -18,40 +18,26 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
   return (
     <div className="flex items-center flex-wrap justify-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-md">
       <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">Background:</p>
-      {backgrounds.map((bgColor) => {
-        const isColorClass = bgColor.startsWith('bg-');
-        const displayStyle = isColorClass ? {} : { backgroundColor: bgColor };
-        // Ensure border is visible on light backgrounds too
-        const displayClass = isColorClass ? bgColor : 'w-6 h-6 rounded border border-gray-300 dark:border-gray-500'; 
-
+      {backgrounds.map((background) => {
         return (
           <Button
-            key={bgColor}
+            key={background.id}
             variant="outline"
             size="icon"
-            onClick={() => onSelectBackgroundAction(bgColor)}
+            onClick={() => onBackgroundChange?.(background.id)}
             className={cn(
               'w-7 h-7 rounded-md transition-all duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800',
-              selectedBackground === bgColor && 'ring-2 ring-offset-1 ring-blue-600 dark:ring-blue-400 dark:ring-offset-gray-800',
-              !isColorClass && 'p-0' // Remove padding for custom color swatches
+              selectedBackgroundId === background.id && 'ring-2 ring-offset-1 ring-blue-600 dark:ring-blue-400 dark:ring-offset-gray-800',
+              'p-0' // Remove padding for custom color swatches
             )}
-            aria-label={`Select background ${bgColor}`}
+            aria-label={`Select background ${background.name}`}
           >
             <div
-              className={cn(
-                'w-full h-full rounded flex items-center justify-center',
-                displayClass
-              )}
-              style={displayStyle}
+              className="w-full h-full rounded flex items-center justify-center"
+              style={background.previewStyle}
             >
-              {selectedBackground === bgColor && (
-                <Check className={cn(
-                  'h-3.5 w-3.5',
-                  (isColorClass && (bgColor.includes('dark') || bgColor.includes('black') || bgColor.includes('slate') || bgColor.includes('zinc'))) || 
-                  (!isColorClass && isDarkColor(bgColor)) 
-                  ? 'text-white' 
-                  : 'text-black'
-                )} />
+              {selectedBackgroundId === background.id && (
+                <Check className="h-3.5 w-3.5 text-white" />
               )}
             </div>
           </Button>
@@ -69,9 +55,9 @@ function isDarkColor(hexColor: string): boolean {
   
   let r, g, b;
   if (hex.length === 3) {
-    r = parseInt(hex[0] + hex[0], 16);
-    g = parseInt(hex[1] + hex[1], 16);
-    b = parseInt(hex[2] + hex[2], 16);
+    r = parseInt((hex[0] || '0') + (hex[0] || '0'), 16);
+    g = parseInt((hex[1] || '0') + (hex[1] || '0'), 16);
+    b = parseInt((hex[2] || '0') + (hex[2] || '0'), 16);
   } else {
     r = parseInt(hex.substring(0, 2), 16);
     g = parseInt(hex.substring(2, 4), 16);

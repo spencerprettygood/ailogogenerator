@@ -1,4 +1,4 @@
-import { TestSession, InteractionEvent, FeedbackData } from '../types';
+import { TestSession, InteractionEvent, FeedbackData } from '@/lib/types';
 import { AnalyticsAdapter } from '../test-manager';
 
 /**

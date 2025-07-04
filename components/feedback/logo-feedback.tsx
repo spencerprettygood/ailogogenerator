@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Star } from 'lucide-react';
-import { FeedbackCategory, LogoFeedback } from '@/lib/types-feedback';
+import type { FeedbackCategory, LogoFeedback } from '@/lib/types-feedback';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';

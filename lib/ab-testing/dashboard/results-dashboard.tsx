@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  TestResults, 
-  TestConfig, 
-  TestVariant,
-  TestMetric 
-} from '../types';
+import { TestComponent, FeedbackSource, TestConfig, TestMetric, TestResults, TestVariant, MetricResult, VariantConfig } from '@/lib/types';
 import { getTestManager } from '../index';
 
 interface ResultsDashboardProps {
@@ -37,7 +32,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       setActiveTests(mockActiveTests);
       
       // Set first test as selected by default
-      if (mockActiveTests.length > 0 && !selectedTestId) {
+      if (mockActiveTests.length > 0 && mockActiveTests[0] && !selectedTestId) {
         setSelectedTestId(mockActiveTests[0].id);
       }
       
@@ -209,9 +204,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         {selectedResults?.winner ? (
                           <span className="flex items-center">
                             Variant {selectedResults.winner}
-                            <span className="ml-2 text-xs text-emerald-500">
-                              ({Math.round(selectedResults.winnerConfidence * 100)}% confidence)
-                            </span>
+                            {typeof selectedResults.winnerConfidence === 'number' &&
+                              <span className="ml-2 text-xs text-emerald-500">
+                                ({Math.round(selectedResults.winnerConfidence * 100)}% confidence)
+                              </span>
+                            }
                           </span>
                         ) : (
                           <span className="text-gray-500">Not determined</span>
@@ -267,7 +264,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                                 </td>
                               ))}
                               <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                {calculateDifference(values, metric)}
+                                {calculateDifference(values, metric as TestMetric)}
                               </td>
                             </tr>
                           ))}
@@ -354,246 +351,146 @@ function formatMetricName(metric: string): string {
 
 // Format metric values based on metric type
 function formatMetricValue(metric: string, value: number | undefined): string {
-  if (value === undefined) return '-';
-  
-  if (metric === TestMetric.GENERATION_SPEED) {
-    return Math.round(value).toLocaleString() + 'ms';
+  if (typeof value !== 'number') {
+    return '-';
   }
   
-  if (metric === TestMetric.CONVERSION_RATE) {
-    return value.toFixed(1) + '%';
+  switch (metric) {
+    case TestMetric.CONVERSION_RATE:
+    case TestMetric.ENGAGEMENT:
+      return `${value.toFixed(2)}%`;
+    case TestMetric.GENERATION_SPEED:
+      return `${Math.round(value)} ms`;
+    case TestMetric.LOGO_QUALITY:
+      return `${value} / 10`;
+    case TestMetric.USER_SATISFACTION:
+      return `${value} stars`;
+    case TestMetric.TOKEN_EFFICIENCY:
+      return `${value.toFixed(2)} tokens`;
+    default:
+      return value.toString();
   }
-  
-  if (metric === TestMetric.USER_SATISFACTION || metric === TestMetric.LOGO_QUALITY) {
-    return value.toFixed(2);
-  }
-  
-  return value.toFixed(2);
 }
 
-// Calculate difference between variants with styling
-function calculateDifference(
-  values: Record<string, any>,
-  metric: string
-): JSX.Element | null {
-  const variants = Object.keys(values);
-  if (variants.length < 2) return null;
-  
-  // Use A as baseline and B as comparison by default
-  const baselineVariant = TestVariant.A;
-  const comparisonVariant = TestVariant.B;
-  
-  if (!values[baselineVariant] || !values[comparisonVariant]) return null;
-  
-  const baselineValue = values[baselineVariant].mean;
-  const comparisonValue = values[comparisonVariant].mean;
-  
-  if (baselineValue === undefined || comparisonValue === undefined) return null;
-  
-  const absoluteDiff = comparisonValue - baselineValue;
-  const percentDiff = (absoluteDiff / baselineValue) * 100;
-  
-  const isPositive = 
-    (metric === TestMetric.GENERATION_SPEED) 
-      ? absoluteDiff < 0 // Lower is better for speed
-      : absoluteDiff > 0; // Higher is better for other metrics
-  
-  const color = isPositive ? 'text-green-600' : 'text-red-600';
-  const sign = absoluteDiff > 0 ? '+' : '';
-  
-  return (
-    <span className={color}>
-      {sign}{absoluteDiff.toFixed(2)} ({sign}{Math.abs(percentDiff).toFixed(1)}%)
-    </span>
-  );
+// Calculate difference between variant values for a metric
+function calculateDifference(values: { [key in TestVariant]?: MetricResult }, metric: TestMetric): React.ReactNode {
+  const variantKeys = Object.keys(values) as TestVariant[];
+  if (variantKeys.length < 2) {
+    return '-';
+  }
+
+  const firstVariantKey = variantKeys[0];
+  const secondVariantKey = variantKeys[1];
+
+  if(!firstVariantKey || !secondVariantKey) return '-';
+
+  const firstValue = values[firstVariantKey]?.mean || 0;
+  const secondValue = values[secondVariantKey]?.mean || 0;
+  const diff = secondValue - firstValue;
+
+  const sign = diff > 0 ? '+' : '';
+  const color = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'text-gray-500';
+
+  return <span className={color}>{`${sign}${diff.toFixed(2)}%`}</span>;
 }
 
-// Mock data functions for demo purposes
-
+// Mock functions for demo
 async function getMockTests(): Promise<TestConfig[]> {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  return [
-    {
-      id: 'svg_generation_test',
-      name: 'SVG Generation Approach',
-      description: 'Testing different prompt techniques for SVG generation',
-      component: TestComponent.SVG_GENERATION_APPROACH,
-      variants: {},
-      metrics: [TestMetric.LOGO_QUALITY, TestMetric.USER_SATISFACTION],
-      feedbackSources: [FeedbackSource.EXPLICIT_RATING],
-      trafficAllocation: { A: 50, B: 50 },
-      startDate: new Date('2025-06-01'),
-      minimumSampleSize: 30,
-      isActive: true
-    },
-    {
-      id: 'ui_layout_test',
-      name: 'UI Layout Comparison',
-      description: 'Testing centered vs asymmetrical layout designs',
-      component: TestComponent.UI_LAYOUT,
-      variants: {},
-      metrics: [TestMetric.USER_SATISFACTION, TestMetric.ENGAGEMENT],
-      feedbackSources: [FeedbackSource.EXPLICIT_RATING],
-      trafficAllocation: { A: 50, B: 50 },
-      startDate: new Date('2025-06-05'),
-      minimumSampleSize: 50,
-      isActive: true
-    }
-  ];
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve([
+        {
+          id: 'test1',
+          name: 'Test 1',
+          description: 'Description for Test 1',
+          component: TestComponent.LOGO_GENERATION_UI,
+          variants: {
+              [TestVariant.A]: { name: 'Control', description: 'Original version' },
+              [TestVariant.B]: { name: 'Variant B', description: 'New header' },
+              [TestVariant.C]: { name: 'Variant C', description: 'Different CTA' },
+          },
+          metrics: [TestMetric.CONVERSION_RATE, TestMetric.ENGAGEMENT, TestMetric.USER_SATISFACTION],
+          feedbackSources: [FeedbackSource.DIRECT_FEEDBACK, FeedbackSource.SURVEY],
+          minimumSampleSize: 100,
+          maxDurationDays: 14,
+          confidenceThreshold: 0.95
+        },
+        {
+          id: 'test2',
+          name: 'Test 2',
+          description: 'Description for Test 2',
+          component: TestComponent.ONBOARDING_FLOW,
+          variants: {
+            [TestVariant.A]: { name: 'Control', description: 'Original onboarding' },
+            [TestVariant.B]: { name: 'Variant B', description: 'Simplified onboarding' },
+          },
+          metrics: [TestMetric.CONVERSION_RATE, TestMetric.TIME_TO_CONVERT],
+          feedbackSources: [FeedbackSource.USAGE_ANALYTICS],
+          minimumSampleSize: 1000,
+          maxDurationDays: 30,
+          confidenceThreshold: 0.99
+        }
+      ]);
+    }, 1000);
+  });
 }
 
 async function getMockResults(testId: string): Promise<TestResults> {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 700));
-  
-  if (testId === 'svg_generation_test') {
-    return {
-      testId,
-      status: 'running',
-      sampleSize: {
-        [TestVariant.A]: 21,
-        [TestVariant.B]: 19
-      },
-      metrics: {
-        [TestMetric.LOGO_QUALITY]: {
-          [TestVariant.A]: {
-            mean: 3.85,
-            median: 4.00,
-            standardDeviation: 0.75,
-            confidenceInterval: [3.52, 4.18]
+  return new Promise(resolve => {
+    setTimeout(() => {
+      if (testId === 'test1') {
+        resolve({
+          testId: 'test1',
+          status: 'running',
+          sampleSize: {
+            [TestVariant.A]: 50,
+            [TestVariant.B]: 55,
+            [TestVariant.C]: 60
           },
-          [TestVariant.B]: {
-            mean: 4.32,
-            median: 4.50,
-            standardDeviation: 0.68,
-            confidenceInterval: [4.02, 4.62]
-          }
-        },
-        [TestMetric.USER_SATISFACTION]: {
-          [TestVariant.A]: {
-            mean: 4.05,
-            median: 4.00,
-            standardDeviation: 0.80,
-            confidenceInterval: [3.69, 4.41]
+          winner: undefined,
+          winnerConfidence: 0,
+          metrics: {
+            [TestMetric.CONVERSION_RATE]: {
+              [TestVariant.A]: { mean: 2.5, confidenceInterval: [2.0, 3.0] },
+              [TestVariant.B]: { mean: 3.0, confidenceInterval: [2.5, 3.5] },
+              [TestVariant.C]: { mean: 3.5, confidenceInterval: [3.0, 4.0] }
+            },
+            [TestMetric.ENGAGEMENT]: {
+              [TestVariant.A]: { mean: 75, confidenceInterval: [70, 80] },
+              [TestVariant.B]: { mean: 80, confidenceInterval: [75, 85] },
+              [TestVariant.C]: { mean: 85, confidenceInterval: [80, 90] }
+            }
           },
-          [TestVariant.B]: {
-            mean: 4.42,
-            median: 4.50,
-            standardDeviation: 0.61,
-            confidenceInterval: [4.15, 4.69]
-          }
-        },
-        [TestMetric.GENERATION_SPEED]: {
-          [TestVariant.A]: {
-            mean: 63200,
-            median: 62100,
-            standardDeviation: 5400,
-            confidenceInterval: [60800, 65600]
+          insights: [],
+          recommendations: []
+        });
+      } else {
+        resolve({
+          testId: 'test2',
+          status: 'completed',
+          sampleSize: {
+            [TestVariant.A]: 150,
+            [TestVariant.B]: 160,
+            [TestVariant.C]: 170
           },
-          [TestVariant.B]: {
-            mean: 68900,
-            median: 67800,
-            standardDeviation: 6200,
-            confidenceInterval: [66100, 71700]
-          }
-        }
-      },
-      winner: undefined,
-      winnerConfidence: 0,
-      insights: [
-        'Variant B shows a 12.2% improvement in Logo Quality scores',
-        'Variant B has 9.1% higher User Satisfaction ratings',
-        'Variant B takes 9.0% longer to generate logos on average'
-      ],
-      recommendations: [
-        'Continue the test to reach minimum sample size of 30 per variant',
-        'Consider analyzing the trade-off between generation speed and quality'
-      ]
-    };
-  }
-  
-  if (testId === 'ui_layout_test') {
-    return {
-      testId,
-      status: 'completed',
-      sampleSize: {
-        [TestVariant.A]: 52,
-        [TestVariant.B]: 54
-      },
-      metrics: {
-        [TestMetric.USER_SATISFACTION]: {
-          [TestVariant.A]: {
-            mean: 3.92,
-            median: 4.00,
-            standardDeviation: 0.85,
-            confidenceInterval: [3.69, 4.15]
+          winner: TestVariant.C,
+          winnerConfidence: 0.95,
+          metrics: {
+            [TestMetric.CONVERSION_RATE]: {
+              [TestVariant.A]: { mean: 2.8, confidenceInterval: [2.3, 3.3] },
+              [TestVariant.B]: { mean: 3.2, confidenceInterval: [2.7, 3.7] },
+              [TestVariant.C]: { mean: 4.0, confidenceInterval: [3.5, 4.5] }
+            },
+            [TestMetric.ENGAGEMENT]: {
+              [TestVariant.A]: { mean: 78, confidenceInterval: [73, 83] },
+              [TestVariant.B]: { mean: 82, confidenceInterval: [77, 87] },
+              [TestVariant.C]: { mean: 88, confidenceInterval: [83, 93] }
+            }
           },
-          [TestVariant.B]: {
-            mean: 4.36,
-            median: 4.50,
-            standardDeviation: 0.74,
-            confidenceInterval: [4.16, 4.56]
-          }
-        },
-        [TestMetric.ENGAGEMENT]: {
-          [TestVariant.A]: {
-            mean: 4.2,
-            median: 4.0,
-            standardDeviation: 1.9,
-            confidenceInterval: [3.7, 4.7]
-          },
-          [TestVariant.B]: {
-            mean: 6.8,
-            median: 7.0,
-            standardDeviation: 2.1,
-            confidenceInterval: [6.2, 7.4]
-          }
-        },
-        [TestMetric.CONVERSION_RATE]: {
-          [TestVariant.A]: {
-            mean: 82.3,
-            median: 82.3,
-            standardDeviation: 3.8,
-            confidenceInterval: [81.2, 83.4]
-          },
-          [TestVariant.B]: {
-            mean: 89.1,
-            median: 89.1,
-            standardDeviation: 3.2,
-            confidenceInterval: [88.2, 90.0]
-          }
-        }
-      },
-      winner: TestVariant.B,
-      winnerConfidence: 0.95,
-      insights: [
-        'Asymmetrical layout (B) resulted in 11.2% higher user satisfaction',
-        'Engagement metrics were 61.9% higher with asymmetrical layout',
-        'Conversion rate improved by 8.3% with the new layout design',
-        'Both mobile and desktop users preferred the asymmetrical layout'
-      ],
-      recommendations: [
-        'Implement asymmetrical layout as the default UI design',
-        'Apply similar UI principles to other parts of the application',
-        'Consider additional refinements to the asymmetrical layout',
-        'Monitor long-term engagement after implementation'
-      ]
-    };
-  }
-  
-  return {
-    testId,
-    status: 'running',
-    sampleSize: {
-      [TestVariant.A]: 0,
-      [TestVariant.B]: 0
-    },
-    metrics: {},
-    insights: [],
-    recommendations: []
-  };
+          insights: ['Variant C showed a significant lift in conversion rate.'],
+          recommendations: ['Roll out Variant C to all users.']
+        });
+      }
+    }, 500);
+  });
 }
-
-export default ResultsDashboard;

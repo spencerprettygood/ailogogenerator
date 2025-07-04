@@ -95,7 +95,7 @@ export function SearchInterface({
           {showFileUpload && (
             <div className="px-4 pb-3">
               <FileUploadUnified
-                onFilesChangeAction={handleFilesChange}
+                onFilesChange={handleFilesChange}
                 maxFiles={3}
                 maxFileSizeMb={10}
                 acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}

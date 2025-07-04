@@ -34,6 +34,8 @@ export interface MockupSelectorProps {
   templates: MockupTemplate[];
   selectedTemplateId: string;
   onSelectTemplateAction: (id: string) => void;
+  // Add alias for compatibility with existing components
+  onSelectTemplate?: (id: string) => void;
   logo?: SVGLogo | string;
   brandName?: string;
   className?: string;
@@ -107,7 +109,9 @@ export interface EnhancedBackgroundSelectorProps {
 export interface MockupCustomizerProps {
   template: MockupTemplate;
   brandName?: string;
-  onUpdateCustomText: (customText: Record<string, string>) => void;
+  onUpdateCustomText?: (customText: Record<string, string>) => void;
+  // Add alias for compatibility with existing components
+  onUpdateCustomTextAction?: (customText: Record<string, string>) => void;
   onUpdateColorVariant: (colorVariant: string) => void;
   selectedColorVariant?: string;
   initialCustomText?: Record<string, string>;

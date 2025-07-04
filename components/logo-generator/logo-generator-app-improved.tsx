@@ -35,7 +35,9 @@ import {
   MessageRole, 
   ProgressStage,
   AnimationOptions,
-  AnimationExportOptions
+  AnimationExportOptions,
+  AnimationEasing,
+  AnimationDirection
 } from '@/lib/types'; 
 import { 
   RefreshCw, 
@@ -55,7 +57,7 @@ interface GetAnimationsOptions extends Omit<AnimationOptions, 'timing'> {
   duration: number;
   easing: string;
   delay: number;
-  iterations: number;
+  iterations: number | 'infinite';
   direction: string;
   [key: string]: any;
 }
@@ -155,10 +157,10 @@ export function LogoGeneratorApp() {
           ...rest,
           timing: {
             duration,
-            easing,
+            easing: easing as AnimationEasing,
             delay,
-            iterations,
-            direction: direction as 'normal' | 'reverse' | 'alternate' | 'alternate-reverse',
+            iterations: iterations === 'infinite' ? Infinity : iterations,
+            direction: direction as AnimationDirection,
           }
         };
       }
@@ -240,7 +242,7 @@ export function LogoGeneratorApp() {
 
   const handleRetry = useCallback(() => {
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
-    if (lastUserMessage && lastUserMessage.content) {
+    if (lastUserMessage && typeof lastUserMessage.content === 'string') {
       reset();
       setMessages([lastUserMessage]); 
       handleSubmit(
@@ -691,11 +693,12 @@ export function LogoGeneratorApp() {
                           files={hookAssets.individualFiles || []} 
                           packageUrl={hookAssets.zipPackageUrl}
                           brandName={hookAssets.brandName || "Your Brand"}
-                          onDownloadFileAction={(file) => {
-                            console.log('Downloading file:', file.id);
+                          onDownloadFileAction={(fileId) => {
+                            const file = hookAssets.individualFiles?.find(f => f.id === fileId);
+                            console.log('Downloading file:', fileId);
                             toast({
                               title: "Download Started",
-                              description: `Downloading ${file.name}`,
+                              description: `Downloading ${file?.name || fileId}`,
                             });
                           }}
                           onDownloadAllAction={() => {

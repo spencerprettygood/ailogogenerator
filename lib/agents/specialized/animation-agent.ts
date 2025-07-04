@@ -3,7 +3,8 @@ import { AgentInput, AnimationAgentOutput, AnimationAgentInput, AgentConfig } fr
 import { SVGAnimationService } from '../../animation/animation-service';
 import { AnimationOptions, AnimationType, AnimationEasing } from '../../animation/types';
 import { safeJsonParse } from '../../utils/json-utils';
-import { handleError, ErrorCategory } from '../../utils/error-handler';
+import { ErrorCategory } from '../../utils/error-handler';
+import { AppError } from '../../utils/app-error';
 
 /**
  * Agent responsible for adding animations to SVG logos using AI-driven analysis.
@@ -28,19 +29,18 @@ export class AnimationAgent extends BaseAgent {
       "1.  Analyze the SVG's structure (paths, groups, text elements) to identify animation opportunities.",
       "2.  Consider the brand's personality (from the design spec) to ensure the animation style is aligned.",
       '3.  The goal is to enhance the logo, not distract from it. Prefer subtle, professional animations.',
-      '4.  You MUST output your animation plan as a single, valid JSON object that conforms to the AnimationOptions interface.',
+      '4.  Your output MUST be a single, valid, strict JSON object without any surrounding text, markdown, or code blocks.',
+      '5.  The JSON must conform exactly to the AnimationOptions interface with "type" and "timing" fields.',
       '',
-      'Example Output:',
-      '```json',
+      'Expected JSON Structure:',
       '{',
-      '  "type": "draw",',
+      '  "type": "fade_in", // Must be one of the allowed animation types',
       '  "timing": {',
-      '    "duration": 2500,',
-      '    "easing": "ease-out", // This will be coerced to the AnimationEasing enum in code',
-      '    "delay": 500',
+      '    "duration": 2000, // Duration in milliseconds, between 500-5000ms',
+      '    "easing": "ease-out", // Must be one of the allowed easing functions',
+      '    "delay": 200 // Optional delay in milliseconds',
       '  }',
       '}',
-      '```',
       '',
       `Available Animation Types: ${Object.values(AnimationType).join(', ')}`,
       `Available Easing Functions: ${Object.values(AnimationEasing).join(', ')}`
@@ -84,16 +84,51 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
     originalInput: AgentInput,
   ): Promise<AnimationAgentOutput> {
     const input = originalInput as AnimationAgentInput;
-    const parsedOptions = safeJsonParse(responseContent);
+    
+    // Extract JSON from the response - more robust parsing
+    let parsedOptions: any;
+    try {
+      // First try standard JSON parse with the entire content
+      parsedOptions = safeJsonParse(responseContent);
+      
+      // If that fails, try to extract JSON from markdown blocks
+      if (!parsedOptions || typeof parsedOptions !== 'object') {
+        const jsonMatch = responseContent.match(/```(?:json)?\s*({[\s\S]*?})\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          parsedOptions = safeJsonParse(jsonMatch[1]);
+        }
+      }
+      
+      // If still not valid, try to find any JSON-like structure
+      if (!parsedOptions || typeof parsedOptions !== 'object') {
+        const possibleJson = responseContent.match(/{[\s\S]*?}/);
+        if (possibleJson) {
+          parsedOptions = safeJsonParse(possibleJson[0]);
+        }
+      }
+    } catch (error) {
+      this.log(`Error parsing JSON response: ${error}`);
+      return {
+        success: false,
+        error: new AppError({
+          message: 'Failed to parse JSON from AI response',
+          category: ErrorCategory.API,
+          code: 'json_parse_error',
+          context: { responseContent, error: error instanceof Error ? error.message : String(error) },
+          isRetryable: true,
+        }),
+      };
+    }
 
     if (!parsedOptions || typeof parsedOptions !== 'object') {
       return {
         success: false,
-        error: handleError({
-          error: 'Invalid JSON response from AI. The response was not a valid object.',
+        error: new AppError({
+          message: 'Invalid JSON response from AI. The response was not a valid object.',
           category: ErrorCategory.API,
-          details: { responseContent },
-          retryable: true,
+          code: 'invalid_json_response',
+          context: { responseContent },
+          isRetryable: true,
         }),
       };
     }
@@ -102,11 +137,12 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
     if (!parsedOptions.type || !parsedOptions.timing) {
       return {
         success: false,
-        error: handleError({
-          error: 'AI response is missing required fields: type or timing',
+        error: new AppError({
+          message: 'AI response is missing required fields: type or timing',
           category: ErrorCategory.API,
-          details: { parsedOptions },
-          retryable: true,
+          code: 'invalid_ai_response',
+          context: { parsedOptions },
+          isRetryable: true,
         }),
       };
     }
@@ -122,11 +158,12 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
     if (!animationResponse.success || !animationResponse.result) {
       return {
         success: false,
-        error: handleError({
-          error: 'Failed to apply animation using SVGAnimationService.',
+        error: new AppError({
+          message: 'Failed to apply animation using SVGAnimationService.',
           category: ErrorCategory.EXTERNAL,
-          details: { animationError: animationResponse.error?.message || 'Unknown animation service error' },
-          retryable: false,
+          code: 'animation_service_error',
+          context: { animationError: animationResponse.error?.message || 'Unknown animation service error' },
+          isRetryable: false,
         }),
       };
     }

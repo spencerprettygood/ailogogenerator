@@ -72,7 +72,7 @@ export function CenteredLogoChat() {
       if (latestMessage?.role === 'assistant' && latestMessage.isLoading) {
         setMessages(prev => prev.slice(0, -1).concat({
           ...latestMessage,
-          content: `${progress.currentStage}: ${progress.message} (${Math.round(progress.overallProgress)}%)`,
+          content: `${progress.currentStage}: ${progress.message} (${Math.round(progress.overallProgress || 0)}%)`,
           isLoading: true
         }));
       }
@@ -96,14 +96,16 @@ export function CenteredLogoChat() {
   // Handle errors
   useEffect(() => {
     if (error) {
-      setMessages(prev => prev.slice(0, -1).concat([
-        {
+      setMessages(prev => {
+        const newMessages = prev.slice(0, -1);
+        newMessages.push({
           id: generateId(),
           role: 'assistant',
-          content: `I encountered an issue: ${error.message}. Let's try again! Can you provide a bit more detail about what you're looking for?`,
+          content: `I encountered an issue: ${error?.message || 'An unknown error occurred'}. Let\'s try again! Can you provide a bit more detail about what you\'re looking for?`,
           timestamp: new Date()
-        }
-      ]));
+        });
+        return newMessages;
+      });
     }
   }, [error]);
 
@@ -113,7 +115,7 @@ export function CenteredLogoChat() {
       setMessages(prev => [...prev, {
         id: generateId(),
         role: 'assistant',
-        content: question,
+        content: question || "", // Ensure content is always a string
         timestamp: new Date()
       }]);
       setCurrentStep(prev => prev + 1);

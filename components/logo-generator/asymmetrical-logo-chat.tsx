@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useChat, type UIMessage } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CornerUpLeft, Download } from 'lucide-react';
 import { Raleway } from 'next/font/google';
@@ -14,11 +14,25 @@ const raleway = Raleway({
   variable: '--font-raleway',
 });
 
+// Helper to extract text from message parts, mirroring chat-interface.tsx
+function getMessageText(message: UIMessage): string {
+    if (Array.isArray((message as any).parts)) {
+      return (message as any).parts
+        .filter((part: any) => part.type === 'text' && typeof part.text === 'string')
+        .map((part: any) => part.text)
+        .join(' ');
+    }
+    // Fallback for simple content for safety, though 'parts' is the expected structure
+    if (typeof (message as any).content === 'string') {
+        return (message as any).content;
+    }
+    return '';
+}
+
+
 export function AsymmetricalLogoChat() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
-    // Pointing to a new conversational API route
-    api: '/api/chat', 
-  });
+  const { messages, sendMessage, setMessages, status } = useChat({});
+  const [input, setInput] = useState('');
 
   const {
     preview,
@@ -41,7 +55,11 @@ export function AsymmetricalLogoChat() {
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    handleSubmit(e);
+    if (input.trim()) {
+      // Use sendMessage with the 'parts' structure
+      sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] });
+      setInput('');
+    }
   };
 
   const handleReset = () => {
@@ -111,7 +129,8 @@ export function AsymmetricalLogoChat() {
                 className={`flex my-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-lg p-4 rounded-2xl ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}>
-                  <p className="text-sm">{m.content}</p>
+                  {/* Use the helper function to render message content */}
+                  <div className="text-sm">{getMessageText(m)}</div>
                 </div>
               </motion.div>
             ))}
@@ -129,14 +148,14 @@ export function AsymmetricalLogoChat() {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Tell me about your logo..."
               className="w-full resize-none bg-muted border border-transparent rounded-full py-3 px-6 pr-20 focus:outline-none focus:ring-2 focus:ring-accent"
               rows={1}
             />
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={status === 'streaming'}
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-accent text-accent-foreground rounded-full p-2 hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               <Send className="w-5 h-5" />

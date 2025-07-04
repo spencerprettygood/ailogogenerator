@@ -364,7 +364,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     min={0}
                     max={10}
                     step={0.5}
-                    onValueChange={(value) => handleAttributeChange('stroke-width', value[0])}
+                    onValueChange={(value) => handleAttributeChange('stroke-width', value[0] || 1)}
                     className="flex-1"
                   />
                 </div>
@@ -388,7 +388,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     min={5}
                     max={50}
                     step={1}
-                    onValueChange={(value) => handleAttributeChange('r', value[0])}
+                    onValueChange={(value) => handleAttributeChange('r', value[0] || 50)}
                     className="flex-1"
                   />
                 </div>
@@ -412,7 +412,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       min={5}
                       max={100}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('width', value[0])}
+                      onValueChange={(value) => handleAttributeChange('width', value[0] || 100)}
                       className="flex-1"
                     />
                   </div>
@@ -432,7 +432,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       min={5}
                       max={100}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('height', value[0])}
+                      onValueChange={(value) => handleAttributeChange('height', value[0] || 100)}
                       className="flex-1"
                     />
                   </div>
@@ -457,7 +457,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       min={5}
                       max={50}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('rx', value[0])}
+                      onValueChange={(value) => handleAttributeChange('rx', value[0] || 5)}
                       className="flex-1"
                     />
                   </div>
@@ -477,7 +477,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       min={5}
                       max={50}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('ry', value[0])}
+                      onValueChange={(value) => handleAttributeChange('ry', value[0] || 5)}
                       className="flex-1"
                     />
                   </div>
@@ -496,7 +496,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     step={1}
                     onValueChange={(value) => {
                       const center = (parseFloat(customizedAttributes.x1 as string || '20') + parseFloat(customizedAttributes.x2 as string || '80')) / 2;
-                      const halfLength = value[0] / 2;
+                      const halfLength = (value[0] || 100) / 2;
                       handleAttributeChange('x1', center - halfLength);
                       handleAttributeChange('x2', center + halfLength);
                     }}
@@ -593,7 +593,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                   max={360}
                   step={5}
                   onValueChange={(value) => {
-                    handleAttributeChange('rotate', value[0]);
+                    handleAttributeChange('rotate', value[0] || 0);
                     
                     // Update transform attribute to include rotation
                     const currentTransform = customizedAttributes.transform || '';

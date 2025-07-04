@@ -209,7 +209,7 @@ export function PerplexitySearch({
           >
             <div className="bg-background border border-border rounded-xl p-4 shadow-lg">
               <FileUploadUnified 
-                onFilesChangeAction={handleFilesChange}
+                onFilesChange={handleFilesChange}
                 maxFiles={3}
                 acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
                 className="w-full"

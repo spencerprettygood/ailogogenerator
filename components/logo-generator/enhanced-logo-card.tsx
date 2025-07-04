@@ -70,7 +70,7 @@ export function EnhancedLogoCard({
   
   // Handle copy SVG to clipboard
   const handleCopy = () => {
-    const svgCode = 'svgCode' in logo ? logo.svgCode : logo.svg;
+    const svgCode = ('elements' in logo) ? (logo.svg || logo.svgCode) : logo.svgCode;
     if (svgCode) {
       navigator.clipboard.writeText(svgCode)
         .then(() => {
@@ -131,10 +131,10 @@ export function EnhancedLogoCard({
   };
   
   // Get SVG code with type safety
-  const svgCode = 'svgCode' in logo ? logo.svgCode : logo.svg;
+  const svgCode = ('elements' in logo) ? (logo.svg || logo.svgCode) : logo.svgCode;
   
   // Framer Motion variants
-  const cardVariants = {
+  const cardVariants: import('framer-motion').Variants = {
     normal: {
       maxWidth: '100%',
       maxHeight: '400px',

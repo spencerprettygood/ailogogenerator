@@ -44,7 +44,7 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
     
     if (nameMatch) {
       // Use name part of the ID
-      return `${nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1)}`;
+      return `${(nameMatch?.[1] || '').charAt(0).toUpperCase() + (nameMatch?.[1] || '').slice(1)}`;
     }
     
     // Default to element type and ID

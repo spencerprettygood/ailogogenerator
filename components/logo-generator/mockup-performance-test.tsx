@@ -32,7 +32,10 @@ export function MockupPerformanceTest({
   // Set initial template
   useEffect(() => {
     if (templates.length > 0 && !selectedTemplateId) {
-      setSelectedTemplateId(templates[0].id);
+      const firstTemplate = templates[0];
+      if (firstTemplate) {
+        setSelectedTemplateId(firstTemplate.id);
+      }
     }
     
     // Detect device capabilities
@@ -116,7 +119,11 @@ export function MockupPerformanceTest({
                   <span className="text-sm">Simple</span>
                   <Slider
                     value={[effectsIntensity]}
-                    onValueChange={(values) => setEffectsIntensity(values[0])}
+                    onValueChange={(values) => {
+                      if (values[0] !== undefined) {
+                        setEffectsIntensity(values[0])
+                      }
+                    }}
                     min={0}
                     max={100}
                     step={10}
@@ -143,10 +150,10 @@ export function MockupPerformanceTest({
               </div>
             </div>
             
-            {selectedTemplateId && selectedSvgKey && (
+            {selectedTemplateId && selectedSvgKey && TEST_SVG_LOGOS[selectedSvgKey] && (
               <div className="mt-6">
                 <EnhancedMockupPreview
-                  logo={TEST_SVG_LOGOS[selectedSvgKey]}
+                  logo={TEST_SVG_LOGOS[selectedSvgKey]!}
                   template={templates.find(t => t.id === selectedTemplateId)!}
                   brandName="Test Brand"
                   showEffectsControls={true}

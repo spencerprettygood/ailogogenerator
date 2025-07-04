@@ -36,7 +36,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onDownloadAction }) => {
       <Button
         size="sm"
         variant={file.isPrimary ? "default" : "outline"}
-        onClick={() => onDownloadAction(file.id)}
+        onClick={() => onDownloadAction && onDownloadAction(file.id)}
         disabled={file.status === 'downloading' || file.status === 'completed'}
         className={cn(
           "ml-2 whitespace-nowrap",

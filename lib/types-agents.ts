@@ -94,7 +94,11 @@ export interface AgentMessage {
   fromAgent: string;
   toAgent: string;
   messageType: 'request' | 'response' | 'update' | 'error' | 'brand_info' | 'svg_preview';
-  payload: any;
+  payload: {
+    content?: string;
+    progress?: any; // Keeping this as `any` for now to avoid deep refactoring, will be addressed next.
+    [key: string]: any;
+  };
   timestamp: number;
 }
 

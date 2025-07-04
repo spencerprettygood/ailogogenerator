@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     console.error('Error Boundary caught an error:', error, errorInfo);
     
     // Store errorInfo for display
-    this.setState({ errorInfo, componentStack: errorInfo.componentStack });
+    this.setState({ errorInfo, componentStack: errorInfo.componentStack ?? undefined });
     
     // Call onError callback if provided
     if (this.props.onError) {
@@ -51,7 +51,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       import('@/lib/utils/error-reporter').then(module => {
         const errorReporter = module.default;
         errorReporter.reportError(error, {
-          component: errorInfo.componentStack,
+          component: errorInfo.componentStack ?? undefined,
           url: typeof window !== 'undefined' ? window.location.href : undefined
         });
       });

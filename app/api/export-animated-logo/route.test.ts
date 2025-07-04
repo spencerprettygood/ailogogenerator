@@ -99,7 +99,7 @@ describe('Export Animated Logo API', () => {
     expect(storeFile).toHaveBeenCalledWith('animated-logo.svg', expect.any(Buffer));
     
     // Verify the SVG content includes embedded CSS and JS
-    const storedContent = vi.mocked(storeFile).mock.calls[0][1].toString();
+    const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toContain(sampleSvg.trim());
     expect(storedContent).toContain(sampleCss.trim());
     expect(storedContent).toContain(sampleJs.trim());
@@ -128,7 +128,7 @@ describe('Export Animated Logo API', () => {
     expect(storeFile).toHaveBeenCalledWith('animated-logo.html', expect.any(Buffer));
     
     // Verify the HTML content includes the SVG, CSS, and JS
-    const storedContent = vi.mocked(storeFile).mock.calls[0][1].toString();
+    const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toContain('<!DOCTYPE html>');
     expect(storedContent).toContain(sampleSvg.trim());
     expect(storedContent).toContain(sampleCss.trim());
@@ -204,7 +204,7 @@ describe('Export Animated Logo API', () => {
     expect(storeFile).toHaveBeenCalledWith('animated-logo.svg', expect.any(Buffer));
     
     // Verify the SVG content is unchanged when no CSS/JS is provided
-    const storedContent = vi.mocked(storeFile).mock.calls[0][1].toString();
+    const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toBe(sampleSvg);
   });
 });

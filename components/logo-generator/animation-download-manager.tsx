@@ -34,12 +34,10 @@ const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
 }) => {
   const [exportFormat, setExportFormat] = useState<string>('svg');
   const [showFormatOptions, setShowFormatOptions] = useState(false);
-  const [exportOptions, setExportOptions] = useState<AnimationExportOptions>({
+  const [exportOptions, setExportOptions] = useState<Partial<AnimationExportOptions>>({
     format: 'svg',
     duration: 3000,
-    fps: 30,
-    quality: 'medium',
-    loop: true
+    quality: 75,
   });
   
   const formatMenuRef = useRef<HTMLDivElement>(null);
@@ -77,7 +75,7 @@ const AnimationDownloadManager: React.FC<AnimationDownloadManagerProps> = ({
 
   const handleExport = useCallback(() => {
     try {
-      onExport(exportFormat, exportOptions);
+      onExport(exportFormat, exportOptions as AnimationExportOptions);
     } catch (error) {
       handleError(error, {
         category: ErrorCategory.UI,

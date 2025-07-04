@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { MockupPreviewProps, SVGLogo } from '@/lib/types';
+import { MockupPreviewProps, SVGLogo, EffectsConfig } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Settings } from 'lucide-react';
@@ -18,6 +18,7 @@ interface EnhancedMockupPreviewProps extends MockupPreviewProps {
   onBackgroundChange?: (backgroundId: string) => void;
   showBackgroundSelector?: boolean;
   showEffectsControls?: boolean;
+  effectsConfig?: EffectsConfig;
 }
 
 export function EnhancedMockupPreview({
@@ -31,7 +32,8 @@ export function EnhancedMockupPreview({
   backgroundId,
   onBackgroundChange,
   showBackgroundSelector = true,
-  showEffectsControls = false
+  showEffectsControls = false,
+  effectsConfig: initialEffectsConfig
 }: EnhancedMockupPreviewProps) {
   const [mockupSvg, setMockupSvg] = useState<string>('');
   const [dataUrl, setDataUrl] = useState<string>('');
@@ -41,9 +43,16 @@ export function EnhancedMockupPreview({
   const [showBackgrounds, setShowBackgrounds] = useState<boolean>(false);
   
   // Effects configuration state
-  const [effectsConfig, setEffectsConfig] = useState(() => 
-    EnhancedMockupService.getRecommendedEffects(template.id)
+  const [effectsConfig, setEffectsConfig] = useState<EffectsConfig>(() => 
+    initialEffectsConfig || EnhancedMockupService.getRecommendedEffects(template.id)
   );
+
+  // Update effects when prop changes
+  useEffect(() => {
+    if (initialEffectsConfig) {
+      setEffectsConfig(initialEffectsConfig);
+    }
+  }, [initialEffectsConfig]);
 
   // Load available backgrounds
   useEffect(() => {
@@ -51,10 +60,13 @@ export function EnhancedMockupPreview({
     setAvailableBackgrounds(backgrounds);
     
     // If no background is selected, choose the first one
-    if (!selectedBackgroundId && backgrounds.length > 0) {
-      setSelectedBackgroundId(backgrounds[0].id);
-      if (onBackgroundChange) {
-        onBackgroundChange(backgrounds[0].id);
+    if (!selectedBackgroundId && backgrounds && backgrounds.length > 0) {
+      const firstBg = backgrounds[0];
+      if (firstBg) {
+        setSelectedBackgroundId(firstBg.id);
+        if (onBackgroundChange) {
+          onBackgroundChange(firstBg.id);
+        }
       }
     }
   }, [template.type, selectedBackgroundId, onBackgroundChange]);
@@ -134,7 +146,7 @@ export function EnhancedMockupPreview({
 
   // Toggle lighting effect
   const toggleLighting = () => {
-    setEffectsConfig(prev => ({
+    setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
       applyLighting: !prev.applyLighting
     }));
@@ -142,7 +154,7 @@ export function EnhancedMockupPreview({
 
   // Toggle shadow effect
   const toggleShadow = () => {
-    setEffectsConfig(prev => ({
+    setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
       applyShadow: !prev.applyShadow
     }));
@@ -150,7 +162,7 @@ export function EnhancedMockupPreview({
 
   // Toggle perspective effect
   const togglePerspective = () => {
-    setEffectsConfig(prev => ({
+    setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
       applyPerspective: !prev.applyPerspective
     }));
@@ -158,7 +170,7 @@ export function EnhancedMockupPreview({
 
   // Change light direction
   const changeLightDirection = (direction: 'top' | 'right' | 'bottom' | 'left') => {
-    setEffectsConfig(prev => ({
+    setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
       lightDirection: direction
     }));

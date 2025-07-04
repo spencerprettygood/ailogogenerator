@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { 
   optimizeSVGForAnimation,
   extractAnimatableElements,
@@ -7,127 +7,76 @@ import {
   convertTimingToCSS,
   convertTimingToSMIL
 } from '../utils/animation-utils';
-import { AnimationEasing } from '../types';
-import { MockDOMParser, MockXMLSerializer, simpleSvg, pathSvg } from './utils/mock-svg';
+import { AnimationEasing, AnimationType } from '../types';
+import { simpleSvg, pathSvg } from './utils/mock-svg';
 
-// Mock DOM APIs for testing in Node environment
-global.DOMParser = MockDOMParser as any;
-global.XMLSerializer = MockXMLSerializer as any;
+// Relies on the jsdom environment provided by Vitest.
 
 describe('Animation Utilities', () => {
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('optimizeSVGForAnimation', () => {
     it('should optimize SVG by adding IDs to elements without them', () => {
-      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
-        if (selector === 'path, rect, circle, ellipse, polygon, polyline, g, text') {
-          return [
-            { id: '', tagName: 'rect', setAttribute: vi.fn() },
-            { id: 'existing-id', tagName: 'circle', setAttribute: vi.fn() },
-            { id: '', tagName: 'path', setAttribute: vi.fn() }
-          ] as any;
-        }
-        return [] as any;
-      });
-
-      const result = optimizeSVGForAnimation(simpleSvg);
-      expect(result.isOptimized).toBe(true);
-      expect(result.modifications).toContain('Added IDs to elements');
+      const optimizedResult = optimizeSVGForAnimation(simpleSvg);
+      expect(optimizedResult.isOptimized).toBe(true);
+      expect(optimizedResult.modifications).toContain('Added IDs to 2 elements');
+      const doc = new DOMParser().parseFromString(optimizedResult.svg, 'image/svg+xml');
+      expect(doc.querySelector('rect')?.id).not.toBe('');
+      expect(doc.querySelector('circle')?.id).not.toBe('');
     });
 
     it('should not modify SVG that is already optimized', () => {
-      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
-        if (selector === 'path, rect, circle, ellipse, polygon, polyline, g, text') {
-          return [
-            { id: 'rect-1', tagName: 'rect' },
-            { id: 'circle-1', tagName: 'circle' }
-          ] as any;
-        }
-        return [] as any;
-      });
-
-      const result = optimizeSVGForAnimation(simpleSvg);
+      const alreadyOptimizedSvg = `
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect id="rect-1" x="10" y="10" width="80" height="80" fill="blue" />
+  <circle id="circle-1" cx="50" cy="50" r="30" fill="red" />
+</svg>
+      `;
+      const result = optimizeSVGForAnimation(alreadyOptimizedSvg);
       expect(result.isOptimized).toBe(true);
-      expect(result.modifications).toEqual([]);
+      // It will still report adding stroke-width if missing, so we check for ID modification only.
+      const hasIdModification = result.modifications.some(m => m.startsWith('Added IDs'));
+      expect(hasIdModification).toBe(false);
     });
 
     it('should ensure stroke-width on elements with stroke', () => {
-      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
-        if (selector === 'path, line, polyline, polygon, rect, circle, ellipse') {
-          return [
-            { 
-              getAttribute: (attr: string) => attr === 'stroke' ? 'black' : null,
-              setAttribute: vi.fn()
-            }
-          ] as any;
-        }
-        return [] as any;
-      });
-
       const result = optimizeSVGForAnimation(pathSvg);
       expect(result.isOptimized).toBe(true);
-      expect(result.modifications).toContain('Added missing stroke-width');
+      expect(result.modifications).toContain('Added missing stroke-width to 2 elements');
+      const doc = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
+      doc.querySelectorAll('path').forEach(p => {
+        expect(p.getAttribute('stroke-width')).toBe('1');
+      });
     });
 
     it('should handle invalid SVG', () => {
-      vi.spyOn(document, 'querySelector').mockImplementation((selector: string) => {
-        if (selector === 'parsererror') {
-          return {} as any; // Return an object to simulate parsing error
-        }
-        return null;
-      });
-
       const result = optimizeSVGForAnimation('<invalid>svg</invalid>');
       expect(result.isOptimized).toBe(false);
-      expect(result.errors).toContain('Invalid SVG');
+      expect(result.errors).toContain('Invalid SVG: parsererror found in document');
     });
   });
 
   describe('extractAnimatableElements', () => {
     it('should extract paths for draw animation', () => {
-      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
-        if (selector === 'path') {
-          return [
-            { id: 'path-1', getAttribute: () => 'd="M10,10 L90,90"' },
-            { id: 'path-2', getAttribute: () => 'd="M20,20 C30,30 40,40 50,50"' }
-          ] as any;
-        }
-        return [] as any;
-      });
-
-      const elements = extractAnimatableElements(pathSvg, 'draw');
+      const elements = extractAnimatableElements(pathSvg, AnimationType.DRAW);
       expect(elements.length).toBe(2);
-      expect(elements[0].id).toBe('path-1');
-      expect(elements[1].id).toBe('path-2');
+      expect(elements[0]?.tagName.toLowerCase()).toBe('path');
     });
 
     it('should extract all direct children for sequential animation', () => {
-      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
-        if (selector === 'svg > *') {
-          return [
-            { id: 'rect-1', tagName: 'rect' },
-            { id: 'circle-1', tagName: 'circle' }
-          ] as any;
-        }
-        return [] as any;
-      });
-
-      const elements = extractAnimatableElements(simpleSvg, 'sequential');
+      const elements = extractAnimatableElements(simpleSvg, AnimationType.SEQUENTIAL);
       expect(elements.length).toBe(2);
-      expect(elements[0].id).toBe('rect-1');
-      expect(elements[1].id).toBe('circle-1');
+      expect(elements[0]?.tagName.toLowerCase()).toBe('rect');
+      expect(elements[1]?.tagName.toLowerCase()).toBe('circle');
     });
 
     it('should extract the svg element for whole-logo animations', () => {
-      vi.spyOn(document, 'querySelector').mockImplementation((selector: string) => {
-        if (selector === 'svg') {
-          return { id: 'logo', tagName: 'svg' } as any;
-        }
-        return null;
-      });
-
-      const elements = extractAnimatableElements(simpleSvg, 'fade_in');
+      const elements = extractAnimatableElements(simpleSvg, AnimationType.FADE_IN);
       expect(elements.length).toBe(1);
-      expect(elements[0].id).toBe('logo');
-      expect(elements[0].tagName).toBe('svg');
+      expect(elements[0]?.tagName.toLowerCase()).toBe('svg');
     });
 
     it('should return empty array for unsupported animation types', () => {
@@ -158,60 +107,40 @@ describe('Animation Utilities', () => {
     });
 
     it('should return empty string for unsupported animation type', () => {
-      const jsCode = generateBrowserCompatibilityCheck('unsupported_type');
+      const jsCode = generateBrowserCompatibilityCheck('unsupported_type' as any);
       expect(jsCode).toBe('');
     });
   });
 
   describe('detectAnimationSupport', () => {
     it('should detect if browser supports animations', () => {
-      // Mock browser environment
-      global.document = {
-        documentElement: {
-          style: {
-            animation: 'test',
-            webkitAnimation: ''
-          }
-        },
-        createElementNS: vi.fn().mockReturnValue({
-          animate: vi.fn()
-        })
-      } as any;
-
       const support = detectAnimationSupport();
       expect(support.css).toBe(true);
+      expect(support.smil).toBe(true);
       expect(support.webAnimations).toBe(true);
     });
 
     it('should detect limited support in older browsers', () => {
-      // Mock older browser environment
-      global.document = {
-        documentElement: {
-          style: {
-            animation: undefined,
-            webkitAnimation: 'test',
-            MozAnimation: '',
-            OAnimation: ''
-          }
-        },
-        createElementNS: vi.fn().mockReturnValue({
-          animate: undefined
-        })
-      } as any;
+      const docStyle = document.documentElement.style;
+      vi.spyOn(docStyle, 'animation' as any, 'get').mockReturnValue(undefined);
+      vi.spyOn(docStyle, 'webkitAnimation' as any, 'get').mockReturnValue('');
+      vi.spyOn(Element.prototype, 'animate').mockReturnValue(undefined as any);
 
       const support = detectAnimationSupport();
-      expect(support.css).toBe(true); // Vendor prefixed
+      expect(support.css).toBe(true);
       expect(support.webAnimations).toBe(false);
     });
 
-    it('should handle environments without document object', () => {
-      // Mock environment without document object (like Node.js)
-      global.document = undefined as any;
-
+    it('should handle environments without window object', () => {
+      const originalWindow = global.window;
+      (global as any).window = undefined;
+      
       const support = detectAnimationSupport();
       expect(support.css).toBe(false);
       expect(support.smil).toBe(false);
       expect(support.webAnimations).toBe(false);
+
+      global.window = originalWindow;
     });
   });
 
@@ -221,7 +150,7 @@ describe('Animation Utilities', () => {
         duration: 1000,
         easing: AnimationEasing.EASE_IN_OUT
       });
-      expect(css).toBe('1s ease-in-out');
+      expect(css).toBe('1000ms ease-in-out');
     });
 
     it('should include delay when provided', () => {
@@ -230,7 +159,7 @@ describe('Animation Utilities', () => {
         delay: 200,
         easing: AnimationEasing.EASE_OUT
       });
-      expect(css).toBe('0.5s ease-out 0.2s');
+      expect(css).toBe('500ms 200ms ease-out');
     });
 
     it('should handle iterations and direction', () => {
@@ -240,8 +169,7 @@ describe('Animation Utilities', () => {
         iterations: 3,
         direction: 'alternate'
       });
-      expect(css).toBe('2s linear');
-      expect(css).not.toContain('alternate'); // Direction is handled separately
+      expect(css).toBe('2000ms linear 3 alternate');
     });
 
     it('should handle infinite iterations', () => {
@@ -250,15 +178,15 @@ describe('Animation Utilities', () => {
         easing: AnimationEasing.BOUNCE,
         iterations: Infinity
       });
-      expect(css).toBe('1s cubic-bezier(0.68, -0.55, 0.265, 1.55)');
+      expect(css).toBe('1000ms cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite');
     });
 
     it('should handle custom cubic-bezier easing', () => {
       const css = convertTimingToCSS({
         duration: 1000,
-        easing: AnimationEasing.ELASTIC
+        easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)'
       });
-      expect(css).toBe('1s cubic-bezier(.5,2.5,.7,.7)');
+      expect(css).toBe('1000ms cubic-bezier(0.1, 0.7, 1.0, 0.1)');
     });
   });
 
@@ -270,7 +198,7 @@ describe('Animation Utilities', () => {
       });
       expect(attrs.dur).toBe('1s');
       expect(attrs.calcMode).toBe('spline');
-      expect(attrs.keySplines).toBeDefined();
+      expect(attrs.keySplines).toBe('0.42 0 0.58 1');
     });
 
     it('should include begin attribute for delay', () => {

@@ -198,7 +198,7 @@ export function LogoGeneratorApp() {
 
   const handleRetry = useCallback(() => {
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
-    if (lastUserMessage && lastUserMessage.content) {
+    if (lastUserMessage && typeof lastUserMessage.content === 'string') {
       reset();
       handleSubmit(lastUserMessage.content, lastUserMessage.files);
     }
@@ -271,7 +271,7 @@ export function LogoGeneratorApp() {
         timestamp: new Date(),
         assets: hookAssets,
         sessionId: sessionId,
-        progress: { status: 'completed', progress: 100, message: 'Done', stage: 'Done' },
+        progress: { status: 'completed', progress: 100, message: 'Done', stage: 'Done', currentStage: 'Done', stageProgress: 100 },
         generationOptions: {
           includeAnimations,
           includeUniquenessAnalysis,
@@ -940,11 +940,12 @@ export function LogoGeneratorApp() {
                           files={hookAssets.individualFiles || []} 
                           packageUrl={hookAssets.zipPackageUrl}
                           brandName={hookAssets.brandName || "Your Brand"}
-                          onDownloadFileAction={(file) => {
-                            console.log('Downloading file:', file.id);
+                          onDownloadFileAction={(fileId) => {
+                            const file = hookAssets.individualFiles?.find(f => f.id === fileId);
+                            console.log('Downloading file:', fileId);
                             toast({
                               title: "Download Started",
-                              description: `Downloading ${file.name}`,
+                              description: `Downloading ${file?.name || fileId}`,
                             });
                           }}
                           onDownloadAllAction={() => {

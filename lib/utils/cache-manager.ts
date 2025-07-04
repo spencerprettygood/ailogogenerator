@@ -708,6 +708,23 @@ export class CacheManager {
       return `generation:${brief.prompt}`;
     }
   }
+
+  /**
+   * Generate a cache key for logo generation requests
+   * @param brief Logo brief or prompt
+   * @returns Cache key string
+   */
+  public getCacheKey(brief: string | object): string {
+    const content = typeof brief === 'string' ? brief : JSON.stringify(brief);
+    // Simple hash function for cache key generation
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return `gen_${Math.abs(hash)}`;
+  }
 }
 
 /**

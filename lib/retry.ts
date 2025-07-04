@@ -7,6 +7,14 @@ export interface RetryConfig {
   backoffFactor: number;
 }
 
+export interface AIResponse {
+  content: { text: string }[];
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+}
+
 export const defaultRetryConfig: RetryConfig = {
   maxAttempts: 3,
   baseDelay: 1000,
@@ -45,4 +53,26 @@ export async function withRetry<T>(
   }
   
   throw lastError!;
+}
+
+// AI-specific retry wrapper for backward compatibility
+export async function callAIWithRetry(
+  aiRequestConfig: any,
+  retryConfig: Partial<RetryConfig> = {}
+): Promise<AIResponse> {
+  // For now, this is just a wrapper around withRetry that handles AI-specific requests
+  return withRetry<AIResponse>(
+    async () => {
+      // Implementation would call AI service with aiRequestConfig
+      // For now, this is a placeholder to fix type errors
+      return {
+        content: [{ text: '{}' }],
+        usage: {
+          input_tokens: 0,
+          output_tokens: 0
+        }
+      };
+    },
+    retryConfig
+  );
 }

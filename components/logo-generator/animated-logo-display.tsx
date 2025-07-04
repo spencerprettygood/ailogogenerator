@@ -195,7 +195,7 @@ export function AnimatedLogoDisplay({
       const animationState = !isPlaying ? 'running' : 'paused';
       
       // Get animated elements
-      const animatedElements = containerRef.current.querySelectorAll('*');
+      const animatedElements = containerRef.current?.querySelectorAll('*') || [];
       
       // Apply animation state to all elements
       animatedElements.forEach((el: Element) => {

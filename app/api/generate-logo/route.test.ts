@@ -57,25 +57,26 @@ vi.mock('nanoid', () => ({
 }));
 
 // Mock TextEncoder
-global.TextEncoder = class TextEncoder {
+global.TextEncoder = class MockTextEncoder {
   encode(text: string) {
     return new Uint8Array([...text].map(c => c.charCodeAt(0)));
   }
-};
+  get encoding() { return 'utf-8'; }
+  encodeInto() { return { read: 0, written: 0 }; }
+} as any;
 
 // Mock ReadableStream
-class MockReadableStream extends ReadableStream {
-  controller: { enqueue?: (chunk: unknown) => void; close?: () => void };
+class MockReadableStream {
+  controller: { enqueue: (chunk: unknown) => void; close: () => void };
   
-  constructor(options: { start?: (controller: { enqueue: (chunk: unknown) => void; close: () => void }) => void }) {
-    const controller = {} as { enqueue: (chunk: unknown) => void; close: () => void };
-    super({
-      start(c) {
-        Object.assign(controller, c);
-        if (options?.start) options.start(c);
-      }
-    });
-    this.controller = controller;
+  constructor(options?: { start?: (controller: { enqueue: (chunk: unknown) => void; close: () => void }) => void }) {
+    this.controller = {
+      enqueue: (chunk: unknown) => {},
+      close: () => {}
+    };
+    if (options?.start) {
+      options.start(this.controller);
+    }
   }
 }
 
@@ -104,7 +105,8 @@ describe('Logo Generation API Route', () => {
     });
     
     // Mock process.env
-    process.env.NODE_ENV = 'development';
+    const originalEnv = process.env.NODE_ENV;
+    (process.env as any).NODE_ENV = 'development';
   });
   
   afterEach(() => {
@@ -114,7 +116,7 @@ describe('Logo Generation API Route', () => {
   describe('POST handler', () => {
     it('should stream logo generation results', async () => {
       // Setup cache miss
-      CacheManager.getInstance().getGenerationResult.mockReturnValue(null);
+      vi.mocked(CacheManager.getInstance().getGenerationResult).mockReturnValue(Promise.resolve(null));
       
       // Execute the handler
       const response = await POST(mockRequest);
@@ -150,7 +152,7 @@ describe('Logo Generation API Route', () => {
         downloadUrl: '/api/download?file=cached.zip'
       };
       
-      CacheManager.getInstance().getGenerationResult.mockReturnValue(mockCachedResult);
+      vi.mocked(CacheManager.getInstance().getGenerationResult).mockReturnValue(Promise.resolve(mockCachedResult));
       
       // Execute the handler
       const response = await POST(mockRequest);
@@ -195,7 +197,7 @@ describe('Logo Generation API Route', () => {
     it('should handle rate limiting', async () => {
       // Mock rate limiter to deny the request - using import instead of require
       const { RateLimiter } = await import('@/lib/utils/security-utils');
-      RateLimiter.check.mockReturnValueOnce({ 
+      vi.mocked(RateLimiter.check).mockReturnValueOnce({ 
         allowed: false, 
         retryAfter: 60000 
       });
@@ -230,7 +232,7 @@ describe('Logo Generation API Route', () => {
     
     it('should not return stats in production mode', async () => {
       // Set to production mode
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       
       // Execute the handler
       const response = await GET(mockRequest);

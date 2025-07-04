@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { animateLogo } from '../stages/stage-i-animation';
-          timing: {
-            duration: 2000,
-            easing: AnimationEasing.EASE_OUT
-          }rt { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
+import { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
 import { AnimationType, AnimationEasing, AnimationTrigger } from '../../animation/types';
 
 // Sample SVG for testing
@@ -136,7 +133,7 @@ describe('Stage I: Animation', () => {
           type: AnimationType.DRAW, // Should auto-select DRAW for paths
           timing: {
             duration: 1500,
-            easing: 'ease-out'
+            easing: AnimationEasing.EASE_OUT
           }
         },
         cssCode: '.animated { animation: drawPath 1.5s ease-out; }'
@@ -257,7 +254,7 @@ describe('Stage I: Animation', () => {
           type: AnimationType.SEQUENTIAL,
           timing: {
             duration: 1500,
-            easing: 'ease-out'
+            easing: AnimationEasing.EASE_OUT
           }
         },
         cssCode: '.animated > * { animation: fadeIn 1.5s ease-out; }'

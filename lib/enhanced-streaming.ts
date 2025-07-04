@@ -393,9 +393,120 @@ export class EnhancedStreamProcessor {
    * Process a single line from the stream
    */
   private processLine(line: string, callbacks: EnhancedStreamingCallbacks): void {
+    // Enhanced JSON stream processing to handle concatenated JSON objects
     try {
-      const message = JSON.parse(line) as StreamMessage;
+      // Skip empty lines or non-JSON content
+      if (!line.trim() || !line.includes('{')) {
+        return;
+      }
+
+      // First attempt to parse the entire line as a single JSON object
+      try {
+        const message = JSON.parse(line) as StreamMessage;
+        this.processMessageObject(message, callbacks);
+        return; // Successfully processed as a single JSON object
+      } catch (singleParseError) {
+        // If single parse fails, the line might contain multiple concatenated JSON objects
+        // Continue to the advanced processing below
+      }
       
+      // Advanced processing for concatenated JSON objects
+      let processedCount = 0;
+      let remainingText = line;
+      
+      while (remainingText.length > 0) {
+        // Find the position of the first opening brace
+        const firstBracePos = remainingText.indexOf('{');
+        if (firstBracePos === -1) break; // No more JSON objects
+        
+        // Trim anything before the first brace
+        remainingText = remainingText.substring(firstBracePos);
+        
+        // Find the matching closing brace using a JSON object depth counter
+        let depth = 0;
+        let closingBracePos = -1;
+        let inString = false;
+        let escapeNext = false;
+        
+        for (let i = 0; i < remainingText.length; i++) {
+          const char = remainingText[i];
+          
+          // Handle string literals and escape sequences correctly
+          if (escapeNext) {
+            escapeNext = false;
+            continue;
+          }
+          
+          if (char === '\\') {
+            escapeNext = true;
+            continue;
+          }
+          
+          if (char === '"' && !escapeNext) {
+            inString = !inString;
+            continue;
+          }
+          
+          // Only count braces when not inside a string
+          if (!inString) {
+            if (char === '{') depth++;
+            else if (char === '}') {
+              depth--;
+              if (depth === 0) {
+                closingBracePos = i;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (closingBracePos === -1) break; // No complete JSON object found
+        
+        // Extract the JSON object string
+        const jsonStr = remainingText.substring(0, closingBracePos + 1);
+        
+        // Parse and process this JSON object
+        try {
+          const message = JSON.parse(jsonStr) as StreamMessage;
+          this.processMessageObject(message, callbacks);
+          processedCount++;
+        } catch (parseError) {
+          console.warn(`Failed to parse JSON segment [${processedCount + 1}]:`, jsonStr, parseError);
+          
+          // Try to salvage the JSON by fixing common issues
+          try {
+            // Try to fix trailing commas
+            const fixedJson = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']');
+            const message = JSON.parse(fixedJson) as StreamMessage;
+            this.processMessageObject(message, callbacks);
+            processedCount++;
+            console.debug('Successfully processed JSON after fixing format issues');
+          } catch (fixError) {
+            // Couldn't fix the JSON, just log the error
+          }
+        }
+        
+        // Move to the remainder of the text
+        remainingText = remainingText.substring(closingBracePos + 1);
+      }
+      
+      if (processedCount === 0) {
+        // If we couldn't process any JSON objects, log the issue
+        console.warn('Could not extract any valid JSON objects from line:', line);
+      } else {
+        console.debug(`Successfully processed ${processedCount} JSON objects from concatenated stream`);
+      }
+    } catch (error) {
+      console.error('Error in enhanced stream processing:', error);
+      // Don't call onError for parsing failures, just log them
+    }
+  }
+
+  /**
+   * Process a single message object and route it to the appropriate handler
+   */
+  private processMessageObject(message: StreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+    try {
       // Process based on message type
       switch (message.type) {
         case StreamMessageType.START:
@@ -448,7 +559,7 @@ export class EnhancedStreamProcessor {
           break;
       }
     } catch (parseError) {
-      console.warn('Failed to parse streaming data:', line, parseError);
+      console.warn('Failed to parse streaming data:', parseError);
       // Don't call onError for parse failures, just log them
     }
   }
@@ -488,11 +599,9 @@ export class EnhancedStreamProcessor {
         progress: progress.stageProgress,
         previews: 0
       };
-    } else {
+    } else if (this.stageHistory[progress.currentStage]) {
       // Update progress in stage history
-      if (this.stageHistory[progress.currentStage]) {
-        this.stageHistory[progress.currentStage].progress = progress.stageProgress;
-      }
+      this.stageHistory[progress.currentStage].progress = progress.stageProgress;
     }
     
     // Calculate estimated time remaining if not provided
@@ -508,16 +617,16 @@ export class EnhancedStreamProcessor {
     
     // Create enhanced progress object
     const enhancedProgress: GenerationProgress = {
+      status: 'generating', // Default status
       currentStage: progress.currentStage,
       stageProgress: progress.stageProgress,
       overallProgress: progress.overallProgress,
       statusMessage: progress.statusMessage,
+      message: progress.statusMessage,
+      progress: progress.overallProgress, // Map to standard progress
       estimatedTimeRemaining,
       elapsedTime: Date.now() - this.startTime,
-      // For backward compatibility
-      stage: progress.currentStage,
-      progress: progress.stageProgress,
-      message: progress.statusMessage
+      stage: progress.currentStage // For backward compatibility
     };
     
     // Call progress callback
@@ -538,7 +647,8 @@ export class EnhancedStreamProcessor {
     // Convert to StagePreview format
     const stagePreview: StagePreview = {
       stageId: preview.stageId,
-      content: preview.content,
+      previewData: preview.content, // Required field
+      content: preview.content, // Alias for backward compatibility
       contentType: preview.contentType,
       timestamp: Date.now(),
       dimensions: preview.width && preview.height ? { 
@@ -675,13 +785,14 @@ export class EnhancedStreamProcessor {
     // Legacy progress updates
     if (message.type === 'progress' && message.progress) {
       callbacks.onProgress({
+        status: 'generating', // Required field
         currentStage: message.progress.currentStage,
         stageProgress: message.progress.stageProgress,
         overallProgress: message.progress.overallProgress,
         statusMessage: message.progress.statusMessage,
         // For backward compatibility
         stage: message.progress.currentStage,
-        progress: message.progress.stageProgress,
+        progress: message.progress.overallProgress,
         message: message.progress.statusMessage
       });
     }
@@ -690,6 +801,7 @@ export class EnhancedStreamProcessor {
     if (message.type === 'svg_preview' && message.previewSvg) {
       callbacks.onPreview({
         stageId: 'svg_generation',
+        previewData: message.previewSvg,
         content: message.previewSvg,
         contentType: 'svg',
         timestamp: Date.now()
@@ -697,6 +809,7 @@ export class EnhancedStreamProcessor {
     } else if (message.preview) {
       callbacks.onPreview({
         stageId: 'unknown',
+        previewData: message.preview,
         content: message.preview,
         contentType: 'svg',
         timestamp: Date.now()

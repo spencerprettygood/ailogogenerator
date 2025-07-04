@@ -84,8 +84,8 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
     try {
       const newSvgCode = elementsToSvgCode(
         customizationState.elements,
-        customizationState.viewBox,
-        customizationState.svgAttrs
+        customizationState.viewBox || '0 0 100 100',
+        customizationState.svgAttrs || {}
       );
       setPreviewSvgCode(newSvgCode);
     } catch (error) {
@@ -122,26 +122,30 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
     
     setCustomizationState(prev => {
       const newIndex = prev.historyIndex - 1;
+      const historyItem = prev.history[newIndex];
+      if (!historyItem) return prev;
       return {
         ...prev,
-        elements: prev.history[newIndex].elements,
+        elements: historyItem.elements,
         historyIndex: newIndex,
       };
     });
-  }, [canUndo]);
+  }, [canUndo, customizationState.history]);
 
   const handleRedo = useCallback(() => {
     if (!canRedo) return;
     
     setCustomizationState(prev => {
       const newIndex = prev.historyIndex + 1;
+      const historyItem = prev.history[newIndex];
+      if (!historyItem) return prev;
       return {
         ...prev,
-        elements: prev.history[newIndex].elements,
+        elements: historyItem.elements,
         historyIndex: newIndex,
       };
     });
-  }, [canRedo]);
+  }, [canRedo, customizationState.history]);
 
   // Element update handler
   const handleElementUpdate = useCallback((updatedElement: SVGElement) => {
@@ -288,13 +292,13 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       }
       
       // Extract all children from the group and remove the parent attribute
-      const ungroupedChildren = selectedElement.children.map(child => ({
-        ...child,
-        attributes: {
-          ...child.attributes,
-          parent: undefined // Remove the parent reference
-        }
-      }));
+      const ungroupedChildren = selectedElement.children.map(child => {
+        const { parent, ...attributes } = child.attributes;
+        return {
+          ...child,
+          attributes,
+        };
+      });
       
       // Filter out the group from the elements array and add the children
       const updatedElements = [
@@ -307,7 +311,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       newHistory.push({ elements: updatedElements, timestamp: Date.now() });
       
       // Select the first child as the new selected element
-      const newSelectedId = ungroupedChildren.length > 0 ? ungroupedChildren[0].id : null;
+      const newSelectedId = ungroupedChildren.length > 0 && ungroupedChildren[0] ? ungroupedChildren[0].id : null;
       
       return {
         ...prev,
@@ -326,12 +330,17 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       if (!prev.selectedElementId) return prev;
       
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
-      if (elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
+      if (elementIndex < 0 || elementIndex >= prev.elements.length - 1) return prev;
       
       // Swap the element with the one above it
       const newElements = [...prev.elements];
-      [newElements[elementIndex], newElements[elementIndex + 1]] = 
-        [newElements[elementIndex + 1], newElements[elementIndex]];
+      const elementToMove = newElements[elementIndex];
+      const elementToSwap = newElements[elementIndex + 1];
+
+      if (elementToMove && elementToSwap) {
+        newElements[elementIndex] = elementToSwap;
+        newElements[elementIndex + 1] = elementToMove;
+      }
       
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
@@ -355,8 +364,13 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       
       // Swap the element with the one below it
       const newElements = [...prev.elements];
-      [newElements[elementIndex], newElements[elementIndex - 1]] = 
-        [newElements[elementIndex - 1], newElements[elementIndex]];
+      const elementToMove = newElements[elementIndex];
+      const elementToSwap = newElements[elementIndex - 1];
+
+      if (elementToMove && elementToSwap) {
+        newElements[elementIndex] = elementToSwap;
+        newElements[elementIndex - 1] = elementToMove;
+      }
       
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
@@ -376,13 +390,15 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       if (!prev.selectedElementId) return prev;
       
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
-      if (elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
+      const elementToMove = prev.elements[elementIndex];
+
+      if (!elementToMove || elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
       
       // Remove the element and add it to the end (top)
       const newElements = [
         ...prev.elements.filter(el => el.id !== prev.selectedElementId),
-        prev.elements[elementIndex]
-      ];
+        elementToMove
+      ].filter((el): el is SVGElement => !!el);
       
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
@@ -402,13 +418,15 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       if (!prev.selectedElementId) return prev;
       
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
-      if (elementIndex <= 0) return prev;
+      const elementToMove = prev.elements[elementIndex];
+
+      if (!elementToMove || elementIndex <= 0) return prev;
       
       // Remove the element and add it to the beginning (bottom)
       const newElements = [
-        prev.elements[elementIndex],
+        elementToMove,
         ...prev.elements.filter(el => el.id !== prev.selectedElementId)
-      ];
+      ].filter((el): el is SVGElement => !!el);
       
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);

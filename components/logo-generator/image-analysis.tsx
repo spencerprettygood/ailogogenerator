@@ -123,6 +123,8 @@ async function analyzeImage(file: File): Promise<AnalysisResult> {
         const g = data[i + 1];
         const b = data[i + 2];
         
+        if (r === undefined || g === undefined || b === undefined) continue;
+
         const brightness = (r + g + b) / 3;
         totalBrightness += brightness;
 

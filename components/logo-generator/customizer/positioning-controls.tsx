@@ -44,9 +44,8 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
         if (attributes.transform) {
           const match = /translate\(([^,]+),([^)]+)\)/.exec(attributes.transform as string);
           if (match) {
-            return {
-              x: parseFloat(match[1]) || 0,
-              y: parseFloat(match[2]) || 0,
+            return {               x: parseFloat(match?.[1] || '0') || 0,
+               y: parseFloat(match?.[2] || '0') || 0,
             };
           }
         }
@@ -62,8 +61,7 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
     
     if (attributes.transform) {
       const rotateMatch = /rotate\(([^)]+)\)/.exec(attributes.transform as string);
-      if (rotateMatch) {
-        return parseFloat(rotateMatch[1]) || 0;
+      if (rotateMatch) {         return parseFloat(rotateMatch?.[1] || '0') || 0;
       }
     }
     

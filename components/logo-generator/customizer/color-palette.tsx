@@ -44,7 +44,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
   // Start editing a color
   const handleStartEdit = (index: number) => {
     setEditingIndex(index);
-    setEditValue(colors[index]);
+    setEditValue(colors[index] || '');
   };
 
   // Save edited color

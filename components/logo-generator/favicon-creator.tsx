@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ColorPicker } from '@/components/logo-generator/customizer/color-picker';
+import ColorPicker from '@/components/logo-generator/customizer/color-picker';
 import { 
   Download, 
   Info, 
@@ -131,7 +131,6 @@ export function FaviconCreator({
                 <ColorPicker
                   color={themeColor}
                   onChange={handleColorChange}
-                  allowCustom
                 />
               </div>
               <p className="text-xs text-muted-foreground">

@@ -4,6 +4,16 @@
 import { AnimationType, AnimationOptions, AnimationEasing, AnimationTrigger } from '../types';
 
 /**
+ * Represents the result of an SVG optimization operation.
+ */
+export interface SVGOptimizationResult {
+  svg: string;
+  isOptimized: boolean;
+  modifications: string[];
+  errors: string[];
+}
+
+/**
  * Generate a unique ID for animation elements
  * @returns A unique string ID
  */
@@ -86,6 +96,7 @@ export function createDefaultAnimationOptions(type: AnimationType): AnimationOpt
     timing: {
       duration: 1000,
       easing: AnimationEasing.EASE_IN_OUT,
+      iterations: 1, // Default to 1 iteration
       ...(defaultOptions[type]?.timing || {})
     }
   } as AnimationOptions;
@@ -97,7 +108,7 @@ export function createDefaultAnimationOptions(type: AnimationType): AnimationOpt
  * @returns Boolean indicating if the feature is supported
  */
 export function isBrowserSupported(feature: 'css-animations' | 'smil' | 'web-animations-api'): boolean {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false; // Server-side rendering
   }
   
@@ -107,12 +118,11 @@ export function isBrowserSupported(feature: 'css-animations' | 'smil' | 'web-ani
              'webkitAnimation' in document.documentElement.style;
       
     case 'smil':
-      // Check if SMIL is supported
-      const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      return !!svgElement && 'animate' in svgElement;
+      // A more reliable check for SMIL is to see if animation elements have the beginElement method.
+      return typeof (document.createElementNS('http://www.w3.org/2000/svg', 'animate') as any).beginElement === 'function';
       
     case 'web-animations-api':
-      return 'animate' in Element.prototype;
+      return typeof Element.prototype.animate === 'function';
       
     default:
       return false;
@@ -258,7 +268,8 @@ export function convertTimingToCSS(options: {
     parts.push(options.iterations === Infinity || options.iterations === 'infinite' ? 'infinite' : `${options.iterations}`);
   }
   if (options.direction) parts.push(options.direction);
-  return `animation: ${parts.join(' ')};`;
+  
+  return parts.join(' ');
 }
 
 /**
@@ -271,52 +282,136 @@ export function convertTimingToSMIL(options: {
   iterations?: number | 'infinite' | undefined;
 }): Record<string, string> {
   const attrs: Record<string, string> = {
-    dur: `${options.duration}ms`,
+    dur: `${options.duration / 1000}s`,
     fill: 'freeze',
   };
-  if (options.delay) attrs.begin = `${options.delay}ms`;
+  if (options.delay) attrs.begin = `${options.delay / 1000}s`;
   if (options.iterations !== undefined) {
     attrs.repeatCount =
       options.iterations === Infinity || options.iterations === 'infinite'
         ? 'indefinite'
         : `${options.iterations}`;
   }
-  // Only add calcMode for non-linear easing
-  if (options.easing !== AnimationEasing.LINEAR && options.easing !== 'linear') {
-    attrs.calcMode = 'paced';
+
+  const easingMap: Partial<Record<AnimationEasing, { calcMode: string; keySplines?: string }>> = {
+    [AnimationEasing.EASE_IN]: { calcMode: 'spline', keySplines: '0.42 0 1 1' },
+    [AnimationEasing.EASE_OUT]: { calcMode: 'spline', keySplines: '0 0 0.58 1' },
+    [AnimationEasing.EASE_IN_OUT]: { calcMode: 'spline', keySplines: '0.42 0 0.58 1' },
+    [AnimationEasing.LINEAR]: { calcMode: 'linear' },
+    [AnimationEasing.BOUNCE]: { calcMode: 'spline', keySplines: '0.68 -0.55 0.265 1.55' },
+    [AnimationEasing.ELASTIC]: { calcMode: 'spline', keySplines: '.5,2.5,.7,.7' },
+  };
+
+  const smilEasing = easingMap[options.easing as AnimationEasing];
+
+  if (smilEasing) {
+    attrs.calcMode = smilEasing.calcMode;
+    if (smilEasing.keySplines) {
+      attrs.keySplines = smilEasing.keySplines;
+    }
+  } else {
+    // Fallback for custom cubic-bezier or other values
+    attrs.calcMode = 'linear'; 
   }
+
   return attrs;
 }
 
 /**
- * Optimize SVG for animation by ensuring proper structure
+ * Optimize SVG for animation by ensuring proper structure and adding IDs.
  * @param svg SVG content to optimize
- * @returns Optimized SVG content
+ * @returns An object containing the optimized SVG and details of the operation.
  */
-export function optimizeSVGForAnimation(svg: string): string {
-  // Add IDs to elements that don't have them
-  let optimized = svg;
-  
-  // Find elements without IDs and add them
-  const elementsWithoutIds = svg.match(/<(path|circle|rect|ellipse|line|polygon|polyline|text|g)[^>]*(?!id=)[^>]*>/g);
-  
-  if (elementsWithoutIds) {
-    elementsWithoutIds.forEach((element, index) => {
-      const id = `elem-${index + 1}`;
-      const elementWithId = element.replace(/<(\w+)/, `<$1 id="${id}"`);
-      optimized = optimized.replace(element, elementWithId);
-    });
+export function optimizeSVGForAnimation(svg: string): SVGOptimizationResult {
+  const result: SVGOptimizationResult = {
+    svg,
+    isOptimized: false,
+    modifications: [],
+    errors: [],
+  };
+
+  if (typeof window === 'undefined') {
+    result.errors.push('DOM environment not available (e.g., server-side rendering).');
+    return result;
   }
-  
-  return optimized;
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svg, 'image/svg+xml');
+
+    // Check for parsing errors
+    if (doc.querySelector('parsererror')) {
+      result.errors.push('Invalid SVG: parsererror found in document');
+      return result;
+    }
+
+    // 1. Add IDs to elements that don't have them
+    const elementsToId = Array.from(doc.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, g, text'));
+    let addedIdsCount = 0;
+    elementsToId.forEach((el) => {
+      if (!el.id) {
+        el.id = generateAnimationId();
+        addedIdsCount++;
+      }
+    });
+    if (addedIdsCount > 0) {
+      result.modifications.push(`Added IDs to ${addedIdsCount} elements`);
+    }
+
+    // 2. Ensure stroke-width on elements with stroke
+    const elementsWithStroke = Array.from(doc.querySelectorAll('path, line, polyline, polygon, rect, circle, ellipse'));
+    let addedStrokeWidthCount = 0;
+    elementsWithStroke.forEach(el => {
+      if (el.getAttribute('stroke') && !el.getAttribute('stroke-width')) {
+        el.setAttribute('stroke-width', '1'); // Default stroke-width
+        addedStrokeWidthCount++;
+      }
+    });
+    if (addedStrokeWidthCount > 0) {
+      result.modifications.push(`Added missing stroke-width to ${addedStrokeWidthCount} elements`);
+    }
+
+    const serializer = new XMLSerializer();
+    result.svg = serializer.serializeToString(doc.documentElement);
+    result.isOptimized = true;
+
+  } catch (e: any) {
+    result.errors.push(`An unexpected error occurred: ${e.message}`);
+  }
+
+  return result;
 }
 
 /**
- * Extract animatable elements from SVG
+ * Extract animatable elements from SVG based on animation type.
  * @param svg SVG content to analyze
- * @returns Array of element IDs that can be animated
+ * @param animationType The type of animation to be applied.
+ * @returns Array of elements that can be animated.
  */
-export function extractAnimatableElements(svg: string): string[] {
-  const matches = svg.match(/id="([^"]+)"/g);
-  return matches ? matches.map(m => m.replace(/id="|"/g, '')) : [];
+export function extractAnimatableElements(svg: string, animationType: AnimationType): Element[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
+  const svgElement = doc.querySelector('svg');
+
+  if (!svgElement) {
+    return [];
+  }
+
+  switch (animationType) {
+    case AnimationType.DRAW:
+      return Array.from(doc.querySelectorAll('path'));
+    case AnimationType.SEQUENTIAL:
+      return Array.from(svgElement.children);
+    case AnimationType.FADE_IN:
+    case AnimationType.ZOOM_IN:
+    case AnimationType.SPIN:
+    case AnimationType.PULSE:
+      return [svgElement];
+    default:
+      return [];
+  }
 }

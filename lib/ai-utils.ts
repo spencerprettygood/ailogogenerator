@@ -68,11 +68,11 @@ function getModelProvider(provider: string, modelName: string) {
 /**
  * Convert our Message format to AI SDK's ModelMessage format
  */
-function convertMessages(messages: Message[]): ModelMessage[] {
+function convertMessages(messages: Message[]): any[] {
   return messages.map(msg => {
     if (typeof msg.content === 'string') {
       return {
-        role: msg.role,
+        role: msg.role as any,
         content: msg.content
       };
     } else {
@@ -137,7 +137,7 @@ export async function streamText(options: StreamOptions) {
     
     // Use AI SDK's streamText function
     const result = await aiStreamText({
-      model: modelProvider,
+      model: modelProvider as any,
       messages: convertedMessages,
       system,
       maxOutputTokens: maxTokens,
@@ -177,7 +177,7 @@ export async function generateText(options: StreamOptions) {
     
     // Use AI SDK's generateText function
     const { text } = await aiGenerateText({
-      model: modelProvider,
+      model: modelProvider as any,
       messages: convertedMessages,
       system,
       maxOutputTokens: maxTokens,

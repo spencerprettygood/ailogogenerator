@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { 
   Sparkles, 
   Wand2, 
@@ -143,7 +143,7 @@ export function StageTransition({
   const stageIcon = STAGE_ICONS[currentStageKey] || <Sparkles className="w-8 h-8" />;
   
   // Animation variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
@@ -164,7 +164,7 @@ export function StageTransition({
     }
   };
   
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: { 
       y: 0, 
@@ -178,7 +178,7 @@ export function StageTransition({
     }
   };
   
-  const iconVariants = {
+  const iconVariants: Variants = {
     hidden: { scale: 0.8, opacity: 0 },
     visible: { 
       scale: 1, 
@@ -197,7 +197,7 @@ export function StageTransition({
     }
   };
   
-  const progressVariants = {
+  const progressVariants: Variants = {
     hidden: { width: 0 },
     visible: { 
       width: `${progress}%`,

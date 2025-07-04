@@ -1,5 +1,5 @@
-import { DesignSpec } from '@/lib/types';
-import { callAIWithRetry } from '@/lib/retry';
+import { DesignSpec } from '../../types';
+import { callAIWithRetry } from '../../retry';
 
 export interface UniquenessAnalysisInput {
   svg: string;
