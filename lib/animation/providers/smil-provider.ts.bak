@@ -327,7 +327,7 @@ export class SMILAnimationProvider implements AnimationProvider {
     let centerX = 0, centerY = 0;
     const viewBox = svgElement.getAttribute('viewBox');
     if (viewBox) {
-      const parts = viewBox.split(" ").map(Number); const x = parts[0] || 0; const y = parts[1] || 0; const width = parts[2] || 0; const height = parts[3] || 0;
+      const [x, y, width, height] = viewBox.split(' ').map(Number);
       centerX = x + width / 2;
       centerY = y + height / 2;
     } else if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {
@@ -399,7 +399,7 @@ export class SMILAnimationProvider implements AnimationProvider {
     let centerX = 0, centerY = 0;
     const viewBox = svgElement.getAttribute('viewBox');
     if (viewBox) {
-      const parts = viewBox.split(" ").map(Number); const x = parts[0] || 0; const y = parts[1] || 0; const width = parts[2] || 0; const height = parts[3] || 0;
+      const [x, y, width, height] = viewBox.split(' ').map(Number);
       centerX = x + width / 2;
       centerY = y + height / 2;
     } else if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {
@@ -560,7 +560,7 @@ export class SMILAnimationProvider implements AnimationProvider {
     let centerX = 0, centerY = 0;
     const viewBox = svgElement.getAttribute('viewBox');
     if (viewBox) {
-      const parts = viewBox.split(" ").map(Number); const x = parts[0] || 0; const y = parts[1] || 0; const width = parts[2] || 0; const height = parts[3] || 0;
+      const [x, y, width, height] = viewBox.split(' ').map(Number);
       centerX = x + width / 2;
       centerY = y + height / 2;
     } else if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {

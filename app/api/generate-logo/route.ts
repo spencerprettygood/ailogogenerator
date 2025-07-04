@@ -84,14 +84,14 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               images = fileEntries.filter((value): value is File => (typeof value !== 'string') && (value instanceof File));
             } catch (formError) {
               console.error('Form data parsing error:', formError);
-              controller.enqueue(encoder.encode(JSON.stringify({
+              safeEnqueue({
                 type: 'error',
                 error: {
                   message: 'Invalid form data format',
                   details: formError instanceof Error ? formError.message : 'Error parsing form data'
                 }
-              }) + '\n'));
-              controller.close();
+              });
+              safeClose();
               return;
             }
           } else {
@@ -114,26 +114,26 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               animationOptions = body.animationOptions || null;
             } catch (parseError) {
               console.error('JSON parsing error:', parseError);
-              controller.enqueue(encoder.encode(JSON.stringify({
+              safeEnqueue({
                 type: 'error',
                 error: {
                   message: 'Invalid request format',
                   details: parseError instanceof Error ? parseError.message : 'Error parsing JSON'
                 }
-              }) + '\n'));
-              controller.close();
+              });
+              safeClose();
               return;
             }
           }
           
           if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-            controller.enqueue(encoder.encode(JSON.stringify({
+            safeEnqueue({
               type: 'error',
               error: {
                 message: 'A text prompt is required.'
               }
-            }) + '\n'));
-            controller.close();
+            });
+            safeClose();
             return;
           }
           
@@ -143,7 +143,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           
           if (!rateLimitResult.allowed) {
             const retryAfterSeconds = Math.ceil((rateLimitResult.retryAfter || 0) / 1000);
-            controller.enqueue(encoder.encode(JSON.stringify({
+            safeEnqueue({
               type: 'error',
               error: {
                 message: 'Rate limit exceeded. Please try again later.',
@@ -151,8 +151,8 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
                   retryAfterSeconds
                 }
               }
-            }) + '\n'));
-            controller.close();
+            });
+            safeClose();
             return;
           }
           
@@ -162,10 +162,10 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           // Use the session ID generated earlier
           
           // Send initial response with session ID
-          controller.enqueue(encoder.encode(JSON.stringify({
+          safeEnqueue({
             type: 'start',
             sessionId
-          }) + '\n'));
+          });
           
           // Map agent progress to UI-friendly progress update
           const stageMap: Record<string, PipelineStage> = {
@@ -198,10 +198,10 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             };
             
             // Send progress update
-            controller.enqueue(encoder.encode(JSON.stringify({
+            safeEnqueue({
               type: 'progress',
               progress: pipelineProgress
-            }) + '\n'));
+            });
           };
           
           // Prepare the brief
@@ -234,7 +234,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             console.log('Cache hit! Using cached logo generation result');
             
             // Send progress update
-            controller.enqueue(encoder.encode(JSON.stringify({
+            safeEnqueue({
               type: 'progress',
               progress: {
                 currentStage: PipelineStage.CACHED,
@@ -242,14 +242,14 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
                 overallProgress: 100,
                 statusMessage: 'Retrieved from cache'
               }
-            }) + '\n'));
+            });
             
             // If we have a preview SVG in the cached result, send it
             if (cachedResult.logoSvg) {
-              controller.enqueue(encoder.encode(JSON.stringify({
+              safeEnqueue({
                 type: 'svg_preview',
                 previewSvg: cachedResult.logoSvg
-              }) + '\n'));
+              });
             }
             
             // Create a result object with the cached data
@@ -264,11 +264,11 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             };
             
             // Notify client this is from cache
-            controller.enqueue(encoder.encode(JSON.stringify({
+            safeEnqueue({
               type: 'cache',
               cached: true,
               message: 'Result retrieved from cache'
-            }) + '\n'));
+            });
           } else {
             // Not in cache, execute the pipeline
             // Start performance timer for the entire generation process (safe for Edge Runtime)
@@ -359,7 +359,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           }
           
           // Send final result
-          controller.enqueue(encoder.encode(JSON.stringify({
+          safeEnqueue({
             type: 'result',
             result: {
               success: result.success,
@@ -367,10 +367,10 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
               sessionId,
               metrics: result.metrics
             }
-          }) + '\n'));
+          });
           
           // Close the stream
-          controller.close();
+          safeClose();
           
           // Record memory usage after completion - safe for Edge Runtime
           try {
@@ -404,16 +404,16 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           });
           
           // Send error response with the same error ID
-          controller.enqueue(encoder.encode(JSON.stringify({
+          safeEnqueue({
             type: 'error',
             error: {
               message: error instanceof Error ? error.message : 'Logo generation failed',
               details: error instanceof Error ? error.stack : String(error),
               errorId
             }
-          }) + '\n'));
+          });
           
-          controller.close();
+          safeClose();
         }
       }
     });

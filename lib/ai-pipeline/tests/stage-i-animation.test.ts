@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { animateLogo } from '../stages/stage-i-animation';
-import { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
+          timing: {
+            duration: 2000,
+            easing: AnimationEasing.EASE_OUT
+          }rt { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
 import { AnimationType, AnimationEasing, AnimationTrigger } from '../../animation/types';
 
 // Sample SVG for testing

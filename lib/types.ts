@@ -475,3 +475,19 @@ export interface ColorVariant {
   name: string;
   colors: Record<string, string>;
 }
+
+// Legacy stage interfaces for backward compatibility
+export interface LogoStage {
+  id: string;
+  name: string;
+  duration?: number;
+  progress: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  estimatedTime?: number;
+}
+
+export interface StagePreview {
+  stageId: string;
+  previewData: string;
+  timestamp: number;
+}

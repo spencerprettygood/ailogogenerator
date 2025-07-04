@@ -287,3 +287,36 @@ export function convertTimingToSMIL(options: {
   }
   return attrs;
 }
+
+/**
+ * Optimize SVG for animation by ensuring proper structure
+ * @param svg SVG content to optimize
+ * @returns Optimized SVG content
+ */
+export function optimizeSVGForAnimation(svg: string): string {
+  // Add IDs to elements that don't have them
+  let optimized = svg;
+  
+  // Find elements without IDs and add them
+  const elementsWithoutIds = svg.match(/<(path|circle|rect|ellipse|line|polygon|polyline|text|g)[^>]*(?!id=)[^>]*>/g);
+  
+  if (elementsWithoutIds) {
+    elementsWithoutIds.forEach((element, index) => {
+      const id = `elem-${index + 1}`;
+      const elementWithId = element.replace(/<(\w+)/, `<$1 id="${id}"`);
+      optimized = optimized.replace(element, elementWithId);
+    });
+  }
+  
+  return optimized;
+}
+
+/**
+ * Extract animatable elements from SVG
+ * @param svg SVG content to analyze
+ * @returns Array of element IDs that can be animated
+ */
+export function extractAnimatableElements(svg: string): string[] {
+  const matches = svg.match(/id="([^"]+)"/g);
+  return matches ? matches.map(m => m.replace(/id="|"/g, '')) : [];
+}

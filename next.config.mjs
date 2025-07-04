@@ -135,10 +135,8 @@ const nextConfig = {
   
   // External packages that should be transpiled
   experimental: {
-    // Changed property name to match Next.js 15 requirements
-    // The documentation mentions it should be serverComponentsExternalPackages
-    // but the error suggests it might be something else
-    transpilePackages: [
+    // Use serverComponentsExternalPackages instead of transpilePackages
+    serverComponentsExternalPackages: [
       'next-themes',
       '@anthropic-ai/sdk',
     ]

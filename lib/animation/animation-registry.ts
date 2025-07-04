@@ -69,7 +69,16 @@ export class AnimationRegistry {
   public getProviderById(providerId: string): AnimationProvider | undefined {
     return this.providers.get(providerId);
   }
-  
+
+  /**
+   * Get a provider by its ID
+   * @param id - Provider ID
+   * @returns The provider if found, undefined otherwise
+   */
+  public getProvider(id: string): AnimationProvider | undefined {
+    return this.providers.get(id);
+  }
+
   /**
    * Get all registered animation providers
    * 
@@ -155,5 +164,34 @@ export class AnimationRegistry {
    */
   public getProviderCount(): number {
     return this.providers.size;
+  }
+
+  /**
+   * Get all providers that support a specific animation type
+   * @param animationType - The animation type to check
+   * @returns Array of providers that support the animation type
+   */
+  public getProvidersByAnimationType(animationType: AnimationType): AnimationProvider[] {
+    return Array.from(this.providers.values()).filter(provider => 
+      provider.supportsAnimationType(animationType)
+    );
+  }
+
+  /**
+   * Get the default provider for a specific animation type
+   * @param animationType - The animation type
+   * @returns The default provider for the type, or undefined if none found
+   */
+  public getDefaultProviderForType(animationType: AnimationType): AnimationProvider | undefined {
+    return this.getProviderForType(animationType);
+  }
+
+  /**
+   * Check if an animation type is supported by any registered provider
+   * @param animationType - The animation type to check
+   * @returns True if supported, false otherwise
+   */
+  public isAnimationTypeSupported(animationType: AnimationType): boolean {
+    return this.getProviderForType(animationType) !== undefined;
   }
 }
