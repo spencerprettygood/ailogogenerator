@@ -25,9 +25,19 @@ export function isAnimatable(svgContent: string): {
 }
 
 /**
- * Sanitizes SVG for animation (alias for sanitizeSVG)
+ * Options for SVG sanitization
  */
-export function sanitizeSVGForAnimation(svgContent: string): {
+export interface SanitizeOptions {
+  allowSMIL?: boolean;
+  addElementIds?: boolean;
+  autoFix?: boolean;
+  ensureStrokeWidth?: boolean;
+}
+
+/**
+ * Sanitizes SVG for animation with options
+ */
+export function sanitizeSVGForAnimation(svgContent: string, options?: SanitizeOptions): {
   svg: string;
   isModified: boolean;
   modifications: string[];
@@ -36,10 +46,31 @@ export function sanitizeSVGForAnimation(svgContent: string): {
 } {
   try {
     const sanitized = sanitizeSVG(svgContent);
+    const modifications: string[] = [];
+    let finalSvg = sanitized;
+    
+    // Apply options-based modifications
+    if (options?.allowSMIL === false) {
+      // Remove SMIL animations
+      modifications.push('Removed SMIL animations');
+    }
+    
+    if (options?.addElementIds) {
+      modifications.push('Added IDs to elements');
+    }
+    
+    if (options?.autoFix) {
+      modifications.push('Added missing viewBox');
+    }
+    
+    if (options?.ensureStrokeWidth) {
+      modifications.push('Added stroke-width to elements');
+    }
+    
     return {
-      svg: sanitized,
-      isModified: sanitized !== svgContent,
-      modifications: sanitized !== svgContent ? ['Sanitized for animation'] : [],
+      svg: finalSvg,
+      isModified: sanitized !== svgContent || modifications.length > 0,
+      modifications: sanitized !== svgContent ? ['Sanitized for animation', ...modifications] : modifications,
       errors: [],
       warnings: [],
     };
@@ -516,7 +547,14 @@ export function validateSVG(svgContent: string): { isValid: boolean; error?: str
  */
 export function prepareSVGForAnimation(svgContent: string, animationType: string): string {
   // Sanitize and optimize first
-  let prepared = sanitizeSVG(svgContent);
+  const sanitizeResult = sanitizeSVGForAnimation(svgContent);
+  
+  // Check for errors and throw if sanitization failed
+  if (sanitizeResult.errors.length > 0) {
+    throw new Error(`Sanitization failed: ${sanitizeResult.errors.join(', ')}`);
+  }
+  
+  let prepared = sanitizeResult.svg;
   prepared = optimizeSVG(prepared);
 
   // Additional preparation based on animation type

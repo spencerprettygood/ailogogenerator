@@ -24,7 +24,7 @@ describe('useLogoGeneration', () => {
     vi.clearAllMocks();
 
     // Mock stream return value
-    logoAPI.generateLogo.mockResolvedValue(new ReadableStream());
+    (logoAPI.generateLogo as any).mockResolvedValue(new ReadableStream());
   });
 
   afterEach(() => {
@@ -49,13 +49,14 @@ describe('useLogoGeneration', () => {
 
   it('should handle generateLogo action', async () => {
     // Setup mock implementation
-    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+    (streamProcessor.processStream as any).mockImplementation((stream, callbacks) => {
       // Simulate progress update
       callbacks.onProgress({
+        status: 'generating',
         currentStage: 'stage-a',
         stageProgress: 50,
-        overallProgress: 25,
-        statusMessage: 'Processing requirements',
+        progress: 25,
+        message: 'Processing requirements',
       });
 
       // Simulate completion
@@ -77,10 +78,11 @@ describe('useLogoGeneration', () => {
     // Check final state
     expect(result.current.isGenerating).toBe(false);
     expect(result.current.progress).toEqual({
+      status: 'generating',
       currentStage: 'stage-a',
       stageProgress: 50,
-      overallProgress: 25,
-      statusMessage: 'Processing requirements',
+      progress: 25,
+      message: 'Processing requirements',
     });
     expect(result.current.assets).toEqual({ logoSvg: '<svg></svg>' });
     expect(result.current.sessionId).toBe('test-session-123');
@@ -88,7 +90,7 @@ describe('useLogoGeneration', () => {
 
   it('should handle errors', async () => {
     // Setup error case
-    logoAPI.generateLogo.mockRejectedValue(new Error('API error'));
+    (logoAPI.generateLogo as any).mockRejectedValue(new Error('API error'));
 
     const { result } = renderHook(() => useLogoGeneration());
 
@@ -104,7 +106,7 @@ describe('useLogoGeneration', () => {
 
   it('should handle streaming errors', async () => {
     // Setup streaming error
-    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+    (streamProcessor.processStream as any).mockImplementation((stream, callbacks) => {
       callbacks.onError(new Error('Stream error'));
     });
 
@@ -122,7 +124,7 @@ describe('useLogoGeneration', () => {
 
   it('should handle previews', async () => {
     // Setup preview
-    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+    (streamProcessor.processStream as any).mockImplementation((stream, callbacks) => {
       callbacks.onPreview({
         stageId: 'stage-d',
         content: '<svg>preview</svg>',
@@ -143,15 +145,16 @@ describe('useLogoGeneration', () => {
 
   it('should handle cached results', async () => {
     // Setup cache hit
-    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+    (streamProcessor.processStream as any).mockImplementation((stream, callbacks) => {
       callbacks.onCache?.(true);
 
       // Immediately complete with cache result
       callbacks.onProgress({
+        status: 'completed',
         currentStage: 'cached',
         stageProgress: 100,
-        overallProgress: 100,
-        statusMessage: 'Retrieved from cache',
+        progress: 100,
+        message: 'Retrieved from cache',
       });
 
       callbacks.onComplete({ logoSvg: '<svg>cached</svg>' }, 'cached-session');
@@ -166,18 +169,19 @@ describe('useLogoGeneration', () => {
     // Check cache state
     expect(result.current.fromCache).toBe(true);
     expect(result.current.progress?.currentStage).toBe('cached');
-    expect(result.current.progress?.overallProgress).toBe(100);
-    expect(result.current.assets?.logoSvg).toBe('<svg>cached</svg>');
+    expect(result.current.progress?.progress).toBe(100);
+    expect(result.current.assets?.logos?.[0]?.svgCode || (result.current.assets as any)?.logoSvg).toBe('<svg>cached</svg>');
   });
 
   it('should reset state correctly', async () => {
     // Setup successful generation
-    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+    (streamProcessor.processStream as any).mockImplementation((stream, callbacks) => {
       callbacks.onProgress({
+        status: 'generating',
         currentStage: 'stage-a',
         stageProgress: 50,
-        overallProgress: 25,
-        statusMessage: 'Processing',
+        progress: 25,
+        message: 'Processing',
       });
 
       callbacks.onComplete({ logoSvg: '<svg></svg>' }, 'test-session');

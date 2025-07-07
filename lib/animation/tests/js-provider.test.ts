@@ -277,9 +277,8 @@ describe('JSAnimationProvider', () => {
   });
 
   it('should apply default animation when type is not supported', async () => {
-    // @ts-ignore - Testing with an unsupported type
     const result = await provider.animate(mockSvg, {
-      type: 'unsupported_type',
+      type: 'unsupported_type' as AnimationType,
       timing: {
         duration: 1000,
       },

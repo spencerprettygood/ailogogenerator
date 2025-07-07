@@ -200,11 +200,7 @@ export function withCache(
         const clonedResponse = response.clone();
 
         // Store in cache
-        cacheManager.set(cacheKey, clonedResponse, 'response', {
-          url: req.url,
-          method: req.method,
-          timestamp: Date.now(),
-        });
+        cacheManager.set(cacheKey, clonedResponse, 'response');
 
         // Add cache-related headers
         response.headers.set('x-cache', 'miss');
@@ -252,7 +248,7 @@ export function invalidateCache(pattern: string | RegExp) {
       const keyPrefix = 'response:';
 
       // Iterate through all cache entries
-      for (const [key, _] of cache.entries()) {
+      for (const [key, _] of Array.from(cache.entries())) {
         if (key.startsWith(keyPrefix)) {
           const cacheKey = key.substring(keyPrefix.length);
 

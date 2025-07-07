@@ -304,8 +304,14 @@ function applyGoldenRatioPrinciples(svg: SVGLogo): void {
   logger.debug('Applying golden ratio principles');
 
   // Determine the primary dimensions for the golden ratio
-  const width = svg.width;
-  const height = svg.height;
+  const width = svg.width || svg.inlineSize;
+  const height = svg.height || svg.blockSize;
+
+  // Return early if dimensions are undefined
+  if (!width || !height) {
+    logger.warn('SVG dimensions are undefined, skipping golden ratio application');
+    return;
+  }
 
   // Calculate golden ratio segments
   const goldenWidth = width / GOLDEN_RATIO;
@@ -331,11 +337,21 @@ function applyGoldenRatioPrinciples(svg: SVGLogo): void {
     // Get the primary element (usually the largest or most central)
     const primaryElement = significantElements[0];
 
+    if (!primaryElement) {
+      logger.warn('No primary element found for golden ratio alignment');
+      return;
+    }
+
     // Get element center
     const elementCenter = calculateElementCenter(primaryElement);
 
     // Find the closest golden point
     const closestPoint = findClosestPoint(elementCenter, goldenPoints);
+
+    if (!closestPoint) {
+      logger.warn('No closest golden point found');
+      return;
+    }
 
     // Only reposition if the element is not already close to a golden point
     const distance = Math.sqrt(
@@ -499,16 +515,22 @@ function calculateElementCenter(element: LogoElement): { x: number; y: number } 
 function findClosestPoint(
   target: { x: number; y: number },
   points: Array<{ x: number; y: number }>
-): { x: number; y: number } {
+): { x: number; y: number } | undefined {
+  if (!points || points.length === 0) {
+    return undefined;
+  }
+
   let closestPoint = points[0];
   let minDistance = Number.MAX_VALUE;
 
   for (const point of points) {
-    const distance = Math.sqrt(Math.pow(target.x - point.x, 2) + Math.pow(target.y - point.y, 2));
+    if (point && typeof point.x === 'number' && typeof point.y === 'number') {
+      const distance = Math.sqrt(Math.pow(target.x - point.x, 2) + Math.pow(target.y - point.y, 2));
 
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestPoint = point;
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+      }
     }
   }
 
@@ -980,7 +1002,9 @@ function applyProximityPrinciple(svg: SVGLogo, rankedElements: LogoElement[]): v
       );
 
       // Consider elements within 25% of SVG width/height as potentially related
-      const threshold = Math.min(svg.width, svg.height) * 0.25;
+      const width = svg.width || svg.inlineSize || 0;
+      const height = svg.height || svg.blockSize || 0;
+      const threshold = Math.min(width, height) * 0.25;
       return distance < threshold;
     });
 
@@ -1010,14 +1034,14 @@ function applySimilarityPrinciple(svg: SVGLogo, rankedElements: LogoElement[]): 
     if (!elementsByType[el.type]) {
       elementsByType[el.type] = [];
     }
-    elementsByType[el.type].push(el);
+    elementsByType[el.type]!.push(el);
   }
 
   // For each type with multiple elements, ensure consistent styling
   for (const type in elementsByType) {
     const elements = elementsByType[type];
 
-    if (elements.length < 2) continue;
+    if (!elements || elements.length < 2) continue;
 
     // Find the most common fill color
     const fillColors: Record<string, number> = {};
@@ -1034,8 +1058,9 @@ function applySimilarityPrinciple(svg: SVGLogo, rankedElements: LogoElement[]): 
     let maxCount = 0;
 
     for (const fill in fillColors) {
-      if (fillColors[fill] > maxCount) {
-        maxCount = fillColors[fill];
+      const count = fillColors[fill];
+      if (count && count > maxCount) {
+        maxCount = count;
         mostCommonFill = fill;
       }
     }
@@ -1069,7 +1094,9 @@ function applyContinuityPrinciple(svg: SVGLogo, rankedElements: LogoElement[]): 
   const verticalGroups: Record<number, LogoElement[]> = {};
 
   // Round coordinates to create groupings
-  const roundingFactor = Math.min(svg.width, svg.height) * 0.05; // 5% of the smaller dimension
+  const width = svg.width || svg.inlineSize || 0;
+  const height = svg.height || svg.blockSize || 0;
+  const roundingFactor = Math.min(width, height) * 0.05; // 5% of the smaller dimension
 
   for (const el of rankedElements) {
     const center = calculateElementCenter(el);

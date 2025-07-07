@@ -121,7 +121,7 @@ describe('Animation Utilities', () => {
 
     it('should detect limited support in older browsers', () => {
       const docStyle = document.documentElement.style;
-      vi.spyOn(docStyle, 'animation' as any, 'get').mockReturnValue(undefined);
+      vi.spyOn(docStyle, 'animation' as any, 'get').mockReturnValue('');
       vi.spyOn(docStyle, 'webkitAnimation' as any, 'get').mockReturnValue('');
       vi.spyOn(Element.prototype, 'animate').mockReturnValue(undefined as any);
 

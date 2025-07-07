@@ -121,7 +121,7 @@ describe('TimeEstimator', () => {
       const stageEstimate = estimator.getStageEstimate('stage-a');
 
       // The estimate should be different from the original
-      expect(stageEstimate).not.toBe(testStages[0].duration);
+      expect(stageEstimate).not.toBe(testStages[0]?.duration || 0);
     });
   });
 
@@ -189,7 +189,7 @@ describe('TimeEstimator', () => {
       const stageEstimate = estimator.getStageEstimate('stage-a');
 
       // Should not be the default duration
-      expect(stageEstimate).not.toBe(testStages[0].duration);
+      expect(stageEstimate).not.toBe(testStages[0]?.duration || 0);
     });
   });
 });
@@ -212,13 +212,15 @@ describe('estimateRemainingTime function', () => {
         status: 'completed',
         estimatedDuration: 5000,
         order: 0,
+        progress: 100,
       },
       {
         id: 'stage-b',
         name: 'Moodboard',
-        status: 'in-progress',
+        status: 'in_progress',
         estimatedDuration: 10000,
         order: 1,
+        progress: 50,
       },
       {
         id: 'stage-c',
@@ -226,6 +228,7 @@ describe('estimateRemainingTime function', () => {
         status: 'pending',
         estimatedDuration: 5000,
         order: 2,
+        progress: 0,
       },
     ];
 

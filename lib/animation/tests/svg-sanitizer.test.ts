@@ -267,13 +267,14 @@ describe('SVG Sanitizer', () => {
     });
 
     it('should throw an error if sanitization fails', () => {
-      vi.spyOn(global, 'sanitizeSVGForAnimation').mockImplementation(() => ({
+      // Mock the sanitizeSVGForAnimation function to return errors
+      vi.spyOn(require('../utils/svg-sanitizer'), 'sanitizeSVGForAnimation').mockReturnValue({
         svg: '',
         isModified: false,
         modifications: [],
         errors: ['Sanitization failed'],
         warnings: [],
-      }));
+      });
 
       expect(() => prepareSVGForAnimation(invalidSvg, 'draw')).toThrow();
     });

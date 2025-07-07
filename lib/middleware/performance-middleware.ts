@@ -88,6 +88,8 @@ export function withPerformanceMonitoring(
         endTime,
         statusCode: 500,
         requestSize,
+        name: `API: ${endpoint}`,
+        category: 'api',
         metadata: {
           error: error instanceof Error ? error.message : String(error),
           path: url.pathname,
@@ -148,6 +150,8 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
     statusCode: response.status,
     requestSize,
     responseSize,
+    name: `API: ${endpoint}`,
+    category: 'api',
     metadata: {
       path: url.pathname,
       query: Object.fromEntries(url.searchParams.entries()),

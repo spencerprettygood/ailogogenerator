@@ -208,6 +208,11 @@ export function applyGoldenRatio(svg: SVGLogo): SVGLogo {
   // Get the primary dimensions
   const { width, height } = enhancedSvg;
 
+  // Ensure width and height are defined
+  if (!width || !height) {
+    return enhancedSvg;
+  }
+
   // Calculate golden ratio proportions
   const goldenWidth = height * GOLDEN_RATIO;
   const goldenHeight = width / GOLDEN_RATIO;
@@ -366,9 +371,9 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } {
   // Parse hex values
   let r, g, b;
   if (hex.length === 3) {
-    r = parseInt(hex[0] + hex[0], 16) / 255;
-    g = parseInt(hex[1] + hex[1], 16) / 255;
-    b = parseInt(hex[2] + hex[2], 16) / 255;
+    r = parseInt((hex[0] || '0') + (hex[0] || '0'), 16) / 255;
+    g = parseInt((hex[1] || '0') + (hex[1] || '0'), 16) / 255;
+    b = parseInt((hex[2] || '0') + (hex[2] || '0'), 16) / 255;
   } else {
     r = parseInt(hex.substring(0, 2), 16) / 255;
     g = parseInt(hex.substring(2, 4), 16) / 255;
@@ -533,9 +538,9 @@ function calculateRelativeLuminance(color: string): number {
   // Parse RGB values
   let r, g, b;
   if (color.length === 3) {
-    r = parseInt(color[0] + color[0], 16) / 255;
-    g = parseInt(color[1] + color[1], 16) / 255;
-    b = parseInt(color[2] + color[2], 16) / 255;
+    r = parseInt((color[0] || '0') + (color[0] || '0'), 16) / 255;
+    g = parseInt((color[1] || '0') + (color[1] || '0'), 16) / 255;
+    b = parseInt((color[2] || '0') + (color[2] || '0'), 16) / 255;
   } else {
     r = parseInt(color.substring(0, 2), 16) / 255;
     g = parseInt(color.substring(2, 4), 16) / 255;
@@ -835,7 +840,7 @@ export function optimizeSVGPaths(svgCode: string): string {
             overrides: {
               // Preserve important attributes
               removeViewBox: false,
-              cleanupIDs: false,
+              cleanupIds: false,
               removeHiddenElems: false,
             },
           },
@@ -1083,7 +1088,7 @@ function addIndustrySpecificRecommendations(
   const industryLower = industry.toLowerCase();
 
   if (industryLower.includes('tech') || industryLower.includes('software')) {
-    if (scores.colorHarmony < 80) {
+    if ((scores.colorHarmony || 0) < 80) {
       recommendations.push(
         'Technology logos often benefit from blue tones that convey trust and innovation.'
       );
@@ -1136,6 +1141,366 @@ export function adaptForCulturalContext(svg: SVGLogo, region: string): SVGLogo {
   }
 
   return adaptedSvg;
+}
+
+/**
+ * Calculates the center point of an element
+ * @param element - SVG element to calculate center for
+ * @returns - Center point coordinates
+ */
+function calculateElementCenter(element: LogoElement): { x: number; y: number } {
+  const x = Number(element.attributes.x || element.attributes.cx || 0);
+  const y = Number(element.attributes.y || element.attributes.cy || 0);
+  const width = Number(element.attributes.width || element.attributes.r || 0);
+  const height = Number(element.attributes.height || element.attributes.r || 0);
+  
+  return {
+    x: x + width / 2,
+    y: y + height / 2
+  };
+}
+
+/**
+ * Finds the closest point from an array of points
+ * @param points - Array of points to search
+ * @param targetPoint - Target point to find closest to
+ * @returns - Closest point or undefined if array is empty
+ */
+function findClosestPoint(
+  points: Array<{ x: number; y: number }>,
+  targetPoint: { x: number; y: number }
+): { x: number; y: number } | undefined {
+  if (!points || points.length === 0) {
+    return undefined;
+  }
+  
+  let closestPoint = points[0];
+  let minDistance = Infinity;
+  
+  for (const point of points) {
+    if (point && typeof point.x === 'number' && typeof point.y === 'number') {
+      const distance = Math.sqrt(
+        Math.pow(point.x - targetPoint.x, 2) + Math.pow(point.y - targetPoint.y, 2)
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+      }
+    }
+  }
+  
+  return closestPoint;
+}
+
+/**
+ * Applies transformation to an element
+ * @param element - Element to transform
+ * @param transform - Transformation to apply
+ * @returns - Transformed element
+ */
+function applyTransformToElement(
+  element: LogoElement,
+  transform: { x?: number; y?: number; scale?: number }
+): LogoElement {
+  const newElement = { ...element };
+  
+  if (transform.x !== undefined) {
+    newElement.attributes = {
+      ...newElement.attributes,
+      x: Number(newElement.attributes.x || 0) + transform.x
+    };
+  }
+  
+  if (transform.y !== undefined) {
+    newElement.attributes = {
+      ...newElement.attributes,
+      y: Number(newElement.attributes.y || 0) + transform.y
+    };
+  }
+  
+  if (transform.scale !== undefined) {
+    const currentTransform = newElement.attributes.transform || '';
+    const scaleTransform = `scale(${transform.scale})`;
+    newElement.attributes = {
+      ...newElement.attributes,
+      transform: currentTransform ? `${currentTransform} ${scaleTransform}` : scaleTransform
+    };
+  }
+  
+  return newElement;
+}
+
+/**
+ * Applies golden ratio positioning to elements
+ * @param svg - SVG logo to enhance
+ * @returns - Enhanced SVG with golden ratio positioning
+ */
+function applyGoldenRatioPositioning(svg: SVGLogo): SVGLogo {
+  const enhancedSvg = { ...svg };
+  const width = svg.width || svg.inlineSize || 0;
+  const height = svg.height || svg.blockSize || 0;
+  
+  // Ensure width and height are defined
+  if (!width || !height) {
+    return enhancedSvg;
+  }
+  
+  // Calculate golden ratio proportions
+  const goldenWidth = width / GOLDEN_RATIO;
+  const goldenHeight = height / GOLDEN_RATIO;
+  
+  // Calculate golden ratio points
+  const goldenPoints = [
+    { x: width - goldenWidth, y: height - goldenHeight },
+    { x: goldenWidth, y: height - goldenHeight },
+    { x: width - goldenWidth, y: goldenHeight },
+    { x: goldenWidth, y: goldenHeight }
+  ];
+  
+  // Find primary element (largest or first significant element)
+  const primaryElement = enhancedSvg.elements.find(el => 
+    el.type === 'text' || el.type === 'rect' || el.type === 'circle' || el.type === 'ellipse'
+  );
+  
+  if (!primaryElement) {
+    return enhancedSvg;
+  }
+  
+  // Calculate element center
+  const elementCenter = calculateElementCenter(primaryElement);
+  
+  // Calculate movement threshold
+  const threshold = Math.min(width, height) * 0.1;
+  
+  // Find closest golden ratio point
+  const closestPoint = findClosestPoint(goldenPoints, elementCenter);
+  
+  if (closestPoint) {
+    // Apply transformation to align with golden ratio
+    const transformedElement = applyTransformToElement(primaryElement, {
+      x: closestPoint.x - elementCenter.x,
+      y: closestPoint.y - elementCenter.y
+    });
+    
+    // Update the element in the SVG
+    enhancedSvg.elements = enhancedSvg.elements.map(el => 
+      el.id === primaryElement.id ? transformedElement : el
+    );
+  }
+  
+  return enhancedSvg;
+}
+
+/**
+ * Analyzes element distribution and balance
+ * @param elements - Array of SVG elements
+ * @param svg - SVG logo for context
+ * @returns - Analysis results
+ */
+function analyzeElementDistribution(elements: LogoElement[], svg: SVGLogo): {
+  dominantColor: string;
+  elementCount: number;
+  balance: number;
+} {
+  const width = svg.width || svg.inlineSize || 0;
+  const height = svg.height || svg.blockSize || 0;
+  
+  // Group elements by type - Fixed: Check if elements is defined and not null
+  const elementsByType: Record<string, LogoElement[]> = {};
+  
+  if (elements && elements.length > 0) {
+    for (const el of elements) {
+      if (!elementsByType[el.type]) {
+        elementsByType[el.type] = [];
+      }
+      elementsByType[el.type]!.push(el);
+    }
+  }
+  
+  // Analyze color distribution - Fixed: Check if elements is defined
+  const fillColors: Record<string, number> = {};
+  
+  if (elements && elements.length > 0) {
+    for (const el of elements) {
+      const fill = el.attributes.fill as string;
+      if (fill && typeof fill === 'string') {
+        fillColors[fill] = (fillColors[fill] || 0) + 1;
+      }
+    }
+  }
+  
+  // Find dominant color - Fixed: Check if fillColors has entries
+  let dominantColor = '#000000';
+  let maxCount = 0;
+  
+  for (const [fill, count] of Object.entries(fillColors)) {
+    if (count && count > maxCount) {
+      maxCount = count;
+      dominantColor = fill;
+    }
+  }
+  
+  // Calculate balance (simplified implementation) - Fixed: Check for width/height
+  let balance = 50; // Default balanced score
+  
+  if (width && height) {
+    const roundingFactor = Math.min(width, height) * 0.1;
+    balance = Math.max(0, Math.min(100, 50 + (roundingFactor / 10)));
+  }
+  
+  return {
+    dominantColor,
+    elementCount: elements ? elements.length : 0,
+    balance
+  };
+}
+
+/**
+ * Comprehensive golden ratio layout enhancement with proper null checks
+ * @param svg - SVG logo to enhance
+ * @returns - Enhanced SVG with golden ratio layout
+ */
+function enhanceGoldenRatioLayout(svg: SVGLogo): SVGLogo {
+  const enhancedSvg = { ...svg };
+  
+  // Fixed: Proper null checks for width and height
+  const width = svg.width || svg.inlineSize;
+  const height = svg.height || svg.blockSize;
+  
+  // Return early if dimensions are undefined
+  if (!width || !height) {
+    return enhancedSvg;
+  }
+  
+  // Fixed: Calculate golden ratio proportions with proper null checks
+  const goldenWidth = width / GOLDEN_RATIO;
+  const goldenHeight = height / GOLDEN_RATIO;
+  
+  // Fixed: Calculate golden ratio points with proper null checks
+  const goldenPoints = [
+    { x: width - goldenWidth, y: height - goldenHeight },
+    { x: goldenWidth, y: height - goldenHeight },
+    { x: width - goldenWidth, y: goldenHeight },
+    { x: goldenWidth, y: goldenHeight }
+  ];
+  
+  // Fixed: Find primary element with proper null checks
+  const primaryElement = enhancedSvg.elements?.find(el => 
+    el && (el.type === 'text' || el.type === 'rect' || el.type === 'circle' || el.type === 'ellipse')
+  );
+  
+  if (!primaryElement) {
+    return enhancedSvg;
+  }
+  
+  // Fixed: Calculate element center with null checks
+  const elementCenter = calculateElementCenter(primaryElement);
+  
+  // Fixed: Calculate movement threshold with proper null checks
+  const threshold = width && height ? Math.min(width, height) * 0.1 : 0;
+  
+  // Fixed: Find closest golden ratio point with proper null checks
+  const closestPoint = findClosestPoint(goldenPoints, elementCenter);
+  
+  // Fixed: Check if closestPoint is defined before using it
+  if (closestPoint) {
+    // Apply transformation to align with golden ratio
+    const transformedElement = applyTransformToElement(primaryElement, {
+      x: closestPoint.x - elementCenter.x,
+      y: closestPoint.y - elementCenter.y
+    });
+    
+    // Update the element in the SVG
+    enhancedSvg.elements = enhancedSvg.elements?.map(el => 
+      el.id === primaryElement.id ? transformedElement : el
+    ) || [];
+  }
+  
+  return enhancedSvg;
+}
+
+/**
+ * Advanced logo analysis with comprehensive null checks
+ * @param svg - SVG logo to analyze
+ * @returns - Analysis results with proper error handling
+ */
+function analyzeLogoAdvanced(svg: SVGLogo): {
+  qualityScore: number;
+  recommendations: string[];
+  technicalMetrics: {
+    elementCount: number;
+    colorCount: number;
+    complexityScore: number;
+  };
+} {
+  // Fixed: Proper null checks for svg dimensions
+  const width = svg.width || svg.inlineSize;
+  const height = svg.height || svg.blockSize;
+  
+  if (!width || !height) {
+    return {
+      qualityScore: 0,
+      recommendations: ['Unable to analyze: SVG dimensions are undefined'],
+      technicalMetrics: {
+        elementCount: 0,
+        colorCount: 0,
+        complexityScore: 0
+      }
+    };
+  }
+  
+  // Fixed: Element analysis with proper null checks
+  const elements = svg.elements || [];
+  const elementsByType: Record<string, LogoElement[]> = {};
+  
+  for (const el of elements) {
+    if (el && el.type) {
+      if (!elementsByType[el.type]) {
+        elementsByType[el.type] = [];
+      }
+      elementsByType[el.type]!.push(el);
+    }
+  }
+  
+  // Fixed: Color analysis with proper null checks
+  const fillColors: Record<string, number> = {};
+  
+  for (const el of elements) {
+    if (el && el.attributes && el.attributes.fill) {
+      const fill = el.attributes.fill as string;
+      if (typeof fill === 'string') {
+        fillColors[fill] = (fillColors[fill] || 0) + 1;
+      }
+    }
+  }
+  
+  // Fixed: Find dominant color with proper null checks
+  let dominantColor = '#000000';
+  let maxCount = 0;
+  
+  for (const [fill, count] of Object.entries(fillColors)) {
+    if (count && count > maxCount) {
+      maxCount = count;
+      dominantColor = fill;
+    }
+  }
+  
+  // Fixed: Calculate technical metrics with proper null checks
+  const roundingFactor = Math.min(width, height) * 0.1;
+  const complexityScore = Math.max(0, Math.min(100, elements.length * 10));
+  
+  return {
+    qualityScore: Math.max(0, Math.min(100, 75 + (roundingFactor / 10))),
+    recommendations: [
+      elements.length > 10 ? 'Consider simplifying the design by reducing element count' : 'Good element count',
+      Object.keys(fillColors).length > 5 ? 'Consider reducing color complexity' : 'Good color balance'
+    ],
+    technicalMetrics: {
+      elementCount: elements.length,
+      colorCount: Object.keys(fillColors).length,
+      complexityScore
+    }
+  };
 }
 
 // Export a combined enhancement function for convenience

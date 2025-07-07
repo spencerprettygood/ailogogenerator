@@ -203,22 +203,19 @@ export class StreamProcessor {
     if (data.type === 'progress' && data.progress) {
       try {
         callbacks.onProgress({
-          currentStageId: data.progress.currentStageId || data.progress.currentStage || '',
-          currentStage: data.progress.currentStage || data.progress.currentStageId || '', // Backward compatibility
+          status: 'generating',
+          currentStage: data.progress.currentStage || data.progress.currentStageId || '',
           stageProgress:
             typeof data.progress.stageProgress === 'number' ? data.progress.stageProgress : 0,
-          overallProgress:
+          progress:
             typeof data.progress.overallProgress === 'number'
               ? data.progress.overallProgress
               : typeof data.progress.progress === 'number'
                 ? data.progress.progress
                 : 0,
-          statusMessage: data.progress.statusMessage || data.progress.message || 'Processing...',
+          message: data.progress.statusMessage || data.progress.message || 'Processing...',
           // Backward compatibility
           stage: data.progress.currentStage || '',
-          progress: data.progress.stageProgress || 0,
-          message: data.progress.statusMessage || 'Processing...',
-          status: 'completed',
         });
       } catch (progressError) {
         console.error('Error processing progress update:', progressError, data);

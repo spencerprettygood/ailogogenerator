@@ -609,6 +609,8 @@ export interface LogoStage {
   progress: number;
   status: 'pending' | 'in_progress' | 'completed' | 'error';
   estimatedTime?: number;
+  estimatedDuration?: number; // Add missing property for time estimation
+  order?: number; // Add missing property for stage ordering
 }
 
 export interface StagePreview {
@@ -766,6 +768,8 @@ export interface LogoStage {
   progress: number;
   status: 'pending' | 'in_progress' | 'completed' | 'error';
   estimatedTime?: number;
+  estimatedDuration?: number; // Add missing property for time estimation
+  order?: number; // Add missing property for stage ordering
 }
 
 export interface StagePreview {

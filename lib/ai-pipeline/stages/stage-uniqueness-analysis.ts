@@ -119,7 +119,7 @@ Do not include any explanatory text outside the JSON.`;
     });
 
     const aiResponse = response.content[0].text;
-    const tokensUsed = response.usage?.input_tokens || 0 + response.usage?.output_tokens || 0;
+    const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
     // Parse the JSON response
     try {

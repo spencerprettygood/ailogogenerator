@@ -57,11 +57,10 @@ export interface CacheStats {
  */
 export class ExtendedCacheManager extends CacheManager {
   private static extendedInstance: ExtendedCacheManager;
-  private logger: Logger;
 
   // Stats tracking
-  private hits: number = 0;
-  private misses: number = 0;
+  private extendedHits: number = 0;
+  private extendedMisses: number = 0;
   private getTimes: number[] = [];
   private setTimes: number[] = [];
   private lastHitAt: number = 0;
@@ -79,7 +78,6 @@ export class ExtendedCacheManager extends CacheManager {
    */
   private constructor() {
     super();
-    this.logger = new Logger('ExtendedCacheManager');
 
     // Set up memory monitoring if available
     this.setupMemoryMonitoring();
@@ -230,7 +228,7 @@ export class ExtendedCacheManager extends CacheManager {
 
       // Get cache stats to determine which types to clean
       const stats = super.getStats();
-      const totalItems = stats.totalSize;
+      const totalItems = stats.totalItems || 0;
 
       if (totalItems === 0) return;
 
@@ -240,11 +238,12 @@ export class ExtendedCacheManager extends CacheManager {
         intermediate: 0,
         asset: 0,
         progress: 0,
+        response: 0,
       };
 
       // Calculate items to remove for each type
-      for (const type of Object.keys(stats.counts) as CacheType[]) {
-        const count = stats.counts[type];
+      for (const type of Object.keys(stats.itemsByType || {}) as CacheType[]) {
+        const count = (stats.itemsByType || {})[type] || 0;
         const removeCount = Math.floor((count * cleanupPercent) / 100);
         typesToClean[type] = removeCount;
       }
@@ -265,7 +264,7 @@ export class ExtendedCacheManager extends CacheManager {
 
       this.logger.info('Adaptive cleanup completed', {
         totalRemoved,
-        remainingItems: this.getStats().totalSize,
+        remainingItems: super.getStats().totalItems || 0,
       });
     } catch (error) {
       // Log error but continue
@@ -285,15 +284,14 @@ export class ExtendedCacheManager extends CacheManager {
     try {
       if (count <= 0) return 0;
 
-      // Access the private cache map (we can do this because we extend the class)
-      // @ts-ignore - accessing private member
-      const cache = this.cache as Map<string, any>;
+      // Access the protected cache map (we can do this because we extend the class)
+      const cache = this.cache;
       const keyPrefix = `${type}:`;
 
       // Collect items of the specified type
       const items: Array<{ key: string; createdAt: number }> = [];
 
-      for (const [key, item] of cache.entries()) {
+      for (const [key, item] of Array.from(cache.entries())) {
         if (key.startsWith(keyPrefix)) {
           items.push({
             key,
@@ -312,7 +310,7 @@ export class ExtendedCacheManager extends CacheManager {
         cache.delete(key);
       }
 
-      // @ts-ignore - accessing private member
+      // Update the counts
       this.counts[type] -= toRemove.length;
 
       return toRemove.length;
@@ -353,10 +351,10 @@ export class ExtendedCacheManager extends CacheManager {
 
       // Track hit/miss
       if (result !== null) {
-        this.hits++;
+        this.extendedHits++;
         this.lastHitAt = Date.now();
       } else {
-        this.misses++;
+        this.extendedMisses++;
         this.lastMissAt = Date.now();
       }
 
@@ -383,14 +381,14 @@ export class ExtendedCacheManager extends CacheManager {
    */
   public override set<T>(
     key: string,
-    data: T,
+    value: T,
     type: CacheType,
-    metadata?: Record<string, unknown>
-  ): string {
+    ttl?: number
+  ): void {
     const startTime = performance.now();
 
     try {
-      const result = super.set(key, data, type, metadata);
+      super.set(key, value, type, ttl);
 
       // Track performance
       const endTime = performance.now();
@@ -400,10 +398,8 @@ export class ExtendedCacheManager extends CacheManager {
       if (this.setTimes.length > 100) {
         this.setTimes.shift();
       }
-
-      return result;
     } catch (error) {
-      // Log error and return key
+      // Log error
       handleError(error, {
         category: ErrorCategory.STORAGE,
         context: {
@@ -414,8 +410,6 @@ export class ExtendedCacheManager extends CacheManager {
         logLevel: 'warn',
         silent: true,
       });
-
-      return key;
     }
   }
 
@@ -448,15 +442,15 @@ export class ExtendedCacheManager extends CacheManager {
       key: string;
       data: T;
       type: CacheType;
-      metadata?: Record<string, unknown>;
+      ttl?: number;
     }>
-  ): string[] {
+  ): void {
     try {
-      return items.map(item => {
-        return this.set(item.key, item.data, item.type, item.metadata);
+      items.forEach(item => {
+        this.set(item.key, item.data, item.type, item.ttl);
       });
     } catch (error) {
-      // Log error and return partial results
+      // Log error
       handleError(error, {
         category: ErrorCategory.STORAGE,
         context: {
@@ -465,8 +459,6 @@ export class ExtendedCacheManager extends CacheManager {
         },
         logLevel: 'warn',
       });
-
-      return items.map(item => item.key);
     }
   }
 
@@ -504,8 +496,8 @@ export class ExtendedCacheManager extends CacheManager {
   public getDetailedStats(): CacheStats {
     try {
       const basicStats = super.getStats();
-      const totalHits = this.hits;
-      const totalMisses = this.misses;
+      const totalHits = this.extendedHits;
+      const totalMisses = this.extendedMisses;
       const totalOperations = totalHits + totalMisses;
 
       // Calculate average times
@@ -522,10 +514,10 @@ export class ExtendedCacheManager extends CacheManager {
       // Estimate memory usage
       let estimatedMemoryUsage = 0;
 
-      // @ts-ignore - accessing private member
-      const cache = this.cache as Map<string, any>;
+      // Access the protected cache map
+      const cache = this.cache;
 
-      for (const [key, value] of cache.entries()) {
+      for (const [key, value] of Array.from(cache.entries())) {
         // Rough estimate: key length + JSON stringified value length * 2 bytes per char
         let valueSize = 0;
 
@@ -542,7 +534,7 @@ export class ExtendedCacheManager extends CacheManager {
 
       return {
         // Basic stats
-        size: basicStats.totalSize,
+        size: basicStats.totalItems || 0,
         hits: totalHits,
         misses: totalMisses,
         hitRate: totalOperations > 0 ? totalHits / totalOperations : 0,
@@ -561,7 +553,7 @@ export class ExtendedCacheManager extends CacheManager {
         estimatedMemoryUsageBytes: estimatedMemoryUsage,
 
         // Counts by type
-        countsByType: { ...basicStats.counts },
+        countsByType: { ...basicStats.itemsByType },
       };
     } catch (error) {
       // Log error and return minimal stats
@@ -588,6 +580,7 @@ export class ExtendedCacheManager extends CacheManager {
           intermediate: 0,
           asset: 0,
           progress: 0,
+          response: 0,
         },
       };
     }

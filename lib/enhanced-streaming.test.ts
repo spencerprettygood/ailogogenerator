@@ -190,6 +190,7 @@ describe('EnhancedStreamProcessor', () => {
           metrics: {
             totalTime: 60000,
             tokensUsed: 1000,
+            stages: {} as Record<string, { duration: number; tokensUsed: number; }>,
           },
           timestamp: Date.now(),
         } as ResultStreamMessage,

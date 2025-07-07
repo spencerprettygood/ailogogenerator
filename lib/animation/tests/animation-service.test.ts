@@ -110,7 +110,9 @@ describe('SVGAnimationService', () => {
     await service.animateSVG(testSvg, options);
 
     // Verify the options were merged with defaults
-    const passedOptions = animateSpy.mock.calls[0][1];
+    const callArgs = animateSpy.mock.calls[0];
+    expect(callArgs).toBeDefined();
+    const passedOptions = callArgs![1];
     expect(passedOptions.timing.easing).toBeDefined();
     expect(passedOptions.timing.delay).toBeDefined();
     expect(passedOptions.timing.iterations).toBeDefined();

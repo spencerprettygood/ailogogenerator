@@ -155,5 +155,5 @@ export function getSpacing(size: keyof typeof spacing): string {
 // Helper function to get component-specific spacing
 export function getComponentSpacing(component: keyof typeof space, variant: string = 'md'): string {
   const componentSpace = space[component] as Record<string, string>;
-  return componentSpace[variant] || componentSpace.md;
+  return componentSpace[variant] || componentSpace.md || '0';
 }

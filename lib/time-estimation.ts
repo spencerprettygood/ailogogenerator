@@ -266,8 +266,8 @@ export class TimeEstimator {
     const sortedSpeeds = [...speeds].sort((a, b) => a - b);
     const q1Index = Math.floor(sortedSpeeds.length * 0.25);
     const q3Index = Math.floor(sortedSpeeds.length * 0.75);
-    const q1 = sortedSpeeds[q1Index];
-    const q3 = sortedSpeeds[q3Index];
+    const q1 = sortedSpeeds[q1Index] || 0;
+    const q3 = sortedSpeeds[q3Index] || 0;
     const iqr = q3 - q1;
     const lowerBound = Math.max(0.1, q1 - 1.5 * iqr);
     const upperBound = Math.min(10, q3 + 1.5 * iqr);
@@ -317,7 +317,10 @@ export class TimeEstimator {
     // Calculate duration up to current stage
     let durationUpToCurrentStage = 0;
     for (let i = 0; i < currentStageIndex; i++) {
-      durationUpToCurrentStage += this.getStageEstimate(this.stages[i].id) / 1000; // Convert to seconds
+      const stage = this.stages[i];
+      if (stage) {
+        durationUpToCurrentStage += this.getStageEstimate(stage.id) / 1000; // Convert to seconds
+      }
     }
 
     // Calculate current stage info
@@ -446,7 +449,7 @@ export function estimateRemainingTime(
   const mappedStages =
     stages?.map(stage => ({
       id: stage.id,
-      duration: stage.estimatedDuration || DEFAULT_STAGE_DURATIONS[stage.id] || 10000,
+      duration: stage.estimatedDuration || stage.duration || DEFAULT_STAGE_DURATIONS[stage.id as keyof typeof DEFAULT_STAGE_DURATIONS] || 10000,
     })) || Object.entries(DEFAULT_STAGE_DURATIONS).map(([id, duration]) => ({ id, duration }));
 
   // Create estimator

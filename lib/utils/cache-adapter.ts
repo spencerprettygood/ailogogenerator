@@ -74,7 +74,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
     }
 
     // Clear only items of specified type
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.type === type) {
         this.cache.delete(key);
       }
@@ -88,7 +88,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
 
     // Return only keys of specified type
     const keys: string[] = [];
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.type === type) {
         keys.push(key);
       }
@@ -103,7 +103,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
 
     // Count only items of specified type
     let count = 0;
-    for (const item of this.cache.values()) {
+    for (const item of Array.from(this.cache.values())) {
       if (item.type === type) {
         count++;
       }
@@ -116,40 +116,47 @@ export class MemoryCacheAdapter implements CacheAdapter {
  * External Redis cache adapter
  * For production use with serverless functions
  */
+
+import { createClient, RedisClientType } from 'redis';
+import { z } from 'zod';
+
 export class RedisCacheAdapter implements CacheAdapter {
-  private client: any; // Would be Redis client
+  private client: RedisClientType;
   private prefix: string;
 
   constructor(redisUrl?: string, prefix = 'ailogo:') {
     this.prefix = prefix;
 
-    // This is a placeholder for actual Redis initialization
-    // In a real implementation, would initialize Redis client
-    this.client = {
-      async get(key: string) {
-        console.log(`[Redis Mock] Getting ${key}`);
-        return null;
-      },
-      async set(key: string, value: string, options: any) {
-        console.log(`[Redis Mock] Setting ${key}`);
-      },
-      async del(key: string) {
-        console.log(`[Redis Mock] Deleting ${key}`);
-        return 1;
-      },
-      async keys(pattern: string) {
-        console.log(`[Redis Mock] Getting keys matching ${pattern}`);
-        return [];
-      },
-      async flushdb() {
-        console.log(`[Redis Mock] Flushing DB`);
-      },
-    };
+    // Validate redisUrl strictly for production
+    const redisUrlSchema = z.string().url();
+    if (!redisUrl || !redisUrlSchema.safeParse(redisUrl).success) {
+      throw new Error('REDIS_URL is missing or invalid. Cannot initialize RedisCacheAdapter.');
+    }
 
-    // In a real implementation:
-    // import { createClient } from 'redis';
-    // this.client = createClient({ url: redisUrl });
-    // this.client.connect();
+    this.client = createClient({ url: redisUrl });
+    let connected = false;
+    this.client.on('error', (err) => {
+      // Fail fast in production
+      console.error('Redis connection error:', err);
+      if (process.env.NODE_ENV === 'production') {
+        throw err;
+      }
+    });
+    this.client.connect()
+      .then(() => {
+        connected = true;
+        console.info('Redis connected successfully.');
+      })
+      .catch((err) => {
+        console.error('Failed to connect to Redis:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
+      });
+    // Optionally, block further cache operations until connected in production
+    if (process.env.NODE_ENV === 'production' && !connected) {
+      throw new Error('Redis connection not established.');
+    }
   }
 
   private getFullKey(key: string): string {
@@ -165,7 +172,7 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
 
     try {
-      const item = JSON.parse(data) as CacheItem<T>;
+      const item = JSON.parse(data as string) as CacheItem<T>;
 
       // Check if expired
       if (item.expiresAt < Date.now()) {
@@ -213,7 +220,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       const keys = await this.client.keys(`${this.prefix}*`);
 
       if (keys.length > 0) {
-        await this.client.del(...keys);
+        await this.client.del(keys);
       }
       return;
     }
@@ -228,7 +235,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       if (!data) continue;
 
       try {
-        const item = JSON.parse(data);
+        const item = JSON.parse(data as string);
 
         if (item.type === type) {
           await this.client.del(fullKey);
@@ -258,7 +265,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       if (!data) continue;
 
       try {
-        const item = JSON.parse(data);
+        const item = JSON.parse(data as string);
 
         if (item.type === type) {
           keys.push(fullKey.substring(prefixLength));
@@ -285,7 +292,10 @@ export class RedisCacheAdapter implements CacheAdapter {
 export function createCacheAdapter(): CacheAdapter {
   // Use Redis in production, memory in development
   if (env.isProduction) {
-    const redisUrl = env.get('REDIS_URL', '');
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is required in production');
+    }
     return new RedisCacheAdapter(redisUrl);
   }
 

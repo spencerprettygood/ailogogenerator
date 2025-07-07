@@ -82,9 +82,11 @@ export async function testAllMockupTemplates(): Promise<Record<string, Record<st
 
   // Test each template with each test SVG
   for (const template of templates) {
+    if (!template?.id) continue;
     results[template.id] = {};
 
     for (const [name, svg] of Object.entries(TEST_SVG_LOGOS)) {
+      if (!name || !svg) continue;
       try {
         // Generate mockup with default settings
         const mockup = EnhancedMockupService.generateEnhancedMockup(
@@ -104,10 +106,14 @@ export async function testAllMockupTemplates(): Promise<Record<string, Record<st
           'Test Brand'
         );
 
-        results[template.id][name] = 'success';
+        if (results[template.id]) {
+          results[template.id][name] = 'success';
+        }
       } catch (error) {
-        results[template.id][name] =
-          `error: ${error instanceof Error ? error.message : String(error)}`;
+        if (results[template.id]) {
+          results[template.id][name] =
+            `error: ${error instanceof Error ? error.message : String(error)}`;
+        }
       }
     }
   }
@@ -124,7 +130,12 @@ export async function testMockupPerformance(
 ): Promise<Record<string, number>> {
   const performanceResults: Record<string, number> = {};
   const testSvg = TEST_SVG_LOGOS.complex; // Use complex SVG for performance testing
-  const templateId = EnhancedMockupService.getAllTemplates()[0].id; // Use first template
+  const templates = EnhancedMockupService.getAllTemplates();
+  const templateId = templates[0]?.id; // Use first template
+  
+  if (!templateId || !testSvg) {
+    throw new Error('No templates or test SVG available for performance testing');
+  }
 
   // Test basic mockup (no effects)
   const basicStart = performance.now();
@@ -147,7 +158,7 @@ export async function testMockupPerformance(
     );
   }
   const basicEnd = performance.now();
-  performanceResults.basic = (basicEnd - basicStart) / iterations;
+  performanceResults['basic'] = (basicEnd - basicStart) / iterations;
 
   // Test with lighting only
   const lightingStart = performance.now();
@@ -170,7 +181,7 @@ export async function testMockupPerformance(
     );
   }
   const lightingEnd = performance.now();
-  performanceResults.lighting = (lightingEnd - lightingStart) / iterations;
+  performanceResults['lighting'] = (lightingEnd - lightingStart) / iterations;
 
   // Test with shadow only
   const shadowStart = performance.now();
@@ -193,7 +204,7 @@ export async function testMockupPerformance(
     );
   }
   const shadowEnd = performance.now();
-  performanceResults.shadow = (shadowEnd - shadowStart) / iterations;
+  performanceResults['shadow'] = (shadowEnd - shadowStart) / iterations;
 
   // Test with perspective only
   const perspectiveStart = performance.now();
@@ -222,7 +233,7 @@ export async function testMockupPerformance(
     );
   }
   const perspectiveEnd = performance.now();
-  performanceResults.perspective = (perspectiveEnd - perspectiveStart) / iterations;
+  performanceResults['perspective'] = (perspectiveEnd - perspectiveStart) / iterations;
 
   // Test with all effects
   const allEffectsStart = performance.now();
@@ -251,7 +262,7 @@ export async function testMockupPerformance(
     );
   }
   const allEffectsEnd = performance.now();
-  performanceResults.allEffects = (allEffectsEnd - allEffectsStart) / iterations;
+  performanceResults['allEffects'] = (allEffectsEnd - allEffectsStart) / iterations;
 
   return performanceResults;
 }

@@ -64,6 +64,8 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
                 status: 'completed',
                 progress: 100,
                 message: 'Retrieved from cache',
+                currentStage: PipelineStage.CACHED,
+                stageProgress: 100,
                 stage: PipelineStage.CACHED,
                 estimatedTimeRemaining: 0,
               };

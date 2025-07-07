@@ -45,7 +45,7 @@ interface LocalCacheItem<T = unknown> {
  * @type {CacheType}
  * @description Enum-like type for different categories of cached data
  */
-export type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
+export type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress' | 'response';
 
 /**
  * @interface CacheConfig
@@ -64,6 +64,7 @@ export interface CacheConfig {
     intermediate: number;
     asset: number;
     progress: number;
+    response: number;
   };
 
   /** Maximum number of items to store in the cache */
@@ -87,18 +88,18 @@ export interface CacheConfig {
  */
 export class CacheManager {
   private static instance: CacheManager;
-  private cache: Map<string, LocalCacheItem>;
+  protected cache: Map<string, LocalCacheItem>;
   private cleanupTimer: NodeJS.Timeout | null = null;
-  private config: CacheConfig;
-  private logger: Logger;
-  private counts: Record<CacheType, number>;
-  private hits: Record<CacheType, number>;
-  private misses: Record<CacheType, number>;
+  protected config: CacheConfig;
+  protected logger: Logger;
+  protected counts: Record<CacheType, number>;
+  protected hits: Record<CacheType, number>;
+  protected misses: Record<CacheType, number>;
 
   /**
-   * Private constructor (use getInstance() instead)
+   * Protected constructor (use getInstance() instead)
    */
-  private constructor() {
+  protected constructor() {
     // Initialize the cache
     this.cache = new Map<string, LocalCacheItem>();
 
@@ -108,6 +109,7 @@ export class CacheManager {
       intermediate: 0,
       asset: 0,
       progress: 0,
+      response: 0,
     };
 
     // Set up cache hit/miss counters
@@ -116,6 +118,7 @@ export class CacheManager {
       intermediate: 0,
       asset: 0,
       progress: 0,
+      response: 0,
     };
 
     this.misses = {
@@ -123,6 +126,7 @@ export class CacheManager {
       intermediate: 0,
       asset: 0,
       progress: 0,
+      response: 0,
     };
 
     // Initialize configuration with defaults
@@ -134,6 +138,7 @@ export class CacheManager {
         intermediate: 2 * 60 * 60 * 1000, // 2 hours
         asset: 24 * 60 * 60 * 1000, // 24 hours
         progress: 15 * 60 * 1000, // 15 minutes
+        response: 60 * 1000, // 1 minute
       },
       maxItems: 1000,
       cleanInterval: 10 * 60 * 1000, // 10 minutes
@@ -263,7 +268,7 @@ export class CacheManager {
       const ITEM_OVERHEAD = 200;
       let totalSize = 0;
 
-      for (const [key, item] of this.cache.entries()) {
+      for (const [key, item] of Array.from(this.cache.entries())) {
         // Add key size
         totalSize += key.length * 2;
 
@@ -375,7 +380,7 @@ export class CacheManager {
     let oldestItem: LocalCacheItem | null = null;
     let oldestKey: string | null = null;
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (!oldestItem || (item.lastAccessed || 0) < (oldestItem.lastAccessed || 0)) {
         oldestItem = item;
         oldestKey = key;
@@ -616,7 +621,7 @@ export class CacheManager {
    */
   public invalidateType(type: CacheType): number {
     let removed = 0;
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.type === type) {
         this.cache.delete(key);
         removed++;
@@ -651,9 +656,10 @@ export class CacheManager {
         intermediate: 0,
         asset: 0,
         progress: 0,
+        response: 0,
       };
 
-      for (const [key, item] of this.cache.entries()) {
+      for (const [key, item] of Array.from(this.cache.entries())) {
         if (now > item.expiresAt) {
           this.cache.delete(key);
           this.counts[item.type]--;
@@ -731,6 +737,17 @@ export class CacheManager {
       hash = hash & hash; // Convert to 32bit integer
     }
     return `gen_${Math.abs(hash)}`;
+  }
+
+  /**
+   * Clean up resources
+   */
+  public dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    this.logger.info('CacheManager disposed');
   }
 }
 

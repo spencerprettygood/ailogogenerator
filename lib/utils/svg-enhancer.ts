@@ -6,7 +6,7 @@
  * with advanced design principles.
  */
 
-import { SVGLogo, LogoElement } from '../types';
+import { SVGLogo, LogoElement, Typography } from '../types';
 import {
   enhanceSVGDesign,
   DesignAssessment,

@@ -48,12 +48,12 @@ export const FAVICON_PACKAGES: FaviconPackage[] = [
 function prepareSvgForFavicon(svgString: string): string {
   // Extract viewBox information
   const viewBoxMatch = svgString.match(/viewBox=["']([^"']*)["']/);
-  const viewBox = viewBoxMatch ? viewBoxMatch[1].split(/\s+/).map(Number) : [0, 0, 100, 100];
+  const viewBox = viewBoxMatch?.[1] ? viewBoxMatch[1].split(/\s+/).map(Number) : [0, 0, 100, 100];
 
   // Make sure the SVG is square for favicon use
   if (viewBox[2] !== viewBox[3]) {
-    const size = Math.max(viewBox[2], viewBox[3]);
-    const newViewBox = `${viewBox[0]} ${viewBox[1]} ${size} ${size}`;
+    const size = Math.max(viewBox[2] || 0, viewBox[3] || 0);
+    const newViewBox = `${viewBox[0] || 0} ${viewBox[1] || 0} ${size} ${size}`;
     svgString = svgString.replace(/viewBox=["'][^"']*["']/, `viewBox="${newViewBox}"`);
   }
 
@@ -104,8 +104,10 @@ export async function generateFavicons(
     for (const size of packageConfig.sizes) {
       if (packageConfig.formats.includes('png')) {
         const pngDataUrl = await convertMockupToPng(preparedSvg, size);
-        const pngData = pngDataUrl.split(',')[1];
-        zip.file(`favicon-${size}x${size}.png`, pngData, { base64: true });
+        const pngData = pngDataUrl?.split(',')[1];
+        if (pngData) {
+          zip.file(`favicon-${size}x${size}.png`, pngData, { base64: true });
+        }
       }
     }
 
@@ -120,23 +122,23 @@ export async function generateFavicons(
     }
 
     // Add manifest.json if requested
-    if (packageConfig.includeManifest) {
+    if (packageConfig.includeManifest && brandName && brandColor) {
       const manifest = generateWebManifest(brandName, brandColor, packageConfig.sizes);
       zip.file('manifest.json', manifest);
     }
 
     // Add browserconfig.xml if requested
-    if (packageConfig.includeBrowserConfig) {
+    if (packageConfig.includeBrowserConfig && brandColor) {
       const browserConfig = generateBrowserConfig(brandColor);
       zip.file('browserconfig.xml', browserConfig);
     }
 
     // Add HTML snippet for easy integration
-    const htmlSnippet = generateHtmlSnippet(packageConfig, brandColor);
+    const htmlSnippet = generateHtmlSnippet(packageConfig, brandColor || '#000000');
     zip.file('favicon-snippet.html', htmlSnippet);
 
     // Add README
-    const readme = generateReadme(packageConfig, brandName);
+    const readme = generateReadme(packageConfig, brandName || 'Brand Name');
     zip.file('README.txt', readme);
 
     // Generate the ZIP file

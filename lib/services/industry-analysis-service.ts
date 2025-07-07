@@ -52,7 +52,8 @@ export class IndustryAnalysisService {
         success: false,
         error: {
           message: 'Brand name and industry are required for analysis',
-          code: 'MISSING_PARAMETERS',
+          details: 'Both brandName and industry parameters must be provided',
+          retryable: false,
         },
       };
     }
@@ -76,7 +77,7 @@ export class IndustryAnalysisService {
       this.logger.debug('Executing industry analysis with retry logic');
 
       const result = await withRetry(() => this.agent.execute(input), {
-        maxRetries: 3,
+        retries: 3,
         initialDelay: 1000,
         backoffMultiplier: 2,
         maxDelay: 10000,
@@ -103,7 +104,7 @@ export class IndustryAnalysisService {
         error: {
           message: 'Failed to complete industry analysis',
           details: errorMessage,
-          code: 'ANALYSIS_FAILURE',
+          retryable: true,
         },
       };
     }

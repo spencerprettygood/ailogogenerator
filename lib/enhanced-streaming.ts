@@ -640,11 +640,9 @@ export class EnhancedStreamProcessor {
       currentStage: progress.currentStage,
       stageProgress: progress.stageProgress,
       overallProgress: progress.overallProgress,
-      statusMessage: progress.statusMessage,
       message: progress.statusMessage,
       progress: progress.overallProgress, // Map to standard progress
       estimatedTimeRemaining,
-      elapsedTime: Date.now() - this.startTime,
       stage: progress.currentStage, // For backward compatibility
     };
 
@@ -834,12 +832,10 @@ export class EnhancedStreamProcessor {
         status: 'generating', // Required field
         currentStage: message.progress.currentStage,
         stageProgress: message.progress.stageProgress,
-        overallProgress: message.progress.overallProgress,
-        statusMessage: message.progress.statusMessage,
-        // For backward compatibility
-        stage: message.progress.currentStage,
         progress: message.progress.overallProgress,
         message: message.progress.statusMessage,
+        // For backward compatibility
+        stage: message.progress.currentStage,
       });
     }
 
