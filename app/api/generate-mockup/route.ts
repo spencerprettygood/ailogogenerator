@@ -11,29 +11,23 @@ export async function POST(request: NextRequest) {
   try {
     // Parse the JSON body
     const body = await request.json();
-    const { 
-      logoSvg, 
-      templateId, 
-      customText = {}, 
+    const {
+      logoSvg,
+      templateId,
+      customText = {},
       selectedColorVariant,
       brandName = 'Brand Name',
       format = 'svg',
-      width = 1200 
+      width = 1200,
     } = body;
 
     // Validate inputs
     if (!logoSvg) {
-      return NextResponse.json(
-        { error: 'Missing logo SVG' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing logo SVG' }, { status: 400 });
     }
 
     if (!templateId) {
-      return NextResponse.json(
-        { error: 'Missing template ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing template ID' }, { status: 400 });
     }
 
     // Find the template
@@ -62,8 +56,8 @@ export async function POST(request: NextRequest) {
       return new NextResponse(mockupSvg, {
         headers: {
           'Content-Type': 'image/svg+xml',
-          'Content-Disposition': `attachment; filename="${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}.svg"`
-        }
+          'Content-Disposition': `attachment; filename="${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}.svg"`,
+        },
       });
     }
 
@@ -73,16 +67,13 @@ export async function POST(request: NextRequest) {
       const height = Math.round(width / template.aspectRatio);
 
       // Convert SVG to PNG
-      const pngBuffer = await sharp(Buffer.from(mockupSvg))
-        .resize(width, height)
-        .png()
-        .toBuffer();
+      const pngBuffer = await sharp(Buffer.from(mockupSvg)).resize(width, height).png().toBuffer();
 
       return new NextResponse(pngBuffer, {
         headers: {
           'Content-Type': 'image/png',
-          'Content-Disposition': `attachment; filename="${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}.png"`
-        }
+          'Content-Disposition': `attachment; filename="${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}.png"`,
+        },
       });
     }
 
@@ -93,10 +84,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error generating mockup:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate mockup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate mockup' }, { status: 500 });
   }
 }
 
@@ -109,7 +97,7 @@ export async function GET(_request: NextRequest) {
       name: template.name,
       description: template.description,
       thumbnailUrl: template.thumbnailUrl,
-      aspectRatio: template.aspectRatio
-    }))
+      aspectRatio: template.aspectRatio,
+    })),
   });
 }

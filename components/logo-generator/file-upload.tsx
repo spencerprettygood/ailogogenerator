@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 // DEPRECATED: Use the new FileUpload component instead.
 // This file is retained temporarily for migration purposes and will be removed after all usages are updated.
@@ -52,12 +52,12 @@ export function FileUpload({
 
       if (fileRejections.length > 0) {
         const rejectionErrors = fileRejections.map(
-          (rejection) =>
+          rejection =>
             `File ${rejection.file.name} was rejected: ${rejection.errors
-              .map((e) => e.message)
+              .map(e => e.message)
               .join(', ')}`
         );
-        setErrors((prevErrors) => [...prevErrors, ...rejectionErrors]);
+        setErrors(prevErrors => [...prevErrors, ...rejectionErrors]);
       }
     },
     [files, onFilesChange, validationOptions]
@@ -101,7 +101,7 @@ export function FileUpload({
           type="button"
           variant="outline"
           onClick={open}
-          disabled={disabled || (files.length >= maxFiles)}
+          disabled={disabled || files.length >= maxFiles}
         >
           <UploadCloud className="mr-2 h-4 w-4" />
           Select Files
@@ -157,11 +157,7 @@ export function FileUpload({
           </div>
           <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {files.map((file, index) => (
-              <FilePreview
-                key={index}
-                file={file}
-                onRemoveAction={() => removeFile(index)}
-              />
+              <FilePreview key={index} file={file} onRemoveAction={() => removeFile(index)} />
             ))}
           </div>
         </div>

@@ -1,7 +1,7 @@
 /**
  * @file app-init.ts
  * @description Application initialization for production readiness
- * 
+ *
  * This file handles initializing critical services before the app starts,
  * including environment validation, error reporting, and distributed caching.
  */
@@ -18,14 +18,14 @@ function initApp() {
   try {
     // Validate environment variables
     validateEnv();
-    
+
     // Initialize error reporting
     errorReporter.init();
-    
+
     // Test cache adapter connection
     testCacheAdapter().catch(error => {
       console.error('Cache adapter initialization failed:', error);
-      
+
       if (env.isProduction) {
         errorReporter.reportError(
           error instanceof Error ? error : new Error(String(error)),
@@ -34,11 +34,11 @@ function initApp() {
         );
       }
     });
-    
+
     console.log(`Application initialized in ${env.get('NODE_ENV')} mode`);
   } catch (error) {
     console.error('Application initialization failed:', error);
-    
+
     if (env.isProduction) {
       // Try to report the error even if initialization failed
       try {
@@ -53,7 +53,7 @@ function initApp() {
         console.error('Error reporting failed:', reportError);
       }
     }
-    
+
     // In production, we might want to throw to prevent startup with invalid config
     if (env.isProduction) {
       throw error;
@@ -73,20 +73,20 @@ async function testCacheAdapter() {
     createdAt: Date.now(),
     type: 'test',
   };
-  
+
   // Test set operation
   await cacheAdapter.set(testKey, testItem);
-  
+
   // Test get operation
   const retrieved = await cacheAdapter.get(testKey);
-  
+
   if (!retrieved || (retrieved.data as any)?.test !== true) {
     throw new Error('Cache adapter test failed: data mismatch');
   }
-  
+
   // Clean up
   await cacheAdapter.delete(testKey);
-  
+
   return true;
 }
 

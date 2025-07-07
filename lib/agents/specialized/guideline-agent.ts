@@ -3,7 +3,7 @@ import {
   AgentConfig,
   AgentInput,
   GuidelineAgentInput,
-  GuidelineAgentOutput
+  GuidelineAgentOutput,
 } from '../../types-agents';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 
@@ -12,16 +12,12 @@ import { handleError, ErrorCategory } from '../../utils/error-handler';
  */
 export class GuidelineAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'guideline',
-      ['guideline-creation'],
-      {
-        model: 'claude-3-5-sonnet-20240620', // Use more powerful model for detailed guidelines
-        temperature: 0.4,
-        maxTokens: 4000, // Larger token limit for comprehensive guidelines
-        ...config
-      }
-    );
+    super('guideline', ['guideline-creation'], {
+      model: 'claude-3-5-sonnet-20240620', // Use more powerful model for detailed guidelines
+      temperature: 0.4,
+      maxTokens: 4000, // Larger token limit for comprehensive guidelines
+      ...config,
+    });
 
     // Set the system prompt for this agent
     this.systemPrompt = `You are a specialized brand guidelines generator for an AI logo generator.
@@ -103,7 +99,7 @@ Based on all the provided information, generate a complete, professional, and se
    */
   protected async processResponse(
     responseContent: string,
-    originalInput: AgentInput,
+    originalInput: AgentInput
   ): Promise<GuidelineAgentOutput> {
     const htmlContent = this.extractHtml(responseContent);
 
@@ -111,7 +107,8 @@ Based on all the provided information, generate a complete, professional, and se
       return {
         success: false,
         error: handleError({
-          error: 'No valid HTML content found in the response. The model did not return a well-formed HTML document.',
+          error:
+            'No valid HTML content found in the response. The model did not return a well-formed HTML document.',
           category: ErrorCategory.API,
           details: { responseSnippet: responseContent.substring(0, 200) },
           retryable: true,
@@ -167,8 +164,8 @@ Based on all the provided information, generate a complete, professional, and se
     // Case 3: Find the first occurrence of <!DOCTYPE html> anywhere in the string
     const doctypeIndex = content.toLowerCase().indexOf('<!doctype html>');
     if (doctypeIndex !== -1) {
-        this.log('Found HTML content with leading text, extracting from <!DOCTYPE>.');
-        return content.substring(doctypeIndex);
+      this.log('Found HTML content with leading text, extracting from <!DOCTYPE>.');
+      return content.substring(doctypeIndex);
     }
 
     this.log('Could not find valid HTML structure in the response.', 'warn');

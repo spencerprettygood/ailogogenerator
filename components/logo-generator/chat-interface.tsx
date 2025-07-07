@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 // Card is imported but not used
 // import { Card } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
-import { useToast } from "@/lib/hooks/use-toast";
+import { useToast } from '@/lib/hooks/use-toast';
 // MessageList is imported but not used
 // import { MessageList } from './message-list';
 import { TypingIndicator } from './typing-indicator';
@@ -37,13 +37,7 @@ export function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize the chat with the standard useChat hook
-  const {
-    messages,
-    sendMessage,
-    setMessages,
-    error,
-    status,
-  } = useChat({});
+  const { messages, sendMessage, setMessages, error, status } = useChat({});
 
   // Scroll to bottom of messages when new messages are added
   useEffect(() => {
@@ -66,11 +60,7 @@ export function ChatInterface({
   // Check for [GENERATE_LOGO] command in the latest assistant message
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (
-      lastMessage &&
-      lastMessage.role === 'assistant' &&
-      !generationRequested
-    ) {
+    if (lastMessage && lastMessage.role === 'assistant' && !generationRequested) {
       // Check if message content contains the trigger pattern
       const content = getMessageText(lastMessage);
       const containsTrigger = GENERATE_LOGO_PATTERN.test(content);
@@ -89,7 +79,7 @@ export function ChatInterface({
 
         toast({
           title: 'Starting Logo Generation',
-          description: 'Creating your logo based on our conversation...'
+          description: 'Creating your logo based on our conversation...',
         });
       }
     }
@@ -101,7 +91,7 @@ export function ChatInterface({
       toast({
         title: 'Chat Error',
         description: error.message || 'Something went wrong with the chat',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   }, [error, toast]);
@@ -130,7 +120,8 @@ export function ChatInterface({
     }
   };
 
-  const canSubmit = (input.trim() || selectedFiles.length > 0) && !isGenerating && !generationRequested;
+  const canSubmit =
+    (input.trim() || selectedFiles.length > 0) && !isGenerating && !generationRequested;
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -154,9 +145,7 @@ export function ChatInterface({
                 <div className="font-semibold mb-1">
                   {message.role === 'user' ? 'You' : 'AI Designer'}
                 </div>
-                <div className="whitespace-pre-wrap">
-                  {getMessageText(message)}
-                </div>
+                <div className="whitespace-pre-wrap">{getMessageText(message)}</div>
               </div>
             ))}
           </div>
@@ -204,11 +193,7 @@ export function ChatInterface({
               {input.length > 0 && ` • ${input.length} characters`}
             </div>
 
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="min-w-[100px]"
-            >
+            <Button type="submit" disabled={!canSubmit} className="min-w-[100px]">
               Send
             </Button>
           </div>

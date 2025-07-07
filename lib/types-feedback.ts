@@ -10,15 +10,15 @@ export interface LogoFeedback {
   sessionId: string;
   timestamp: string;
   logoId?: string;
-  
+
   // Rating data
   overallRating: number; // 1-5 stars
-  
+
   // Category ratings
   designQualityRating?: number;
   relevanceRating?: number;
   uniquenessRating?: number;
-  
+
   // Additional information
   feedbackCategories?: FeedbackCategory[];
   additionalComments?: string;
@@ -27,9 +27,9 @@ export interface LogoFeedback {
 /**
  * Categories of feedback for the self-reporting system
  */
-export type FeedbackCategory = 
+export type FeedbackCategory =
   | 'designQuality'
-  | 'colorChoice' 
+  | 'colorChoice'
   | 'typography'
   | 'uniqueness'
   | 'relevance'
@@ -43,10 +43,10 @@ export interface LiveFeedback {
   sessionId: string;
   timestamp: string;
   currentStage?: string;
-  
+
   // Issue data
   issueType: IssueType;
-  
+
   // Additional information
   description?: string;
   screenshot?: string; // Base64 encoded image
@@ -56,7 +56,7 @@ export interface LiveFeedback {
 /**
  * Types of issues that can be reported in the live feedback system
  */
-export type IssueType = 
+export type IssueType =
   | 'generationFailed'
   | 'slowResponse'
   | 'unexpectedResult'

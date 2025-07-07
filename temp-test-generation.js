@@ -1,9 +1,9 @@
-
 import fetch from 'node-fetch';
 
 async function runTest() {
   const testBrief = {
-    prompt: 'A minimalist logo for a new coffee shop called "The Daily Grind". It should be clean, modern, and feature a stylized coffee bean.',
+    prompt:
+      'A minimalist logo for a new coffee shop called "The Daily Grind". It should be clean, modern, and feature a stylized coffee bean.',
     industry: 'Food & Beverage',
   };
 
@@ -42,7 +42,7 @@ async function runTest() {
           try {
             const json = JSON.parse(jsonStr);
             console.log('Received data chunk:', JSON.stringify(json, null, 2));
-             if (json.type === 'error') {
+            if (json.type === 'error') {
               console.error('Error during generation:', json.error);
             }
             if (json.type === 'finalResult') {
@@ -58,7 +58,6 @@ async function runTest() {
     }
 
     console.log('Logo generation test finished.');
-
   } catch (error) {
     console.error('An unexpected error occurred during the test:', error);
   }

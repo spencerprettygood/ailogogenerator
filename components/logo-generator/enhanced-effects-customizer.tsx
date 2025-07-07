@@ -16,7 +16,7 @@ export function EnhancedEffectsCustomizer({
   effectsConfig,
   onEffectsChange,
   templateId,
-  className = ''
+  className = '',
 }: EnhancedEffectsCustomizerProps) {
   const [localConfig, setLocalConfig] = useState<EnhancedEffectsConfig>(effectsConfig);
 
@@ -44,12 +44,7 @@ export function EnhancedEffectsCustomizer({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex justify-between items-center">
           <span>Visual Effects</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleReset}
-            className="h-8 px-2 text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 px-2 text-xs">
             <Undo2 className="h-3 w-3 mr-1" />
             Reset
           </Button>
@@ -70,10 +65,10 @@ export function EnhancedEffectsCustomizer({
               <Label htmlFor="lighting-toggle" className="flex items-center gap-2">
                 <span>Enable Lighting</span>
               </Label>
-              <Switch 
-                id="lighting-toggle" 
+              <Switch
+                id="lighting-toggle"
                 checked={localConfig.applyLighting}
-                onCheckedChange={(checked) => applyChanges({ applyLighting: checked })}
+                onCheckedChange={checked => applyChanges({ applyLighting: checked })}
               />
             </div>
 
@@ -115,7 +110,9 @@ export function EnhancedEffectsCustomizer({
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="light-intensity" className="text-xs">Light Intensity</Label>
+                    <Label htmlFor="light-intensity" className="text-xs">
+                      Light Intensity
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {Math.round(localConfig.lightIntensity * 100)}%
                     </span>
@@ -126,7 +123,7 @@ export function EnhancedEffectsCustomizer({
                     max={1}
                     step={0.05}
                     value={[localConfig.lightIntensity]}
-                    onValueChange={(value) => applyChanges({ lightIntensity: value[0] })}
+                    onValueChange={value => applyChanges({ lightIntensity: value[0] })}
                   />
                 </div>
               </>
@@ -139,10 +136,10 @@ export function EnhancedEffectsCustomizer({
               <Label htmlFor="shadow-toggle" className="flex items-center gap-2">
                 <span>Enable Shadow</span>
               </Label>
-              <Switch 
-                id="shadow-toggle" 
+              <Switch
+                id="shadow-toggle"
                 checked={localConfig.applyShadow}
-                onCheckedChange={(checked) => applyChanges({ applyShadow: checked })}
+                onCheckedChange={checked => applyChanges({ applyShadow: checked })}
               />
             </div>
 
@@ -150,7 +147,9 @@ export function EnhancedEffectsCustomizer({
               <>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="shadow-blur" className="text-xs">Shadow Blur</Label>
+                    <Label htmlFor="shadow-blur" className="text-xs">
+                      Shadow Blur
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {localConfig.shadowBlur}px
                     </span>
@@ -161,13 +160,15 @@ export function EnhancedEffectsCustomizer({
                     max={20}
                     step={1}
                     value={[localConfig.shadowBlur]}
-                    onValueChange={(value) => applyChanges({ shadowBlur: value[0] })}
+                    onValueChange={value => applyChanges({ shadowBlur: value[0] })}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="shadow-opacity" className="text-xs">Shadow Opacity</Label>
+                    <Label htmlFor="shadow-opacity" className="text-xs">
+                      Shadow Opacity
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {Math.round(localConfig.shadowOpacity * 100)}%
                     </span>
@@ -178,7 +179,7 @@ export function EnhancedEffectsCustomizer({
                     max={1}
                     step={0.05}
                     value={[localConfig.shadowOpacity]}
-                    onValueChange={(value) => applyChanges({ shadowOpacity: value[0] })}
+                    onValueChange={value => applyChanges({ shadowOpacity: value[0] })}
                   />
                 </div>
               </>
@@ -191,10 +192,10 @@ export function EnhancedEffectsCustomizer({
               <Label htmlFor="perspective-toggle" className="flex items-center gap-2">
                 <span>Enable 3D Perspective</span>
               </Label>
-              <Switch 
-                id="perspective-toggle" 
+              <Switch
+                id="perspective-toggle"
                 checked={localConfig.applyPerspective}
-                onCheckedChange={(checked) => applyChanges({ applyPerspective: checked })}
+                onCheckedChange={checked => applyChanges({ applyPerspective: checked })}
               />
             </div>
 
@@ -202,7 +203,9 @@ export function EnhancedEffectsCustomizer({
               <>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="rotate-x" className="text-xs">Rotate X</Label>
+                    <Label htmlFor="rotate-x" className="text-xs">
+                      Rotate X
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {localConfig.perspectiveTransform?.rotateX || 0}°
                     </span>
@@ -213,18 +216,26 @@ export function EnhancedEffectsCustomizer({
                     max={45}
                     step={1}
                     value={[localConfig.perspectiveTransform?.rotateX || 0]}
-                    onValueChange={(value) => applyChanges({ 
-                      perspectiveTransform: { 
-                        ...(localConfig.perspectiveTransform || { rotateY: 0, rotateZ: 0, translateZ: 0 }),
-                        rotateX: value[0] || 0 
-                      } 
-                    })}
+                    onValueChange={value =>
+                      applyChanges({
+                        perspectiveTransform: {
+                          ...(localConfig.perspectiveTransform || {
+                            rotateY: 0,
+                            rotateZ: 0,
+                            translateZ: 0,
+                          }),
+                          rotateX: value[0] || 0,
+                        },
+                      })
+                    }
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="rotate-y" className="text-xs">Rotate Y</Label>
+                    <Label htmlFor="rotate-y" className="text-xs">
+                      Rotate Y
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {localConfig.perspectiveTransform?.rotateY || 0}°
                     </span>
@@ -235,18 +246,26 @@ export function EnhancedEffectsCustomizer({
                     max={45}
                     step={1}
                     value={[localConfig.perspectiveTransform?.rotateY || 0]}
-                    onValueChange={(value) => applyChanges({ 
-                      perspectiveTransform: { 
-                        ...(localConfig.perspectiveTransform || { rotateX: 0, rotateZ: 0, translateZ: 0 }),
-                        rotateY: value[0] || 0 
-                      } 
-                    })}
+                    onValueChange={value =>
+                      applyChanges({
+                        perspectiveTransform: {
+                          ...(localConfig.perspectiveTransform || {
+                            rotateX: 0,
+                            rotateZ: 0,
+                            translateZ: 0,
+                          }),
+                          rotateY: value[0] || 0,
+                        },
+                      })
+                    }
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="rotate-z" className="text-xs">Rotate Z</Label>
+                    <Label htmlFor="rotate-z" className="text-xs">
+                      Rotate Z
+                    </Label>
                     <span className="text-xs text-muted-foreground">
                       {localConfig.perspectiveTransform?.rotateZ || 0}°
                     </span>
@@ -257,12 +276,18 @@ export function EnhancedEffectsCustomizer({
                     max={45}
                     step={1}
                     value={[localConfig.perspectiveTransform?.rotateZ || 0]}
-                    onValueChange={(value) => applyChanges({ 
-                      perspectiveTransform: { 
-                        ...(localConfig.perspectiveTransform || { rotateX: 0, rotateY: 0, translateZ: 0 }),
-                        rotateZ: value[0] || 0 
-                      } 
-                    })}
+                    onValueChange={value =>
+                      applyChanges({
+                        perspectiveTransform: {
+                          ...(localConfig.perspectiveTransform || {
+                            rotateX: 0,
+                            rotateY: 0,
+                            translateZ: 0,
+                          }),
+                          rotateZ: value[0] || 0,
+                        },
+                      })
+                    }
                   />
                 </div>
               </>

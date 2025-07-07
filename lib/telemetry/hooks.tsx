@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * React hooks for telemetry
@@ -27,7 +27,7 @@ export function useTelemetry() {
     trackEvent,
     trackError,
     startTimer,
-    telemetry
+    telemetry,
   };
 }
 
@@ -38,7 +38,7 @@ export function usePageTracking(pageName: string, properties?: TelemetryProperti
   useEffect(() => {
     telemetry.recordEvent('page_view', {
       page: pageName,
-      ...properties
+      ...properties,
     });
   }, [pageName, properties]);
 }
@@ -56,10 +56,7 @@ export function useRenderTracking(componentName: string) {
 /**
  * Higher-order component to add telemetry to any component
  */
-export function withTelemetry(
-  Component: React.ComponentType,
-  componentName: string
-) {
+export function withTelemetry(Component: React.ComponentType, componentName: string) {
   return function TelemetryWrappedComponent(props: {}) {
     useRenderTracking(componentName);
     return <Component {...props} />;

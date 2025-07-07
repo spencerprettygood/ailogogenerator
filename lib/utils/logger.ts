@@ -1,6 +1,6 @@
 /**
  * Logger Utility
- * 
+ *
  * A comprehensive logging system for the AI Logo Generator that provides:
  * - Structured logging with context and metadata
  * - Multiple log levels (debug, info, warn, error)
@@ -14,7 +14,7 @@ export enum LogLevel {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  NONE = 4
+  NONE = 4,
 }
 
 export interface LogEntry {
@@ -42,7 +42,7 @@ const DEFAULT_CONFIG: LoggerConfig = {
   enableConsole: true,
   enableMetadata: true,
   enableTimestamps: true,
-  enableStackTraces: true
+  enableStackTraces: true,
 };
 
 /**
@@ -59,7 +59,7 @@ export class Logger {
 
   /**
    * Create a new logger instance
-   * 
+   *
    * @param module - The module or component name for contextual logging
    * @param config - Optional configuration overrides for this logger instance
    */
@@ -70,7 +70,7 @@ export class Logger {
 
   /**
    * Configure global logger settings
-   * 
+   *
    * @param config - Configuration options to apply globally
    */
   static configure(config: Partial<LoggerConfig>): void {
@@ -79,7 +79,7 @@ export class Logger {
 
   /**
    * Log a debug message
-   * 
+   *
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
@@ -89,7 +89,7 @@ export class Logger {
 
   /**
    * Log an informational message
-   * 
+   *
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
@@ -99,7 +99,7 @@ export class Logger {
 
   /**
    * Log a warning message
-   * 
+   *
    * @param message - The message to log
    * @param metadata - Optional contextual data
    */
@@ -109,7 +109,7 @@ export class Logger {
 
   /**
    * Log an error message
-   * 
+   *
    * @param message - The message to log
    * @param metadata - Optional contextual data
    * @param error - Optional error object
@@ -127,7 +127,7 @@ export class Logger {
 
   /**
    * Internal method to handle logging
-   * 
+   *
    * @param level - The log level
    * @param message - The message to log
    * @param metadata - Optional contextual data
@@ -143,7 +143,7 @@ export class Logger {
       level,
       message,
       module: this.module,
-      metadata: this.config.enableMetadata ? metadata : undefined
+      metadata: this.config.enableMetadata ? metadata : undefined,
     };
 
     // Send to console if enabled
@@ -157,7 +157,7 @@ export class Logger {
 
   /**
    * Log to the console with appropriate formatting
-   * 
+   *
    * @param entry - The log entry to output
    */
   private logToConsole(entry: LogEntry): void {
@@ -166,7 +166,7 @@ export class Logger {
       [LogLevel.INFO]: 'INFO',
       [LogLevel.WARN]: 'WARN',
       [LogLevel.ERROR]: 'ERROR',
-      [LogLevel.NONE]: 'NONE'
+      [LogLevel.NONE]: 'NONE',
     };
 
     const timestamp = entry.timestamp ? `[${entry.timestamp}] ` : '';
@@ -192,7 +192,7 @@ export class Logger {
 
   /**
    * Create a child logger with a sub-module name
-   * 
+   *
    * @param subModule - The name of the sub-module
    * @returns A new logger instance with the combined module name
    */

@@ -15,8 +15,8 @@ const sampleSvg = `
 vi.mock('../../animation/animation-service', () => ({
   SVGAnimationService: class {},
   svgAnimationService: {
-    animateSVG: vi.fn()
-  }
+    animateSVG: vi.fn(),
+  },
 }));
 
 describe('Stage I: Animation', () => {
@@ -40,16 +40,16 @@ describe('Stage I: Animation', () => {
           type: AnimationType.FADE_IN,
           timing: {
             duration: 1000,
-            easing: AnimationEasing.EASE_IN_OUT
-          }
+            easing: AnimationEasing.EASE_IN_OUT,
+          },
         },
-        cssCode: '.animated { animation: fadeIn 1s ease-in-out; }'
-      }
+        cssCode: '.animated { animation: fadeIn 1s ease-in-out; }',
+      },
     });
 
     const result = await animateLogo({
       svg: sampleSvg,
-      brandName: 'TestBrand'
+      brandName: 'TestBrand',
     });
 
     expect(result.success).toBe(true);
@@ -58,7 +58,7 @@ describe('Stage I: Animation', () => {
     expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
-        type: AnimationType.FADE_IN
+        type: AnimationType.FADE_IN,
       })
     );
   });
@@ -74,33 +74,30 @@ describe('Stage I: Animation', () => {
           type: AnimationType.ZOOM_IN,
           timing: {
             duration: 2000,
-            easing: AnimationEasing.BOUNCE
-          }
+            easing: AnimationEasing.BOUNCE,
+          },
         },
-        cssCode: '.animated { animation: zoomIn 2s cubic-bezier(0.68, -0.55, 0.265, 1.55); }'
-      }
+        cssCode: '.animated { animation: zoomIn 2s cubic-bezier(0.68, -0.55, 0.265, 1.55); }',
+      },
     });
 
     const customOptions = {
       type: AnimationType.ZOOM_IN,
       timing: {
         duration: 2000,
-        easing: AnimationEasing.BOUNCE
-      }
+        easing: AnimationEasing.BOUNCE,
+      },
     };
 
     const result = await animateLogo({
       svg: sampleSvg,
       brandName: 'TestBrand',
-      animationOptions: customOptions
+      animationOptions: customOptions,
     });
 
     expect(result.success).toBe(true);
     expect(result.result).toBeDefined();
-    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
-      sampleSvg,
-      customOptions
-    );
+    expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(sampleSvg, customOptions);
   });
 
   it('should auto-select an appropriate animation when requested', async () => {
@@ -115,12 +112,12 @@ describe('Stage I: Animation', () => {
         querySelector: (selector: string) => {
           if (selector === 'svg') {
             return {
-              children: [1, 2, 3, 4] // Mock 4 children elements
+              children: [1, 2, 3, 4], // Mock 4 children elements
             };
           }
           return null;
-        }
-      }))
+        },
+      })),
     })) as any;
 
     // Mock successful animation
@@ -133,17 +130,17 @@ describe('Stage I: Animation', () => {
           type: AnimationType.DRAW, // Should auto-select DRAW for paths
           timing: {
             duration: 1500,
-            easing: AnimationEasing.EASE_OUT
-          }
+            easing: AnimationEasing.EASE_OUT,
+          },
         },
-        cssCode: '.animated { animation: drawPath 1.5s ease-out; }'
-      }
+        cssCode: '.animated { animation: drawPath 1.5s ease-out; }',
+      },
     });
 
     const result = await animateLogo({
       svg: sampleSvg,
       brandName: 'TestBrand',
-      autoSelectAnimation: true
+      autoSelectAnimation: true,
     });
 
     expect(result.success).toBe(true);
@@ -151,7 +148,7 @@ describe('Stage I: Animation', () => {
     expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
-        type: AnimationType.DRAW
+        type: AnimationType.DRAW,
       })
     );
   });
@@ -162,13 +159,13 @@ describe('Stage I: Animation', () => {
       success: false,
       error: {
         message: 'Animation service error',
-        details: 'Invalid SVG structure'
-      }
+        details: 'Invalid SVG structure',
+      },
     });
 
     const result = await animateLogo({
       svg: sampleSvg,
-      brandName: 'TestBrand'
+      brandName: 'TestBrand',
     });
 
     expect(result.success).toBe(false);
@@ -185,7 +182,7 @@ describe('Stage I: Animation', () => {
 
     const result = await animateLogo({
       svg: sampleSvg,
-      brandName: 'TestBrand'
+      brandName: 'TestBrand',
     });
 
     expect(result.success).toBe(false);
@@ -207,17 +204,17 @@ describe('Stage I: Animation', () => {
             type: AnimationType.FADE_IN,
             timing: {
               duration: 1000,
-              easing: AnimationEasing.EASE_IN_OUT
-            }
+              easing: AnimationEasing.EASE_IN_OUT,
+            },
           },
-          cssCode: '.animated { animation: fadeIn 1s ease-in-out; }'
-        }
+          cssCode: '.animated { animation: fadeIn 1s ease-in-out; }',
+        },
       };
     });
 
     const result = await animateLogo({
       svg: sampleSvg,
-      brandName: 'TestBrand'
+      brandName: 'TestBrand',
     });
 
     expect(result.success).toBe(true);
@@ -236,12 +233,12 @@ describe('Stage I: Animation', () => {
         querySelector: (selector: string) => {
           if (selector === 'svg') {
             return {
-              children: Array(10).fill(0) // Mock 10 children elements
+              children: Array(10).fill(0), // Mock 10 children elements
             };
           }
           return null;
-        }
-      }))
+        },
+      })),
     })) as any;
 
     // Mock successful animation
@@ -254,24 +251,24 @@ describe('Stage I: Animation', () => {
           type: AnimationType.SEQUENTIAL,
           timing: {
             duration: 1500,
-            easing: AnimationEasing.EASE_OUT
-          }
+            easing: AnimationEasing.EASE_OUT,
+          },
         },
-        cssCode: '.animated > * { animation: fadeIn 1.5s ease-out; }'
-      }
+        cssCode: '.animated > * { animation: fadeIn 1.5s ease-out; }',
+      },
     });
 
     const result = await animateLogo({
       svg: sampleSvg,
       brandName: 'TestBrand',
-      autoSelectAnimation: true
+      autoSelectAnimation: true,
     });
 
     expect(result.success).toBe(true);
     expect(svgAnimationService.animateSVG).toHaveBeenCalledWith(
       sampleSvg,
       expect.objectContaining({
-        type: AnimationType.SEQUENTIAL
+        type: AnimationType.SEQUENTIAL,
       })
     );
   });

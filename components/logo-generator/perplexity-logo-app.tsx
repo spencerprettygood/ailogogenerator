@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,8 +6,8 @@ import { Sparkles, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
-import { useToast } from "@/lib/hooks/use-toast";
-import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
+import { useToast } from '@/lib/hooks/use-toast';
+import { useLogoGeneration } from '@/lib/hooks/use-logo-generation';
 import { Header } from './header';
 import ErrorBoundary from './error-boundary';
 import { PerplexitySearch } from './perplexity-search';
@@ -31,7 +31,7 @@ export function PerplexityLogoApp() {
     hasSearched: false,
     currentQuery: '',
     showWelcome: true,
-    messages: []
+    messages: [],
   });
 
   const { toast } = useToast();
@@ -44,41 +44,47 @@ export function PerplexityLogoApp() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     sessionId,
     error,
-    reset
+    reset,
   } = useLogoGeneration();
 
   // Handle search submission
-  const handleSearch = useCallback(async (prompt: string, files?: File[]) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: prompt,
-      timestamp: new Date(),
-    };
+  const handleSearch = useCallback(
+    async (prompt: string, files?: File[]) => {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: prompt,
+        timestamp: new Date(),
+      };
 
-    setAppState(prev => ({
-      ...prev,
-      hasSearched: true,
-      currentQuery: prompt,
-      showWelcome: false,
-      messages: [...prev.messages, userMessage]
-    }));
+      setAppState(prev => ({
+        ...prev,
+        hasSearched: true,
+        currentQuery: prompt,
+        showWelcome: false,
+        messages: [...prev.messages, userMessage],
+      }));
 
-    try {
-      await generateLogo(prompt, files);
-    } catch (err) {
-      toast({
-        title: "Generation Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
-        variant: "destructive"
-      });
-    }
-  }, [generateLogo, toast]);
+      try {
+        await generateLogo(prompt, files);
+      } catch (err) {
+        toast({
+          title: 'Generation Failed',
+          description: err instanceof Error ? err.message : 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+      }
+    },
+    [generateLogo, toast]
+  );
 
   // Handle suggestion chip clicks
-  const handleSuggestionClick = useCallback((suggestion: string) => {
-    handleSearch(suggestion);
-  }, [handleSearch]);
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      handleSearch(suggestion);
+    },
+    [handleSearch]
+  );
 
   // Handle reset to start over
   const handleReset = useCallback(() => {
@@ -87,7 +93,7 @@ export function PerplexityLogoApp() {
       hasSearched: false,
       currentQuery: '',
       showWelcome: true,
-      messages: []
+      messages: [],
     });
   }, [reset]);
 
@@ -95,9 +101,9 @@ export function PerplexityLogoApp() {
   useEffect(() => {
     if (error) {
       toast({
-        title: "Generation Error",
+        title: 'Generation Error',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
     }
   }, [error, toast]);
@@ -106,7 +112,7 @@ export function PerplexityLogoApp() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         <Header />
-        
+
         <main className="container mx-auto px-4 py-8 max-w-4xl">
           <AnimatePresence mode="wait">
             {appState.showWelcome && !appState.hasSearched ? (
@@ -116,7 +122,7 @@ export function PerplexityLogoApp() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
                 className="flex flex-col items-center justify-center min-h-[60vh] space-y-8"
               >
                 {/* Hero Section */}
@@ -129,7 +135,7 @@ export function PerplexityLogoApp() {
                   >
                     <Sparkles className="w-8 h-8 text-primary" />
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -137,14 +143,15 @@ export function PerplexityLogoApp() {
                   >
                     <H1>Create Your Perfect Logo</H1>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
                   >
                     <LargeText className="text-muted-foreground max-w-2xl">
-                      Describe your brand vision and watch as AI crafts professional logos tailored to your business
+                      Describe your brand vision and watch as AI crafts professional logos tailored
+                      to your business
                     </LargeText>
                   </motion.div>
                 </div>
@@ -192,19 +199,12 @@ export function PerplexityLogoApp() {
                 <Card className="p-6 border-l-4 border-l-primary">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <H3 className="mb-2">
-                        Your Request
-                      </H3>
+                      <H3 className="mb-2">Your Request</H3>
                       <Paragraph className="text-muted-foreground">
                         {appState.currentQuery}
                       </Paragraph>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleReset}
-                      className="ml-4"
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleReset} className="ml-4">
                       <RotateCcw className="w-4 h-4 mr-2" />
                       New Logo
                     </Button>
@@ -216,37 +216,35 @@ export function PerplexityLogoApp() {
                   messages={appState.messages}
                   isGenerating={isGenerating}
                   previewSvg={preview}
-                  progressData={progress ? {
-                    stages: [],
-                    currentStageId: progress.stage || null,
-                    overallProgress: progress.progress || 0,
-                    estimatedTimeRemaining: null
-                  } : undefined}
+                  progressData={
+                    progress
+                      ? {
+                          stages: [],
+                          currentStageId: progress.stage || null,
+                          overallProgress: progress.progress || 0,
+                          estimatedTimeRemaining: null,
+                        }
+                      : undefined
+                  }
                 />
 
                 {/* Logo Display */}
                 {assets && preview && (
                   <Card className="p-8">
                     <div className="text-center mb-6">
-                      <H2 className="mb-2">
-                        Your Logo is Ready!
-                      </H2>
+                      <H2 className="mb-2">Your Logo is Ready!</H2>
                       <Paragraph className="text-muted-foreground">
                         Professional logo package created with AI precision
                       </Paragraph>
                     </div>
-                    
-                    <LogoDisplay
-                      svgContent={preview}
-                      variants={[]}
-                      className="mb-8"
-                    />
-                    
+
+                    <LogoDisplay svgContent={preview} variants={[]} className="mb-8" />
+
                     <DownloadManager
                       files={assets.individualFiles || []}
                       packageUrl={assets.zipPackageUrl}
                       brandName="Your Logo"
-                      onDownloadFileAction={(fileName) => {
+                      onDownloadFileAction={fileName => {
                         const file = assets.individualFiles?.find(f => f.name === fileName);
                         if (file) {
                           window.open(file.url, '_blank');

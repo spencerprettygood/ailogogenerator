@@ -24,7 +24,7 @@ import {
   GuidelineAgent,
   PackagingAgent,
   IndustryAnalysisAgent,
-  AnimationAgent
+  AnimationAgent,
 } from './specialized';
 
 // Register all agent types

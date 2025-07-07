@@ -1,17 +1,17 @@
 import React from 'react';
-import { 
-  H1, 
-  H2, 
-  H3, 
-  H4, 
-  H5, 
-  H6, 
-  Paragraph, 
-  LargeText, 
+import {
+  H1,
+  H2,
+  H3,
+  H4,
+  H5,
+  H6,
+  Paragraph,
+  LargeText,
   SmallText,
   Caption,
   GradientHeading,
-  AccentHeading
+  AccentHeading,
 } from './typography';
 
 export function TypographyShowcase() {
@@ -20,8 +20,8 @@ export function TypographyShowcase() {
       <div className="space-y-4">
         <H1>Typography System</H1>
         <Paragraph>
-          This page demonstrates the typography system using Raleway (200 weight with increased letter-spacing for headings) 
-          and Arimo (12px base size for body text).
+          This page demonstrates the typography system using Raleway (200 weight with increased
+          letter-spacing for headings) and Arimo (12px base size for body text).
         </Paragraph>
       </div>
 
@@ -61,30 +61,34 @@ export function TypographyShowcase() {
           <div className="space-y-6 pl-4">
             <div>
               <LargeText>
-                Large Text - Arimo 14px. This is a larger body text style used for emphasized paragraphs or introductory content.
-                It maintains good readability while standing out from the standard body text.
+                Large Text - Arimo 14px. This is a larger body text style used for emphasized
+                paragraphs or introductory content. It maintains good readability while standing out
+                from the standard body text.
               </LargeText>
               <Caption>Arimo 14px</Caption>
             </div>
             <div>
               <Paragraph>
-                Normal Paragraph - Arimo 12px. This is the default body text size used throughout the application.
-                It provides excellent readability for extended content while maintaining a clean, professional appearance.
-                Most of the application content should use this text size to ensure consistency.
+                Normal Paragraph - Arimo 12px. This is the default body text size used throughout
+                the application. It provides excellent readability for extended content while
+                maintaining a clean, professional appearance. Most of the application content should
+                use this text size to ensure consistency.
               </Paragraph>
               <Caption>Arimo 12px</Caption>
             </div>
             <div>
               <SmallText>
-                Small Text - Arimo 11px. This smaller text size is useful for secondary information, footnotes, or other
-                less emphasized content. Despite its smaller size, it remains readable while occupying less visual space.
+                Small Text - Arimo 11px. This smaller text size is useful for secondary information,
+                footnotes, or other less emphasized content. Despite its smaller size, it remains
+                readable while occupying less visual space.
               </SmallText>
               <Caption>Arimo 11px</Caption>
             </div>
             <div>
               <Caption>
-                Caption Text - Arimo 10px. Used for image captions, annotations, and very supplementary information.
-                The smallest text size in our system, reserved for minimal usage where space is constrained.
+                Caption Text - Arimo 10px. Used for image captions, annotations, and very
+                supplementary information. The smallest text size in our system, reserved for
+                minimal usage where space is constrained.
               </Caption>
               <Caption>Arimo 10px</Caption>
             </div>
@@ -105,9 +109,10 @@ export function TypographyShowcase() {
             <div>
               <H3 className="text-balance">Text Balance Example</H3>
               <Paragraph className="text-balance max-w-lg">
-                This paragraph uses the text-balance utility to ensure that the lines are balanced visually.
-                It's particularly useful for headings and short paragraphs where line lengths should be
-                optically balanced for better readability and aesthetic appearance.
+                This paragraph uses the text-balance utility to ensure that the lines are balanced
+                visually. It's particularly useful for headings and short paragraphs where line
+                lengths should be optically balanced for better readability and aesthetic
+                appearance.
               </Paragraph>
               <Caption>Using text-balance utility</Caption>
             </div>

@@ -9,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TestMockupsPage() {
   const [selectedLogo, setSelectedLogo] = React.useState<string>('simple');
-  
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <h1 className="text-3xl font-bold">Enhanced Mockup System Test</h1>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Select Logo Type</CardTitle>
@@ -32,14 +32,14 @@ export default function TestMockupsPage() {
           </div>
         </CardContent>
       </Card>
-      
+
       <EnhancedMockupIntegration
         logo={TEST_SVG_LOGOS[selectedLogo] || TEST_SVG_LOGOS.simple || ''}
         brandName={`Test ${selectedLogo.charAt(0).toUpperCase() + selectedLogo.slice(1)} Brand`}
       />
-      
+
       <MockupPerformanceTest />
-      
+
       <h2 className="text-2xl font-bold mt-8">Implementation Notes</h2>
       <div className="bg-muted p-6 rounded-lg">
         <h3 className="text-xl font-semibold mb-4">Enhanced Mockup System</h3>
@@ -53,7 +53,7 @@ export default function TestMockupsPage() {
           <li>3D perspective transforms for angled surfaces</li>
           <li>Performance optimizations based on device capabilities</li>
         </ul>
-        
+
         <h3 className="text-xl font-semibold mt-6 mb-4">Next Steps</h3>
         <ul className="list-disc pl-6 space-y-2">
           <li>Add actual background images to the public/assets/mockups/backgrounds directory</li>
@@ -63,10 +63,12 @@ export default function TestMockupsPage() {
           <li>Implement responsive image loading based on device capabilities</li>
           <li>Add WebP format support with fallbacks for better performance</li>
         </ul>
-        
+
         <h3 className="text-xl font-semibold mt-6 mb-4">Performance Considerations</h3>
         <ul className="list-disc pl-6 space-y-2">
-          <li>Complex lighting and shadow effects can be expensive, especially on mobile devices</li>
+          <li>
+            Complex lighting and shadow effects can be expensive, especially on mobile devices
+          </li>
           <li>Background images should be properly sized and compressed</li>
           <li>Progressive loading should be implemented for slower connections</li>
           <li>SVG complexity should be reduced for better performance</li>

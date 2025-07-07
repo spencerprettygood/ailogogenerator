@@ -18,7 +18,7 @@ export function MockupPreviewSystem({
   templates = DEFAULT_MOCKUP_TEMPLATES,
   className = '',
   onDownload,
-  initialTemplateId
+  initialTemplateId,
 }: MockupPreviewSystemProps) {
   // State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
@@ -33,7 +33,7 @@ export function MockupPreviewSystem({
   useEffect(() => {
     const template = templates.find(t => t.id === selectedTemplateId) || null;
     setSelectedTemplate(template);
-    
+
     // Reset customization options when template changes
     if (template) {
       // Set default color variant
@@ -42,7 +42,7 @@ export function MockupPreviewSystem({
       } else {
         setSelectedColorVariant(undefined);
       }
-      
+
       // Set default text values
       if (template.textPlaceholders) {
         const defaultValues: Record<string, string> = {};
@@ -95,20 +95,23 @@ export function MockupPreviewSystem({
   };
 
   // Group templates by type for tab organization
-  const templatesByType = templates.reduce((acc, template) => {
-    if (!acc[template.type]) {
-      acc[template.type] = [];
-    }
-    acc[template.type].push(template);
-    return acc;
-  }, {} as Record<MockupType, MockupTemplate[]>);
+  const templatesByType = templates.reduce(
+    (acc, template) => {
+      if (!acc[template.type]) {
+        acc[template.type] = [];
+      }
+      acc[template.type].push(template);
+      return acc;
+    },
+    {} as Record<MockupType, MockupTemplate[]>
+  );
 
   // Create tabs for each mockup type that has templates
   const mockupTypeTabs = Object.entries(templatesByType)
     .filter(([_, typeTemplates]) => typeTemplates.length > 0)
     .map(([type, _]) => ({
       value: type,
-      label: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+      label: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
     }));
 
   return (
@@ -174,9 +177,7 @@ export function MockupPreviewSystem({
               </div>
             ) : (
               <div className="p-12 text-center">
-                <p className="text-muted-foreground">
-                  Select a template first to customize it.
-                </p>
+                <p className="text-muted-foreground">Select a template first to customize it.</p>
               </div>
             )}
           </TabsContent>

@@ -21,7 +21,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
    */
   public async saveTest(test: TestConfig): Promise<void> {
     const existingIndex = this.tests.findIndex(t => t.id === test.id);
-    
+
     if (existingIndex >= 0) {
       this.tests[existingIndex] = test;
     } else {
@@ -41,7 +41,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
    */
   public async updateSession(session: TestSession): Promise<void> {
     const index = this.sessions.findIndex(s => s.sessionId === session.sessionId);
-    
+
     if (index >= 0) {
       this.sessions[index] = session;
     } else {

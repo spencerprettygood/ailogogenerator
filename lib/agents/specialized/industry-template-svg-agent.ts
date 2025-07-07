@@ -2,23 +2,23 @@
  * @file industry-template-svg-agent.ts
  * @module lib/agents/specialized/industry-template-svg-agent
  * @description SVG logo generation agent with industry-specific templates
- * 
+ *
  * This agent extends the enhanced SVG generation agent with industry-specific
  * design templates and styling guidance, applying best practices for each
  * industry category.
  */
 
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  SVGGenerationAgentInput, 
-  IndustryTemplateSVGAgentOutput
+import {
+  AgentConfig,
+  AgentInput,
+  SVGGenerationAgentInput,
+  IndustryTemplateSVGAgentOutput,
 } from '../../types-agents';
-import { 
-  detectIndustry, 
-  getIndustryTemplate, 
-  getDesignPrinciplesForIndustry
+import {
+  detectIndustry,
+  getIndustryTemplate,
+  getDesignPrinciplesForIndustry,
 } from '../../industry-templates';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -29,17 +29,13 @@ import { SVGValidator } from '../../utils/svg-validator';
  */
 export class IndustryTemplateSVGAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'industry-template-svg', 
-      ['svg-generation'],
-      {
-        model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
-        temperature: 0.5, // Balanced temperature for creativity with consistency
-        maxTokens: 4096, // Increased token limit for industry-specific generation
-        ...config
-      }
-    );
-    
+    super('industry-template-svg', ['svg-generation'], {
+      model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
+      temperature: 0.5, // Balanced temperature for creativity with consistency
+      maxTokens: 4096, // Increased token limit for industry-specific generation
+      ...config,
+    });
+
     this.systemPrompt = `You are an expert SVG logo generation agent with specialized knowledge of industry-specific design best practices.
     
 Your task is to generate a professional, production-ready SVG logo based on the selected design concept and specifications, applying industry-appropriate design templates and principles to create truly exceptional results.
@@ -89,47 +85,49 @@ You MUST return your response as a single, valid JSON object enclosed in \`\`\`j
 The SVG code should be a complete, valid SVG with proper syntax and optimization.
 It must work when pasted directly into an HTML file or opened in a browser.`;
   }
-  
+
   /**
    * Generate the prompt for industry-specific SVG generation
    */
   protected async generatePrompt(input: SVGGenerationAgentInput): Promise<string> {
     const { designSpec, selectedConcept } = input;
-    
+
     // Detect industry if not already specified
     let industry = designSpec.industry || '';
     let industryConfidence = (designSpec as any).industry_confidence || 0;
-    
+
     if (!industry) {
       const detectionResult = detectIndustry(designSpec.brand_description);
       industry = detectionResult.primaryIndustry;
       industryConfidence = detectionResult.confidenceScore;
     }
-    
+
     // Get industry template and design principles
     const industryTemplate = getIndustryTemplate(industry) || {
       name: 'General',
       description: 'General business industry',
       commonColors: [],
-      commonStyles: []
+      commonStyles: [],
     };
     const designPrinciples = getDesignPrinciplesForIndustry(industry) || {
       colorTheory: 'Use harmonious color combinations appropriate for the brand',
       composition: 'Apply balanced layout principles',
       visualWeight: 'Balance elements for visual stability',
       typography: 'Use appropriate typography for the brand',
-      negativeSpace: 'Use negative space effectively'
+      negativeSpace: 'Use negative space effectively',
     };
-    
+
     // Build industry-specific recommendations
-    const colorRecommendations = industryTemplate.commonColors.length > 0 
-      ? `Common colors for ${industryTemplate.name} include: ${industryTemplate.commonColors.join(', ')}`
-      : '';
-    
-    const styleRecommendations = industryTemplate.commonStyles.length > 0
-      ? `Common styles for ${industryTemplate.name} include: ${industryTemplate.commonStyles.join(', ')}`
-      : '';
-    
+    const colorRecommendations =
+      industryTemplate.commonColors.length > 0
+        ? `Common colors for ${industryTemplate.name} include: ${industryTemplate.commonColors.join(', ')}`
+        : '';
+
+    const styleRecommendations =
+      industryTemplate.commonStyles.length > 0
+        ? `Common styles for ${industryTemplate.name} include: ${industryTemplate.commonStyles.join(', ')}`
+        : '';
+
     return `Please generate a professional SVG logo based on the following design specifications and selected concept, applying industry-specific design templates:
 
 # Brand Details
@@ -168,11 +166,14 @@ It must work when pasted directly into an HTML file or opened in a browser.`;
 
 Please generate a complete, production-ready SVG logo applying these industry-specific design principles, along with a detailed design rationale explaining your decisions. Be sure to incorporate appropriate industry-specific design elements and best practices for ${industryTemplate.name}. Respond with your JSON object inside \`\`\`json tags.`;
   }
-  
+
   /**
    * Process the response from the AI
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<IndustryTemplateSVGAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<IndustryTemplateSVGAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
     if (!parsed || typeof parsed !== 'object') {
@@ -225,9 +226,9 @@ Please generate a complete, production-ready SVG logo applying these industry-sp
         error: handleError({
           error: 'Generated SVG failed validation',
           category: ErrorCategory.SVG,
-          details: { 
+          details: {
             validationErrors: svgValidation.errors,
-            svgContent: svgContent.substring(0, 200) + '...'
+            svgContent: svgContent.substring(0, 200) + '...',
           },
           retryable: true,
         }),
@@ -255,7 +256,7 @@ Please generate a complete, production-ready SVG logo applying these industry-sp
         svg: svgContent,
         designRationale: parsed.designRationale,
         designPrinciples: designPrinciples,
-        industryTemplate: parsed.industryTemplate || 'general'
+        industryTemplate: parsed.industryTemplate || 'general',
       },
       tokensUsed: this.metrics.tokenUsage.total,
       processingTime: this.metrics.executionTime,

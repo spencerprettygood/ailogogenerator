@@ -12,10 +12,11 @@ interface StageItemProps {
 const StageItem: React.FC<StageItemProps> = ({ stage, isCurrent, isCompleted, isUpcoming }) => {
   const getStatusIcon = () => {
     // Get stage status safely
-    const status = typeof stage === 'object' && stage !== null && 'status' in stage 
-      ? String(stage.status) // Convert to string to handle any type
-      : 'pending';
-    
+    const status =
+      typeof stage === 'object' && stage !== null && 'status' in stage
+        ? String(stage.status) // Convert to string to handle any type
+        : 'pending';
+
     if (status === 'completed') {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
@@ -52,9 +53,12 @@ const StageItem: React.FC<StageItemProps> = ({ stage, isCurrent, isCompleted, is
 
   // Get stage status with fallback
   const stageStatus = String(getStageProp('status', 'pending')); // Convert to string for safety
-  const stageProgress = typeof getStageProp('progress') === 'number' ? getStageProp('progress') : undefined;
-  const stageElapsedTime = typeof getStageProp('elapsedTime') === 'number' ? getStageProp('elapsedTime') : undefined;
-  const stageEstimatedDuration = typeof getStageProp('estimatedDuration') === 'number' ? getStageProp('estimatedDuration') : 0;
+  const stageProgress =
+    typeof getStageProp('progress') === 'number' ? getStageProp('progress') : undefined;
+  const stageElapsedTime =
+    typeof getStageProp('elapsedTime') === 'number' ? getStageProp('elapsedTime') : undefined;
+  const stageEstimatedDuration =
+    typeof getStageProp('estimatedDuration') === 'number' ? getStageProp('estimatedDuration') : 0;
   const stageDetails = typeof getStageProp('details') === 'string' ? getStageProp('details') : '';
 
   return (
@@ -79,14 +83,15 @@ const StageItem: React.FC<StageItemProps> = ({ stage, isCurrent, isCompleted, is
         >
           {getStageName()}
         </p>
-        {(stageStatus === 'in-progress' || stageStatus === 'in_progress') && stageProgress !== undefined && (
-          <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-            <span>{stageProgress}%</span>
-            {stageElapsedTime !== undefined && (
-              <span className="ml-2">({stageElapsedTime}s elapsed)</span>
-            )}
-          </div>
-        )}
+        {(stageStatus === 'in-progress' || stageStatus === 'in_progress') &&
+          stageProgress !== undefined && (
+            <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <span>{stageProgress}%</span>
+              {stageElapsedTime !== undefined && (
+                <span className="ml-2">({stageElapsedTime}s elapsed)</span>
+              )}
+            </div>
+          )}
         {stageStatus === 'completed' && stageElapsedTime !== undefined && (
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Completed in {stageElapsedTime}s
@@ -97,9 +102,9 @@ const StageItem: React.FC<StageItemProps> = ({ stage, isCurrent, isCompleted, is
         )}
       </div>
       {isCurrent && stageEstimatedDuration > 0 && (
-         <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-           ~{Math.round(stageEstimatedDuration / 60)} min
-         </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          ~{Math.round(stageEstimatedDuration / 60)} min
+        </p>
       )}
     </li>
   );

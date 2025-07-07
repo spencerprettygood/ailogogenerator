@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { AnimationType } from "@/lib/animation/types";
-import { useThemeSafe } from "@/components/providers/theme-fixed";
-import { SVGLogo } from "@/lib/types";
-import { SVGRenderer } from "./svg-renderer";
-import { cn } from "@/lib/utils";
-import { ErrorCategory, handleError } from "@/lib/utils/error-handler";
-import { Paragraph } from "@/components/ui/typography";
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { AnimationType } from '@/lib/animation/types';
+import { useThemeSafe } from '@/components/providers/theme-fixed';
+import { SVGLogo } from '@/lib/types';
+import { SVGRenderer } from './svg-renderer';
+import { cn } from '@/lib/utils';
+import { ErrorCategory, handleError } from '@/lib/utils/error-handler';
+import { Paragraph } from '@/components/ui/typography';
 
 // Define missing types locally for now
 interface LogoVariant {
@@ -70,23 +70,23 @@ export interface LogoDisplayProps {
   id?: string;
 }
 
-/** 
+/**
  * Logo Display Component
- * 
+ *
  * Displays the generated SVG logo with controls for preview, animation, and customization.
  * Enhanced with keyboard navigation, a11y improvements, and advanced error handling.
  */
 function LogoDisplay({
   logo,
-  svgContent = "",
-  svgCode = "",
+  svgContent = '',
+  svgCode = '',
   variants = [],
-  animationCSS = "",
+  animationCSS = '',
   animationType,
   animatedLogo,
   isGenerating = false,
   hasError = false,
-  errorMessage = "Failed to generate logo",
+  errorMessage = 'Failed to generate logo',
   title,
   description,
   allowDownload = true,
@@ -95,7 +95,7 @@ function LogoDisplay({
   onAnimationStateChange,
   onVariantSelect,
   onCustomizeRequest,
-  id = "logo-display",
+  id = 'logo-display',
 }: LogoDisplayProps) {
   // States
   const [isPlaying, setIsPlaying] = useState(true);
@@ -107,56 +107,60 @@ function LogoDisplay({
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     variants.length > 0 && variants[0]?.id ? variants[0].id : null
   );
-  
+
   // State for SVG content validation
   const [isSvgValid, setIsSvgValid] = useState<boolean>(true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Theme - with safe fallback
   const { isDark } = useThemeSafe();
-  
+
   // Background options with CSS classes - enhanced with semantic naming
   const backgrounds = [
-    { name: "Light", value: "bg-white", description: "White background" },
-    { name: "Dark", value: "bg-gray-900", description: "Dark background" },
-    { name: "Transparent", value: "bg-transparent", description: "Transparent background with grid" },
-    { name: "Accent", value: "bg-accent/10", description: "Accent color background" },
-    { name: "Blue", value: "bg-blue-100 dark:bg-blue-900", description: "Blue background" },
-    { name: "Green", value: "bg-green-100 dark:bg-green-900", description: "Green background" },
+    { name: 'Light', value: 'bg-white', description: 'White background' },
+    { name: 'Dark', value: 'bg-gray-900', description: 'Dark background' },
+    {
+      name: 'Transparent',
+      value: 'bg-transparent',
+      description: 'Transparent background with grid',
+    },
+    { name: 'Accent', value: 'bg-accent/10', description: 'Accent color background' },
+    { name: 'Blue', value: 'bg-blue-100 dark:bg-blue-900', description: 'Blue background' },
+    { name: 'Green', value: 'bg-green-100 dark:bg-green-900', description: 'Green background' },
   ];
-  
+
   // Helper function to validate SVG content
   const validateSvgContent = useCallback((content: string): boolean => {
     try {
       if (!content) return false;
-      
+
       // Basic check for SVG tags
       if (!content.includes('<svg') || !content.includes('</svg>')) {
-        setValidationError("Invalid SVG format: Missing SVG tags");
+        setValidationError('Invalid SVG format: Missing SVG tags');
         return false;
       }
-      
+
       // Create a DOM parser to validate XML structure
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(content, 'image/svg+xml');
-      
+
       // Check for parsing errors
       const parserError = svgDoc.querySelector('parsererror');
       if (parserError) {
-        setValidationError("SVG parsing error: Malformed XML");
+        setValidationError('SVG parsing error: Malformed XML');
         return false;
       }
-      
+
       // Validate that root element is SVG
       const rootElement = svgDoc.documentElement;
       if (rootElement.nodeName !== 'svg') {
-        setValidationError("Invalid SVG: Root element is not <svg>");
+        setValidationError('Invalid SVG: Root element is not <svg>');
         return false;
       }
-      
+
       // Successfully validated
       setValidationError(null);
       return true;
@@ -166,20 +170,22 @@ function LogoDisplay({
         category: ErrorCategory.SVG,
         context: {
           component: 'LogoDisplay',
-          operation: 'validateSvgContent'
+          operation: 'validateSvgContent',
         },
-        logLevel: 'warn'
+        logLevel: 'warn',
       });
-      
-      setValidationError("SVG validation error: " + (error instanceof Error ? error.message : "Unknown error"));
+
+      setValidationError(
+        'SVG validation error: ' + (error instanceof Error ? error.message : 'Unknown error')
+      );
       return false;
     }
   }, []);
-  
+
   // Determine the SVG content to display
   const displaySvgContent = React.useMemo(() => {
-    let finalSvgContent = "";
-    
+    let finalSvgContent = '';
+
     try {
       // If a specific variant is selected, use its SVG
       if (selectedVariantId && variants.length > 0) {
@@ -188,12 +194,12 @@ function LogoDisplay({
           finalSvgContent = selectedVariant.svgCode;
         }
       }
-      
+
       // Otherwise use the logo SVG or provided SVG content
       if (!finalSvgContent && logo?.svgCode) {
         finalSvgContent = logo.svgCode;
       }
-      
+
       // Handle both svgContent and svgCode for compatibility
       if (!finalSvgContent && svgContent) {
         // Check if the content might be from AI SDK v5 format (contains an SVG tag)
@@ -209,16 +215,16 @@ function LogoDisplay({
           finalSvgContent = svgContent;
         }
       }
-      
+
       // Fall back to svgCode
       if (!finalSvgContent && svgCode) {
         finalSvgContent = svgCode;
       }
-      
+
       // Validate the final SVG content
       const isValid = validateSvgContent(finalSvgContent);
       setIsSvgValid(isValid);
-      
+
       return finalSvgContent;
     } catch (error) {
       // Handle any unexpected errors
@@ -226,24 +232,24 @@ function LogoDisplay({
         category: ErrorCategory.SVG,
         context: {
           component: 'LogoDisplay',
-          operation: 'displaySvgContent'
+          operation: 'displaySvgContent',
         },
-        logLevel: 'warn'
+        logLevel: 'warn',
       });
-      
+
       setIsSvgValid(false);
-      setValidationError("Error processing SVG content");
-      return "";
+      setValidationError('Error processing SVG content');
+      return '';
     }
   }, [logo, svgContent, svgCode, selectedVariantId, variants, validateSvgContent]);
-  
+
   // Handle animation playback
   useEffect(() => {
     if (onAnimationStateChange) {
       onAnimationStateChange(isPlaying);
     }
   }, [isPlaying, onAnimationStateChange]);
-  
+
   // Reset zoom and position when new SVG is received
   useEffect(() => {
     if (displaySvgContent) {
@@ -251,121 +257,124 @@ function LogoDisplay({
       setPosition({ x: 0, y: 0 });
     }
   }, [displaySvgContent]);
-  
+
   // Handle mousedown for drag operations
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
-    
+
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
-      y: e.clientY - position.y
+      y: e.clientY - position.y,
     });
   };
-  
+
   // Handle touchstart for drag operations on mobile
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!containerRef.current || e.touches.length !== 1) return;
-    
+
     const touch = e.touches[0];
     if (!touch) return;
 
     setIsDragging(true);
     setDragStart({
       x: touch.clientX - position.x,
-      y: touch.clientY - position.y
+      y: touch.clientY - position.y,
     });
   };
-  
+
   // Handle mousemove for drag operations
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragging) return;
-    
+
     setPosition({
       x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
+      y: e.clientY - dragStart.y,
     });
   };
-  
+
   // Handle touchmove for drag operations on mobile
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isDragging || e.touches.length !== 1) return;
-    
+
     const touch = e.touches[0];
     if (!touch) return;
 
     setPosition({
       x: touch.clientX - dragStart.x,
-      y: touch.clientY - dragStart.y
+      y: touch.clientY - dragStart.y,
     });
-    
+
     // Prevent page scrolling while dragging
     e.preventDefault();
   };
-  
+
   // Handle mouseup/touchend to end drag operations
   const handleDragEnd = () => {
     setIsDragging(false);
   };
-  
+
   // Handle zoom in/out
   const handleZoom = useCallback((delta: number) => {
-    setZoom((prevZoom) => {
+    setZoom(prevZoom => {
       const newZoom = Math.max(0.5, Math.min(3, prevZoom + delta));
       return newZoom;
     });
   }, []);
-  
+
   // Reset zoom and position
   const handleReset = useCallback(() => {
     setZoom(1);
     setPosition({ x: 0, y: 0 });
   }, []);
-  
+
   // Toggle animation playback
   const toggleAnimation = useCallback(() => {
-    setIsPlaying((prev) => {
+    setIsPlaying(prev => {
       const newState = !prev;
       return newState;
     });
   }, []);
-  
+
   // Toggle background color
   const cycleBackground = useCallback(() => {
-    setBackgroundIndex((prev) => (prev + 1) % backgrounds.length);
+    setBackgroundIndex(prev => (prev + 1) % backgrounds.length);
   }, [backgrounds.length]);
-  
+
   // Handle variant selection
-  const handleVariantSelect = useCallback((variantId: string) => {
-    setSelectedVariantId(variantId);
-    if (onVariantSelect) {
-      onVariantSelect(variantId);
-    }
-  }, [onVariantSelect]);
-  
+  const handleVariantSelect = useCallback(
+    (variantId: string) => {
+      setSelectedVariantId(variantId);
+      if (onVariantSelect) {
+        onVariantSelect(variantId);
+      }
+    },
+    [onVariantSelect]
+  );
+
   // Handle customization request
   const handleCustomizeRequest = useCallback(() => {
     if (onCustomizeRequest && displaySvgContent && isSvgValid) {
       onCustomizeRequest(displaySvgContent);
     }
   }, [onCustomizeRequest, displaySvgContent, isSvgValid]);
-  
+
   // Download SVG file
   const downloadSVG = useCallback(() => {
     if (!displaySvgContent || !isSvgValid) return;
-    
+
     try {
-      const blob = new Blob([displaySvgContent], { type: "image/svg+xml" });
+      const blob = new Blob([displaySvgContent], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `${title || logo?.name || "logo"}.svg`;
-      a.setAttribute('aria-label', `Download ${title || logo?.name || "logo"} as SVG`);
-      
+      a.download = `${title || logo?.name || 'logo'}.svg`;
+      a.setAttribute('aria-label', `Download ${title || logo?.name || 'logo'} as SVG`);
+
       // Use a more robust approach to download
       document.body.appendChild(a);
       a.click();
-      
+
       // Clean up
       setTimeout(() => {
         document.body.removeChild(a);
@@ -376,60 +385,60 @@ function LogoDisplay({
         category: ErrorCategory.DOWNLOAD,
         context: {
           component: 'LogoDisplay',
-          operation: 'downloadSVG'
+          operation: 'downloadSVG',
         },
-        logLevel: 'error'
+        logLevel: 'error',
       });
     }
   }, [displaySvgContent, isSvgValid, title, logo?.name]);
-  
+
   // Download PNG file with enhanced error handling
   const downloadPNG = useCallback(() => {
     if (!displaySvgContent || !isSvgValid) return;
-    
+
     try {
       // Create a canvas element
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
-        throw new Error("Canvas 2D context not available");
+        throw new Error('Canvas 2D context not available');
       }
-      
+
       // Create a new Image element
       const img = new Image();
-      
+
       // Handle errors during image loading
-      img.onerror = (error) => {
+      img.onerror = error => {
         handleError(error, {
           category: ErrorCategory.DOWNLOAD,
           context: {
             component: 'LogoDisplay',
-            operation: 'downloadPNG_imgLoad'
+            operation: 'downloadPNG_imgLoad',
           },
-          logLevel: 'error'
+          logLevel: 'error',
         });
       };
-      
+
       // Set up a callback for when the image loads
       img.onload = () => {
         try {
           // Set canvas dimensions to match the SVG with higher resolution for quality
           canvas.width = img.width * 2; // Higher resolution
           canvas.height = img.height * 2;
-          
+
           // Draw the image onto the canvas
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
+
           // Convert canvas to PNG and download
-          const pngUrl = canvas.toDataURL("image/png");
-          const a = document.createElement("a");
+          const pngUrl = canvas.toDataURL('image/png');
+          const a = document.createElement('a');
           a.href = pngUrl;
-          a.download = `${title || logo?.name || "logo"}.png`;
-          a.setAttribute('aria-label', `Download ${title || logo?.name || "logo"} as PNG`);
-          
+          a.download = `${title || logo?.name || 'logo'}.png`;
+          a.setAttribute('aria-label', `Download ${title || logo?.name || 'logo'} as PNG`);
+
           document.body.appendChild(a);
           a.click();
-          
+
           // Clean up
           setTimeout(() => {
             document.body.removeChild(a);
@@ -439,40 +448,40 @@ function LogoDisplay({
             category: ErrorCategory.DOWNLOAD,
             context: {
               component: 'LogoDisplay',
-              operation: 'downloadPNG_canvas'
+              operation: 'downloadPNG_canvas',
             },
-            logLevel: 'error'
+            logLevel: 'error',
           });
         }
       };
-      
+
       // Use a data URL for better cross-origin compatibility
-      const svgBlob = new Blob([displaySvgContent], { type: "image/svg+xml" });
+      const svgBlob = new Blob([displaySvgContent], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(svgBlob);
-      
+
       // Apply additional CORS settings
-      img.crossOrigin = "anonymous";
+      img.crossOrigin = 'anonymous';
       img.src = url;
-      
+
       // Clean up the object URL after the image loads or on error
       img.onload = () => {
         try {
           // Set canvas dimensions
           canvas.width = img.width * 2;
           canvas.height = img.height * 2;
-          
+
           // Draw image and generate PNG
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const pngUrl = canvas.toDataURL("image/png");
-          
+          const pngUrl = canvas.toDataURL('image/png');
+
           // Download the PNG
-          const a = document.createElement("a");
+          const a = document.createElement('a');
           a.href = pngUrl;
-          a.download = `${title || logo?.name || "logo"}.png`;
+          a.download = `${title || logo?.name || 'logo'}.png`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          
+
           // Clean up
           URL.revokeObjectURL(url);
         } catch (error) {
@@ -480,13 +489,13 @@ function LogoDisplay({
             category: ErrorCategory.DOWNLOAD,
             context: {
               component: 'LogoDisplay',
-              operation: 'downloadPNG_onload'
+              operation: 'downloadPNG_onload',
             },
-            logLevel: 'error'
+            logLevel: 'error',
           });
         }
       };
-      
+
       img.onerror = () => {
         URL.revokeObjectURL(url);
       };
@@ -495,80 +504,87 @@ function LogoDisplay({
         category: ErrorCategory.DOWNLOAD,
         context: {
           component: 'LogoDisplay',
-          operation: 'downloadPNG'
+          operation: 'downloadPNG',
         },
-        logLevel: 'error'
+        logLevel: 'error',
       });
     }
   }, [displaySvgContent, isSvgValid, title, logo?.name]);
-  
+
   // Handle keyboard navigation for logo controls
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    switch (e.key) {
-      case 'ArrowUp':
-        // Move logo up
-        setPosition(prev => ({ ...prev, y: prev.y - 10 }));
-        e.preventDefault();
-        break;
-      case 'ArrowDown':
-        // Move logo down
-        setPosition(prev => ({ ...prev, y: prev.y + 10 }));
-        e.preventDefault();
-        break;
-      case 'ArrowLeft':
-        // Move logo left
-        setPosition(prev => ({ ...prev, x: prev.x - 10 }));
-        e.preventDefault();
-        break;
-      case 'ArrowRight':
-        // Move logo right
-        setPosition(prev => ({ ...prev, x: prev.x + 10 }));
-        e.preventDefault();
-        break;
-      case '+':
-      case '=':
-        // Zoom in
-        handleZoom(0.1);
-        e.preventDefault();
-        break;
-      case '-':
-      case '_':
-        // Zoom out
-        handleZoom(-0.1);
-        e.preventDefault();
-        break;
-      case 'r':
-      case 'R':
-        // Reset view
-        handleReset();
-        e.preventDefault();
-        break;
-      case ' ':
-        // Toggle animation
-        if (showAnimationControls) {
-          toggleAnimation();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      switch (e.key) {
+        case 'ArrowUp':
+          // Move logo up
+          setPosition(prev => ({ ...prev, y: prev.y - 10 }));
           e.preventDefault();
-        }
-        break;
-      case 'b':
-      case 'B':
-        // Cycle background
-        cycleBackground();
-        e.preventDefault();
-        break;
-    }
-  }, [handleZoom, handleReset, toggleAnimation, cycleBackground, showAnimationControls]);
-  
+          break;
+        case 'ArrowDown':
+          // Move logo down
+          setPosition(prev => ({ ...prev, y: prev.y + 10 }));
+          e.preventDefault();
+          break;
+        case 'ArrowLeft':
+          // Move logo left
+          setPosition(prev => ({ ...prev, x: prev.x - 10 }));
+          e.preventDefault();
+          break;
+        case 'ArrowRight':
+          // Move logo right
+          setPosition(prev => ({ ...prev, x: prev.x + 10 }));
+          e.preventDefault();
+          break;
+        case '+':
+        case '=':
+          // Zoom in
+          handleZoom(0.1);
+          e.preventDefault();
+          break;
+        case '-':
+        case '_':
+          // Zoom out
+          handleZoom(-0.1);
+          e.preventDefault();
+          break;
+        case 'r':
+        case 'R':
+          // Reset view
+          handleReset();
+          e.preventDefault();
+          break;
+        case ' ':
+          // Toggle animation
+          if (showAnimationControls) {
+            toggleAnimation();
+            e.preventDefault();
+          }
+          break;
+        case 'b':
+        case 'B':
+          // Cycle background
+          cycleBackground();
+          e.preventDefault();
+          break;
+      }
+    },
+    [handleZoom, handleReset, toggleAnimation, cycleBackground, showAnimationControls]
+  );
+
   // Get the current background
   const currentBackground = backgrounds[backgroundIndex];
-  
+
   // Get animation CSS from animatedLogo or provided CSS
   const effectiveAnimationCSS = animatedLogo?.cssCode || animationCSS;
-  
+
   // Render skeleton loader for loading state
   if (isGenerating) {
     return (
-      <Card className={cn("w-full max-w-md mx-auto overflow-hidden shadow-sm", className)} aria-busy="true" aria-live="polite">
+      <Card
+        className={cn('w-full max-w-md mx-auto overflow-hidden shadow-sm', className)}
+        aria-busy="true"
+        aria-live="polite"
+      >
         <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
           <div className="animate-pulse flex flex-col items-center space-y-4 w-full">
             {/* Improved skeleton loading state */}
@@ -586,12 +602,12 @@ function LogoDisplay({
       </Card>
     );
   }
-  
+
   // Render error state with improved accessibility
   if (hasError) {
     return (
-      <Card 
-        className={cn("w-full max-w-md mx-auto overflow-hidden border-destructive", className)}
+      <Card
+        className={cn('w-full max-w-md mx-auto overflow-hidden border-destructive', className)}
         role="alert"
         aria-live="assertive"
       >
@@ -616,9 +632,9 @@ function LogoDisplay({
             <Paragraph className="text-destructive font-medium text-center">
               {errorMessage}
             </Paragraph>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="mt-2"
               onClick={() => window.location.reload()}
             >
@@ -629,12 +645,12 @@ function LogoDisplay({
       </Card>
     );
   }
-  
+
   // Render validation error state
   if (!isSvgValid && validationError) {
     return (
-      <Card 
-        className={cn("w-full max-w-md mx-auto overflow-hidden border-destructive", className)}
+      <Card
+        className={cn('w-full max-w-md mx-auto overflow-hidden border-destructive', className)}
         role="alert"
         aria-live="assertive"
       >
@@ -664,12 +680,12 @@ function LogoDisplay({
       </Card>
     );
   }
-  
+
   // Render empty state with better UX
   if (!displaySvgContent) {
     return (
-      <Card 
-        className={cn("w-full max-w-md mx-auto overflow-hidden", className)}
+      <Card
+        className={cn('w-full max-w-md mx-auto overflow-hidden', className)}
         aria-label="No logo available"
       >
         <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
@@ -701,37 +717,28 @@ function LogoDisplay({
       </Card>
     );
   }
-  
+
   // Main logo display component
   return (
-    <Card 
-      className={cn("w-full max-w-md mx-auto overflow-hidden shadow-sm", className)}
-      id={id}
-    >
+    <Card className={cn('w-full max-w-md mx-auto overflow-hidden shadow-sm', className)} id={id}>
       {/* Logo Title and Description with better semantics */}
       {(title || description) && (
         <div className="p-4 border-b">
           {title && (
-            <h3 
-              className="text-lg font-medium"
-              id={`${id}-title`}
-            >
+            <h3 className="text-lg font-medium" id={`${id}-title`}>
               {title}
             </h3>
           )}
           {description && (
-            <p 
-              className="text-sm text-muted-foreground"
-              id={`${id}-description`}
-            >
+            <p className="text-sm text-muted-foreground" id={`${id}-description`}>
               {description}
             </p>
           )}
         </div>
       )}
-      
+
       {/* Logo Display Area - Enhanced with keyboard navigation */}
-      <div 
+      <div
         ref={containerRef}
         className="relative w-full aspect-square overflow-hidden"
         onMouseDown={handleMouseDown}
@@ -755,23 +762,23 @@ function LogoDisplay({
           background={currentBackground?.value}
           zoom={zoom}
           position={position}
-          showGrid={currentBackground?.value === "bg-transparent"}
+          showGrid={currentBackground?.value === 'bg-transparent'}
           draggable={isDragging}
           className="w-full h-full"
           aspectRatio="1/1"
           aria-hidden="false"
         />
-        
+
         {/* Animation Type Badge - Enhanced visibility */}
         {animationType && (
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm"
           >
             {animationType}
           </Badge>
         )}
-        
+
         {/* Customize Button - Better positioning and contrast */}
         {onCustomizeRequest && (
           <Button
@@ -785,16 +792,16 @@ function LogoDisplay({
             <span>Customize</span>
           </Button>
         )}
-        
+
         {/* Background indicator */}
-        <div 
+        <div
           className="absolute bottom-2 left-2 text-xs bg-background/70 text-foreground px-2 py-1 rounded-md backdrop-blur-sm"
           aria-live="polite"
           aria-atomic="true"
         >
           {currentBackground?.name}
         </div>
-        
+
         {/* Keyboard controls helper - only shown when focused */}
         <div className="absolute bottom-2 right-2 opacity-0 focus-within:opacity-100 transition-opacity duration-200">
           <Badge variant="outline" className="bg-background/70 backdrop-blur-sm">
@@ -802,18 +809,18 @@ function LogoDisplay({
           </Badge>
         </div>
       </div>
-      
+
       {/* Control Bar - Enhanced accessibility */}
       <CardFooter className="p-3 border-t flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-1" aria-label="Logo controls">
           {/* Animation Controls with proper labeling */}
           {showAnimationControls && (
             <>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={toggleAnimation}
-                aria-label={isPlaying ? "Pause Animation" : "Play Animation"}
+                aria-label={isPlaying ? 'Pause Animation' : 'Play Animation'}
                 aria-pressed={!isPlaying}
               >
                 {isPlaying ? (
@@ -822,10 +829,10 @@ function LogoDisplay({
                   <PlayIcon className="h-4 w-4" aria-hidden="true" />
                 )}
               </Button>
-              
+
               {/* Background Toggle with tooltip */}
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={cycleBackground}
                 aria-label={`Change background (current: ${currentBackground?.description})`}
@@ -834,10 +841,10 @@ function LogoDisplay({
               </Button>
             </>
           )}
-          
+
           {/* Zoom Controls */}
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => handleZoom(-0.1)}
             aria-label="Zoom Out"
@@ -845,18 +852,13 @@ function LogoDisplay({
           >
             <MinusIcon className="h-4 w-4" aria-hidden="true" />
           </Button>
-          
-          <Badge 
-            variant="outline" 
-            className="text-xs px-2"
-            aria-live="polite"
-            aria-atomic="true"
-          >
+
+          <Badge variant="outline" className="text-xs px-2" aria-live="polite" aria-atomic="true">
             {Math.round(zoom * 100)}%
           </Badge>
-          
-          <Button 
-            variant="ghost" 
+
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => handleZoom(0.1)}
             aria-label="Zoom In"
@@ -864,28 +866,23 @@ function LogoDisplay({
           >
             <PlusIcon className="h-4 w-4" aria-hidden="true" />
           </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleReset}
-            aria-label="Reset View"
-          >
+
+          <Button variant="ghost" size="sm" onClick={handleReset} aria-label="Reset View">
             <ResetIcon className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
-        
+
         {/* Variant Selector with better scrolling */}
         {variants.length > 1 && (
-          <div 
+          <div
             className="flex items-center space-x-1 overflow-x-auto py-1 px-1 bg-muted/30 rounded-md w-full mt-2 no-scrollbar"
             role="radiogroup"
             aria-label="Logo variants"
           >
-            {variants.map((variant) => (
+            {variants.map(variant => (
               <Button
                 key={variant.id}
-                variant={selectedVariantId === variant.id ? "accent" : "ghost"}
+                variant={selectedVariantId === variant.id ? 'accent' : 'ghost'}
                 size="sm"
                 className="flex-shrink-0"
                 onClick={() => handleVariantSelect(variant.id)}
@@ -897,27 +894,27 @@ function LogoDisplay({
             ))}
           </div>
         )}
-        
+
         {/* Download Controls with more visual clarity */}
         {allowDownload && (
           <div className="flex items-center space-x-1 mt-2 w-full justify-end">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={downloadSVG}
-              aria-label={`Download ${title || logo?.name || "logo"} as SVG`}
+              aria-label={`Download ${title || logo?.name || 'logo'} as SVG`}
               disabled={!isSvgValid}
               className="transition-all hover:shadow"
             >
               <DownloadIcon className="h-4 w-4 mr-1" aria-hidden="true" />
               SVG
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="sm"
               onClick={downloadPNG}
-              aria-label={`Download ${title || logo?.name || "logo"} as PNG`}
+              aria-label={`Download ${title || logo?.name || 'logo'} as PNG`}
               disabled={!isSvgValid}
               className="transition-all hover:shadow"
             >
@@ -934,14 +931,14 @@ function LogoDisplay({
 // Enhanced icon components with aria-hidden for better accessibility
 function PauseIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
       aria-hidden="true"
       focusable="false"
@@ -955,13 +952,13 @@ function PauseIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function PlayIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -975,13 +972,13 @@ function PlayIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function PaletteIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -1001,13 +998,13 @@ function PaletteIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function MinusIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -1021,13 +1018,13 @@ function MinusIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function PlusIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -1042,13 +1039,13 @@ function PlusIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function ResetIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -1063,13 +1060,13 @@ function ResetIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function DownloadIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
@@ -1085,13 +1082,13 @@ function DownloadIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 
 function PencilIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"

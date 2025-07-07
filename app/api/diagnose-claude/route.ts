@@ -10,11 +10,14 @@ import { env } from '@/lib/utils/env';
 export const GET = withErrorHandling(async function GET(_req: NextRequest) {
   // Only allow in development mode
   if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({
-      error: 'This endpoint is only available in development mode'
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: 'This endpoint is only available in development mode',
+      },
+      { status: 403 }
+    );
   }
-  
+
   // Collect diagnostic information
   const diagnostics = {
     timestamp: new Date().toISOString(),
@@ -30,21 +33,22 @@ export const GET = withErrorHandling(async function GET(_req: NextRequest) {
     config: {
       is_development: env.isDevelopment,
       is_production: env.isProduction,
-    }
+    },
   };
-  
+
   // Try a simple API call to test the connection
   try {
     const testResponse = await claudeService.generateResponse(
       "Hello, this is a test prompt to verify connectivity. Please respond with 'Connection successful'.",
       {
-        systemPrompt: "You are a test assistant. Respond with 'Connection successful' to verify connectivity.",
+        systemPrompt:
+          "You are a test assistant. Respond with 'Connection successful' to verify connectivity.",
         model: 'claude-3-sonnet-20240229', // Use a stable model for testing
         temperature: 0,
         maxTokens: 20,
       }
     );
-    
+
     return NextResponse.json({
       success: true,
       message: 'Claude API diagnostic successful',
@@ -52,15 +56,18 @@ export const GET = withErrorHandling(async function GET(_req: NextRequest) {
       test_response: {
         content: testResponse.content,
         processing_time: testResponse.processingTime,
-      }
+      },
     });
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      message: 'Claude API diagnostic failed',
-      error: error instanceof Error ? error.message : String(error),
-      diagnostics,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Claude API diagnostic failed',
+        error: error instanceof Error ? error.message : String(error),
+        diagnostics,
+      },
+      { status: 500 }
+    );
   }
 });
 
@@ -70,9 +77,9 @@ export const GET = withErrorHandling(async function GET(_req: NextRequest) {
  */
 function validateApiKeyFormat(apiKey?: string): boolean {
   if (!apiKey) return false;
-  
+
   // Check if it follows the typical format of Anthropic API keys
   const validFormat = /^sk-ant-api\d{2}-[a-zA-Z0-9_-]{48,}$/.test(apiKey);
-  
+
   return validFormat;
 }

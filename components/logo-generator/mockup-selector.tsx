@@ -16,16 +16,19 @@ export function MockupSelector({
   onSelectTemplateAction,
   logo,
   brandName = 'Brand Name',
-  className = ''
+  className = '',
 }: MockupSelectorProps) {
   // Group templates by type
-  const templatesByType = templates.reduce((acc, template) => {
-    if (!acc[template.type]) {
-      acc[template.type] = [];
-    }
-    acc[template.type].push(template);
-    return acc;
-  }, {} as Record<MockupType, typeof templates>);
+  const templatesByType = templates.reduce(
+    (acc, template) => {
+      if (!acc[template.type]) {
+        acc[template.type] = [];
+      }
+      acc[template.type].push(template);
+      return acc;
+    },
+    {} as Record<MockupType, typeof templates>
+  );
 
   // Convert enum to readable names
   const typeNames: Record<MockupType, string> = {
@@ -39,7 +42,7 @@ export function MockupSelector({
     [MockupType.BILLBOARD]: 'Billboards',
     [MockupType.PACKAGING]: 'Packaging',
     [MockupType.EMAIL_SIGNATURE]: 'Email Signatures',
-    [MockupType.FAVICON]: 'Favicons'
+    [MockupType.FAVICON]: 'Favicons',
   };
 
   return (
@@ -49,34 +52,34 @@ export function MockupSelector({
           <h3 className="text-lg font-medium mb-3">{typeNames[type as MockupType]}</h3>
           <ScrollArea className="w-full whitespace-nowrap pb-4">
             <div className="flex space-x-4 pb-2">
-              {typeTemplates.map((template) => {
+              {typeTemplates.map(template => {
                 const isSelected = template.id === selectedTemplateId;
-                
+
                 // Use placeholder or generate a preview
-                const previewUrl = template.thumbnailUrl || template.placeholderUrl || '/assets/mockups/placeholder.jpg';
-                
+                const previewUrl =
+                  template.thumbnailUrl ||
+                  template.placeholderUrl ||
+                  '/assets/mockups/placeholder.jpg';
+
                 return (
-                  <div 
-                    key={template.id} 
+                  <div
+                    key={template.id}
                     className={cn(
-                      "flex-shrink-0 cursor-pointer transition-all duration-200 rounded-lg overflow-hidden border-2",
-                      isSelected 
-                        ? "border-primary shadow-md" 
-                        : "border-transparent hover:border-muted"
+                      'flex-shrink-0 cursor-pointer transition-all duration-200 rounded-lg overflow-hidden border-2',
+                      isSelected
+                        ? 'border-primary shadow-md'
+                        : 'border-transparent hover:border-muted'
                     )}
                     onClick={() => onSelectTemplateAction(template.id)}
                   >
                     <div className="relative w-48 h-32">
-                      <Image
-                        src={previewUrl}
-                        alt={template.name}
-                        fill
-                        className="object-cover"
-                      />
+                      <Image src={previewUrl} alt={template.name} fill className="object-cover" />
                     </div>
                     <div className="p-2 bg-card">
                       <h4 className="text-sm font-medium truncate">{template.name}</h4>
-                      <p className="text-xs text-muted-foreground truncate">{template.description}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {template.description}
+                      </p>
                     </div>
                   </div>
                 );

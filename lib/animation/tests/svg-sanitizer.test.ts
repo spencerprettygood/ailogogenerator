@@ -1,15 +1,19 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { sanitizeSVGForAnimation, isAnimatable, prepareSVGForAnimation } from '../utils/svg-sanitizer';
-import { 
-  simpleSvg, 
-  pathSvg, 
-  smilAnimatedSvg, 
-  insecureSvg, 
+import {
+  sanitizeSVGForAnimation,
+  isAnimatable,
+  prepareSVGForAnimation,
+} from '../utils/svg-sanitizer';
+import {
+  simpleSvg,
+  pathSvg,
+  smilAnimatedSvg,
+  insecureSvg,
   invalidSvg,
   missingViewBoxSvg,
   complexSvg,
   MockDOMParser,
-  MockXMLSerializer
+  MockXMLSerializer,
 } from './utils/mock-svg';
 
 // Mock DOM APIs for testing in Node environment
@@ -18,12 +22,12 @@ beforeAll(() => {
   global.XMLSerializer = MockXMLSerializer as any;
   global.document = {
     createNodeIterator: () => ({
-      nextNode: () => null
-    })
+      nextNode: () => null,
+    }),
   } as any;
   global.NodeFilter = {
     SHOW_COMMENT: 128,
-    FILTER_ACCEPT: 1
+    FILTER_ACCEPT: 1,
   } as any;
 });
 
@@ -44,9 +48,7 @@ describe('SVG Sanitizer', () => {
     it('should remove SMIL animations when not allowed', () => {
       vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
         if (selector === 'animate, animateTransform, animateMotion, set') {
-          return [
-            { parentNode: { removeChild: vi.fn() } }
-          ] as any;
+          return [{ parentNode: { removeChild: vi.fn() } }] as any;
         }
         return [] as any;
       });
@@ -69,7 +71,7 @@ describe('SVG Sanitizer', () => {
         if (selector === 'path, rect, circle, ellipse, line, polyline, polygon, text, g') {
           return [
             { id: '', tagName: 'path' },
-            { id: '', tagName: 'circle' }
+            { id: '', tagName: 'circle' },
           ] as any;
         }
         return [] as any;
@@ -80,16 +82,18 @@ describe('SVG Sanitizer', () => {
     });
 
     it('should add viewBox when missing and autoFix is enabled', () => {
-      vi.spyOn(document.querySelector('svg') as any, 'hasAttribute')
-        .mockImplementation((attr: string) => attr !== 'viewBox');
+      vi.spyOn(document.querySelector('svg') as any, 'hasAttribute').mockImplementation(
+        (attr: string) => attr !== 'viewBox'
+      );
 
       const result = sanitizeSVGForAnimation(missingViewBoxSvg, { autoFix: true });
       expect(result.modifications.some(m => m.includes('Added missing viewBox'))).toBe(true);
     });
 
     it('should not add viewBox when autoFix is disabled', () => {
-      vi.spyOn(document.querySelector('svg') as any, 'hasAttribute')
-        .mockImplementation((attr: string) => attr !== 'viewBox');
+      vi.spyOn(document.querySelector('svg') as any, 'hasAttribute').mockImplementation(
+        (attr: string) => attr !== 'viewBox'
+      );
 
       const result = sanitizeSVGForAnimation(missingViewBoxSvg, { autoFix: false });
       expect(result.modifications.some(m => m.includes('Added missing viewBox'))).toBe(false);
@@ -99,14 +103,14 @@ describe('SVG Sanitizer', () => {
       vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
         if (selector === 'path, line, polyline, polygon, rect, circle, ellipse') {
           return [
-            { 
-              getAttribute: (attr: string) => attr === 'stroke' ? 'black' : null,
-              setAttribute: vi.fn()
+            {
+              getAttribute: (attr: string) => (attr === 'stroke' ? 'black' : null),
+              setAttribute: vi.fn(),
             },
             {
-              getAttribute: (attr: string) => attr === 'stroke' ? 'red' : null,
-              setAttribute: vi.fn()
-            }
+              getAttribute: (attr: string) => (attr === 'stroke' ? 'red' : null),
+              setAttribute: vi.fn(),
+            },
           ] as any;
         }
         return [] as any;
@@ -201,14 +205,14 @@ describe('SVG Sanitizer', () => {
       vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
         if (selector === 'path') {
           return [
-            { 
+            {
               setAttribute: vi.fn(),
-              getAttribute: (attr: string) => null
+              getAttribute: (attr: string) => null,
             },
             {
               setAttribute: vi.fn(),
-              getAttribute: (attr: string) => null
-            }
+              getAttribute: (attr: string) => null,
+            },
           ] as any;
         }
         return [] as any;
@@ -222,16 +226,16 @@ describe('SVG Sanitizer', () => {
       vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
         if (selector === 'path') {
           return [
-            { 
+            {
               id: '',
               setAttribute: vi.fn(),
-              getAttribute: (attr: string) => null
+              getAttribute: (attr: string) => null,
             },
             {
               id: '',
               setAttribute: vi.fn(),
-              getAttribute: (attr: string) => null
-            }
+              getAttribute: (attr: string) => null,
+            },
           ] as any;
         }
         return [] as any;
@@ -245,14 +249,14 @@ describe('SVG Sanitizer', () => {
       vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
         if (selector === '*') {
           return [
-            { 
+            {
               tagName: 'rect',
-              setAttribute: vi.fn()
+              setAttribute: vi.fn(),
             },
             {
               tagName: 'circle',
-              setAttribute: vi.fn()
-            }
+              setAttribute: vi.fn(),
+            },
           ] as any;
         }
         return [] as any;
@@ -268,7 +272,7 @@ describe('SVG Sanitizer', () => {
         isModified: false,
         modifications: [],
         errors: ['Sanitization failed'],
-        warnings: []
+        warnings: [],
       }));
 
       expect(() => prepareSVGForAnimation(invalidSvg, 'draw')).toThrow();

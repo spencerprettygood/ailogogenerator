@@ -85,7 +85,7 @@ class StageCValidator {
     const requiredDesignFields: Array<keyof DesignSpec> = [
       'brand_name',
       'brand_description',
-      'target_audience'
+      'target_audience',
     ];
 
     for (const field of requiredDesignFields) {
@@ -97,11 +97,11 @@ class StageCValidator {
     // Verify each concept has required fields
     for (let i = 0; i < input.concepts.length; i++) {
       const concept = input.concepts[i];
-      
+
       if (!concept.name || typeof concept.name !== 'string') {
         throw new Error(`Concept ${i + 1} is missing a valid name`);
       }
-      
+
       if (!concept.description || typeof concept.description !== 'string') {
         throw new Error(`Concept ${i + 1} is missing a valid description`);
       }
@@ -110,7 +110,7 @@ class StageCValidator {
 
   static validateSelectionOutput(jsonString: string, conceptCount: number): ConceptSelection {
     let parsed: unknown;
-    
+
     try {
       // Handle potential code blocks
       const match = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
@@ -125,7 +125,7 @@ class StageCValidator {
     }
 
     const obj = parsed as Record<string, unknown>;
-    
+
     // Validate selected_concept_index
     if (!('selected_concept_index' in obj) || typeof obj.selected_concept_index !== 'number') {
       throw new Error('AI response missing or invalid selected_concept_index');
@@ -159,7 +159,7 @@ class StageCValidator {
     return {
       selectedConcept: null as unknown as MoodboardConcept, // Will be populated after validation
       selectionRationale: rationale,
-      score: score
+      score: score,
     };
   }
 }
@@ -178,7 +178,7 @@ class StageCRetryHandler {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry validation errors
         if (error instanceof Error && error.message.includes('Design specification')) {
           throw error;
@@ -196,11 +196,9 @@ class StageCRetryHandler {
 }
 
 // Main selection function
-export async function selectDirection(
-  input: StageCInput
-): Promise<StageCOutput> {
+export async function selectDirection(input: StageCInput): Promise<StageCOutput> {
   const startTime = Date.now();
-  
+
   try {
     // Validate input
     StageCValidator.validateInput(input);
@@ -226,7 +224,9 @@ Additional Requests: ${input.designSpec.additional_requests}
 
 CONCEPT OPTIONS:
 
-${input.concepts.map((concept, index) => `
+${input.concepts
+  .map(
+    (concept, index) => `
 CONCEPT ${index + 1}: ${concept.name}
 Description: ${concept.description}
 Style Approach: ${concept.style_approach}
@@ -234,7 +234,9 @@ Primary Colors: ${concept.primary_colors.join(', ')}
 Typography: ${concept.typography_style}
 Imagery Elements: ${concept.imagery_elements}
 Rationale: ${concept.rationale}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 Select the best concept based on the evaluation criteria. Return only a JSON object with the selected_concept_index (0, 1, or 2), selection_rationale, and score.
 `;
@@ -269,7 +271,7 @@ Select the best concept based on the evaluation criteria. Return only a JSON obj
 
     // Validate and parse the selection output
     const validatedSelection = StageCValidator.validateSelectionOutput(
-      completion.content, 
+      completion.content,
       input.concepts.length
     );
 
@@ -285,7 +287,6 @@ Select the best concept based on the evaluation criteria. Return only a JSON obj
       tokensUsed: (completion.usage.input_tokens || 0) + (completion.usage.output_tokens || 0),
       processingTime,
     };
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     let errorType: 'validation_error' | 'ai_error' | 'system_error' = 'system_error';
@@ -298,15 +299,19 @@ Select the best concept based on the evaluation criteria. Return only a JSON obj
         errorDetails = error.stack;
       }
 
-      if (error.message.includes('Design specification') || 
-          error.message.includes('Concepts array') ||
-          error.message.includes('Concept ')) {
+      if (
+        error.message.includes('Design specification') ||
+        error.message.includes('Concepts array') ||
+        error.message.includes('Concept ')
+      ) {
         errorType = 'validation_error';
-      } else if (error.message.includes('AI model') || 
-                 error.message.includes('AI response') ||
-                 error.message.includes('JSON response') ||
-                 error.message.includes('selection_rationale') ||
-                 error.message.includes('selected_concept_index')) {
+      } else if (
+        error.message.includes('AI model') ||
+        error.message.includes('AI response') ||
+        error.message.includes('JSON response') ||
+        error.message.includes('selection_rationale') ||
+        error.message.includes('selected_concept_index')
+      ) {
         errorType = 'ai_error';
       } else if (error.message.includes('ANTHROPIC_API_KEY')) {
         errorType = 'system_error';
@@ -327,36 +332,40 @@ export function manualSelection(
   selectedIndex: number
 ): ConceptSelection {
   if (selectedIndex < 0 || selectedIndex >= concepts.length) {
-    throw new Error(`Invalid selection index: ${selectedIndex}. Must be between 0 and ${concepts.length - 1}.`);
+    throw new Error(
+      `Invalid selection index: ${selectedIndex}. Must be between 0 and ${concepts.length - 1}.`
+    );
   }
 
   return {
     selectedConcept: concepts[selectedIndex],
-    selectionRationale: "Manually selected by user.",
-    score: 100 // Maximum score for user selection
+    selectionRationale: 'Manually selected by user.',
+    score: 100, // Maximum score for user selection
   };
 }
 
 // Utility function for validation
 export function validateStageCOutput(output: StageCOutput): string {
-  if (!output) return "Output is undefined or null";
-  
+  if (!output) return 'Output is undefined or null';
+
   if (output.success) {
-    if (!output.selection) return "Successful output missing selection";
-    if (!output.selection.selectedConcept) return "Selection missing selectedConcept";
-    if (!output.selection.selectionRationale) return "Selection missing selectionRationale";
-    if (typeof output.selection.score !== 'number') return "Selection missing or invalid score";
-    
-    if (!output.tokensUsed || output.tokensUsed <= 0) return "Missing or invalid tokensUsed";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime";
-    
-    return "valid";
+    if (!output.selection) return 'Successful output missing selection';
+    if (!output.selection.selectedConcept) return 'Selection missing selectedConcept';
+    if (!output.selection.selectionRationale) return 'Selection missing selectionRationale';
+    if (typeof output.selection.score !== 'number') return 'Selection missing or invalid score';
+
+    if (!output.tokensUsed || output.tokensUsed <= 0) return 'Missing or invalid tokensUsed';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime';
+
+    return 'valid';
   } else {
-    if (!output.error) return "Failed output missing error object";
-    if (!output.error.type || !output.error.message) return "Error object missing type or message";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime on error";
-    
-    return "valid_error";
+    if (!output.error) return 'Failed output missing error object';
+    if (!output.error.type || !output.error.message) return 'Error object missing type or message';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime on error';
+
+    return 'valid_error';
   }
 }
 

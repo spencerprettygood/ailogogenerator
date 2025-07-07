@@ -1,9 +1,9 @@
-import { 
-  AnimationProvider, 
-  AnimationType, 
+import {
+  AnimationProvider,
+  AnimationType,
   AnimationOptions,
   AnimatedSVGLogo,
-  AnimationEasing
+  AnimationEasing,
 } from '../types';
 
 /**
@@ -13,19 +13,20 @@ import {
 export class JSAnimationProvider implements AnimationProvider {
   id = 'js-provider';
   name = 'JavaScript Animation Provider';
-  description = 'Provides JavaScript-based animations for SVG logos, handling complex animations that CSS and SMIL cannot';
-  
+  description =
+    'Provides JavaScript-based animations for SVG logos, handling complex animations that CSS and SMIL cannot';
+
   // List of animation types supported by this provider
   supportedAnimationTypes: AnimationType[] = [
     AnimationType.MORPH,
-    AnimationType.DRAW, 
+    AnimationType.DRAW,
     AnimationType.FLOAT,
     AnimationType.PULSE,
     AnimationType.WAVE,
     AnimationType.SHIMMER,
     AnimationType.SEQUENTIAL,
     AnimationType.TYPEWRITER,
-    AnimationType.CUSTOM
+    AnimationType.CUSTOM,
   ];
 
   /**
@@ -42,17 +43,17 @@ export class JSAnimationProvider implements AnimationProvider {
     try {
       // Validate and optimize SVG
       const validatedSvg = this.validateSVG(svg);
-      
+
       // Generate a unique ID for the animation
       const uniqueId = this.generateUniqueId();
-      
+
       // Process the SVG and generate animation code based on type
-      let result: { 
-        animatedSvg: string; 
-        cssCode?: string; 
-        jsCode: string; 
+      let result: {
+        animatedSvg: string;
+        cssCode?: string;
+        jsCode: string;
       };
-      
+
       switch (options.type) {
         case AnimationType.MORPH:
           result = this.applyMorphAnimation(validatedSvg, options, uniqueId);
@@ -85,21 +86,21 @@ export class JSAnimationProvider implements AnimationProvider {
           // Default to a simple fade in if type isn't supported
           result = this.applyDefaultAnimation(validatedSvg, options, uniqueId);
       }
-      
+
       // Return animated SVG result
       return {
         originalSvg: svg,
         animatedSvg: result.animatedSvg,
         animationOptions: options,
         cssCode: result.cssCode,
-        jsCode: result.jsCode
+        jsCode: result.jsCode,
       };
     } catch (error) {
       console.error('Error in JS Animation Provider:', error);
       throw error;
     }
   }
-  
+
   /**
    * Validate SVG to ensure it's well-formed
    */
@@ -108,27 +109,29 @@ export class JSAnimationProvider implements AnimationProvider {
       // Simple validation to ensure the SVG is well-formed
       const parser = new DOMParser();
       const doc = parser.parseFromString(svg, 'image/svg+xml');
-      
+
       // Check for parsing errors
       const parserErrors = doc.getElementsByTagName('parsererror');
       if (parserErrors.length > 0) {
         throw new Error('Invalid SVG: Document contains parser errors');
       }
-      
+
       // Check that it has an SVG root element
       const svgElement = doc.querySelector('svg');
       if (!svgElement) {
         throw new Error('Invalid SVG: Missing root <svg> element');
       }
-      
+
       // Ensure it has viewBox or width/height
-      if (!svgElement.hasAttribute('viewBox') && 
-          (!svgElement.hasAttribute('width') || !svgElement.hasAttribute('height'))) {
+      if (
+        !svgElement.hasAttribute('viewBox') &&
+        (!svgElement.hasAttribute('width') || !svgElement.hasAttribute('height'))
+      ) {
         console.warn('SVG is missing viewBox or width/height attributes');
         // Add a default viewBox if needed
         svgElement.setAttribute('viewBox', '0 0 300 300');
       }
-      
+
       // Return the validated (and potentially fixed) SVG
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
@@ -147,19 +150,26 @@ export class JSAnimationProvider implements AnimationProvider {
   /**
    * Apply morphing animation to SVG paths
    */
-  private applyMorphAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyMorphAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg morph-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg morph-animation"`
+    );
+
     // Generate CSS for basic styling
     const cssCode = `
       #${uniqueId}.animated-svg.morph-animation {
         /* Base styling for morphing animation */
       }
     `;
-    
+
     // Generate JavaScript for the morphing animation
     // This implementation uses requestAnimationFrame for smooth animation
     const jsCode = `
@@ -316,19 +326,26 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode, cssCode };
   }
 
   /**
    * Apply drawing animation to SVG paths using JS for more precise control
    */
-  private applyDrawAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyDrawAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg draw-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg draw-animation"`
+    );
+
     // Generate CSS for styling
     const cssCode = `
       #${uniqueId}.animated-svg.draw-animation path,
@@ -341,7 +358,7 @@ export class JSAnimationProvider implements AnimationProvider {
         fill-opacity: 0;
       }
     `;
-    
+
     // Generate JavaScript for the drawing animation
     const jsCode = `
       (function() {
@@ -587,26 +604,33 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode, cssCode };
   }
 
   /**
    * Apply typewriter animation to text elements
    */
-  private applyTypewriterAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyTypewriterAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg typewriter-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg typewriter-animation"`
+    );
+
     // Generate CSS for styling
     const cssCode = `
       #${uniqueId}.animated-svg.typewriter-animation text {
         visibility: visible;
       }
     `;
-    
+
     // Generate JavaScript for the typewriter animation
     const jsCode = `
       (function() {
@@ -741,19 +765,26 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode, cssCode };
   }
 
   /**
    * Apply wave animation to elements
    */
-  private applyWaveAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyWaveAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg wave-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg wave-animation"`
+    );
+
     // Generate JavaScript for the wave animation
     const jsCode = `
       (function() {
@@ -876,36 +907,40 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode };
   }
 
   /**
    * Apply shimmer/shine animation
    */
-  private applyShimmerAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyShimmerAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
     let animatedSvg = svg;
-    
+
     // Parse SVG to add the necessary elements for shimmer
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
-    
+
     // Add id to the svg
     const svgElement = svgDoc.querySelector('svg');
     if (svgElement) {
       svgElement.id = uniqueId;
       svgElement.classList.add('animated-svg', 'shimmer-animation');
-      
+
       // Create defs if not exists
       let defs = svgDoc.querySelector('defs');
       if (!defs) {
         defs = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'defs');
         svgElement.prepend(defs);
       }
-      
+
       // Create linear gradient for shimmer
       const gradient = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
       gradient.id = `shimmer-gradient-${uniqueId}`;
@@ -913,28 +948,28 @@ export class JSAnimationProvider implements AnimationProvider {
       gradient.setAttribute('y1', '0%');
       gradient.setAttribute('x2', '100%');
       gradient.setAttribute('y2', '0%');
-      
+
       // Create gradient stops
       const stop1 = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop1.setAttribute('offset', '0%');
       stop1.setAttribute('stop-color', 'rgba(255,255,255,0)');
       stop1.setAttribute('stop-opacity', '0');
-      
+
       const stop2 = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop2.setAttribute('offset', '50%');
       stop2.setAttribute('stop-color', 'rgba(255,255,255,0.8)');
       stop2.setAttribute('stop-opacity', '0.8');
-      
+
       const stop3 = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop3.setAttribute('offset', '100%');
       stop3.setAttribute('stop-color', 'rgba(255,255,255,0)');
       stop3.setAttribute('stop-opacity', '0');
-      
+
       gradient.appendChild(stop1);
       gradient.appendChild(stop2);
       gradient.appendChild(stop3);
       defs.appendChild(gradient);
-      
+
       // Create rect for shimmer overlay
       const shimmerRect = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'rect');
       shimmerRect.id = `shimmer-overlay-${uniqueId}`;
@@ -943,7 +978,7 @@ export class JSAnimationProvider implements AnimationProvider {
       shimmerRect.setAttribute('fill', `url(#shimmer-gradient-${uniqueId})`);
       shimmerRect.setAttribute('opacity', '0');
       shimmerRect.setAttribute('pointer-events', 'none');
-      
+
       // Get viewBox or dimensions
       const viewBox = svgElement.getAttribute('viewBox');
       if (viewBox) {
@@ -956,14 +991,14 @@ export class JSAnimationProvider implements AnimationProvider {
         shimmerRect.setAttribute('width', width);
         shimmerRect.setAttribute('height', height);
       }
-      
+
       // Add the shimmer rect as the last child
       svgElement.appendChild(shimmerRect);
     }
-    
+
     // Serialize back to string
     animatedSvg = new XMLSerializer().serializeToString(svgDoc);
-    
+
     // Generate JavaScript for the shimmer animation
     const jsCode = `
       (function() {
@@ -1042,20 +1077,27 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode };
   }
 
   /**
    * Apply sequential animation to elements
    */
-  private applySequentialAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applySequentialAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
     const staggerDelay = options.stagger || 200;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg sequential-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg sequential-animation"`
+    );
+
     // Generate JavaScript for the sequential animation
     const jsCode = `
       (function() {
@@ -1068,17 +1110,21 @@ export class JSAnimationProvider implements AnimationProvider {
           let elements = [];
           
           // Use specified elements if provided
-          ${options.sequenceOrder && options.sequenceOrder.length > 0 ? `
+          ${
+            options.sequenceOrder && options.sequenceOrder.length > 0
+              ? `
           const sequenceOrder = ${JSON.stringify(options.sequenceOrder)};
           elements = sequenceOrder
             .map(id => svg.getElementById(id))
             .filter(el => el !== null);
-          ` : `
+          `
+              : `
           // Use all direct children of the SVG except defs
           elements = Array.from(svg.children).filter(el => 
             el.tagName.toLowerCase() !== 'defs'
           );
-          `}
+          `
+          }
           
           if (elements.length === 0) return;
           
@@ -1157,19 +1203,26 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode };
   }
 
   /**
    * Apply floating animation
    */
-  private applyFloatAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyFloatAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg float-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg float-animation"`
+    );
+
     // Generate JavaScript for the float animation
     const jsCode = `
       (function() {
@@ -1263,19 +1316,26 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode };
   }
 
   /**
    * Apply pulse animation
    */
-  private applyPulseAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyPulseAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg pulse-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg pulse-animation"`
+    );
+
     // Generate JavaScript for the pulse animation
     const jsCode = `
       (function() {
@@ -1385,34 +1445,48 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode };
   }
 
   /**
    * Apply custom animation using provided JavaScript code
    */
-  private applyCustomAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyCustomAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     // Add animation class and ID to the SVG element
-    const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg custom-animation"`);
-    
+    const animatedSvg = svg.replace(
+      '<svg',
+      `<svg id="${uniqueId}" class="animated-svg custom-animation"`
+    );
+
     // Use custom CSS if provided, otherwise use a simple fade-in
-    const cssCode = options.customCSS || `
+    const cssCode =
+      options.customCSS ||
+      `
       #${uniqueId}.animated-svg.custom-animation {
         opacity: 0;
         animation: customAnimation-${uniqueId} ${options.timing.duration}ms ${options.timing.easing || AnimationEasing.EASE} ${options.timing.delay || 0}ms ${options.timing.iterations === Infinity ? 'infinite' : options.timing.iterations || '1'} forwards;
       }
       
       @keyframes customAnimation-${uniqueId} {
-        ${options.customKeyframes || `
+        ${
+          options.customKeyframes ||
+          `
         from { opacity: 0; }
         to { opacity: 1; }
-        `}
+        `
+        }
       }
     `;
-    
+
     // Use custom JS if provided, otherwise create a basic animation
-    const jsCode = options.jsCode || `
+    const jsCode =
+      options.jsCode ||
+      `
       (function() {
         // Custom Animation for ${uniqueId}
         document.addEventListener('DOMContentLoaded', function() {
@@ -1493,26 +1567,30 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode, cssCode };
   }
 
   /**
    * Apply default animation as fallback
    */
-  private applyDefaultAnimation(svg: string, options: AnimationOptions, uniqueId: string): { animatedSvg: string; jsCode: string; cssCode?: string } {
+  private applyDefaultAnimation(
+    svg: string,
+    options: AnimationOptions,
+    uniqueId: string
+  ): { animatedSvg: string; jsCode: string; cssCode?: string } {
     const { timing } = options;
-    
+
     // Add animation class and ID to the SVG element
     const animatedSvg = svg.replace('<svg', `<svg id="${uniqueId}" class="animated-svg fade-in"`);
-    
+
     // Default CSS for fade-in
     const cssCode = `
       #${uniqueId}.animated-svg.fade-in {
         opacity: 0;
       }
     `;
-    
+
     // Simple JavaScript animation as fallback
     const jsCode = `
       (function() {
@@ -1597,7 +1675,7 @@ export class JSAnimationProvider implements AnimationProvider {
         });
       })();
     `;
-    
+
     return { animatedSvg, jsCode, cssCode };
   }
 }

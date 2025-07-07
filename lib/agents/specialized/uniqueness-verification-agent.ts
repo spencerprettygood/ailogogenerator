@@ -4,12 +4,12 @@
  */
 
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
+import {
+  AgentConfig,
   AgentInput,
   UniquenessVerificationAgentInput,
   UniquenessVerificationAgentOutput,
-  UniquenessVerificationResult
+  UniquenessVerificationResult,
 } from '../../types-agents';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -19,17 +19,13 @@ import { safeJsonParse } from '../../utils/json-utils';
  */
 export class UniquenessVerificationAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'uniqueness-verification', 
-      ['uniqueness-verification'],
-      {
-        model: 'claude-3-5-sonnet-20240620',
-        temperature: 0.2,
-        maxTokens: 2000,
-        ...config
-      }
-    );
-    
+    super('uniqueness-verification', ['uniqueness-verification'], {
+      model: 'claude-3-5-sonnet-20240620',
+      temperature: 0.2,
+      maxTokens: 2000,
+      ...config,
+    });
+
     this.systemPrompt = `
 # Logo Uniqueness Verification Task
 
@@ -91,21 +87,25 @@ Provide your analysis in JSON format with the following structure:
 
   protected async generatePrompt(input: UniquenessVerificationAgentInput): Promise<string> {
     const { logo, industry, brandName, existingLogos } = input;
-    
+
     // Extract logo SVG code for analysis
     const svgCode = logo.svgCode;
-    
+
     // Prepare existing logos for comparison if available
     let existingLogosSection = '';
     if (existingLogos && existingLogos.length > 0) {
       existingLogosSection = `
 ## Existing Logos for Comparison
-${existingLogos.map((existing: { svgCode: string }, index: number) => `
+${existingLogos
+  .map(
+    (existing: { svgCode: string }, index: number) => `
 ### Logo ${index + 1}
 \`\`\`svg
 ${existing.svgCode.substring(0, 500)}... (truncated)
 \`\`\`
-`).join('\n')}
+`
+  )
+  .join('\n')}
 `;
     }
 
@@ -126,7 +126,10 @@ Please perform the uniqueness verification task based on the instructions in the
     return prompt;
   }
 
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<UniquenessVerificationAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<UniquenessVerificationAgentOutput> {
     const parsedResult = safeJsonParse(responseContent);
 
     if (!parsedResult || typeof parsedResult !== 'object') {
@@ -142,14 +145,17 @@ Please perform the uniqueness verification task based on the instructions in the
     }
 
     // Validate required fields
-    if (typeof parsedResult.isUnique !== 'boolean' || 
-        typeof parsedResult.uniquenessScore !== 'number' ||
-        !Array.isArray(parsedResult.similarityIssues) ||
-        !Array.isArray(parsedResult.recommendations)) {
+    if (
+      typeof parsedResult.isUnique !== 'boolean' ||
+      typeof parsedResult.uniquenessScore !== 'number' ||
+      !Array.isArray(parsedResult.similarityIssues) ||
+      !Array.isArray(parsedResult.recommendations)
+    ) {
       return {
         success: false,
         error: handleError({
-          error: 'AI response has invalid structure. Missing or incorrect type for required fields.',
+          error:
+            'AI response has invalid structure. Missing or incorrect type for required fields.',
           category: ErrorCategory.API,
           details: { parsedResult },
           retryable: true,

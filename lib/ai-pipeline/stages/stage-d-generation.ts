@@ -46,17 +46,47 @@ const STAGE_D_CONFIG = {
   max_svg_size: 20 * 1024, // Increased to 20KB maximum size
   viewBox: '0 0 300 300',
   allowed_elements: [
-    'svg', 'g', 'path', 'circle', 'rect', 'polygon', 'polyline',
-    'line', 'text', 'tspan', 'defs', 'linearGradient', 'radialGradient',
-    'stop', 'ellipse', 'mask', 'clipPath', 'use', 'title', 'desc',
-    'pattern', 'symbol'
+    'svg',
+    'g',
+    'path',
+    'circle',
+    'rect',
+    'polygon',
+    'polyline',
+    'line',
+    'text',
+    'tspan',
+    'defs',
+    'linearGradient',
+    'radialGradient',
+    'stop',
+    'ellipse',
+    'mask',
+    'clipPath',
+    'use',
+    'title',
+    'desc',
+    'pattern',
+    'symbol',
   ],
   forbidden_elements: [
-    'script', 'foreignObject', 'iframe', 'image', 'embed', 'video',
-    'audio', 'canvas', 'object', 'animate', 'set', 'animateMotion',
-    'animateTransform', 'animateColor', 'a'
+    'script',
+    'foreignObject',
+    'iframe',
+    'image',
+    'embed',
+    'video',
+    'audio',
+    'canvas',
+    'object',
+    'animate',
+    'set',
+    'animateMotion',
+    'animateTransform',
+    'animateColor',
+    'a',
   ],
-  max_colors: 6 // Increased to allow for more nuanced palettes
+  max_colors: 6, // Increased to allow for more nuanced palettes
 };
 
 // Enhanced system prompt for SVG logo generation with advanced design principles
@@ -306,7 +336,7 @@ GENERAL DESIGN PRINCIPLES:
 - Balance distinctive with appropriate for maximum effectiveness
 - Consider negative space as an active design element
 - Ensure the logo tells a coherent visual story about the brand
-  `
+  `,
 };
 
 // Input validation class
@@ -321,10 +351,7 @@ class StageDValidator {
     }
 
     // Verify designSpec has required fields
-    const requiredDesignFields: Array<keyof DesignSpec> = [
-      'brand_name',
-      'brand_description'
-    ];
+    const requiredDesignFields: Array<keyof DesignSpec> = ['brand_name', 'brand_description'];
 
     for (const field of requiredDesignFields) {
       if (!input.designSpec[field] || typeof input.designSpec[field] !== 'string') {
@@ -336,7 +363,7 @@ class StageDValidator {
     const requiredConceptFields: Array<keyof MoodboardConcept> = [
       'name',
       'description',
-      'primary_colors'
+      'primary_colors',
     ];
 
     for (const field of requiredConceptFields) {
@@ -345,19 +372,26 @@ class StageDValidator {
       }
     }
 
-    if (!Array.isArray(input.selectedConcept.primary_colors) || input.selectedConcept.primary_colors.length === 0) {
+    if (
+      !Array.isArray(input.selectedConcept.primary_colors) ||
+      input.selectedConcept.primary_colors.length === 0
+    ) {
       throw new Error('Selected concept must have at least one primary color');
     }
 
     // Validate reference images if provided
-    if (input.referenceImages && (!Array.isArray(input.referenceImages) || input.referenceImages.some(img => typeof img !== 'string'))) {
+    if (
+      input.referenceImages &&
+      (!Array.isArray(input.referenceImages) ||
+        input.referenceImages.some(img => typeof img !== 'string'))
+    ) {
       throw new Error('Reference images must be an array of strings');
     }
   }
 
   static validateSvg(svgString: string): { isValid: boolean; issues: string[] } {
     const issues: string[] = [];
-    
+
     // Check if it's empty
     if (!svgString || typeof svgString !== 'string' || svgString.trim().length === 0) {
       return { isValid: false, issues: ['SVG is empty or not a string'] };
@@ -393,7 +427,7 @@ class StageDValidator {
       /href\s*=\s*['"]?https?:/i, // External links
       /<\s*iframe/i,
       /<\s*embed/i,
-      /<\s*object/i
+      /<\s*object/i,
     ];
 
     for (const pattern of securityPatterns) {
@@ -405,29 +439,34 @@ class StageDValidator {
 
     return {
       isValid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
-  static extractSvgAndNotes(content: string): { svg: string | null; notes: string | null; } {
+  static extractSvgAndNotes(content: string): { svg: string | null; notes: string | null } {
     // Extract SVG code
     const svgMatch = content.match(/```svg\s*([\s\S]*?)\s*```/);
     const svg = svgMatch ? svgMatch[1]!.trim() : null;
-    
+
     // Extract JSON notes
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
     const notes = jsonMatch ? jsonMatch[1]!.trim() : null;
-    
+
     return { svg, notes };
   }
 
-  static parseSvgMetadata(svg: string): { width: number; height: number; elementCount: number; hasGradients: boolean } {
+  static parseSvgMetadata(svg: string): {
+    width: number;
+    height: number;
+    elementCount: number;
+    hasGradients: boolean;
+  } {
     // Default values
     let width = 300;
     let height = 300;
     let elementCount = 0;
     let hasGradients = false;
-    
+
     try {
       // Count elements (approximate method without DOM parsing)
       const elementTypes = ['path', 'circle', 'rect', 'polygon', 'text', 'g', 'line', 'ellipse'];
@@ -435,10 +474,10 @@ class StageDValidator {
         const matches = svg.match(new RegExp(`<${type}[\\s>]`, 'g'));
         return count + (matches ? matches.length : 0);
       }, 0);
-      
+
       // Check for gradients
       hasGradients = svg.includes('linearGradient') || svg.includes('radialGradient');
-      
+
       // Try to extract width and height
       const viewBoxMatch = svg.match(/viewBox=["']([^"']*)["']/);
       if (viewBoxMatch && viewBoxMatch[1]) {
@@ -448,17 +487,17 @@ class StageDValidator {
           height = parts[3]!;
         }
       }
-      
+
       // Fallback to width and height attributes if viewBox not found
       if (!viewBoxMatch) {
         const widthMatch = svg.match(/width=["']([^"']*)["']/);
         const heightMatch = svg.match(/height=["']([^"']*)["']/);
-        
+
         if (widthMatch && widthMatch[1]) {
           const w = widthMatch[1];
           width = parseInt(w);
         }
-        
+
         if (heightMatch && heightMatch[1]) {
           const h = heightMatch[1];
           height = parseInt(h);
@@ -467,7 +506,7 @@ class StageDValidator {
     } catch (error) {
       console.error('Error parsing SVG metadata:', error);
     }
-    
+
     return { width, height, elementCount, hasGradients };
   }
 }
@@ -486,12 +525,13 @@ class StageDRetryHandler {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry validation errors
-        if (error instanceof Error && (
-          error.message.includes('Design specification') || 
-          error.message.includes('Selected concept')
-        )) {
+        if (
+          error instanceof Error &&
+          (error.message.includes('Design specification') ||
+            error.message.includes('Selected concept'))
+        ) {
           throw error;
         }
 
@@ -507,36 +547,187 @@ class StageDRetryHandler {
 }
 
 // Enhanced SVG generation function with industry context
-// Stub implementation for CI pipeline tests
-export async function generateSvgLogo(
-  input: StageDInput
-): Promise<StageDOutput> {
-  const svg = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 300\"><title>${input.designSpec.brand_name} Logo</title></svg>`;
-  const tokensUsed = 1;
-  const processingTime = 1;
-  return { success: true, result: { svg, width: 300, height: 300, elementCount: 0, hasGradients: false, designNotes: '', designRationale: undefined, industryContext: undefined }, tokensUsed, processingTime };
+export async function generateSvgLogo(input: StageDInput): Promise<StageDOutput> {
+  const startTime = Date.now();
+  
+  try {
+    // Validate input
+    StageDValidator.validateInput(input);
+    
+    // Get the API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+    }
+    
+    // Initialize the Anthropic client
+    const anthropic = new Anthropic({
+      apiKey: apiKey,
+    });
+    
+    // Get industry-specific guidance
+    const industryGuidance = input.industry 
+      ? INDUSTRY_DESIGN_PRINCIPLES[input.industry as keyof typeof INDUSTRY_DESIGN_PRINCIPLES] || INDUSTRY_DESIGN_PRINCIPLES.default
+      : INDUSTRY_DESIGN_PRINCIPLES.default;
+    
+    // Build the user prompt
+    const userPrompt = `
+BRAND INFORMATION:
+Brand Name: ${input.designSpec.brand_name}
+Brand Description: ${input.designSpec.brand_description}
+Industry: ${input.industry || 'Not specified'}
+Target Audience: ${input.designSpec.target_audience || 'General public'}
+
+SELECTED DESIGN CONCEPT:
+Name: ${input.selectedConcept.name}
+Description: ${input.selectedConcept.description}
+Style: ${input.selectedConcept.style || 'Not specified'}
+Primary Colors: ${input.selectedConcept.primary_colors.join(', ')}
+${input.selectedConcept.secondary_colors ? `Secondary Colors: ${input.selectedConcept.secondary_colors.join(', ')}` : ''}
+${input.selectedConcept.typography ? `Typography: ${input.selectedConcept.typography}` : ''}
+${input.selectedConcept.imagery ? `Imagery: ${input.selectedConcept.imagery}` : ''}
+${input.selectedConcept.mood ? `Mood: ${input.selectedConcept.mood}` : ''}
+
+${input.referenceImages && input.referenceImages.length > 0 ? 
+  `REFERENCE IMAGES:\n${input.referenceImages.map((img, i) => `${i + 1}. ${img}`).join('\n')}\n` : ''}
+
+INDUSTRY-SPECIFIC GUIDANCE:
+${industryGuidance}
+
+Generate a high-quality SVG logo that brings this design concept to life. Focus on creating a unique, professional logo that will stand out in the ${input.industry || 'general'} industry while embodying the brand's personality and values.
+`;
+    
+    // Make the API call with retry logic
+    const result = await StageDRetryHandler.withRetry(async () => {
+      const response = await anthropic.messages.create({
+        model: STAGE_D_CONFIG.model,
+        max_tokens: STAGE_D_CONFIG.max_tokens,
+        temperature: STAGE_D_CONFIG.temperature,
+        system: STAGE_D_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ],
+      });
+      
+      // Extract the response content
+      const content = response.content[0];
+      if (!content || content.type !== 'text') {
+        throw new Error('Invalid response format from Anthropic API');
+      }
+      
+      return {
+        content: content.text,
+        tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+      };
+    });
+    
+    // Parse the SVG and design notes
+    const { svg, notes } = StageDValidator.extractSvgAndNotes(result.content);
+    
+    if (!svg) {
+      throw new Error('Failed to extract SVG from AI response');
+    }
+    
+    // Validate the SVG
+    const validation = StageDValidator.validateSvg(svg);
+    if (!validation.isValid) {
+      throw new Error(`Invalid SVG generated: ${validation.issues.join(', ')}`);
+    }
+    
+    // Parse SVG metadata
+    const metadata = StageDValidator.parseSvgMetadata(svg);
+    
+    // Parse design notes
+    let designNotes = '';
+    let designRationale = undefined;
+    let industryContext = undefined;
+    
+    if (notes) {
+      try {
+        const parsedNotes = JSON.parse(notes);
+        designNotes = parsedNotes.designNotes || '';
+        designRationale = parsedNotes.designRationale || undefined;
+        industryContext = parsedNotes.industryContext || undefined;
+      } catch (error) {
+        console.warn('Failed to parse design notes JSON:', error);
+        designNotes = notes; // Fallback to raw notes
+      }
+    }
+    
+    const processingTime = Date.now() - startTime;
+    
+    return {
+      success: true,
+      result: {
+        svg: svg.trim(),
+        width: metadata.width,
+        height: metadata.height,
+        elementCount: metadata.elementCount,
+        hasGradients: metadata.hasGradients,
+        designNotes,
+        designRationale,
+        industryContext,
+      },
+      tokensUsed: result.tokensUsed,
+      processingTime,
+    };
+    
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    
+    // Determine error type
+    let errorType: 'validation_error' | 'ai_error' | 'system_error' | 'svg_error' = 'system_error';
+    let errorMessage = 'Unknown error occurred';
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      if (errorMessage.includes('Design specification') || errorMessage.includes('Selected concept')) {
+        errorType = 'validation_error';
+      } else if (errorMessage.includes('ANTHROPIC_API_KEY') || errorMessage.includes('Invalid response')) {
+        errorType = 'ai_error';
+      } else if (errorMessage.includes('Invalid SVG')) {
+        errorType = 'svg_error';
+      }
+    }
+    
+    return {
+      success: false,
+      error: {
+        type: errorType,
+        message: errorMessage,
+        details: error,
+      },
+      processingTime,
+    };
+  }
 }
 
 // Utility function for validation
 export function validateStageDOutput(output: StageDOutput): string {
-  if (!output) return "Output is undefined or null";
-  
+  if (!output) return 'Output is undefined or null';
+
   if (output.success) {
-    if (!output.result) return "Successful output missing result";
-    if (!output.result.svg) return "Result missing SVG content";
-    if (output.result.svg.length === 0) return "SVG content is empty";
-    if (!output.result.svg.includes('<svg')) return "Invalid SVG: missing <svg> element";
-    
-    if (!output.tokensUsed || output.tokensUsed <= 0) return "Missing or invalid tokensUsed";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime";
-    
-    return "valid";
+    if (!output.result) return 'Successful output missing result';
+    if (!output.result.svg) return 'Result missing SVG content';
+    if (output.result.svg.length === 0) return 'SVG content is empty';
+    if (!output.result.svg.includes('<svg')) return 'Invalid SVG: missing <svg> element';
+
+    if (!output.tokensUsed || output.tokensUsed <= 0) return 'Missing or invalid tokensUsed';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime';
+
+    return 'valid';
   } else {
-    if (!output.error) return "Failed output missing error object";
-    if (!output.error.type || !output.error.message) return "Error object missing type or message";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime on error";
-    
-    return "valid_error";
+    if (!output.error) return 'Failed output missing error object';
+    if (!output.error.type || !output.error.message) return 'Error object missing type or message';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime on error';
+
+    return 'valid_error';
   }
 }
 

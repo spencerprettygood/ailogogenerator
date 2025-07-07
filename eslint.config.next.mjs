@@ -16,7 +16,7 @@ export default [
   {
     ignores: ['node_modules/**', '.next/**', 'out/**', 'dist/**'],
   },
-  
+
   // Base rules for all files
   {
     languageOptions: {
@@ -36,8 +36,8 @@ export default [
     },
     plugins: {
       '@typescript-eslint': typescriptPlugin,
-      'import': importsPlugin,
-      'react': reactPlugin,
+      import: importsPlugin,
+      react: reactPlugin,
       'react-hooks': hooksPlugin,
       'jsx-a11y': jsxA11yPlugin,
       '@next/next': nextPlugin,
@@ -60,7 +60,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/ban-ts-comment': 'warn',
-      
+
       // React rules
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
@@ -69,11 +69,11 @@ export default [
       'react/jsx-uses-vars': 'error',
       'react/jsx-no-useless-fragment': 'warn',
       'react/jsx-fragments': ['warn', 'syntax'],
-      
+
       // React Hooks rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      
+
       // Import rules
       'import/no-unresolved': 'off', // TypeScript handles this
       'import/named': 'error',
@@ -82,14 +82,7 @@ export default [
       'import/order': [
         'warn',
         {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-          ],
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
           'newlines-between': 'always',
           alphabetize: {
             order: 'asc',
@@ -97,7 +90,7 @@ export default [
           },
         },
       ],
-      
+
       // Next.js rules
       '@next/next/no-html-link-for-pages': 'error',
       '@next/next/no-img-element': 'warn',
@@ -108,7 +101,7 @@ export default [
       '@next/next/no-head-import-in-document': 'error',
       '@next/next/no-script-component-in-head': 'error',
       '@next/next/no-title-in-document-head': 'error',
-      
+
       // Accessibility rules
       'jsx-a11y/alt-text': 'warn',
       'jsx-a11y/anchor-has-content': 'warn',
@@ -119,16 +112,16 @@ export default [
       'jsx-a11y/heading-has-content': 'warn',
       'jsx-a11y/img-redundant-alt': 'warn',
       'jsx-a11y/label-has-associated-control': 'warn',
-      
+
       // General best practices
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
-      'eqeqeq': ['error', 'smart'],
+      eqeqeq: ['error', 'smart'],
       'no-unused-expressions': 'warn',
     },
   },
-  
+
   // Specific rules for Next.js app router files
   {
     files: ['app/**/*.ts', 'app/**/*.tsx'],
@@ -142,7 +135,7 @@ export default [
       '@next/next/inline-script-id': 'warn',
     },
   },
-  
+
   // Specific rules for pages
   {
     files: ['app/**/page.tsx'],
@@ -152,7 +145,7 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
-  
+
   // Special rules for layout files
   {
     files: ['app/**/layout.tsx'],
@@ -162,7 +155,7 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
-  
+
   // Rules for API routes
   {
     files: ['app/api/**/*.ts', 'app/api/**/*.tsx'],
@@ -181,7 +174,7 @@ export default [
       ],
     },
   },
-  
+
   // Rules specifically for client components
   {
     files: ['**/*.tsx', '**/*.ts'],
@@ -190,7 +183,7 @@ export default [
       '@next/next/no-client-hooks-in-server-components': 'error',
     },
   },
-  
+
   // Extra rules from configurations
   ...compat.extends('plugin:@next/next/recommended'),
 ];

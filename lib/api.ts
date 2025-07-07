@@ -34,45 +34,45 @@ export class LogoGeneratorAPI {
         // Use FormData approach when files are present
         const formData = new FormData();
         formData.append('brief', brief);
-        
+
         files.forEach((file, index) => {
           formData.append(`file_${index}`, file);
         });
-        
+
         // Add industry if specified
         if (options?.industry) {
           formData.append('industry', options.industry);
         }
-        
+
         // Add animation options if specified
         if (options?.includeAnimations) {
           formData.append('includeAnimations', 'true');
-          
+
           if (options.animationOptions) {
             formData.append('animationOptions', JSON.stringify(options.animationOptions));
           }
         }
-        
+
         // Add uniqueness analysis if requested
         if (options?.includeUniquenessAnalysis) {
           formData.append('includeUniquenessAnalysis', 'true');
         }
-        
+
         // Send as FormData
         const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
           method: 'POST',
           body: formData,
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new APIError(`Generation failed: ${response.status} ${errorText}`, response.status);
         }
-        
+
         if (!response.body) {
           throw new APIError('No response body received', 500);
         }
-        
+
         return response.body;
       } else {
         // No files, use JSON approach for better caching
@@ -83,7 +83,7 @@ export class LogoGeneratorAPI {
           animationOptions: options?.animationOptions,
           includeUniquenessAnalysis: options?.includeUniquenessAnalysis || false,
         };
-        
+
         const response = await fetch(`${this.baseUrl}/api/generate-logo`, {
           method: 'POST',
           headers: {
@@ -91,16 +91,16 @@ export class LogoGeneratorAPI {
           },
           body: JSON.stringify(payload),
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new APIError(`Generation failed: ${response.status} ${errorText}`, response.status);
         }
-        
+
         if (!response.body) {
           throw new APIError('No response body received', 500);
         }
-        
+
         return response.body;
       }
     } catch (error) {
@@ -108,10 +108,7 @@ export class LogoGeneratorAPI {
         throw error;
       }
       console.error('API request error:', error);
-      throw new APIError(
-        error instanceof Error ? error.message : 'Failed to generate logo',
-        500
-      );
+      throw new APIError(error instanceof Error ? error.message : 'Failed to generate logo', 500);
     }
   }
 

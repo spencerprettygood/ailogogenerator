@@ -26,9 +26,17 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
 
   // Define common issue types with user-friendly labels and icons
   const issueTypes: { type: IssueType; label: string; icon: React.ReactNode }[] = [
-    { type: 'generationFailed', label: 'Generation Failed', icon: <AlertCircle className="h-4 w-4" /> },
+    {
+      type: 'generationFailed',
+      label: 'Generation Failed',
+      icon: <AlertCircle className="h-4 w-4" />,
+    },
     { type: 'slowResponse', label: 'Slow Response', icon: <Clock className="h-4 w-4" /> },
-    { type: 'unexpectedResult', label: 'Unexpected Result', icon: <RotateCcw className="h-4 w-4" /> },
+    {
+      type: 'unexpectedResult',
+      label: 'Unexpected Result',
+      icon: <RotateCcw className="h-4 w-4" />,
+    },
     { type: 'uiIssue', label: 'UI Problem', icon: <AlertCircle className="h-4 w-4" /> },
     { type: 'other', label: 'Other Issue', icon: <MessageCircle className="h-4 w-4" /> },
   ];
@@ -76,7 +84,7 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
     if (!issueType) return;
 
     setIsSubmitting(true);
-    
+
     const feedback: LiveFeedback = {
       sessionId,
       timestamp: new Date().toISOString(),
@@ -173,10 +181,10 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
                     What issue are you experiencing?
                   </label>
                   <div className="space-y-2">
-                    {issueTypes.map((issue) => (
+                    {issueTypes.map(issue => (
                       <Button
                         key={issue.type}
-                        variant={issueType === issue.type ? "default" : "outline"}
+                        variant={issueType === issue.type ? 'default' : 'outline'}
                         className="mr-2 flex w-full items-center justify-start"
                         onClick={() => setIssueType(issue.type)}
                       >
@@ -196,7 +204,7 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
                     id="description"
                     placeholder="Please provide any details that might help us understand the issue..."
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={e => setDescription(e.target.value)}
                     rows={3}
                     className="w-full"
                   />
@@ -205,9 +213,7 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
                 {/* Screenshot */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="block text-sm font-medium">
-                      Include a Screenshot
-                    </label>
+                    <label className="block text-sm font-medium">Include a Screenshot</label>
                     <Button
                       variant="outline"
                       size="sm"
@@ -219,14 +225,10 @@ export function LiveFeedbackButton({ sessionId, currentStage, onSubmit }: LiveFe
                       {isCapturingScreenshot ? 'Capturing...' : 'Capture'}
                     </Button>
                   </div>
-                  
+
                   {screenshot && (
                     <div className="relative mt-2 rounded border border-gray-200 p-1 dark:border-gray-700">
-                      <img
-                        src={screenshot}
-                        alt="Screenshot"
-                        className="h-auto w-full rounded"
-                      />
+                      <img src={screenshot} alt="Screenshot" className="h-auto w-full rounded" />
                       <Button
                         variant="destructive"
                         size="sm"

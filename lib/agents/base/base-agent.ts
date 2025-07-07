@@ -1,13 +1,13 @@
 import { nanoid } from 'nanoid';
-import { 
-  Agent, 
-  AgentCapability, 
-  AgentConfig, 
-  AgentContext, 
-  AgentInput, 
-  AgentMetrics, 
-  AgentOutput, 
-  AgentStatus 
+import {
+  Agent,
+  AgentCapability,
+  AgentConfig,
+  AgentContext,
+  AgentInput,
+  AgentMetrics,
+  AgentOutput,
+  AgentStatus,
 } from '../../types-agents';
 import { claudeService } from '../../services/claude-service';
 import { withRetry } from '../../retry';
@@ -24,23 +24,23 @@ export abstract class BaseAgent implements Agent {
     tokenUsage: {
       input: 0,
       output: 0,
-      total: 0
+      total: 0,
     },
     executionTime: 0,
     retryCount: 0,
     startTime: 0,
-    endTime: 0
+    endTime: 0,
   };
   config: AgentConfig;
   protected context?: AgentContext;
   protected systemPrompt: string = '';
   private progressCallback?: (percent: number, message: string) => void;
-  
+
   constructor(type: string, capabilities: AgentCapability[] = [], config?: Partial<AgentConfig>) {
     this.id = `${type}-${nanoid(6)}`;
     this.type = type;
     this.capabilities = capabilities;
-    
+
     // Default configuration
     this.config = {
       model: 'claude-3-5-sonnet-20240620',
@@ -50,12 +50,12 @@ export abstract class BaseAgent implements Agent {
         maxRetries: 3,
         initialDelay: 1000,
         backoffMultiplier: 2,
-        maxDelay: 10000
+        maxDelay: 10000,
       },
-      ...config
+      ...config,
     };
   }
-  
+
   /**
    * Initialize the agent with context data
    */
@@ -66,30 +66,30 @@ export abstract class BaseAgent implements Agent {
       tokenUsage: {
         input: 0,
         output: 0,
-        total: 0
+        total: 0,
       },
       executionTime: 0,
       retryCount: 0,
       startTime: 0,
-      endTime: 0
+      endTime: 0,
     };
-    
+
     // Set progress callback if provided in context
     if (context.progressCallback) {
       this.progressCallback = context.progressCallback;
     }
-    
+
     // Allow derived classes to perform additional initialization
     await this.onInitialize();
   }
-  
+
   /**
    * Hook for derived classes to perform additional initialization
    */
   protected async onInitialize(): Promise<void> {
     // To be implemented by derived classes
   }
-  
+
   /**
    * Set a progress callback function to report progress updates
    */
@@ -120,10 +120,10 @@ export abstract class BaseAgent implements Agent {
       this.progressCallback(-1, message);
     }
   }
-  
+
   /**
    * Report progress of the agent's execution
-   * 
+   *
    * @param percent - Percentage of completion (0-100)
    * @param message - Status message describing current progress
    */
@@ -136,10 +136,10 @@ export abstract class BaseAgent implements Agent {
     } else {
       this.status = 'working';
     }
-    
+
     // Log progress for debugging
     console.log(`[${this.type}] Progress: ${percent}% - ${message}`);
-    
+
     // Call progress callback if available
     if (this.progressCallback) {
       try {
@@ -149,25 +149,25 @@ export abstract class BaseAgent implements Agent {
       }
     }
   }
-  
+
   /**
    * Execute the agent's core functionality
    */
   async execute(input: AgentInput): Promise<AgentOutput> {
     this.status = 'working';
     this.metrics.startTime = Date.now();
-    
+
     try {
       // Report initial progress
       this.reportProgress(5, 'Starting execution...');
-      
+
       // Generate the prompt for this specific task
       this.reportProgress(10, 'Generating prompt...');
       const prompt = await this.generatePrompt(input);
-      
+
       let result = {
         content: '',
-        tokensUsed: { input: 0, output: 0, total: 0 }
+        tokensUsed: { input: 0, output: 0, total: 0 },
       };
 
       // If a prompt is generated, call the AI model. Otherwise, skip to processing.
@@ -175,7 +175,7 @@ export abstract class BaseAgent implements Agent {
         this.reportProgress(15, 'Generated prompt, preparing AI call...');
         // Determine which system prompt to use
         const systemPrompt = this.config.systemPromptOverride || this.systemPrompt;
-        
+
         // Call Claude API with retry logic
         this.reportProgress(20, 'Calling AI model...');
         result = await this.callWithRetry(prompt, systemPrompt);
@@ -183,50 +183,53 @@ export abstract class BaseAgent implements Agent {
       } else {
         this.reportProgress(60, 'Skipping AI model call, proceeding with local processing...');
       }
-      
+
       // Process the response
       this.reportProgress(70, 'Processing response...');
       const output = await this.processResponse(result.content, input);
-      
+
       // Update metrics
       this.metrics.tokenUsage.input += result.tokensUsed.input;
       this.metrics.tokenUsage.output += result.tokensUsed.output;
       this.metrics.tokenUsage.total += result.tokensUsed.total;
       this.metrics.executionTime = Date.now() - this.metrics.startTime;
       this.metrics.endTime = Date.now();
-      
+
       // Update status and report completion
       this.status = 'completed';
       this.reportProgress(100, 'Execution completed successfully');
-      
+
       // Return the processed output along with metrics
       return {
         ...output,
         tokensUsed: result.tokensUsed.total,
-        processingTime: this.metrics.executionTime
+        processingTime: this.metrics.executionTime,
       };
     } catch (error) {
       this.status = 'failed';
       this.metrics.endTime = Date.now();
       this.metrics.executionTime = this.metrics.endTime - this.metrics.startTime;
-      
+
       // Log the error and report failure
       console.error(`Agent ${this.id} execution failed:`, error);
-      this.reportProgress(0, `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+      this.reportProgress(
+        0,
+        `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+
       // Return error output
       return {
         success: false,
         error: {
           message: error instanceof Error ? error.message : 'Unknown error',
-          details: error
+          details: error,
         },
         tokensUsed: this.metrics.tokenUsage.total,
-        processingTime: this.metrics.executionTime
+        processingTime: this.metrics.executionTime,
       };
     }
   }
-  
+
   /**
    * Call the Claude API with retry logic
    */
@@ -235,17 +238,17 @@ export abstract class BaseAgent implements Agent {
       maxRetries: 3,
       initialDelay: 1000,
       backoffMultiplier: 2,
-      maxDelay: 10000
+      maxDelay: 10000,
     };
-    
+
     // Setup retry configuration
     const retryConfig = {
       maxAttempts: maxRetries,
       baseDelay: initialDelay,
       backoffFactor: backoffMultiplier,
-      maxDelay: maxDelay
+      maxDelay: maxDelay,
     };
-    
+
     // Use the withRetry utility
     try {
       return await withRetry(async () => {
@@ -256,14 +259,14 @@ export abstract class BaseAgent implements Agent {
           fallbackModels: this.config.fallbackModels,
           temperature: this.config.temperature,
           maxTokens: this.config.maxTokens,
-          stopSequences: this.config.stopSequences
+          stopSequences: this.config.stopSequences,
         };
-      
+
         // Use specialized API call based on agent capabilities
         if (this.capabilities.includes('svg-generation')) {
           return await claudeService.generateSVG(prompt, systemPrompt, requestOptions);
         } else if (
-          this.capabilities.includes('requirements-analysis') || 
+          this.capabilities.includes('requirements-analysis') ||
           this.capabilities.includes('selection')
         ) {
           return await claudeService.analyze(prompt, systemPrompt, requestOptions);
@@ -277,37 +280,44 @@ export abstract class BaseAgent implements Agent {
       throw error;
     }
   }
-  
+
   /**
    * Record token usage metrics
-   * 
+   *
    * @param inputTokens - Number of input tokens used
    * @param outputTokens - Number of output tokens used
    * @param totalTokens - Total number of tokens used (if not provided, calculated as inputTokens + outputTokens)
    */
-  protected recordTokenUsage(inputTokens: number, outputTokens: number, totalTokens?: number): void {
+  protected recordTokenUsage(
+    inputTokens: number,
+    outputTokens: number,
+    totalTokens?: number
+  ): void {
     this.metrics.tokenUsage.input += inputTokens;
     this.metrics.tokenUsage.output += outputTokens;
-    this.metrics.tokenUsage.total += totalTokens || (inputTokens + outputTokens);
+    this.metrics.tokenUsage.total += totalTokens || inputTokens + outputTokens;
   }
-  
+
   /**
    * Get the current status of the agent
    */
   getStatus(): AgentStatus {
     return this.status;
   }
-  
+
   /**
    * Get the metrics for this agent's execution
    */
   getMetrics(): AgentMetrics {
     return this.metrics;
   }
-  
+
   /**
    * Abstract methods to be implemented by derived agent classes
    */
   protected abstract generatePrompt(input: AgentInput): Promise<string>;
-  protected abstract processResponse(responseContent: string, originalInput: AgentInput): Promise<AgentOutput>;
+  protected abstract processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<AgentOutput>;
 }

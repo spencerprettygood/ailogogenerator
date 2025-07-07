@@ -20,16 +20,21 @@ export class LogoStorageService {
   /**
    * Save a generated logo session
    */
-  static saveSession(sessionId: string, assets: GeneratedAssets, prompt: string, options: Record<string, any>): void {
+  static saveSession(
+    sessionId: string,
+    assets: GeneratedAssets,
+    prompt: string,
+    options: Record<string, any>
+  ): void {
     try {
       const sessions = this.getAllSessions();
-      
+
       const newSession: StoredSession = {
         id: sessionId,
         timestamp: Date.now(),
         assets,
         prompt,
-        options
+        options,
       };
 
       // Add new session at the beginning
@@ -110,7 +115,7 @@ export class LogoStorageService {
       const data = localStorage.getItem(STORAGE_KEY) || '';
       return {
         sessionCount: sessions.length,
-        storageSize: new Blob([data]).size
+        storageSize: new Blob([data]).size,
       };
     } catch (error) {
       return { sessionCount: 0, storageSize: 0 };

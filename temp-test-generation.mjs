@@ -2,7 +2,8 @@ import fetch from 'node-fetch';
 
 async function runTest() {
   const testBrief = {
-    prompt: 'A minimalist logo for a new coffee shop called "The Daily Grind". It should be clean, modern, and feature a stylized coffee bean.',
+    prompt:
+      'A minimalist logo for a new coffee shop called "The Daily Grind". It should be clean, modern, and feature a stylized coffee bean.',
     industry: 'Food & Beverage',
   };
 
@@ -18,7 +19,7 @@ async function runTest() {
         brief: {
           prompt: testBrief.prompt,
           industry: testBrief.industry,
-        }
+        },
       }),
     });
 
@@ -55,12 +56,10 @@ async function runTest() {
         });
       }
     } catch (err) {
-        console.error('Error reading stream:', err);
+      console.error('Error reading stream:', err);
     }
 
-
     console.log('Logo generation test finished.');
-
   } catch (error) {
     console.error('An unexpected error occurred during the test:', error);
   }

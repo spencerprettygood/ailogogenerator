@@ -32,54 +32,57 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
   const [error, setError] = useState<Error | null>(null);
   const [fromCache, setFromCache] = useState(false);
 
-  const generateLogo = useCallback(async (brief: string, files?: File[], options?: LogoGenerationOptions) => {
-    setIsGenerating(true);
-    setError(null);
-    setProgress(null);
-    setPreview(null);
-    setAssets(null);
-    setSessionId(null);
+  const generateLogo = useCallback(
+    async (brief: string, files?: File[], options?: LogoGenerationOptions) => {
+      setIsGenerating(true);
+      setError(null);
+      setProgress(null);
+      setPreview(null);
+      setAssets(null);
+      setSessionId(null);
 
-    try {
-      const stream = await logoAPI.generateLogo(brief, files, options);
-      
-      await streamProcessor.processStream(stream, {
-        onProgress: setProgress,
-        onPreview: setPreview,
-        onComplete: (generatedAssets, generatedSessionId) => {
-          setAssets(generatedAssets);
-          setSessionId(generatedSessionId);
-          setIsGenerating(false);
-        },
-        onError: (streamError) => {
-          setError(streamError);
-          setIsGenerating(false);
-        },
-        onCache: (isCached) => {
-          setFromCache(isCached);
-          // If from cache, immediately set progress to 100%
-          if (isCached) {
-            const cachedProgress: GenerationProgress = {
-              status: 'completed',
-              progress: 100,
-              message: 'Retrieved from cache',
-              stage: PipelineStage.CACHED,
-              estimatedTimeRemaining: 0,
-            };
-            setProgress(cachedProgress);
-            
-            // Also ensure progress display shows completion
+      try {
+        const stream = await logoAPI.generateLogo(brief, files, options);
+
+        await streamProcessor.processStream(stream, {
+          onProgress: setProgress,
+          onPreview: setPreview,
+          onComplete: (generatedAssets, generatedSessionId) => {
+            setAssets(generatedAssets);
+            setSessionId(generatedSessionId);
             setIsGenerating(false);
-          } else {
-            setFromCache(false);
-          }
-        }
-      });
-    } catch (err) {
-      setError(err as Error);
-      setIsGenerating(false);
-    }
-  }, []);
+          },
+          onError: streamError => {
+            setError(streamError);
+            setIsGenerating(false);
+          },
+          onCache: isCached => {
+            setFromCache(isCached);
+            // If from cache, immediately set progress to 100%
+            if (isCached) {
+              const cachedProgress: GenerationProgress = {
+                status: 'completed',
+                progress: 100,
+                message: 'Retrieved from cache',
+                stage: PipelineStage.CACHED,
+                estimatedTimeRemaining: 0,
+              };
+              setProgress(cachedProgress);
+
+              // Also ensure progress display shows completion
+              setIsGenerating(false);
+            } else {
+              setFromCache(false);
+            }
+          },
+        });
+      } catch (err) {
+        setError(err as Error);
+        setIsGenerating(false);
+      }
+    },
+    []
+  );
 
   const reset = useCallback(() => {
     setIsGenerating(false);
@@ -100,6 +103,6 @@ export function useLogoGeneration(): UseLogoGenerationReturn {
     sessionId,
     error,
     reset,
-    fromCache
+    fromCache,
   };
 }

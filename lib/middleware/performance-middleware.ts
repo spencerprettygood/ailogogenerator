@@ -2,9 +2,9 @@
  * @file performance-middleware.ts
  * @module lib/middleware/performance-middleware
  * @description Performance monitoring middleware for the AI Logo Generator
- * 
+ *
  * This middleware tracks and records performance metrics for API requests.
- * 
+ *
  * @author AILogoGenerator Team
  * @version 1.0.0
  * @copyright 2024
@@ -28,19 +28,19 @@ interface ResponseWithMetrics extends NextResponse {
 /**
  * @function withPerformanceMonitoring
  * @description Higher-order function that adds performance monitoring to an API route handler
- * 
+ *
  * @param {Function} handler - The original API route handler
  * @returns {Function} Enhanced handler with performance monitoring
- * 
+ *
  * @example
  * // In an API route file
  * import { withPerformanceMonitoring } from '@/lib/middleware/performance-middleware';
- * 
+ *
  * async function handler(req: NextRequest) {
  *   // Handle the request normally
  *   return NextResponse.json({ message: 'Success' });
  * }
- * 
+ *
  * export const GET = withPerformanceMonitoring(handler);
  */
 export function withPerformanceMonitoring(
@@ -51,11 +51,11 @@ export function withPerformanceMonitoring(
     if (!performanceMonitor.isEnabled()) {
       return handler(req);
     }
-    
+
     const startTime = Date.now();
     const url = new URL(req.url);
     const endpoint = `${req.method} ${url.pathname}`;
-    
+
     // Attempt to get request body size
     let requestSize = 0;
     try {
@@ -65,22 +65,22 @@ export function withPerformanceMonitoring(
     } catch {
       // Ignore errors in measuring request size
     }
-    
+
     try {
       // Call the original handler
-      const response = await handler(req) as ResponseWithMetrics;
-      
+      const response = (await handler(req)) as ResponseWithMetrics;
+
       // Store metrics in the response for the after-response logic
       response.metrics = {
         startTime,
-        requestSize
+        requestSize,
       };
-      
+
       return response;
     } catch (error) {
       // Record failed request
       const endTime = Date.now();
-      
+
       performanceMonitor.recordAPICall({
         endpoint,
         method: req.method,
@@ -91,10 +91,10 @@ export function withPerformanceMonitoring(
         metadata: {
           error: error instanceof Error ? error.message : String(error),
           path: url.pathname,
-          query: Object.fromEntries(url.searchParams.entries())
-        }
+          query: Object.fromEntries(url.searchParams.entries()),
+        },
       });
-      
+
       // Re-throw the error
       throw error;
     }
@@ -104,7 +104,7 @@ export function withPerformanceMonitoring(
 /**
  * @function afterResponse
  * @description Middleware to record API performance metrics after response is sent
- * 
+ *
  * @param {ResponseWithMetrics} response - The response object with metrics
  * @param {NextRequest} request - The original request
  */
@@ -113,12 +113,12 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
   if (!performanceMonitor.isEnabled() || !response.metrics) {
     return;
   }
-  
+
   const { startTime, requestSize } = response.metrics;
   const endTime = Date.now();
   const url = new URL(request.url);
   const endpoint = `${request.method} ${url.pathname}`;
-  
+
   // Attempt to get response size
   let responseSize = 0;
   try {
@@ -137,7 +137,7 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
   } catch {
     // Ignore errors in measuring response size
   }
-  
+
   // Record API call metrics
   // Record metrics in both systems for completeness
   performanceMonitor.recordAPICall({
@@ -151,10 +151,10 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
     metadata: {
       path: url.pathname,
       query: Object.fromEntries(url.searchParams.entries()),
-      contentType: response.headers.get('content-type') || 'unknown'
-    }
+      contentType: response.headers.get('content-type') || 'unknown',
+    },
   });
-  
+
   // Also record in our telemetry system
   telemetry.recordEvent('api_call', {
     endpoint,
@@ -162,15 +162,15 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
     duration: endTime - startTime,
     statusCode: response.status,
     path: url.pathname,
-    contentType: response.headers.get('content-type') || 'unknown'
+    contentType: response.headers.get('content-type') || 'unknown',
   });
-  
+
   // Add timing metrics
   telemetry.recordMetric({
     name: `api_${request.method.toLowerCase()}_duration`,
     value: endTime - startTime,
     timestamp: endTime,
-    type: 'histogram'
+    type: 'histogram',
   });
 }
 
@@ -183,7 +183,7 @@ export function afterResponse(response: ResponseWithMetrics, request: NextReques
 export function middleware(request: NextRequest): NextResponse {
   // This function will be executed for every request
   // We'll use it to set up performance monitoring
-  
+
   // For now, just pass through - actual monitoring happens in withPerformanceMonitoring
   return NextResponse.next();
 }

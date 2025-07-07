@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ export function SearchInterface({
   onSubmitAction,
   isGenerating,
   className = '',
-  placeholder = 'Describe your perfect logo...'
+  placeholder = 'Describe your perfect logo...',
 }: SearchInterfaceProps) {
   const [prompt, setPrompt] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -59,12 +59,12 @@ export function SearchInterface({
               ref={inputRef}
               type="text"
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={e => setPrompt(e.target.value)}
               placeholder={placeholder}
               className="pr-20 py-6 text-lg bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               disabled={isGenerating}
             />
-            
+
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex space-x-1">
               <Button
                 type="button"
@@ -76,7 +76,7 @@ export function SearchInterface({
               >
                 <FileImage className="h-4 w-4" />
               </Button>
-              
+
               <Button
                 type="submit"
                 size="icon"
@@ -91,7 +91,7 @@ export function SearchInterface({
               </Button>
             </div>
           </div>
-          
+
           {showFileUpload && (
             <div className="px-4 pb-3">
               <FileUploadUnified
@@ -102,7 +102,7 @@ export function SearchInterface({
               />
             </div>
           )}
-          
+
           {files.length > 0 && (
             <div className="px-4 pb-3 text-sm text-muted-foreground">
               {files.length} image{files.length !== 1 ? 's' : ''} selected

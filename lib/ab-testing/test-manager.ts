@@ -1,11 +1,11 @@
-import { 
-  TestConfig, 
-  TestVariant, 
-  TestSession, 
-  FeedbackData, 
+import {
+  TestConfig,
+  TestVariant,
+  TestSession,
+  FeedbackData,
   TestResults,
   FeedbackRequest,
-  InteractionEvent
+  InteractionEvent,
 } from './types';
 
 /**
@@ -17,10 +17,7 @@ export class TestManager {
   private storageAdapter: StorageAdapter;
   private analyticsAdapter: AnalyticsAdapter;
 
-  constructor(
-    storageAdapter: StorageAdapter,
-    analyticsAdapter: AnalyticsAdapter
-  ) {
+  constructor(storageAdapter: StorageAdapter, analyticsAdapter: AnalyticsAdapter) {
     this.storageAdapter = storageAdapter;
     this.analyticsAdapter = analyticsAdapter;
     this.loadActiveTests();
@@ -104,7 +101,7 @@ export class TestManager {
    */
   public createSession(testId: string, variant: TestVariant, userId?: string): string {
     const sessionId = `${testId}_${userId || 'anonymous'}_${Date.now()}`;
-    
+
     const session: TestSession = {
       sessionId,
       testId,
@@ -113,13 +110,13 @@ export class TestManager {
       completed: false,
       interactionEvents: [],
       feedbackData: [],
-      performanceMetrics: {}
+      performanceMetrics: {},
     };
 
     this.sessions.set(sessionId, session);
     this.storageAdapter.saveSession(session);
     this.analyticsAdapter.trackSessionStart(session);
-    
+
     return sessionId;
   }
 
@@ -157,7 +154,7 @@ export class TestManager {
    * Complete a session with final performance metrics
    */
   public completeSession(
-    sessionId: string, 
+    sessionId: string,
     performanceMetrics: Record<string, any>,
     success: boolean = true
   ): void {
@@ -171,12 +168,12 @@ export class TestManager {
     session.endTime = new Date();
     session.performanceMetrics = {
       ...session.performanceMetrics,
-      ...performanceMetrics
+      ...performanceMetrics,
     };
 
     this.analyticsAdapter.trackSessionComplete(session);
     this.storageAdapter.updateSession(session);
-    
+
     // Clean up memory (session still in storage)
     this.sessions.delete(sessionId);
   }
@@ -185,8 +182,8 @@ export class TestManager {
    * Create a feedback request for a user
    */
   public createFeedbackRequest(
-    sessionId: string, 
-    type: FeedbackRequest['type'], 
+    sessionId: string,
+    type: FeedbackRequest['type'],
     prompt: string,
     options?: FeedbackRequest['options']
   ): FeedbackRequest {
@@ -204,7 +201,7 @@ export class TestManager {
       options,
       required: false,
       displayTiming: 'after_completion',
-      dismissible: true
+      dismissible: true,
     };
 
     return request;
@@ -229,120 +226,117 @@ export class TestManager {
   private analyzeTestResults(test: TestConfig, sessions: TestSession[]): TestResults {
     // Calculate sample sizes
     const sampleSize: Record<string, number> = {};
-    
+
     for (const variant of Object.keys(test.variants)) {
-      sampleSize[variant] = sessions.filter(s => 
-        s.assignedVariant === variant && s.completed
+      sampleSize[variant] = sessions.filter(
+        s => s.assignedVariant === variant && s.completed
       ).length;
     }
-    
+
     // Calculate metrics by variant
     const metricResults: Record<string, Record<string, any>> = {};
-    
+
     for (const metric of test.metrics) {
       metricResults[metric] = {};
-      
+
       for (const variant of Object.keys(test.variants)) {
-        const variantSessions = sessions.filter(s => 
-          s.assignedVariant === variant && s.completed
-        );
-        
+        const variantSessions = sessions.filter(s => s.assignedVariant === variant && s.completed);
+
         if (variantSessions.length === 0) continue;
-        
+
         // Extract metric values from sessions
         const values = this.extractMetricValues(variantSessions, metric);
-        
+
         if (values.length > 0) {
           const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
           const sortedValues = [...values].sort((a, b) => a - b);
           const median = sortedValues[Math.floor(sortedValues.length / 2)];
-          
+
           // Calculate standard deviation
           const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
           const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
           const stdDev = Math.sqrt(variance);
-          
+
           // Calculate 95% confidence interval
           const marginOfError = 1.96 * (stdDev / Math.sqrt(values.length));
-          const confidenceInterval: [number, number] = [
-            mean - marginOfError,
-            mean + marginOfError
-          ];
-          
+          const confidenceInterval: [number, number] = [mean - marginOfError, mean + marginOfError];
+
           metricResults[metric][variant] = {
             mean,
             median,
             standardDeviation: stdDev,
-            confidenceInterval
+            confidenceInterval,
           };
         }
       }
     }
-    
+
     // Determine winner if possible
     let winner: TestVariant | undefined;
     let winnerConfidence = 0;
-    
+
     // Basic determination - can be enhanced with proper statistical significance testing
     if (test.metrics.length > 0 && Object.keys(metricResults[test.metrics[0]]).length >= 2) {
       const primaryMetric = test.metrics[0];
       const variants = Object.keys(metricResults[primaryMetric]);
       let bestVariant = variants[0];
       let bestScore = metricResults[primaryMetric][bestVariant].mean;
-      
+
       for (let i = 1; i < variants.length; i++) {
         const variant = variants[i];
         const score = metricResults[primaryMetric][variant].mean;
-        
+
         if (score > bestScore) {
           bestVariant = variant;
           bestScore = score;
         }
       }
-      
+
       // Simple confidence calculation (can be replaced with p-value)
       const controlVariant = TestVariant.A;
       if (bestVariant !== controlVariant && metricResults[primaryMetric][controlVariant]) {
         const controlScore = metricResults[primaryMetric][controlVariant].mean;
         const improvement = (bestScore - controlScore) / controlScore;
-        
-        if (improvement > 0.05) { // 5% improvement threshold
+
+        if (improvement > 0.05) {
+          // 5% improvement threshold
           winner = bestVariant as TestVariant;
           winnerConfidence = Math.min(improvement * 10, 0.99); // Simple conversion to confidence
         }
       }
     }
-    
+
     // Generate insights and recommendations
     const insights: string[] = [];
     const recommendations: string[] = [];
-    
+
     // Basic insights
     for (const metric of test.metrics) {
       if (Object.keys(metricResults[metric]).length >= 2) {
         const variants = Object.keys(metricResults[metric]);
         const variantScores = variants.map(v => ({
           variant: v,
-          score: metricResults[metric][v].mean
+          score: metricResults[metric][v].mean,
         }));
-        
+
         variantScores.sort((a, b) => b.score - a.score);
-        
+
         if (variantScores.length >= 2) {
           const topVariant = variantScores[0];
           const secondVariant = variantScores[1];
-          const percentDiff = ((topVariant.score - secondVariant.score) / secondVariant.score) * 100;
-          
+          const percentDiff =
+            ((topVariant.score - secondVariant.score) / secondVariant.score) * 100;
+
           if (Math.abs(percentDiff) > 5) {
             insights.push(
               `Variant ${topVariant.variant} ${percentDiff > 0 ? 'outperformed' : 'underperformed'} ` +
-              `Variant ${secondVariant.variant} by ${Math.abs(percentDiff).toFixed(1)}% on ${metric}`
+                `Variant ${secondVariant.variant} by ${Math.abs(percentDiff).toFixed(1)}% on ${metric}`
             );
           }
         }
       }
     }
-    
+
     // Basic recommendations
     if (winner) {
       recommendations.push(`Consider implementing Variant ${winner} as the new standard approach`);
@@ -354,13 +348,9 @@ export class TestManager {
     const minSampleReached = Object.values(sampleSize).every(
       size => size >= test.minimumSampleSize
     );
-    
-    const status = !minSampleReached 
-      ? 'running' 
-      : winner 
-        ? 'completed' 
-        : 'inconclusive';
-    
+
+    const status = !minSampleReached ? 'running' : winner ? 'completed' : 'inconclusive';
+
     return {
       testId: test.id,
       status,
@@ -369,7 +359,7 @@ export class TestManager {
       winner,
       winnerConfidence,
       insights,
-      recommendations
+      recommendations,
     };
   }
 
@@ -378,7 +368,7 @@ export class TestManager {
    */
   private extractMetricValues(sessions: TestSession[], metric: string): number[] {
     const values: number[] = [];
-    
+
     for (const session of sessions) {
       // Check performance metrics
       if (session.performanceMetrics && metric in session.performanceMetrics) {
@@ -387,7 +377,7 @@ export class TestManager {
           values.push(value);
         }
       }
-      
+
       // Check feedback data
       for (const feedback of session.feedbackData) {
         if (feedback.metric === metric && typeof feedback.value === 'number') {
@@ -395,7 +385,7 @@ export class TestManager {
         }
       }
     }
-    
+
     return values;
   }
 }

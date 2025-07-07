@@ -20,7 +20,7 @@ We've created a properly formatted next.config.js file that follows the official
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Standard configuration options
-  webpack: (config) => {
+  webpack: config => {
     // Standard webpack customizations
     return config;
   },

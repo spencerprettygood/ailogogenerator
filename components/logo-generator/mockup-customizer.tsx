@@ -27,7 +27,7 @@ export function MockupCustomizer({
   onUpdateColorVariantAction,
   selectedColorVariant,
   initialCustomText = {},
-  className = ''
+  className = '',
 }: MockupCustomizerProps) {
   const [customText, setCustomText] = useState<Record<string, string>>(initialCustomText);
 
@@ -39,14 +39,14 @@ export function MockupCustomizer({
 
   const handleReset = () => {
     const defaultValues: Record<string, string> = {};
-    
+
     template.textPlaceholders?.forEach((placeholder: TextPlaceholder) => {
       let defaultText = placeholder.default;
       // Replace {BRAND_NAME} placeholder with actual brand name
       defaultText = defaultText.replace('{BRAND_NAME}', brandName);
       defaultValues[placeholder.id] = defaultText;
     });
-    
+
     setCustomText(defaultValues);
     onUpdateCustomTextAction(defaultValues);
   };
@@ -56,12 +56,7 @@ export function MockupCustomizer({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex justify-between items-center">
           <span>Customize Mockup</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleReset}
-            className="h-8 px-2 text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 px-2 text-xs">
             <RefreshCw className="h-3 w-3 mr-1" />
             Reset
           </Button>
@@ -73,13 +68,11 @@ export function MockupCustomizer({
           <div className="space-y-2">
             <Label className="text-xs font-medium">Background Color</Label>
             <div className="flex flex-wrap gap-2">
-              {template.colorVariants.map((color) => (
+              {template.colorVariants.map(color => (
                 <div
                   key={color}
                   className={`w-6 h-6 rounded-full cursor-pointer border-2 ${
-                    selectedColorVariant === color
-                      ? 'border-primary'
-                      : 'border-transparent'
+                    selectedColorVariant === color ? 'border-primary' : 'border-transparent'
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => onUpdateColorVariantAction(color)}
@@ -97,7 +90,7 @@ export function MockupCustomizer({
             {template.textPlaceholders.map((placeholder: TextPlaceholder) => {
               const defaultValue = placeholder.default.replace('{BRAND_NAME}', brandName);
               const value = customText[placeholder.id] || defaultValue;
-              
+
               return (
                 <div key={placeholder.id} className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -112,14 +105,14 @@ export function MockupCustomizer({
                     <Textarea
                       id={`text-${placeholder.id}`}
                       value={value}
-                      onChange={(e) => handleTextChange(placeholder.id, e.target.value)}
+                      onChange={e => handleTextChange(placeholder.id, e.target.value)}
                       className="h-20 text-xs"
                     />
                   ) : (
                     <Input
                       id={`text-${placeholder.id}`}
                       value={value}
-                      onChange={(e) => handleTextChange(placeholder.id, e.target.value)}
+                      onChange={e => handleTextChange(placeholder.id, e.target.value)}
                       className="h-8 text-xs"
                     />
                   )}

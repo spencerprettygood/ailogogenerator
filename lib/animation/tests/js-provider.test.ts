@@ -36,24 +36,26 @@ global.DOMParser = class DOMParser {
           if (selector === 'svg') {
             return {
               hasAttribute: (attr: string) => attr === 'viewBox',
-              getAttribute: (attr: string) => attr === 'viewBox' ? '0 0 100 100' : null,
-              setAttribute: vi.fn()
+              getAttribute: (attr: string) => (attr === 'viewBox' ? '0 0 100 100' : null),
+              setAttribute: vi.fn(),
             };
           }
           return null;
         },
         querySelectorAll: (selector: string) => {
           if (selector === 'text') {
-            return [{
-              textContent: 'Hello World',
-              appendChild: vi.fn(),
-              getAttribute: () => null,
-              setAttribute: vi.fn()
-            }];
+            return [
+              {
+                textContent: 'Hello World',
+                appendChild: vi.fn(),
+                getAttribute: () => null,
+                setAttribute: vi.fn(),
+              },
+            ];
           }
           return [];
         },
-        getElementsByTagName: () => []
+        getElementsByTagName: () => [],
       } as any;
     } else if (str.includes('<path')) {
       return {
@@ -61,8 +63,8 @@ global.DOMParser = class DOMParser {
           if (selector === 'svg') {
             return {
               hasAttribute: (attr: string) => attr === 'viewBox',
-              getAttribute: (attr: string) => attr === 'viewBox' ? '0 0 100 100' : null,
-              setAttribute: vi.fn()
+              getAttribute: (attr: string) => (attr === 'viewBox' ? '0 0 100 100' : null),
+              setAttribute: vi.fn(),
             };
           }
           return null;
@@ -71,12 +73,12 @@ global.DOMParser = class DOMParser {
           if (selector === 'path') {
             return [
               { setAttribute: vi.fn(), getAttribute: () => null },
-              { setAttribute: vi.fn(), getAttribute: () => null }
+              { setAttribute: vi.fn(), getAttribute: () => null },
             ];
           }
           return [];
         },
-        getElementsByTagName: () => []
+        getElementsByTagName: () => [],
       } as any;
     } else {
       return {
@@ -84,14 +86,14 @@ global.DOMParser = class DOMParser {
           if (selector === 'svg') {
             return {
               hasAttribute: (attr: string) => attr === 'viewBox',
-              getAttribute: (attr: string) => attr === 'viewBox' ? '0 0 100 100' : null,
-              setAttribute: vi.fn()
+              getAttribute: (attr: string) => (attr === 'viewBox' ? '0 0 100 100' : null),
+              setAttribute: vi.fn(),
             };
           }
           return null;
         },
         querySelectorAll: () => [],
-        getElementsByTagName: () => []
+        getElementsByTagName: () => [],
       } as any;
     }
   }
@@ -126,7 +128,7 @@ describe('JSAnimationProvider', () => {
     expect(provider.supportsAnimationType(AnimationType.MORPH)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.DRAW)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.TYPEWRITER)).toBe(true);
-    
+
     // Test some unsupported types
     expect(provider.supportsAnimationType(AnimationType.FADE_IN)).toBe(false);
     expect(provider.supportsAnimationType(AnimationType.ZOOM_IN)).toBe(false);
@@ -137,8 +139,8 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.MORPH,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(mockPathSvg);
@@ -152,8 +154,8 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.DRAW,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(mockPathSvg);
@@ -167,8 +169,8 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.TYPEWRITER,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(mockTextSvg);
@@ -182,8 +184,8 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.WAVE,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -197,8 +199,8 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.SHIMMER,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -212,9 +214,9 @@ describe('JSAnimationProvider', () => {
       type: AnimationType.SEQUENTIAL,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       },
-      stagger: 200
+      stagger: 200,
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -229,8 +231,8 @@ describe('JSAnimationProvider', () => {
       timing: {
         duration: 1000,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: Infinity
-      }
+        iterations: Infinity,
+      },
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -245,8 +247,8 @@ describe('JSAnimationProvider', () => {
       timing: {
         duration: 1000,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 3
-      }
+        iterations: 3,
+      },
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -259,14 +261,14 @@ describe('JSAnimationProvider', () => {
     const customJS = `
       document.querySelector('svg').style.opacity = 0.5;
     `;
-    
+
     const result = await provider.animate(mockSvg, {
       type: AnimationType.CUSTOM,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE
+        easing: AnimationEasing.EASE,
       },
-      jsCode: customJS
+      jsCode: customJS,
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -279,8 +281,8 @@ describe('JSAnimationProvider', () => {
     const result = await provider.animate(mockSvg, {
       type: 'unsupported_type',
       timing: {
-        duration: 1000
-      }
+        duration: 1000,
+      },
     });
 
     expect(result.originalSvg).toBe(mockSvg);
@@ -294,11 +296,13 @@ describe('JSAnimationProvider', () => {
       throw new Error('Validation error');
     });
 
-    await expect(provider.animate(mockSvg, {
-      type: AnimationType.MORPH,
-      timing: {
-        duration: 1000
-      }
-    })).rejects.toThrow('Validation error');
+    await expect(
+      provider.animate(mockSvg, {
+        type: AnimationType.MORPH,
+        timing: {
+          duration: 1000,
+        },
+      })
+    ).rejects.toThrow('Validation error');
   });
 });

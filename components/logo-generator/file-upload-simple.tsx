@@ -1,7 +1,7 @@
 // DEPRECATED: Use the new FileUpload component instead.
 // This file is retained temporarily for migration purposes and will be removed after all usages are updated.
 
-'use client'
+'use client';
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -43,17 +43,17 @@ export function FileUploadSimple({
         newErrors.push(`Maximum ${maxFiles} files allowed`);
         break;
       }
-      
+
       if (file.size > maxFileSizeMb * 1024 * 1024) {
         newErrors.push(`File ${file.name} is too large (max ${maxFileSizeMb}MB)`);
         continue;
       }
-      
+
       if (!acceptedFileTypes.includes(file.type)) {
         newErrors.push(`File type ${file.type} not supported`);
         continue;
       }
-      
+
       validFiles.push(file);
     }
 
@@ -90,15 +90,13 @@ export function FileUploadSimple({
           className="hidden"
           disabled={disabled}
         />
-        
+
         <UploadCloud className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mb-2">
-          Click to upload or drag and drop
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
         <p className="text-xs text-muted-foreground mb-4">
           PNG, JPG, WEBP up to {maxFileSizeMb}MB each (max {maxFiles} files)
         </p>
-        
+
         <Button
           type="button"
           variant="outline"
@@ -112,14 +110,12 @@ export function FileUploadSimple({
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file, index) => (
-            <div key={`${file.name}-${index}`} className="flex items-center justify-between p-2 bg-muted rounded">
+            <div
+              key={`${file.name}-${index}`}
+              className="flex items-center justify-between p-2 bg-muted rounded"
+            >
               <span className="text-sm truncate">{file.name}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeFile(index)}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeFile(index)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>

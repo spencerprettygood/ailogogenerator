@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { streamProcessor } from '@/lib/streaming';
@@ -23,7 +23,7 @@ export default function TestStreamingPage() {
     try {
       // Choose test data based on test type
       let concatenatedJson = '';
-      
+
       if (testType === 'simple') {
         // Simple test with a few objects
         concatenatedJson = `{"type":"start","sessionId":"RKU95zedGmdYU_UFZVnTN"}{"type":"progress","progress":{"currentStage":"distillation","stageProgress":5,"overallProgress":0,"statusMessage":"Executing..."}}{"type":"progress","progress":{"currentStage":"distillation","stageProgress":100,"overallProgress":11,"statusMessage":"Execution completed successfully"}}{"type":"progress","progress":{"currentStage":"moodboard","stageProgress":5,"overallProgress":11,"statusMessage":"Executing..."}}`;
@@ -39,45 +39,50 @@ export default function TestStreamingPage() {
           const data = encoder.encode(concatenatedJson);
           controller.enqueue(data);
           controller.close();
-        }
+        },
       });
 
       let progressCount = 0;
 
       // Process the stream
-      await streamProcessor.processStream(
-        stream,
-        {
-          onProgress: (progress) => {
-            progressCount++;
-            addLog(`Progress #${progressCount}: ${progress.currentStage} (${progress.stageProgress}%) - Overall: ${progress.overallProgress}% - ${progress.message}`);
-          },
-          onPreview: (svgContent) => {
-            addLog(`Preview received: ${svgContent.substring(0, 50)}...`);
-          },
-          onComplete: (assets, sessionId) => {
-            addLog(`Complete! Session ID: ${sessionId}`);
-            addLog(`Assets received: ${JSON.stringify(assets).substring(0, 100)}...`);
-          },
-          onError: (error) => {
-            addLog(`ERROR: ${error.message}`);
-            setTestStatus('failure');
-          },
-          onCache: (isCached) => {
-            addLog(`Cache status: ${isCached ? 'Retrieved from cache' : 'Not cached'}`);
-          }
-        }
-      );
+      await streamProcessor.processStream(stream, {
+        onProgress: progress => {
+          progressCount++;
+          addLog(
+            `Progress #${progressCount}: ${progress.currentStage} (${progress.stageProgress}%) - Overall: ${progress.overallProgress}% - ${progress.message}`
+          );
+        },
+        onPreview: svgContent => {
+          addLog(`Preview received: ${svgContent.substring(0, 50)}...`);
+        },
+        onComplete: (assets, sessionId) => {
+          addLog(`Complete! Session ID: ${sessionId}`);
+          addLog(`Assets received: ${JSON.stringify(assets).substring(0, 100)}...`);
+        },
+        onError: error => {
+          addLog(`ERROR: ${error.message}`);
+          setTestStatus('failure');
+        },
+        onCache: isCached => {
+          addLog(`Cache status: ${isCached ? 'Retrieved from cache' : 'Not cached'}`);
+        },
+      });
 
       // Calculate success metrics
       const expectedProgressCount = testType === 'simple' ? 3 : 17; // Count the number of progress objects in test data
-      addLog(`Stream processing complete. Received ${progressCount}/${expectedProgressCount} progress updates.`);
-      
+      addLog(
+        `Stream processing complete. Received ${progressCount}/${expectedProgressCount} progress updates.`
+      );
+
       if (progressCount === expectedProgressCount) {
-        addLog(`TEST PASSED: All ${expectedProgressCount} progress objects successfully processed!`);
+        addLog(
+          `TEST PASSED: All ${expectedProgressCount} progress objects successfully processed!`
+        );
         setTestStatus('success');
       } else {
-        addLog(`TEST FAILED: Expected ${expectedProgressCount} progress objects but processed ${progressCount}`);
+        addLog(
+          `TEST FAILED: Expected ${expectedProgressCount} progress objects but processed ${progressCount}`
+        );
         setTestStatus('failure');
       }
     } catch (error) {
@@ -91,38 +96,45 @@ export default function TestStreamingPage() {
       <Card className="w-full">
         <CardHeader>
           <H1>Streaming JSON Parser Test</H1>
-          <Paragraph>This page tests the robust streaming JSON parser that handles concatenated JSON objects.</Paragraph>
+          <Paragraph>
+            This page tests the robust streaming JSON parser that handles concatenated JSON objects.
+          </Paragraph>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
               <div className="flex space-x-2">
-                <Button 
-                  variant={testType === 'simple' ? 'default' : 'outline'} 
+                <Button
+                  variant={testType === 'simple' ? 'default' : 'outline'}
                   onClick={() => setTestType('simple')}
                 >
                   Simple Test
                 </Button>
-                <Button 
-                  variant={testType === 'full' ? 'default' : 'outline'} 
+                <Button
+                  variant={testType === 'full' ? 'default' : 'outline'}
                   onClick={() => setTestType('full')}
                 >
                   Full Test (All Stages)
                 </Button>
               </div>
-              <Button 
-                onClick={runTest} 
-                disabled={testStatus === 'running'}
-                variant="default"
-              >
+              <Button onClick={runTest} disabled={testStatus === 'running'} variant="default">
                 {testStatus === 'running' ? 'Running...' : 'Run Test'}
               </Button>
               <div className="text-sm">
-                Status: <span className={`font-bold ${
-                  testStatus === 'success' ? 'text-green-500' :
-                  testStatus === 'failure' ? 'text-red-500' :
-                  testStatus === 'running' ? 'text-blue-500' : ''
-                }`}>{testStatus.toUpperCase()}</span>
+                Status:{' '}
+                <span
+                  className={`font-bold ${
+                    testStatus === 'success'
+                      ? 'text-green-500'
+                      : testStatus === 'failure'
+                        ? 'text-red-500'
+                        : testStatus === 'running'
+                          ? 'text-blue-500'
+                          : ''
+                  }`}
+                >
+                  {testStatus.toUpperCase()}
+                </span>
               </div>
             </div>
             <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-md h-96 overflow-y-auto">
@@ -130,17 +142,15 @@ export default function TestStreamingPage() {
               {logs.length === 0 ? (
                 <p className="text-slate-500 italic">No logs yet. Run the test to see results.</p>
               ) : (
-                <pre className="text-xs whitespace-pre-wrap">
-                  {logs.join('\n')}
-                </pre>
+                <pre className="text-xs whitespace-pre-wrap">{logs.join('\n')}</pre>
               )}
             </div>
           </div>
         </CardContent>
         <CardFooter>
           <Paragraph className="text-sm text-slate-500">
-            This test simulates the concatenated JSON stream that was previously causing errors. 
-            The parser now correctly extracts and processes each JSON object from the stream.
+            This test simulates the concatenated JSON stream that was previously causing errors. The
+            parser now correctly extracts and processes each JSON object from the stream.
           </Paragraph>
         </CardFooter>
       </Card>

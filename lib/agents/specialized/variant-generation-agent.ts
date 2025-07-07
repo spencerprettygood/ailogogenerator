@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  VariantGenerationAgentInput, 
-  VariantGenerationAgentOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  VariantGenerationAgentInput,
+  VariantGenerationAgentOutput,
 } from '../../types-agents';
 import { SVGValidator } from '../../utils/svg-validator';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
@@ -14,17 +14,13 @@ import { safeJsonParse } from '../../utils/json-utils';
  */
 export class VariantGenerationAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'variant-generation', 
-      ['variant-generation'],
-      {
-        model: 'claude-3-haiku-20240307', // Use faster model for variant generation
-        temperature: 0.3,
-        maxTokens: 2000,
-        ...config
-      }
-    );
-    
+    super('variant-generation', ['variant-generation'], {
+      model: 'claude-3-haiku-20240307', // Use faster model for variant generation
+      temperature: 0.3,
+      maxTokens: 2000,
+      ...config,
+    });
+
     // Set the system prompt for this agent
     this.systemPrompt = `You are a specialized variant generation agent for an AI logo generator.
     
@@ -67,13 +63,13 @@ For the favicon:
 Your entire response must be valid JSON that can be parsed directly.
 Do NOT include any text before or after the JSON object.`;
   }
-  
+
   /**
    * Generate the prompt for variant generation
    */
   protected async generatePrompt(input: VariantGenerationAgentInput): Promise<string> {
     const { svg, brandName } = input;
-    
+
     return `Please create monochrome and favicon variants for the following SVG logo for "${brandName}":
 
 \`\`\`svg
@@ -82,11 +78,14 @@ ${svg}
 
 Follow the instructions in the system prompt to generate the variants in the correct JSON format.`;
   }
-  
+
   /**
    * Process the response from Claude
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<VariantGenerationAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<VariantGenerationAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
     if (!parsed || typeof parsed !== 'object') {
@@ -117,9 +116,7 @@ Follow the instructions in the system prompt to generate the variants in the cor
     const { variants } = parsed;
 
     // Validate monochrome variants
-    if (!variants.monochrome || 
-        !variants.monochrome.black || 
-        !variants.monochrome.white) {
+    if (!variants.monochrome || !variants.monochrome.black || !variants.monochrome.white) {
       return {
         success: false,
         error: handleError({
@@ -148,7 +145,7 @@ Follow the instructions in the system prompt to generate the variants in the cor
     const svgVariants = [
       { name: 'black monochrome', svg: variants.monochrome.black },
       { name: 'white monochrome', svg: variants.monochrome.white },
-      { name: 'favicon', svg: variants.favicon.svg }
+      { name: 'favicon', svg: variants.favicon.svg },
     ];
 
     for (const { name, svg } of svgVariants) {
@@ -166,7 +163,10 @@ Follow the instructions in the system prompt to generate the variants in the cor
 
       const validationResult = SVGValidator.validate(svg);
       if (!validationResult.isValid) {
-        this.log(`Warning: ${name} SVG failed validation: ${validationResult.errors?.join(', ')}`, 'warn');
+        this.log(
+          `Warning: ${name} SVG failed validation: ${validationResult.errors?.join(', ')}`,
+          'warn'
+        );
         // Continue execution but log the warning
       }
     }
@@ -178,7 +178,7 @@ Follow the instructions in the system prompt to generate the variants in the cor
         variants: {
           monochrome: {
             black: variants.monochrome.black,
-            white: variants.monochrome.white
+            white: variants.monochrome.white,
           },
           favicon: {
             svg: variants.favicon.svg,
@@ -187,9 +187,9 @@ Follow the instructions in the system prompt to generate the variants in the cor
           pngVariants: {
             size256: '', // Placeholder for future implementation
             size512: '', // Placeholder for future implementation
-            size1024: '' // Placeholder for future implementation
-          }
-        }
+            size1024: '', // Placeholder for future implementation
+          },
+        },
       },
       tokensUsed: this.metrics.tokenUsage.total,
       processingTime: this.metrics.executionTime,

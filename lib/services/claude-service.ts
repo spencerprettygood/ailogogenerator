@@ -1,6 +1,6 @@
 /**
  * Claude Service
- * 
+ *
  * Secure, server-side-only service for interacting with Claude AI models.
  * Handles authentication, error management, and provides specialized methods
  * for different use cases like SVG generation and analysis.
@@ -11,7 +11,7 @@ import { generateText } from 'ai';
 import { env } from '../utils/env';
 import { logClaudeError, analyzeClaudeError, ClaudeErrorType } from '../utils/claude-error-handler';
 import { ClaudeModel } from '../types-agents';
-import "server-only";
+import 'server-only';
 
 // Interface for Claude API options
 interface AnthropicOptions {
@@ -52,7 +52,7 @@ interface ClaudeResponse {
  */
 class ClaudeService {
   private isInitialized: boolean = false;
-  
+
   /**
    * Configure Anthropic client options with proper security and error handling
    */
@@ -65,7 +65,7 @@ class ClaudeService {
         maxDelayMs: 10000,
       },
       timeoutMs: 60000,
-      logWarnings: true
+      logWarnings: true,
     };
   }
 
@@ -75,16 +75,18 @@ class ClaudeService {
       if (!env.ANTHROPIC_API_KEY && env.NODE_ENV !== 'development') {
         throw new Error('Missing ANTHROPIC_API_KEY environment variable');
       }
-      
+
       // Print diagnostics information in development
       if (env.NODE_ENV === 'development') {
         console.log('Claude service initializing with:', {
           // Only show first few characters of the API key for debugging
-          apiKey: env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 5)}...` : 'Using development fallback',
-          environment: env.NODE_ENV
+          apiKey: env.ANTHROPIC_API_KEY
+            ? `${env.ANTHROPIC_API_KEY.substring(0, 5)}...`
+            : 'Using development fallback',
+          environment: env.NODE_ENV,
         });
       }
-      
+
       this.isInitialized = true;
     } catch (error) {
       console.error('Failed to initialize Claude service:', error);
@@ -94,13 +96,13 @@ class ClaudeService {
 
   /**
    * Generate a response from Claude
-   * 
+   *
    * @param prompt The user prompt to send to Claude
    * @param options Configuration options for the request
    * @returns Formatted Claude response
    */
   async generateResponse(
-    prompt: string, 
+    prompt: string,
     options: ClaudeRequestOptions = {}
   ): Promise<ClaudeResponse> {
     // Check if service is properly initialized
@@ -109,30 +111,30 @@ class ClaudeService {
         'Claude service is not properly configured. Please set ANTHROPIC_API_KEY environment variable.'
       );
     }
-    
+
     const startTime = Date.now();
-    
+
     const {
-      systemPrompt = "You are a helpful AI assistant.",
+      systemPrompt = 'You are a helpful AI assistant.',
       temperature = 0.7,
       maxTokens = 1024,
       model: modelOption,
       stopSequences = [],
     } = options;
     const model: ClaudeModel = modelOption || 'claude-3-5-sonnet-20240620';
-    
+
     try {
       // Sanitize and validate input
       if (!prompt || typeof prompt !== 'string') {
         throw new Error('Invalid prompt: Must provide a non-empty string');
       }
-      
+
       // Create messages array in the format expected by Anthropic model
       const messages: { role: 'user'; content: string }[] = [
         {
           role: 'user',
-          content: prompt
-        }
+          content: prompt,
+        },
       ];
 
       // Add more detailed logging before API call
@@ -141,7 +143,7 @@ class ClaudeService {
         system_length: systemPrompt.length,
         input_length: prompt.length,
         temperature,
-        max_tokens: maxTokens
+        max_tokens: maxTokens,
       });
 
       // Implement a fallback mechanism to handle model compatibility issues
@@ -150,10 +152,10 @@ class ClaudeService {
       // Create a list of models to try, starting with the specified model and then the fallbacks
       const fallbackModels = options.fallbackModels || ['claude-3-sonnet-20240229'];
       const modelsToTry = [model, ...fallbackModels];
-      
+
       // Keep track of errors for better reporting
       const errors: Record<string, unknown> = {};
-      
+
       // Try each model in sequence until one succeeds
       for (let i = 0; i < modelsToTry.length; i++) {
         // Defensive: ensure attemptedModel is always a valid ClaudeModel
@@ -177,21 +179,25 @@ class ClaudeService {
         } catch (modelError) {
           // Store the error for this model
           errors[attemptedModel] = modelError;
-          
+
           // Log the error
           console.warn(`Failed with model ${attemptedModel}`, modelError);
-          
+
           // If this is the last model to try, rethrow the error
           if (i === modelsToTry.length - 1) {
             console.error('All models failed:', errors);
-            throw new Error(`All Claude models failed. Last error: ${modelError instanceof Error ? modelError.message : String(modelError)}`);
+            throw new Error(
+              `All Claude models failed. Last error: ${modelError instanceof Error ? modelError.message : String(modelError)}`
+            );
           }
-          
+
           // Otherwise, continue to the next model
-          console.log(`Trying next fallback model: ${i < modelsToTry.length - 1 ? modelsToTry[i + 1] : 'none available'}`);
+          console.log(
+            `Trying next fallback model: ${i < modelsToTry.length - 1 ? modelsToTry[i + 1] : 'none available'}`
+          );
         }
       }
-      
+
       // Create a simplified response format that matches our existing interface
       return {
         content: result?.text || '',
@@ -207,32 +213,32 @@ class ClaudeService {
     } catch (error) {
       // Use our specialized error handler for better diagnostics
       const errorInfo = analyzeClaudeError(error);
-      
+
       // Enhanced error logging with structured information
       logClaudeError(error, {
         timestamp: new Date().toISOString(),
         model: model,
         prompt_length: prompt.length,
-        error_type: errorInfo.type
+        error_type: errorInfo.type,
       });
-      
+
       // For model errors, we'll have already tried a fallback in the try/catch above
       // For other errors, we need to provide better error information
       let errorMessage = `Failed to generate response from Claude: ${errorInfo.message}`;
-      
+
       if (errorInfo.type === ClaudeErrorType.AUTHENTICATION) {
         errorMessage = 'API key error: Check your ANTHROPIC_API_KEY environment variable';
       } else if (errorInfo.type === ClaudeErrorType.MODEL_NOT_FOUND) {
         errorMessage = `Model error: The requested model "${model}" is not available or doesn't exist`;
       }
-      
+
       throw new Error(errorMessage);
     }
   }
 
   /**
    * Specialized method for generating SVG logos
-   * 
+   *
    * @param prompt User prompt describing the logo to generate
    * @param systemPrompt System prompt with SVG generation instructions
    * @param options Additional configuration options
@@ -248,13 +254,13 @@ class ClaudeService {
       model: 'claude-3-5-sonnet-20240620',
       temperature: 0.5,
       maxTokens: 4000,
-      ...options
+      ...options,
     });
   }
 
   /**
    * Specialized method for quick analysis tasks
-   * 
+   *
    * @param prompt User prompt describing the analysis task
    * @param systemPrompt System prompt with analysis instructions
    * @param options Additional configuration options
@@ -271,7 +277,7 @@ class ClaudeService {
       model: 'claude-3-sonnet-20240229',
       temperature: 0.3,
       maxTokens: 1000,
-      ...options
+      ...options,
     });
   }
 }

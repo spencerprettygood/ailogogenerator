@@ -7,13 +7,13 @@ export interface PackageData {
   originalSvg: string; // Corresponds to StageHInput.svg
   monochrome: {
     lightSvg: string; // Corresponds to StageHInput.monochrome.white
-    darkSvg: string;  // Corresponds to StageHInput.monochrome.black
+    darkSvg: string; // Corresponds to StageHInput.monochrome.black
   };
   faviconSvg: string; // Corresponds to StageHInput.favicon.svg
   pngExports: {
-    png256: Buffer;   // Corresponds to StageHInput.pngVariants.png256
-    png512: Buffer;   // Corresponds to StageHInput.pngVariants.png512
-    png1024: Buffer;  // Corresponds to StageHInput.pngVariants.png1024
+    png256: Buffer; // Corresponds to StageHInput.pngVariants.png256
+    png512: Buffer; // Corresponds to StageHInput.pngVariants.png512
+    png1024: Buffer; // Corresponds to StageHInput.pngVariants.png1024
   };
   // Enhanced variants
   transparentPngExports?: {
@@ -86,9 +86,7 @@ Generated on: ${date}
 `;
 }
 
-export async function createLogoPackage(
-  data: PackageData
-): Promise<Buffer> {
+export async function createLogoPackage(data: PackageData): Promise<Buffer> {
   const zip = new JSZip();
 
   // Add SVG files
@@ -104,7 +102,7 @@ export async function createLogoPackage(
     exportsFolder.file('logo-256.png', data.pngExports.png256);
     exportsFolder.file('logo-512.png', data.pngExports.png512);
     exportsFolder.file('logo-1024.png', data.pngExports.png1024);
-    
+
     // Transparent PNG exports
     if (data.transparentPngExports) {
       const transparentFolder = exportsFolder.folder('transparent');
@@ -114,7 +112,7 @@ export async function createLogoPackage(
         transparentFolder.file('logo-1024.png', data.transparentPngExports.png1024);
       }
     }
-    
+
     // Monochrome PNG exports
     if (data.monochromePngExports) {
       const monochromeFolder = exportsFolder.folder('monochrome');
@@ -130,14 +128,14 @@ export async function createLogoPackage(
     zip.file('exports/logo-256.png', data.pngExports.png256);
     zip.file('exports/logo-512.png', data.pngExports.png512);
     zip.file('exports/logo-1024.png', data.pngExports.png1024);
-    
+
     // Add transparent variants if available
     if (data.transparentPngExports) {
       zip.file('exports/transparent/logo-256.png', data.transparentPngExports.png256);
       zip.file('exports/transparent/logo-512.png', data.transparentPngExports.png512);
       zip.file('exports/transparent/logo-1024.png', data.transparentPngExports.png1024);
     }
-    
+
     // Add monochrome PNG variants if available
     if (data.monochromePngExports) {
       zip.file('exports/monochrome/logo-black-256.png', data.monochromePngExports.black.png256);
@@ -146,7 +144,7 @@ export async function createLogoPackage(
       zip.file('exports/monochrome/logo-white-512.png', data.monochromePngExports.white.png512);
     }
   }
-  
+
   // Add favicon files
   zip.file('favicon.ico', data.faviconIco);
   if (data.faviconPng) {
@@ -160,5 +158,9 @@ export async function createLogoPackage(
   const readme = generateReadmeContent(data.brandName);
   zip.file('README.txt', readme);
 
-  return await zip.generateAsync({ type: 'nodebuffer', compression: "DEFLATE", compressionOptions: { level: 9 } });
+  return await zip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 9 },
+  });
 }

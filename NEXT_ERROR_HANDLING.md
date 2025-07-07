@@ -7,11 +7,13 @@ This document outlines the standardized approach to error handling in our Next.j
 Next.js 15 provides a comprehensive error handling system with multiple layers of protection:
 
 1. **Root Level**: `app/global-error.tsx`
+
    - Catches errors in the root layout
    - Only used as a last resort
    - Completely replaces the root layout when an error occurs
 
 2. **Route Level**: `app/error.tsx`
+
    - Catches errors in route segments
    - Preserves the root layout
    - Used for route-specific errors
@@ -26,43 +28,45 @@ Next.js 15 provides a comprehensive error handling system with multiple layers o
 ### 1. Route Error Handlers (error.tsx)
 
 Use route error handlers for:
+
 - Errors in data fetching at the route level
 - Errors in route layouts or templates
 - Route-specific error states
 
 ```tsx
 // app/dashboard/error.tsx
-'use client'
+'use client';
 
 export default function DashboardError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   return (
     <div>
       <h2>Dashboard Error: {error.message}</h2>
       <button onClick={reset}>Try again</button>
     </div>
-  )
+  );
 }
 ```
 
 ### 2. Component Error Boundaries
 
 Use component error boundaries for:
+
 - High-risk components that might error
 - Third-party components you don't control
 - Components with complex state management
 
 ```tsx
-import { ErrorBoundary } from '@/components/logo-generator/error-boundary'
+import { ErrorBoundary } from '@/components/logo-generator/error-boundary';
 
 <ErrorBoundary fallback={<p>Chart failed to load</p>}>
   <ComplexChart data={data} />
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ### 3. Global Error Handler
@@ -72,14 +76,17 @@ Only used when the root layout crashes. This should be rare and usually indicate
 ## Best Practices
 
 1. **Always Provide Reset Mechanisms**
+
    - Give users a way to recover from errors
    - Use the `reset()` function provided by Next.js
 
 2. **Log Errors Appropriately**
+
    - Use `useEffect` to log errors on the client
    - Consider sending errors to a monitoring service
 
 3. **Graceful Degradation**
+
    - Show useful information when errors occur
    - Maintain core functionality when possible
 
@@ -101,7 +108,7 @@ Only used when the root layout crashes. This should be rare and usually indicate
 Use our standardized `ErrorBoundary` component:
 
 ```tsx
-import { ErrorBoundary } from '@/components/logo-generator/error-boundary'
+import { ErrorBoundary } from '@/components/logo-generator/error-boundary';
 
 <ErrorBoundary
   fallback={<CustomErrorUI />}
@@ -109,7 +116,7 @@ import { ErrorBoundary } from '@/components/logo-generator/error-boundary'
   resetOnUpdate={true}
 >
   {children}
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ## Error Handling with Server Actions
@@ -119,17 +126,17 @@ For server actions, use try/catch patterns:
 ```tsx
 async function submitForm(formData: FormData) {
   try {
-    const result = await saveData(formData)
-    return { success: true, data: result }
+    const result = await saveData(formData);
+    return { success: true, data: result };
   } catch (error) {
     // Log error server-side
-    console.error('Form submission error:', error)
-    
+    console.error('Form submission error:', error);
+
     // Return structured error
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 ```

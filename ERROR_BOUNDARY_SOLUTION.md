@@ -26,9 +26,9 @@ try {
   // Handle with standardized system
   handleError(error, {
     category: ErrorCategory.API,
-    context: { operationName: 'fetchData', parameters: { id: 123 } }
+    context: { operationName: 'fetchData', parameters: { id: 123 } },
   });
-  
+
   // Or use a factory method for common error types
   throw ErrorFactory.notFound('User', '123');
 }
@@ -48,13 +48,13 @@ Provides consistent error handling for API routes:
 // Example usage:
 import { createApiHandler, apiErrorFactory } from '@/lib/middleware/error-middleware';
 
-export const POST = createApiHandler(async (req) => {
+export const POST = createApiHandler(async req => {
   const { id } = await req.json();
-  
+
   if (!id) {
     throw apiErrorFactory.badRequest('Missing required field: id');
   }
-  
+
   // Process the request...
   return { success: true, data: result };
 });
@@ -79,9 +79,9 @@ try {
   // Convert to standardized error
   const appError = createClaudeError(error, {
     prompt: promptText,
-    model: modelName
+    model: modelName,
   });
-  
+
   // Handle error
   if (appError.isRetryable) {
     // Implement retry logic
@@ -133,16 +133,16 @@ All errors share a common structure:
 
 ```typescript
 interface AppError extends Error {
-  category: ErrorCategory;      // Error category
-  severity: ErrorSeverity;      // Error severity level
-  code: ErrorCode;              // Application-specific error code
-  statusCode: HttpStatusCode;   // HTTP status code (for API errors)
+  category: ErrorCategory; // Error category
+  severity: ErrorSeverity; // Error severity level
+  code: ErrorCode; // Application-specific error code
+  statusCode: HttpStatusCode; // HTTP status code (for API errors)
   context?: Record<string, any>; // Additional error context
-  isOperational: boolean;       // Whether error is expected/operational
-  isRetryable: boolean;         // Whether error can be retried
-  timestamp: Date;              // When the error occurred
-  requestId?: string;           // For tracking in logs/monitoring
-  stackId?: string;             // Unique ID for this error instance
+  isOperational: boolean; // Whether error is expected/operational
+  isRetryable: boolean; // Whether error can be retried
+  timestamp: Date; // When the error occurred
+  requestId?: string; // For tracking in logs/monitoring
+  stackId?: string; // Unique ID for this error instance
 }
 ```
 
@@ -170,7 +170,7 @@ const result = await tryWithRetry(
     backoffFactor: 2,
     onRetry: (error, attempt, delay) => {
       console.log(`Retrying attempt ${attempt} after ${delay}ms`);
-    }
+    },
   }
 );
 ```
@@ -221,7 +221,7 @@ const fetchData = withErrorHandling(
   },
   {
     category: ErrorCategory.API,
-    context: { source: 'dataService' }
+    context: { source: 'dataService' },
   }
 );
 ```
@@ -236,7 +236,7 @@ const error = createAppError('Failed to process SVG', {
   category: ErrorCategory.SVG_PROCESSING,
   severity: ErrorSeverity.ERROR,
   context: { filename: 'logo.svg', operation: 'optimization' },
-  isRetryable: false
+  isRetryable: false,
 });
 ```
 
@@ -245,19 +245,19 @@ const error = createAppError('Failed to process SVG', {
 ```typescript
 import { createApiHandler, apiErrorFactory } from '@/lib/middleware/error-middleware';
 
-export const GET = createApiHandler(async (req) => {
+export const GET = createApiHandler(async req => {
   const { id } = Object.fromEntries(new URL(req.url).searchParams);
-  
+
   if (!id) {
     throw apiErrorFactory.badRequest('Missing required parameter: id');
   }
-  
+
   const data = await db.findById(id);
-  
+
   if (!data) {
     throw apiErrorFactory.notFound(`Resource not found: ${id}`);
   }
-  
+
   return data;
 });
 ```
@@ -269,7 +269,7 @@ import { ErrorBoundaryWrapper } from '@/components/logo-generator/error-boundary
 
 function LogoGeneratorApp() {
   return (
-    <ErrorBoundaryWrapper 
+    <ErrorBoundaryWrapper
       componentName="LogoGeneratorApp"
       resetOnUpdate={false}
       containerClassName="w-full h-full"

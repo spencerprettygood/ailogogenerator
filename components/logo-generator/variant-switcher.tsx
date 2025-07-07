@@ -16,8 +16,10 @@ const VariantSwitcher: React.FC<VariantSwitcherProps> = ({
 
   return (
     <div className="flex items-center flex-wrap justify-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-      <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">Variants:</p>
-      {variants.map((variant) => (
+      <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">
+        Variants:
+      </p>
+      {variants.map(variant => (
         <Button
           key={variant.id}
           variant={selectedVariantId === variant.id ? 'default' : 'outline'}

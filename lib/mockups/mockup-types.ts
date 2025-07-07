@@ -1,6 +1,6 @@
 /**
  * Mockup system types
- * 
+ *
  * This file contains the types and interfaces for the mockup system.
  */
 
@@ -18,7 +18,7 @@ export enum MockupType {
   LETTERHEAD = 'letterhead',
   BILLBOARD = 'billboard',
   EMAIL_SIGNATURE = 'email_signature',
-  FAVICON = 'favicon'
+  FAVICON = 'favicon',
 }
 
 /**
@@ -28,7 +28,7 @@ export enum EmailSignatureType {
   MINIMALIST = 'minimalist',
   PROFESSIONAL = 'professional',
   CREATIVE = 'creative',
-  COMPACT = 'compact'
+  COMPACT = 'compact',
 }
 
 /**

@@ -17,7 +17,7 @@ export class ConsoleAnalyticsAdapter implements AnalyticsAdapter {
    */
   public trackSessionStart(session: TestSession): void {
     if (!this.debugMode) return;
-    
+
     console.log(`[AB Testing] Session started: ${session.sessionId}`);
     console.log(`  Test: ${session.testId}`);
     console.log(`  Variant: ${session.assignedVariant}`);
@@ -29,7 +29,7 @@ export class ConsoleAnalyticsAdapter implements AnalyticsAdapter {
    */
   public trackEvent(sessionId: string, event: InteractionEvent): void {
     if (!this.debugMode) return;
-    
+
     console.log(`[AB Testing] Event in session ${sessionId}`);
     console.log(`  Type: ${event.eventType}`);
     console.log(`  Time: ${event.timestamp.toISOString()}`);
@@ -41,13 +41,13 @@ export class ConsoleAnalyticsAdapter implements AnalyticsAdapter {
    */
   public trackFeedback(sessionId: string, feedback: FeedbackData): void {
     if (!this.debugMode) return;
-    
+
     console.log(`[AB Testing] Feedback in session ${sessionId}`);
     console.log(`  Metric: ${feedback.metric}`);
     console.log(`  Source: ${feedback.source}`);
     console.log(`  Value: ${feedback.value}`);
     console.log(`  Time: ${feedback.timestamp.toISOString()}`);
-    
+
     if (feedback.context) {
       console.log(`  Context:`, feedback.context);
     }
@@ -58,7 +58,7 @@ export class ConsoleAnalyticsAdapter implements AnalyticsAdapter {
    */
   public trackSessionComplete(session: TestSession): void {
     if (!this.debugMode) return;
-    
+
     console.log(`[AB Testing] Session completed: ${session.sessionId}`);
     console.log(`  Test: ${session.testId}`);
     console.log(`  Variant: ${session.assignedVariant}`);

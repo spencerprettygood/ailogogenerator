@@ -24,7 +24,7 @@ describe('CSSAnimationProvider', () => {
     expect(provider.supportsAnimationType(AnimationType.FADE_IN)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.ZOOM_IN)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.SPIN)).toBe(true);
-    
+
     // Test some unsupported types
     expect(provider.supportsAnimationType(AnimationType.MORPH)).toBe(false);
     expect(provider.supportsAnimationType(AnimationType.TYPEWRITER)).toBe(false);
@@ -35,8 +35,8 @@ describe('CSSAnimationProvider', () => {
       type: AnimationType.FADE_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -51,8 +51,8 @@ describe('CSSAnimationProvider', () => {
       type: AnimationType.ZOOM_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_OUT
-      }
+        easing: AnimationEasing.EASE_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -67,8 +67,8 @@ describe('CSSAnimationProvider', () => {
       timing: {
         duration: 2000,
         easing: AnimationEasing.LINEAR,
-        iterations: 3
-      }
+        iterations: 3,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -83,14 +83,14 @@ describe('CSSAnimationProvider', () => {
       0% { opacity: 0; transform: translateY(20px); }
       100% { opacity: 1; transform: translateY(0); }
     `;
-    
+
     const result = await provider.animate(simpleSvg, {
       type: AnimationType.CUSTOM,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE
+        easing: AnimationEasing.EASE,
       },
-      customKeyframes
+      customKeyframes,
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -104,9 +104,9 @@ describe('CSSAnimationProvider', () => {
       type: AnimationType.FADE_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       },
-      trigger: AnimationTrigger.HOVER
+      trigger: AnimationTrigger.HOVER,
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -120,9 +120,9 @@ describe('CSSAnimationProvider', () => {
       type: AnimationType.ZOOM_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       },
-      trigger: AnimationTrigger.CLICK
+      trigger: AnimationTrigger.CLICK,
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -135,11 +135,7 @@ describe('CSSAnimationProvider', () => {
   it('should handle staggered animations for sequential type', async () => {
     vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
       if (selector === '*') {
-        return [
-          { tagName: 'rect' },
-          { tagName: 'circle' },
-          { tagName: 'path' }
-        ] as any;
+        return [{ tagName: 'rect' }, { tagName: 'circle' }, { tagName: 'path' }] as any;
       }
       return [] as any;
     });
@@ -148,9 +144,9 @@ describe('CSSAnimationProvider', () => {
       type: AnimationType.SEQUENTIAL,
       timing: {
         duration: 500,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       },
-      stagger: 200
+      stagger: 200,
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -166,12 +162,14 @@ describe('CSSAnimationProvider', () => {
       throw new Error('Validation error');
     });
 
-    await expect(provider.animate(simpleSvg, {
-      type: AnimationType.FADE_IN,
-      timing: {
-        duration: 1000
-      }
-    })).rejects.toThrow('Validation error');
+    await expect(
+      provider.animate(simpleSvg, {
+        type: AnimationType.FADE_IN,
+        timing: {
+          duration: 1000,
+        },
+      })
+    ).rejects.toThrow('Validation error');
   });
 
   it('should apply default animation when type is not supported', async () => {
@@ -179,8 +177,8 @@ describe('CSSAnimationProvider', () => {
     const result = await provider.animate(simpleSvg, {
       type: 'unsupported_type',
       timing: {
-        duration: 1000
-      }
+        duration: 1000,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);

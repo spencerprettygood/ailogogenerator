@@ -30,7 +30,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Business Card on Desk',
       description: 'Business card on a wooden desk with stationery',
       tags: ['desk', 'professional', 'wood', 'stationery'],
-      preview: '/assets/mockups/backgrounds/previews/business-card-desk-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/business-card-desk-1-thumb.jpg',
     },
     {
       id: 'business-card-hand-1',
@@ -39,7 +39,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Business Card in Hand',
       description: 'Business card held in hand against neutral background',
       tags: ['hand', 'holding', 'professional', 'neutral'],
-      preview: '/assets/mockups/backgrounds/previews/business-card-hand-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/business-card-hand-1-thumb.jpg',
     },
     {
       id: 'business-card-stack-1',
@@ -48,8 +48,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Business Card Stack',
       description: 'Stack of business cards with top card visible',
       tags: ['stack', 'professional', 'multiple', 'clean'],
-      preview: '/assets/mockups/backgrounds/previews/business-card-stack-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/business-card-stack-1-thumb.jpg',
+    },
   ],
   [MockupType.WEBSITE]: [
     {
@@ -59,7 +59,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Website on MacBook',
       description: 'Website displayed on a MacBook on desk',
       tags: ['laptop', 'macbook', 'desk', 'digital'],
-      preview: '/assets/mockups/backgrounds/previews/website-macbook-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/website-macbook-1-thumb.jpg',
     },
     {
       id: 'website-desktop-1',
@@ -68,7 +68,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Website on Desktop',
       description: 'Website displayed on a desktop monitor',
       tags: ['desktop', 'monitor', 'office', 'screen'],
-      preview: '/assets/mockups/backgrounds/previews/website-desktop-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/website-desktop-1-thumb.jpg',
     },
     {
       id: 'website-responsive-1',
@@ -77,8 +77,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Responsive Website',
       description: 'Website shown on multiple devices',
       tags: ['responsive', 'multiple', 'devices', 'cross-platform'],
-      preview: '/assets/mockups/backgrounds/previews/website-responsive-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/website-responsive-1-thumb.jpg',
+    },
   ],
   [MockupType.TSHIRT]: [
     {
@@ -88,7 +88,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'T-shirt on Model',
       description: 'T-shirt worn by model against white background',
       tags: ['model', 'person', 'clothing', 'apparel'],
-      preview: '/assets/mockups/backgrounds/previews/tshirt-model-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/tshirt-model-1-thumb.jpg',
     },
     {
       id: 'tshirt-hanging-1',
@@ -97,7 +97,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Hanging T-shirt',
       description: 'T-shirt on hanger against wall',
       tags: ['hanger', 'clothing', 'display', 'retail'],
-      preview: '/assets/mockups/backgrounds/previews/tshirt-hanging-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/tshirt-hanging-1-thumb.jpg',
     },
     {
       id: 'tshirt-folded-1',
@@ -106,8 +106,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Folded T-shirt',
       description: 'Folded t-shirt on retail display',
       tags: ['folded', 'retail', 'display', 'shop'],
-      preview: '/assets/mockups/backgrounds/previews/tshirt-folded-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/tshirt-folded-1-thumb.jpg',
+    },
   ],
   [MockupType.STOREFRONT]: [
     {
@@ -117,7 +117,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Urban Storefront',
       description: 'Modern store in urban setting',
       tags: ['urban', 'city', 'modern', 'retail'],
-      preview: '/assets/mockups/backgrounds/previews/storefront-urban-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/storefront-urban-1-thumb.jpg',
     },
     {
       id: 'storefront-mall-1',
@@ -126,7 +126,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Mall Storefront',
       description: 'Store in shopping mall',
       tags: ['mall', 'shopping', 'retail', 'indoor'],
-      preview: '/assets/mockups/backgrounds/previews/storefront-mall-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/storefront-mall-1-thumb.jpg',
     },
     {
       id: 'storefront-night-1',
@@ -135,8 +135,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Night Storefront',
       description: 'Store at night with illuminated signage',
       tags: ['night', 'illuminated', 'dark', 'evening'],
-      preview: '/assets/mockups/backgrounds/previews/storefront-night-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/storefront-night-1-thumb.jpg',
+    },
   ],
   [MockupType.SOCIAL_MEDIA]: [
     {
@@ -146,7 +146,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Social Media Profile',
       description: 'Social media profile page mockup',
       tags: ['profile', 'platform', 'digital', 'social'],
-      preview: '/assets/mockups/backgrounds/previews/social-profile-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/social-profile-1-thumb.jpg',
     },
     {
       id: 'social-post-1',
@@ -155,7 +155,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Social Media Post',
       description: 'Social media post with engagement metrics',
       tags: ['post', 'engagement', 'likes', 'social'],
-      preview: '/assets/mockups/backgrounds/previews/social-post-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/social-post-1-thumb.jpg',
     },
     {
       id: 'social-mobile-1',
@@ -164,8 +164,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Social Media on Mobile',
       description: 'Social media profile on smartphone',
       tags: ['mobile', 'phone', 'smartphone', 'hand'],
-      preview: '/assets/mockups/backgrounds/previews/social-mobile-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/social-mobile-1-thumb.jpg',
+    },
   ],
   [MockupType.MOBILE_APP]: [
     {
@@ -175,7 +175,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'App in Hand',
       description: 'Mobile app on smartphone held in hand',
       tags: ['hand', 'smartphone', 'mobile', 'person'],
-      preview: '/assets/mockups/backgrounds/previews/mobile-app-hand-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/mobile-app-hand-1-thumb.jpg',
     },
     {
       id: 'mobile-app-desk-1',
@@ -184,7 +184,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'App on Desk',
       description: 'Smartphone with app on desk with accessories',
       tags: ['desk', 'workspace', 'accessories', 'flat-lay'],
-      preview: '/assets/mockups/backgrounds/previews/mobile-app-desk-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/mobile-app-desk-1-thumb.jpg',
     },
     {
       id: 'mobile-app-devices-1',
@@ -193,8 +193,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'App on Multiple Devices',
       description: 'Mobile app shown on smartphone and tablet',
       tags: ['multiple', 'devices', 'tablet', 'smartphone'],
-      preview: '/assets/mockups/backgrounds/previews/mobile-app-devices-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/mobile-app-devices-1-thumb.jpg',
+    },
   ],
   [MockupType.PACKAGING]: [
     {
@@ -204,7 +204,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Product Box',
       description: 'Product box on white background',
       tags: ['box', 'product', 'cardboard', 'retail'],
-      preview: '/assets/mockups/backgrounds/previews/packaging-box-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/packaging-box-1-thumb.jpg',
     },
     {
       id: 'packaging-display-1',
@@ -213,7 +213,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Retail Display',
       description: 'Product packaging in retail display',
       tags: ['retail', 'display', 'shelf', 'store'],
-      preview: '/assets/mockups/backgrounds/previews/packaging-display-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/packaging-display-1-thumb.jpg',
     },
     {
       id: 'packaging-unboxing-1',
@@ -222,8 +222,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Unboxing Experience',
       description: 'Product being unboxed showing packaging',
       tags: ['unboxing', 'experience', 'hands', 'opening'],
-      preview: '/assets/mockups/backgrounds/previews/packaging-unboxing-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/packaging-unboxing-1-thumb.jpg',
+    },
   ],
   [MockupType.LETTERHEAD]: [
     {
@@ -233,7 +233,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Letterhead on Desk',
       description: 'Business letterhead on desk with stationery',
       tags: ['desk', 'stationery', 'business', 'paper'],
-      preview: '/assets/mockups/backgrounds/previews/letterhead-desk-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/letterhead-desk-1-thumb.jpg',
     },
     {
       id: 'letterhead-closeup-1',
@@ -242,8 +242,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Letterhead Closeup',
       description: 'Close-up view of letterhead header',
       tags: ['closeup', 'detail', 'header', 'paper'],
-      preview: '/assets/mockups/backgrounds/previews/letterhead-closeup-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/letterhead-closeup-1-thumb.jpg',
+    },
   ],
   [MockupType.BILLBOARD]: [
     {
@@ -253,7 +253,7 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Urban Billboard',
       description: 'Billboard in urban setting with traffic',
       tags: ['urban', 'city', 'traffic', 'large'],
-      preview: '/assets/mockups/backgrounds/previews/billboard-urban-1-thumb.jpg'
+      preview: '/assets/mockups/backgrounds/previews/billboard-urban-1-thumb.jpg',
     },
     {
       id: 'billboard-highway-1',
@@ -262,8 +262,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Highway Billboard',
       description: 'Billboard alongside highway',
       tags: ['highway', 'road', 'travel', 'large'],
-      preview: '/assets/mockups/backgrounds/previews/billboard-highway-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/billboard-highway-1-thumb.jpg',
+    },
   ],
   [MockupType.EMAIL_SIGNATURE]: [
     {
@@ -273,8 +273,8 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Email on Laptop',
       description: 'Email with signature displayed on laptop',
       tags: ['laptop', 'digital', 'screen', 'electronic'],
-      preview: '/assets/mockups/backgrounds/previews/email-laptop-1-thumb.jpg'
-    }
+      preview: '/assets/mockups/backgrounds/previews/email-laptop-1-thumb.jpg',
+    },
   ],
   [MockupType.FAVICON]: [
     {
@@ -284,9 +284,9 @@ export const BACKGROUND_IMAGES: Record<MockupType, BackgroundImage[]> = {
       name: 'Favicon in Browser',
       description: 'Favicon shown in browser tab',
       tags: ['browser', 'tab', 'website', 'digital'],
-      preview: '/assets/mockups/backgrounds/previews/favicon-browser-1-thumb.jpg'
-    }
-  ]
+      preview: '/assets/mockups/backgrounds/previews/favicon-browser-1-thumb.jpg',
+    },
+  ],
 };
 
 /**
@@ -315,7 +315,7 @@ export function getBackgroundById(id: string): BackgroundImage | undefined {
  */
 export function getBackgroundsByTags(tags: string[]): BackgroundImage[] {
   if (!tags.length) return [];
-  
+
   return getAllBackgroundImages().filter(bg => {
     return tags.some(tag => bg.tags.includes(tag.toLowerCase()));
   });
@@ -327,7 +327,7 @@ export function getBackgroundsByTags(tags: string[]): BackgroundImage[] {
 export function getRandomBackground(type: MockupType): BackgroundImage | undefined {
   const backgroundsForType = BACKGROUND_IMAGES[type] || [];
   if (backgroundsForType.length === 0) return undefined;
-  
+
   const randomIndex = Math.floor(Math.random() * backgroundsForType.length);
   return backgroundsForType[randomIndex];
 }

@@ -15,11 +15,12 @@ let content = fs.readFileSync(smilProviderPath, 'utf8');
 const fixes = [
   // Fix viewBox destructuring
   {
-    search: /const \[x, y, width, height\] = viewBox\.split\(' '\)\.map\(Number\);\s*centerX = x \+ width \/ 2;\s*centerY = y \+ height \/ 2;/g,
+    search:
+      /const \[x, y, width, height\] = viewBox\.split\(' '\)\.map\(Number\);\s*centerX = x \+ width \/ 2;\s*centerY = y \+ height \/ 2;/g,
     replace: `const [x, y, width, height] = viewBox.split(' ').map(Number);
       centerX = (x || 0) + (width || 0) / 2;
-      centerY = (y || 0) + (height || 0) / 2;`
-  }
+      centerY = (y || 0) + (height || 0) / 2;`,
+  },
 ];
 
 // Apply fixes

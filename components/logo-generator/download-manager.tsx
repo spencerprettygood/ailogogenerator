@@ -22,7 +22,9 @@ const DownloadManager: React.FC<DownloadManagerProps> = ({
           <CardTitle>Downloads</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No files available for download yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No files available for download yet.
+          </p>
         </CardContent>
       </Card>
     );
@@ -44,8 +46,8 @@ const DownloadManager: React.FC<DownloadManagerProps> = ({
             </CardDescription>
           </div>
           {packageUrl && (
-            <Button 
-              onClick={onDownloadAllAction} 
+            <Button
+              onClick={onDownloadAllAction}
               className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 whitespace-nowrap"
               aria-label="Download all assets as a ZIP package"
             >
@@ -57,24 +59,17 @@ const DownloadManager: React.FC<DownloadManagerProps> = ({
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {primaryFile && (
-            <FileItem 
-              file={primaryFile} 
-              onDownloadAction={onDownloadFileAction} 
-            />
-          )}
-          {otherFiles.map((file) => (
-            <FileItem 
-              key={file.id} 
-              file={file} 
-              onDownloadAction={onDownloadFileAction} 
-            />
+          {primaryFile && <FileItem file={primaryFile} onDownloadAction={onDownloadFileAction} />}
+          {otherFiles.map(file => (
+            <FileItem key={file.id} file={file} onDownloadAction={onDownloadFileAction} />
           ))}
         </ul>
         {!packageUrl && files.length > 0 && (
-            <div className="mt-4 text-center">
-                 <p className="text-xs text-gray-500 dark:text-gray-400">Package (ZIP) is being prepared...</p>
-            </div>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Package (ZIP) is being prepared...
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

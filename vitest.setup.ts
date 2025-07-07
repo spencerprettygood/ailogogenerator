@@ -10,7 +10,7 @@
 
 // Provide animate() in Element.prototype for web-animations-api support
 if (!window.Element.prototype.animate) {
-  window.Element.prototype.animate = function() {
+  window.Element.prototype.animate = function () {
     return { finished: Promise.resolve() } as any;
   };
 }

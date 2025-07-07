@@ -30,7 +30,7 @@ class SimpleTelemetry {
   constructor() {
     this.sessionId = this.generateSessionId();
     this.isEnabled = typeof window !== 'undefined' && process.env.NODE_ENV !== 'test';
-    
+
     if (this.isEnabled) {
       this.initializePerformanceObserver();
     }
@@ -43,17 +43,17 @@ class SimpleTelemetry {
   private initializePerformanceObserver(): void {
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
       try {
-        const observer = new PerformanceObserver((list) => {
-          list.getEntries().forEach((entry) => {
+        const observer = new PerformanceObserver(list => {
+          list.getEntries().forEach(entry => {
             this.recordMetric({
               name: entry.name,
               value: entry.duration,
               timestamp: Date.now(),
-              type: 'histogram'
+              type: 'histogram',
             });
           });
         });
-        
+
         observer.observe({ entryTypes: ['navigation', 'resource', 'measure'] });
       } catch (error) {
         console.warn('Performance Observer not supported:', error);
@@ -71,11 +71,11 @@ class SimpleTelemetry {
       name,
       timestamp: Date.now(),
       properties,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
 
     this.events.push(event);
-    
+
     // Keep only last 1000 events to prevent memory leaks
     if (this.events.length > 1000) {
       this.events = this.events.slice(-1000);
@@ -94,7 +94,7 @@ class SimpleTelemetry {
     if (!this.isEnabled) return () => {};
 
     const startTime = performance.now();
-    
+
     return () => {
       const duration = performance.now() - startTime;
       this.recordEvent(`${name}_completed`, { duration });
@@ -102,7 +102,7 @@ class SimpleTelemetry {
         name: `${name}_duration`,
         value: duration,
         timestamp: Date.now(),
-        type: 'histogram'
+        type: 'histogram',
       });
     };
   }
@@ -114,7 +114,7 @@ class SimpleTelemetry {
     if (!this.isEnabled) return;
 
     this.metrics.push(metric);
-    
+
     // Keep only last 1000 metrics
     if (this.metrics.length > 1000) {
       this.metrics = this.metrics.slice(-1000);
@@ -131,7 +131,7 @@ class SimpleTelemetry {
       message: error.message,
       stack: error.stack || '',
       context: context || '',
-      name: error.name
+      name: error.name,
     });
 
     // Also log to console for debugging
@@ -145,7 +145,7 @@ class SimpleTelemetry {
     return {
       events: [...this.events],
       metrics: [...this.metrics],
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
   }
 
@@ -178,7 +178,7 @@ class SimpleTelemetry {
       end: () => {
         const duration = performance.now() - startTime;
         this.recordEvent(name, { ...attributes, duration });
-      }
+      },
     };
   }
 }

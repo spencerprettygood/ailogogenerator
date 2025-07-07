@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  PackagingAgentInput, 
-  PackagingAgentOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  PackagingAgentInput,
+  PackagingAgentOutput,
 } from '../../types-agents';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 import { nanoid } from 'nanoid';
@@ -25,20 +25,16 @@ if (process.env.NODE_ENV === 'production' && process.env.BLOB_READ_WRITE_TOKEN) 
  */
 export class PackagingAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'packaging', 
-      ['asset-packaging'],
-      {
-        model: 'claude-3-haiku-20240307', // This agent doesn't primarily use Claude
-        fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
-        temperature: 0.1,
-        maxTokens: 500,
-        ...config
-      }
-    );
-    
+    super('packaging', ['asset-packaging'], {
+      model: 'claude-3-haiku-20240307', // This agent doesn't primarily use Claude
+      fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
+      temperature: 0.1,
+      maxTokens: 500,
+      ...config,
+    });
+
     // This agent doesn't primarily use Claude - it handles asset packaging directly
-    
+
     // Set a system prompt - required to avoid "text content blocks must be non-empty" error
     this.systemPrompt = `You are a specialized asset packaging agent for an AI logo generator.
     
@@ -51,14 +47,14 @@ IMPORTANT REQUIREMENTS:
 4. Include appropriate credits for the AI Logo Generator
 5. Format your response as proper markdown`;
   }
-  
+
   /**
    * Generate the prompt for packaging
    * This agent doesn't primarily use prompts, but can generate README content
    */
   protected async generatePrompt(input: PackagingAgentInput): Promise<string> {
     const { brandName } = input;
-    
+
     // Only used for generating README content
     return `Please create a brief README.md file for a logo package for "${brandName}".
 
@@ -77,22 +73,18 @@ Include:
 
 Keep it concise but professional. Format as proper markdown.`;
   }
-  
+
   /**
    * Process packaging operation
    * This is primarily a direct asset packaging operation, not an AI response processing
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<PackagingAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<PackagingAgentOutput> {
     const input = originalInput as PackagingAgentInput;
-    const { 
-      brandName, 
-      svg, 
-      pngVariants, 
-      monochrome, 
-      favicon, 
-      guidelines 
-    } = input;
-    
+    const { brandName, svg, pngVariants, monochrome, favicon, guidelines } = input;
+
     try {
       this.log(`Starting packaging process for ${brandName}...`);
 
@@ -141,7 +133,7 @@ Keep it concise but professional. Format as proper markdown.`;
         this.log(`Development mode: Creating data URL for package`);
         const base64Zip = zipBuffer.toString('base64');
         const downloadUrl = `data:application/zip;base64,${base64Zip}`;
-        
+
         this.log(`Package prepared successfully (development mode)`);
 
         return {
@@ -189,7 +181,7 @@ Keep it concise but professional. Format as proper markdown.`;
       const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
       this.log(`PackagingAgent encountered an error: ${errMsg}`, 'error');
       this.log(`Error stack: ${errorStack}`, 'error');
-      
+
       return {
         success: false,
         error: handleError({

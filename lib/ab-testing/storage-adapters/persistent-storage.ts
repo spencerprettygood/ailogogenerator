@@ -26,10 +26,10 @@ export class PersistentStorageAdapter implements StorageAdapter {
     try {
       // Create base directory
       await fs.mkdir(this.dataDir, { recursive: true });
-      
+
       // Create sessions directory
       await fs.mkdir(this.sessionsDir, { recursive: true });
-      
+
       // Initialize tests file if it doesn't exist
       try {
         await fs.access(this.testsPath);
@@ -62,15 +62,15 @@ export class PersistentStorageAdapter implements StorageAdapter {
     try {
       const data = await fs.readFile(this.testsPath, 'utf-8');
       const tests: TestConfig[] = JSON.parse(data);
-      
+
       const existingIndex = tests.findIndex(t => t.id === test.id);
-      
+
       if (existingIndex >= 0) {
         tests[existingIndex] = test;
       } else {
         tests.push(test);
       }
-      
+
       await fs.writeFile(this.testsPath, JSON.stringify(tests, null, 2));
     } catch (error) {
       console.error('Failed to save test:', error);
@@ -85,7 +85,7 @@ export class PersistentStorageAdapter implements StorageAdapter {
     try {
       const sessionPath = this.getSessionPath(session.sessionId);
       await fs.writeFile(sessionPath, JSON.stringify(session, null, 2));
-      
+
       // Also update the test session index
       await this.updateSessionIndex(session);
     } catch (error) {
@@ -101,7 +101,7 @@ export class PersistentStorageAdapter implements StorageAdapter {
     try {
       const sessionPath = this.getSessionPath(session.sessionId);
       await fs.writeFile(sessionPath, JSON.stringify(session, null, 2));
-      
+
       // Also update the session index
       await this.updateSessionIndex(session);
     } catch (error) {
@@ -117,17 +117,17 @@ export class PersistentStorageAdapter implements StorageAdapter {
     try {
       // Get session IDs from the index
       const indexPath = path.join(this.sessionsDir, `test_${testId}_index.json`);
-      
+
       try {
         await fs.access(indexPath);
       } catch {
         // If index doesn't exist, no sessions for this test
         return [];
       }
-      
+
       const indexData = await fs.readFile(indexPath, 'utf-8');
       const sessionIds: string[] = JSON.parse(indexData);
-      
+
       // Load each session
       const sessions: TestSession[] = [];
       for (const sessionId of sessionIds) {
@@ -139,7 +139,7 @@ export class PersistentStorageAdapter implements StorageAdapter {
           console.warn(`Failed to load session ${sessionId}:`, error);
         }
       }
-      
+
       return sessions;
     } catch (error) {
       console.error('Failed to get sessions by test:', error);
@@ -159,18 +159,18 @@ export class PersistentStorageAdapter implements StorageAdapter {
    */
   private async updateSessionIndex(session: TestSession): Promise<void> {
     const indexPath = path.join(this.sessionsDir, `test_${session.testId}_index.json`);
-    
+
     try {
       // Check if index exists
       let sessionIds: string[] = [];
-      
+
       try {
         const indexData = await fs.readFile(indexPath, 'utf-8');
         sessionIds = JSON.parse(indexData);
       } catch {
         // Index doesn't exist yet, create new array
       }
-      
+
       // Add session ID if not already in the index
       if (!sessionIds.includes(session.sessionId)) {
         sessionIds.push(session.sessionId);

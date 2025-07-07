@@ -9,7 +9,7 @@ export interface DesignSpec {
   color_palette: string;
   imagery: string;
   target_audience: string;
-  brand_personality?: string;  
+  brand_personality?: string;
   industry_context?: string;
   competitive_positioning?: string;
   uniqueness_requirements?: string;
@@ -94,7 +94,6 @@ Rules:
 4. No commentary outside JSON structure
 `;
 
-
 // Input sanitization class
 class InputSanitizer {
   private static readonly DANGEROUS_PATTERNS = [
@@ -102,12 +101,12 @@ class InputSanitizer {
     /system\s*:/gi,
     /assistant\s*:/gi,
     /<script.*?>.*?<\/script>/gi, // More robust script tag removal
-    /<script.*?>/gi,             // Match script tags like <script ...>
+    /<script.*?>/gi, // Match script tags like <script ...>
     /javascript:/gi,
     /onerror\s*=/gi,
     /onload\s*=/gi,
     /\{\{.*?\}\}/g, // Template injection
-    /\$\{[^}]*\}/g,   // Variable injection - ensure it doesn't break template literals if any are used in valid input
+    /\$\{[^}]*\}/g, // Variable injection - ensure it doesn't break template literals if any are used in valid input
     /```[\s\S]*?```/g, // Code blocks
     /prompt\s*injection/gi,
     /jailbreak/gi,
@@ -119,34 +118,36 @@ class InputSanitizer {
   private static readonly MAX_DESC_LENGTH = 500;
   private static readonly MAX_DESCRIPTIONS = 3;
 
-
   static sanitizeText(input: string, maxLength: number, fieldName: string = 'input'): string {
     if (typeof input !== 'string') {
-        // Allow "unspecified" to pass through if it's from AI, but user input shouldn't be this.
-        if (input === 'unspecified') return input;
-        throw new Error(`Invalid ${fieldName}: must be a string. Received: ${typeof input}`);
+      // Allow "unspecified" to pass through if it's from AI, but user input shouldn't be this.
+      if (input === 'unspecified') return input;
+      throw new Error(`Invalid ${fieldName}: must be a string. Received: ${typeof input}`);
     }
-    
+
     let sanitized = input.trim();
-    
+
     this.DANGEROUS_PATTERNS.forEach(pattern => {
-        sanitized = sanitized.replace(pattern, '[FILTERED]');
+      sanitized = sanitized.replace(pattern, '[FILTERED]');
     });
-    
+
     if (sanitized.length > maxLength) {
-        sanitized = sanitized.slice(0, maxLength) + '...';
+      sanitized = sanitized.slice(0, maxLength) + '...';
     }
     return sanitized;
   }
 
-
   static sanitizeBrief(input: string): string {
-    if (!input) { // Catches null, undefined, empty string
-        throw new Error('Invalid input: brief cannot be empty.');
+    if (!input) {
+      // Catches null, undefined, empty string
+      throw new Error('Invalid input: brief cannot be empty.');
     }
     const sanitized = this.sanitizeText(input, this.MAX_BRIEF_LENGTH, 'brief');
-    if (sanitized.length < this.MIN_BRIEF_LENGTH && input !== 'unspecified') { // Check original input length if sanitized is short
-        throw new Error('Brief is too short. Please provide more details about your logo requirements.');
+    if (sanitized.length < this.MIN_BRIEF_LENGTH && input !== 'unspecified') {
+      // Check original input length if sanitized is short
+      throw new Error(
+        'Brief is too short. Please provide more details about your logo requirements.'
+      );
     }
     return sanitized;
   }
@@ -157,7 +158,7 @@ class InputSanitizer {
     }
 
     return descriptions
-      .map((desc, i) => this.sanitizeText(desc, this.MAX_DESC_LENGTH, `image description ${i+1}`))
+      .map((desc, i) => this.sanitizeText(desc, this.MAX_DESC_LENGTH, `image description ${i + 1}`))
       .filter(desc => desc.length > 0 && desc !== '[FILTERED]') // Ensure not just filtered content
       .slice(0, this.MAX_DESCRIPTIONS);
   }
@@ -167,7 +168,7 @@ class InputSanitizer {
 class JSONValidator {
   static validateDesignSpec(jsonString: string): DesignSpec {
     let parsed: Record<string, unknown>;
-    
+
     try {
       // The AI might sometimes wrap JSON in ```json ... ```
       const match = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
@@ -179,12 +180,12 @@ class JSONValidator {
 
     const requiredFields: Array<keyof DesignSpec> = [
       'brand_name',
-      'brand_description', 
+      'brand_description',
       'style_preferences',
       'color_palette',
       'imagery',
       'target_audience',
-      'additional_requests'
+      'additional_requests',
     ];
 
     const missing = requiredFields.filter(field => !(field in parsed));
@@ -195,66 +196,72 @@ class JSONValidator {
     // Validate field types and sanitize (AI output might still need light sanitization)
     const designSpec: DesignSpec = {
       brand_name: InputSanitizer.sanitizeText(
-        typeof parsed.brand_name === 'string' ? parsed.brand_name : 'unspecified', 
-        200, 
+        typeof parsed.brand_name === 'string' ? parsed.brand_name : 'unspecified',
+        200,
         'brand_name from AI'
       ),
       brand_description: InputSanitizer.sanitizeText(
-        typeof parsed.brand_description === 'string' ? parsed.brand_description : 'unspecified', 
-        500, 
+        typeof parsed.brand_description === 'string' ? parsed.brand_description : 'unspecified',
+        500,
         'brand_description from AI'
       ),
       style_preferences: InputSanitizer.sanitizeText(
-        typeof parsed.style_preferences === 'string' ? parsed.style_preferences : 'unspecified', 
-        500, 
+        typeof parsed.style_preferences === 'string' ? parsed.style_preferences : 'unspecified',
+        500,
         'style_preferences from AI'
       ),
       color_palette: InputSanitizer.sanitizeText(
-        typeof parsed.color_palette === 'string' ? parsed.color_palette : 'unspecified', 
-        500, 
+        typeof parsed.color_palette === 'string' ? parsed.color_palette : 'unspecified',
+        500,
         'color_palette from AI'
       ),
       imagery: InputSanitizer.sanitizeText(
-        typeof parsed.imagery === 'string' ? parsed.imagery : 'unspecified', 
-        500, 
+        typeof parsed.imagery === 'string' ? parsed.imagery : 'unspecified',
+        500,
         'imagery from AI'
       ),
       target_audience: InputSanitizer.sanitizeText(
-        typeof parsed.target_audience === 'string' ? parsed.target_audience : 'unspecified', 
-        500, 
+        typeof parsed.target_audience === 'string' ? parsed.target_audience : 'unspecified',
+        500,
         'target_audience from AI'
       ),
       brand_personality: InputSanitizer.sanitizeText(
-        typeof parsed.brand_personality === 'string' ? parsed.brand_personality : 'unspecified', 
-        500, 
+        typeof parsed.brand_personality === 'string' ? parsed.brand_personality : 'unspecified',
+        500,
         'brand_personality from AI'
       ),
       industry_context: InputSanitizer.sanitizeText(
-        typeof parsed.industry_context === 'string' ? parsed.industry_context : 'unspecified', 
-        500, 
+        typeof parsed.industry_context === 'string' ? parsed.industry_context : 'unspecified',
+        500,
         'industry_context from AI'
       ),
       competitive_positioning: InputSanitizer.sanitizeText(
-        typeof parsed.competitive_positioning === 'string' ? parsed.competitive_positioning : 'unspecified', 
-        500, 
+        typeof parsed.competitive_positioning === 'string'
+          ? parsed.competitive_positioning
+          : 'unspecified',
+        500,
         'competitive_positioning from AI'
       ),
       uniqueness_requirements: InputSanitizer.sanitizeText(
-        typeof parsed.uniqueness_requirements === 'string' ? parsed.uniqueness_requirements : 'unspecified', 
-        500, 
+        typeof parsed.uniqueness_requirements === 'string'
+          ? parsed.uniqueness_requirements
+          : 'unspecified',
+        500,
         'uniqueness_requirements from AI'
       ),
       additional_requests: InputSanitizer.sanitizeText(
-        typeof parsed.additional_requests === 'string' ? parsed.additional_requests : 'unspecified', 
-        500, 
+        typeof parsed.additional_requests === 'string' ? parsed.additional_requests : 'unspecified',
+        500,
         'additional_requests from AI'
       ),
     };
 
-    if (!designSpec.brand_name || 
-        designSpec.brand_name === 'unspecified' || 
-        designSpec.brand_name.length < 2 ||
-        designSpec.brand_name === '[FILTERED]') {
+    if (
+      !designSpec.brand_name ||
+      designSpec.brand_name === 'unspecified' ||
+      designSpec.brand_name.length < 2 ||
+      designSpec.brand_name === '[FILTERED]'
+    ) {
       throw new Error('Brand name from AI is invalid or unspecified. It must be meaningful.');
     }
 
@@ -270,7 +277,7 @@ export async function distillRequirements(
   imageDescriptions?: string[]
 ): Promise<StageAOutput> {
   const startTime = Date.now();
-  
+
   try {
     // Input validation and sanitization
     const sanitizedBrief = InputSanitizer.sanitizeBrief(brief);
@@ -281,10 +288,11 @@ export async function distillRequirements(
     if (!anthropicApiKey) {
       // This error should ideally be caught at a higher level or during app startup
       console.error('ANTHROPIC_API_KEY environment variable is not set');
-      throw new Error('ANTHROPIC_API_KEY environment variable is not set. Cannot contact AI model.');
+      throw new Error(
+        'ANTHROPIC_API_KEY environment variable is not set. Cannot contact AI model.'
+      );
     }
     const anthropic = new Anthropic({ apiKey: anthropicApiKey });
-
 
     // Construct user message
     let userMessage = `User Brief: ${sanitizedBrief}`;
@@ -299,9 +307,9 @@ export async function distillRequirements(
       maxAttempts: STAGE_A_CONFIG.max_retries,
       baseDelay: STAGE_A_CONFIG.retry_delay,
       backoffFactor: 2,
-      maxDelay: 10000
+      maxDelay: 10000,
     };
-    
+
     const completion = await withRetry(async () => {
       const response = await anthropic.messages.create({
         model: STAGE_A_CONFIG.model,
@@ -339,7 +347,6 @@ export async function distillRequirements(
       tokensUsed: (completion.usage.input_tokens || 0) + (completion.usage.output_tokens || 0),
       processingTime,
     };
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     let errorType: 'validation_error' | 'ai_error' | 'system_error' = 'system_error';
@@ -352,14 +359,18 @@ export async function distillRequirements(
         errorDetails = error.stack;
       }
 
-      if (error.message.includes('Invalid input:') || 
-          error.message.includes('Brief is too short') ||
-          error.message.includes('Brand name from AI is invalid')) {
+      if (
+        error.message.includes('Invalid input:') ||
+        error.message.includes('Brief is too short') ||
+        error.message.includes('Brand name from AI is invalid')
+      ) {
         errorType = 'validation_error';
-      } else if (error.message.includes('AI model') || 
-                 error.message.includes('AI response') ||
-                 error.message.includes('JSON response from AI model') ||
-                 error.message.includes('missing required fields')) {
+      } else if (
+        error.message.includes('AI model') ||
+        error.message.includes('AI response') ||
+        error.message.includes('JSON response from AI model') ||
+        error.message.includes('missing required fields')
+      ) {
         errorType = 'ai_error';
       } else if (error.message.includes('ANTHROPIC_API_KEY')) {
         errorType = 'system_error'; // Configuration issue
@@ -376,27 +387,37 @@ export async function distillRequirements(
 
 // Utility function for testing and debugging (optional, but good for development)
 export function validateStageAOutput(output: StageAOutput): string {
-  if (!output) return "Output is undefined or null.";
+  if (!output) return 'Output is undefined or null.';
   if (output.success) {
-    if (!output.designSpec) return "Successful output missing designSpec.";
+    if (!output.designSpec) return 'Successful output missing designSpec.';
     const ds = output.designSpec;
-    const requiredKeys: Array<keyof DesignSpec> = ['brand_name', 'brand_description', 'style_preferences', 'color_palette', 'imagery', 'target_audience', 'additional_requests'];
+    const requiredKeys: Array<keyof DesignSpec> = [
+      'brand_name',
+      'brand_description',
+      'style_preferences',
+      'color_palette',
+      'imagery',
+      'target_audience',
+      'additional_requests',
+    ];
     for (const key of requiredKeys) {
       if (!(key in ds) || typeof ds[key] !== 'string' || ds[key] === '') {
         return `Invalid designSpec: field ${key} is missing, not a string, or empty. Value: ${ds[key]}`;
       }
       if (ds[key] === 'unspecified' && key === 'brand_name') {
-         return `Invalid designSpec: brand_name cannot be 'unspecified'.`;
+        return `Invalid designSpec: brand_name cannot be 'unspecified'.`;
       }
     }
-    if (!output.tokensUsed || output.tokensUsed <= 0) return "Missing or invalid tokensUsed.";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime."; // 0 is possible for very fast mock
-    return "valid";
+    if (!output.tokensUsed || output.tokensUsed <= 0) return 'Missing or invalid tokensUsed.';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime.'; // 0 is possible for very fast mock
+    return 'valid';
   } else {
-    if (!output.error) return "Failed output missing error object.";
-    if (!output.error.type || !output.error.message) return "Error object missing type or message.";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime on error.";
-     return "valid_error";
+    if (!output.error) return 'Failed output missing error object.';
+    if (!output.error.type || !output.error.message) return 'Error object missing type or message.';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime on error.';
+    return 'valid_error';
   }
 }
 
@@ -408,4 +429,3 @@ export const STAGE_A_METADATA = {
   timeout_ms: STAGE_A_CONFIG.timeout,
   max_retries: STAGE_A_CONFIG.max_retries,
 };
-

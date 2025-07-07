@@ -7,10 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Settings } from 'lucide-react';
 import { EnhancedMockupService } from '@/lib/mockups/enhanced-mockup-service';
-import { 
+import {
   BackgroundImage,
   getBackgroundsByType,
-  getBackgroundById
+  getBackgroundById,
 } from '@/lib/mockups/background-image-registry';
 
 interface EnhancedMockupPreviewProps extends MockupPreviewProps {
@@ -33,18 +33,20 @@ export function EnhancedMockupPreview({
   onBackgroundChange,
   showBackgroundSelector = true,
   showEffectsControls = false,
-  effectsConfig: initialEffectsConfig
+  effectsConfig: initialEffectsConfig,
 }: EnhancedMockupPreviewProps) {
   const [mockupSvg, setMockupSvg] = useState<string>('');
   const [dataUrl, setDataUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [availableBackgrounds, setAvailableBackgrounds] = useState<BackgroundImage[]>([]);
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState<string | undefined>(backgroundId);
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState<string | undefined>(
+    backgroundId
+  );
   const [showBackgrounds, setShowBackgrounds] = useState<boolean>(false);
-  
+
   // Effects configuration state
-  const [effectsConfig, setEffectsConfig] = useState<EffectsConfig>(() => 
-    initialEffectsConfig || EnhancedMockupService.getRecommendedEffects(template.id)
+  const [effectsConfig, setEffectsConfig] = useState<EffectsConfig>(
+    () => initialEffectsConfig || EnhancedMockupService.getRecommendedEffects(template.id)
   );
 
   // Update effects when prop changes
@@ -58,7 +60,7 @@ export function EnhancedMockupPreview({
   useEffect(() => {
     const backgrounds = getBackgroundsByType(template.type);
     setAvailableBackgrounds(backgrounds);
-    
+
     // If no background is selected, choose the first one
     if (!selectedBackgroundId && backgrounds && backgrounds.length > 0) {
       const firstBg = backgrounds[0];
@@ -79,7 +81,7 @@ export function EnhancedMockupPreview({
     try {
       // Extract SVG code
       const svgCode = typeof logo === 'string' ? logo : logo.svgCode;
-      
+
       // Generate enhanced mockup
       const generatedMockup = EnhancedMockupService.generateEnhancedMockup(
         svgCode,
@@ -89,9 +91,9 @@ export function EnhancedMockupPreview({
         effectsConfig,
         brandName
       );
-      
+
       setMockupSvg(generatedMockup);
-      
+
       // Convert to data URL
       const url = EnhancedMockupService.generateEnhancedMockupDataUrl(
         svgCode,
@@ -101,7 +103,7 @@ export function EnhancedMockupPreview({
         effectsConfig,
         brandName
       );
-      
+
       setDataUrl(url);
       setIsLoading(false);
     } catch (error) {
@@ -148,7 +150,7 @@ export function EnhancedMockupPreview({
   const toggleLighting = () => {
     setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
-      applyLighting: !prev.applyLighting
+      applyLighting: !prev.applyLighting,
     }));
   };
 
@@ -156,7 +158,7 @@ export function EnhancedMockupPreview({
   const toggleShadow = () => {
     setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
-      applyShadow: !prev.applyShadow
+      applyShadow: !prev.applyShadow,
     }));
   };
 
@@ -164,7 +166,7 @@ export function EnhancedMockupPreview({
   const togglePerspective = () => {
     setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
-      applyPerspective: !prev.applyPerspective
+      applyPerspective: !prev.applyPerspective,
     }));
   };
 
@@ -172,7 +174,7 @@ export function EnhancedMockupPreview({
   const changeLightDirection = (direction: 'top' | 'right' | 'bottom' | 'left') => {
     setEffectsConfig((prev: EffectsConfig) => ({
       ...prev,
-      lightDirection: direction
+      lightDirection: direction,
     }));
   };
 
@@ -194,12 +196,12 @@ export function EnhancedMockupPreview({
                 className="w-full h-auto object-contain"
               />
             </div>
-            
+
             {/* Background selector */}
             {showBackgroundSelector && availableBackgrounds.length > 0 && (
               <div className="absolute top-4 left-4">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => setShowBackgrounds(!showBackgrounds)}
                   variant="secondary"
                   className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
@@ -207,14 +209,16 @@ export function EnhancedMockupPreview({
                   <Settings className="h-4 w-4 mr-2" />
                   Background
                 </Button>
-                
+
                 {showBackgrounds && (
                   <div className="absolute top-10 left-0 z-10 bg-background/95 backdrop-blur-md p-3 rounded-md shadow-md border border-border mt-1 flex gap-2 flex-wrap max-w-[300px]">
                     {availableBackgrounds.map(bg => (
-                      <div 
+                      <div
                         key={bg.id}
                         className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 transition-all ${
-                          selectedBackgroundId === bg.id ? 'border-primary' : 'border-transparent hover:border-muted'
+                          selectedBackgroundId === bg.id
+                            ? 'border-primary'
+                            : 'border-transparent hover:border-muted'
                         }`}
                         onClick={() => handleBackgroundChange(bg.id)}
                         title={bg.name}
@@ -233,12 +237,12 @@ export function EnhancedMockupPreview({
                 )}
               </div>
             )}
-            
+
             {/* Effects controls */}
             {showEffectsControls && (
               <div className="absolute top-4 right-4">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => setShowBackgrounds(!showBackgrounds)}
                   variant="secondary"
                   className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
@@ -246,71 +250,79 @@ export function EnhancedMockupPreview({
                   <Settings className="h-4 w-4 mr-2" />
                   Effects
                 </Button>
-                
+
                 {showBackgrounds && (
                   <div className="absolute top-10 right-0 z-10 bg-background/95 backdrop-blur-md p-3 rounded-md shadow-md border border-border mt-1 w-[200px]">
                     <div className="space-y-3">
                       <div>
-                        <Button 
-                          size="sm" 
-                          variant={effectsConfig.applyLighting ? "default" : "outline"} 
+                        <Button
+                          size="sm"
+                          variant={effectsConfig.applyLighting ? 'default' : 'outline'}
                           onClick={toggleLighting}
                           className="w-full"
                         >
-                          {effectsConfig.applyLighting ? "Lighting: On" : "Lighting: Off"}
+                          {effectsConfig.applyLighting ? 'Lighting: On' : 'Lighting: Off'}
                         </Button>
                       </div>
-                      
+
                       <div>
-                        <Button 
-                          size="sm" 
-                          variant={effectsConfig.applyShadow ? "default" : "outline"} 
+                        <Button
+                          size="sm"
+                          variant={effectsConfig.applyShadow ? 'default' : 'outline'}
                           onClick={toggleShadow}
                           className="w-full"
                         >
-                          {effectsConfig.applyShadow ? "Shadow: On" : "Shadow: Off"}
+                          {effectsConfig.applyShadow ? 'Shadow: On' : 'Shadow: Off'}
                         </Button>
                       </div>
-                      
+
                       <div>
-                        <Button 
-                          size="sm" 
-                          variant={effectsConfig.applyPerspective ? "default" : "outline"} 
+                        <Button
+                          size="sm"
+                          variant={effectsConfig.applyPerspective ? 'default' : 'outline'}
                           onClick={togglePerspective}
                           className="w-full"
                         >
-                          {effectsConfig.applyPerspective ? "Perspective: On" : "Perspective: Off"}
+                          {effectsConfig.applyPerspective ? 'Perspective: On' : 'Perspective: Off'}
                         </Button>
                       </div>
-                      
+
                       {effectsConfig.applyLighting && (
                         <div>
                           <p className="text-xs mb-1">Light Direction:</p>
                           <div className="grid grid-cols-2 gap-1">
-                            <Button 
-                              size="sm" 
-                              variant={effectsConfig.lightDirection === 'top' ? "default" : "outline"} 
+                            <Button
+                              size="sm"
+                              variant={
+                                effectsConfig.lightDirection === 'top' ? 'default' : 'outline'
+                              }
                               onClick={() => changeLightDirection('top')}
                             >
                               Top
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={effectsConfig.lightDirection === 'right' ? "default" : "outline"} 
+                            <Button
+                              size="sm"
+                              variant={
+                                effectsConfig.lightDirection === 'right' ? 'default' : 'outline'
+                              }
                               onClick={() => changeLightDirection('right')}
                             >
                               Right
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={effectsConfig.lightDirection === 'bottom' ? "default" : "outline"} 
+                            <Button
+                              size="sm"
+                              variant={
+                                effectsConfig.lightDirection === 'bottom' ? 'default' : 'outline'
+                              }
                               onClick={() => changeLightDirection('bottom')}
                             >
                               Bottom
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={effectsConfig.lightDirection === 'left' ? "default" : "outline"} 
+                            <Button
+                              size="sm"
+                              variant={
+                                effectsConfig.lightDirection === 'left' ? 'default' : 'outline'
+                              }
                               onClick={() => changeLightDirection('left')}
                             >
                               Left
@@ -323,11 +335,11 @@ export function EnhancedMockupPreview({
                 )}
               </div>
             )}
-            
+
             {/* Download button */}
             <div className="absolute bottom-4 right-4">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={handleDownload}
                 variant="secondary"
                 className="bg-background/80 backdrop-blur-sm hover:bg-background/90"

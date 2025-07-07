@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SVGRenderer } from "./svg-renderer";
-import { cn } from "@/lib/utils";
-import { FileDownloadInfo } from "@/lib/types";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SVGRenderer } from './svg-renderer';
+import { cn } from '@/lib/utils';
+import { FileDownloadInfo } from '@/lib/types';
 
 export interface FaviconDisplayProps {
   /** SVG logo content as a string */
@@ -26,27 +26,27 @@ export interface FaviconDisplayProps {
   onDownloadRequest?: (type: 'ico' | 'png' | 'svg') => Promise<FileDownloadInfo | null>;
 }
 
-/** 
+/**
  * Favicon Display Component
- * 
+ *
  * Displays the logo as favicon previews in different sizes and offers
  * download options for various favicon formats.
  */
 function FaviconDisplay({
-  svgContent = "",
-  logoName = "logo",
+  svgContent = '',
+  logoName = 'logo',
   isGenerating = false,
   hasError = false,
-  errorMessage = "Failed to generate favicon",
+  errorMessage = 'Failed to generate favicon',
   className,
-  onDownloadRequest
+  onDownloadRequest,
 }: FaviconDisplayProps) {
   // States
-  const [activeSizeTab, setActiveSizeTab] = useState<string>("32");
+  const [activeSizeTab, setActiveSizeTab] = useState<string>('32');
   const [isDownloading, setIsDownloading] = useState<Record<string, boolean>>({
     svg: false,
     ico: false,
-    png: false
+    png: false,
   });
 
   // Function to render favicon at different sizes
@@ -55,16 +55,15 @@ function FaviconDisplay({
       <div className="relative flex flex-col items-center space-y-2">
         <div
           className={cn(
-            "overflow-hidden bg-white border border-border rounded flex items-center justify-center",
-            size === 16 ? "w-[16px] h-[16px]" : 
-            size === 32 ? "w-[32px] h-[32px]" : 
-            "w-[64px] h-[64px]"
+            'overflow-hidden bg-white border border-border rounded flex items-center justify-center',
+            size === 16
+              ? 'w-[16px] h-[16px]'
+              : size === 32
+                ? 'w-[32px] h-[32px]'
+                : 'w-[64px] h-[64px]'
           )}
         >
-          <SVGRenderer
-            svgContent={svgContent}
-            className="w-full h-full"
-          />
+          <SVGRenderer svgContent={svgContent} className="w-full h-full" />
         </div>
         <Badge variant="outline" className="text-xs">
           {size}x{size}
@@ -88,25 +87,24 @@ function FaviconDisplay({
             <div className="text-xs text-muted-foreground truncate">example.com</div>
           </div>
         </div>
-        
+
         {/* Tab bar */}
         <div className="bg-muted/50 flex items-end border-b border-border h-8">
           <div className="flex items-center bg-background rounded-t-lg border-t border-l border-r border-border h-7 px-3 space-x-2 relative -mb-px">
             <div className="w-4 h-4 flex-shrink-0">
-              <SVGRenderer
-                svgContent={svgContent}
-                className="w-full h-full"
-              />
+              <SVGRenderer svgContent={svgContent} className="w-full h-full" />
             </div>
             <div className="text-xs font-medium truncate max-w-[100px]">
-              {logoName || "Website"}
+              {logoName || 'Website'}
             </div>
           </div>
         </div>
-        
+
         {/* Content area (minimal) */}
         <div className="h-28 flex items-center justify-center bg-background p-4">
-          <div className="text-sm text-muted-foreground text-center">Browser tab preview with favicon</div>
+          <div className="text-sm text-muted-foreground text-center">
+            Browser tab preview with favicon
+          </div>
         </div>
       </div>
     );
@@ -117,9 +115,9 @@ function FaviconDisplay({
     if (!onDownloadRequest) {
       // Client-side fallback for SVG download
       if (type === 'svg') {
-        const blob = new Blob([svgContent], { type: "image/svg+xml" });
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
         a.download = `${logoName}-favicon.svg`;
         document.body.appendChild(a);
@@ -128,48 +126,48 @@ function FaviconDisplay({
         URL.revokeObjectURL(url);
         return;
       }
-      
+
       // For ICO and PNG, use HTML5 Canvas as fallback
       if (type === 'png') {
         try {
-          const canvas = document.createElement("canvas");
+          const canvas = document.createElement('canvas');
           canvas.width = 32;
           canvas.height = 32;
-          const ctx = canvas.getContext("2d");
+          const ctx = canvas.getContext('2d');
           if (!ctx) return;
-          
+
           const img = new Image();
           img.onload = () => {
             ctx.drawImage(img, 0, 0, 32, 32);
-            const pngUrl = canvas.toDataURL("image/png");
-            const a = document.createElement("a");
+            const pngUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
             a.href = pngUrl;
             a.download = `${logoName}-favicon.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
           };
-          
-          const svgBlob = new Blob([svgContent], { type: "image/svg+xml" });
+
+          const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
           const url = URL.createObjectURL(svgBlob);
           img.src = url;
         } catch (error) {
-          console.error("Failed to generate PNG:", error);
+          console.error('Failed to generate PNG:', error);
         }
         return;
       }
-      
+
       // ICO generation requires server-side processing
-      console.warn("ICO generation requires server-side processing");
+      console.warn('ICO generation requires server-side processing');
       return;
     }
-    
+
     try {
       setIsDownloading(prev => ({ ...prev, [type]: true }));
-      
+
       const fileInfo = await onDownloadRequest(type);
       if (fileInfo && fileInfo.url) {
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = fileInfo.url;
         a.download = fileInfo.name || `${logoName}-favicon.${type}`;
         document.body.appendChild(a);
@@ -182,11 +180,11 @@ function FaviconDisplay({
       setIsDownloading(prev => ({ ...prev, [type]: false }));
     }
   };
-  
+
   // Render loading state
   if (isGenerating) {
     return (
-      <Card className={cn("w-full max-w-md mx-auto overflow-hidden", className)}>
+      <Card className={cn('w-full max-w-md mx-auto overflow-hidden', className)}>
         <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px]">
           <div className="animate-pulse flex flex-col items-center space-y-4 w-full">
             <div className="flex items-center justify-center space-x-4">
@@ -202,11 +200,11 @@ function FaviconDisplay({
       </Card>
     );
   }
-  
+
   // Render error state
   if (hasError) {
     return (
-      <Card className={cn("w-full max-w-md mx-auto overflow-hidden border-destructive", className)}>
+      <Card className={cn('w-full max-w-md mx-auto overflow-hidden border-destructive', className)}>
         <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px]">
           <div className="flex flex-col items-center space-y-4 w-full">
             <svg
@@ -229,11 +227,11 @@ function FaviconDisplay({
       </Card>
     );
   }
-  
+
   // Render empty state
   if (!svgContent) {
     return (
-      <Card className={cn("w-full max-w-md mx-auto overflow-hidden", className)}>
+      <Card className={cn('w-full max-w-md mx-auto overflow-hidden', className)}>
         <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px]">
           <div className="flex flex-col items-center space-y-4 w-full">
             <svg
@@ -256,9 +254,9 @@ function FaviconDisplay({
       </Card>
     );
   }
-  
+
   return (
-    <Card className={cn("w-full max-w-md mx-auto overflow-hidden", className)}>
+    <Card className={cn('w-full max-w-md mx-auto overflow-hidden', className)}>
       <CardContent className="p-6">
         <div className="space-y-6">
           <div className="flex flex-col space-y-2">
@@ -267,7 +265,7 @@ function FaviconDisplay({
               Preview your logo as a favicon in different sizes
             </p>
           </div>
-          
+
           {/* Size Tabs */}
           <Tabs defaultValue="32" value={activeSizeTab} onValueChange={setActiveSizeTab}>
             <TabsList className="grid grid-cols-3">
@@ -275,33 +273,31 @@ function FaviconDisplay({
               <TabsTrigger value="32">32px</TabsTrigger>
               <TabsTrigger value="64">64px</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="16" className="flex justify-center py-4">
               {renderFaviconPreview(16)}
             </TabsContent>
-            
+
             <TabsContent value="32" className="flex justify-center py-4">
               {renderFaviconPreview(32)}
             </TabsContent>
-            
+
             <TabsContent value="64" className="flex justify-center py-4">
               {renderFaviconPreview(64)}
             </TabsContent>
           </Tabs>
-          
+
           {/* Browser Tab Preview */}
           {renderBrowserTabPreview()}
         </div>
       </CardContent>
-      
+
       <CardFooter className="p-6 border-t flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm text-muted-foreground">
-          Download favicon formats:
-        </div>
-        
+        <div className="text-sm text-muted-foreground">Download favicon formats:</div>
+
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => handleDownload('svg')}
             disabled={isDownloading.svg}
@@ -313,9 +309,9 @@ function FaviconDisplay({
             )}
             SVG
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => handleDownload('png')}
             disabled={isDownloading.png}
@@ -327,9 +323,9 @@ function FaviconDisplay({
             )}
             PNG
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => handleDownload('ico')}
             disabled={isDownloading.ico}
@@ -350,7 +346,16 @@ function FaviconDisplay({
 // Icon component for download
 function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />

@@ -13,11 +13,11 @@ interface AnimatedLogoDisplayProps {
 
 /**
  * Component to display an animated SVG logo with playback controls
- * 
+ *
  * This component renders an animated SVG logo using an inline approach
  * where the SVG, CSS, and JS are combined directly in the DOM.
  * It also provides optional play/pause/restart controls.
- * 
+ *
  * Performance optimizations:
  * - Uses IntersectionObserver for lazy loading
  * - Memoizes SVG content to prevent unnecessary DOM manipulations
@@ -31,7 +31,7 @@ export function AnimatedLogoDisplay({
   jsCode,
   className = '',
   showControls = true,
-  lazyLoad = true
+  lazyLoad = true,
 }: AnimatedLogoDisplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgContainerRef = useRef<HTMLDivElement | null>(null);
@@ -49,7 +49,7 @@ export function AnimatedLogoDisplay({
     }
     return null;
   }, []);
-  
+
   // Cleanup function to properly remove resources
   const cleanupResources = useCallback(() => {
     if (svgContainerRef.current) {
@@ -58,32 +58,32 @@ export function AnimatedLogoDisplay({
       }
       svgContainerRef.current = null;
     }
-    
+
     if (jsExecRef.current) {
       jsExecRef.current = null;
     }
-    
+
     if (observerRef.current) {
       observerRef.current.disconnect();
       observerRef.current = null;
     }
   }, []);
-  
+
   // Create a function to set up the animation
   const setupAnimation = useCallback(() => {
     if (!containerRef.current || !svgCode || !isVisible) return;
-    
+
     // Clean up previous resources
     cleanupResources();
     setHasLoaded(false);
-    
+
     // Use requestAnimationFrame for smoother rendering
     requestAnimationFrame(() => {
       // Create the animated SVG container
       const svgContainer = document.createElement('div');
       svgContainer.className = 'svg-container';
       svgContainerRef.current = svgContainer;
-      
+
       // Add CSS if provided
       if (cssCode) {
         const styleElement = document.createElement('style');
@@ -91,13 +91,13 @@ export function AnimatedLogoDisplay({
         styleRef.current = styleElement;
         svgContainer.appendChild(styleElement);
       }
-      
+
       // Parse and add SVG content - safer than innerHTML
       if (parser) {
         try {
           const doc = parser.parseFromString(svgCode, 'image/svg+xml');
           const svgElement = doc.documentElement;
-          
+
           // Clone the SVG to avoid issues with the parser's document
           const importedSvg = document.importNode(svgElement, true);
           svgContainer.appendChild(importedSvg);
@@ -110,10 +110,10 @@ export function AnimatedLogoDisplay({
         // Fallback for environments without DOMParser
         svgContainer.insertAdjacentHTML('beforeend', svgCode);
       }
-      
+
       // Add to DOM
       containerRef.current?.appendChild(svgContainer);
-      
+
       // Add JavaScript if provided - only create the function once
       if (jsCode && !jsExecRef.current) {
         try {
@@ -122,7 +122,7 @@ export function AnimatedLogoDisplay({
           console.error('Error creating animation JS function:', error);
         }
       }
-      
+
       // Execute JS if function exists
       if (jsExecRef.current) {
         try {
@@ -131,27 +131,27 @@ export function AnimatedLogoDisplay({
           console.error('Error executing animation JS:', error);
         }
       }
-      
+
       setHasLoaded(true);
       setIsPlaying(true);
     });
   }, [svgCode, cssCode, jsCode, isVisible, parser, cleanupResources]);
-  
+
   // Set up intersection observer for lazy loading
   useEffect(() => {
     if (!lazyLoad) {
       setIsVisible(true);
       return;
     }
-    
+
     if (!containerRef.current) return;
-    
+
     const options = {
       root: null,
       rootMargin: '100px', // Load when within 100px of viewport
-      threshold: 0.1
+      threshold: 0.1,
     };
-    
+
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -164,10 +164,10 @@ export function AnimatedLogoDisplay({
         }
       });
     };
-    
+
     observerRef.current = new IntersectionObserver(handleIntersection, options);
     observerRef.current.observe(containerRef.current);
-    
+
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
@@ -175,62 +175,62 @@ export function AnimatedLogoDisplay({
       }
     };
   }, [lazyLoad]);
-  
+
   // Apply animation when visibility or content changes
   useEffect(() => {
     if (isVisible) {
       setupAnimation();
     }
-    
+
     return () => {
       cleanupResources();
     };
   }, [isVisible, setupAnimation, cleanupResources]);
-  
+
   // Toggle play/pause state using requestAnimationFrame for smoother UI
   const togglePlayPause = useCallback(() => {
     if (!containerRef.current) return;
-    
+
     requestAnimationFrame(() => {
       const animationState = !isPlaying ? 'running' : 'paused';
-      
+
       // Get animated elements
       const animatedElements = containerRef.current?.querySelectorAll('*') || [];
-      
+
       // Apply animation state to all elements
       animatedElements.forEach((el: Element) => {
         if (el instanceof HTMLElement || el instanceof SVGElement) {
           (el as HTMLElement | SVGElement).style.animationPlayState = animationState;
         }
       });
-      
+
       setIsPlaying(!isPlaying);
     });
   }, [isPlaying]);
-  
+
   // Restart animation with optimized implementation
   const restartAnimation = useCallback(() => {
     if (!containerRef.current || !svgCode) return;
-    
+
     // Use setupAnimation to recreate the animation with all optimizations
     cleanupResources();
     setupAnimation();
   }, [svgCode, cleanupResources, setupAnimation]);
-  
+
   // Memoize buttons to avoid unnecessary re-renders
   const controlButtons = useMemo(() => {
     if (!showControls || !svgCode || !hasLoaded) return null;
-    
+
     return (
       <div className="flex justify-center mt-3 space-x-2">
-        <button 
+        <button
           className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm"
           onClick={togglePlayPause}
           aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
         >
           {isPlaying ? 'Pause' : 'Play'}
         </button>
-        <button 
+        <button
           className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm"
           onClick={restartAnimation}
           aria-label="Restart animation"
@@ -240,26 +240,22 @@ export function AnimatedLogoDisplay({
       </div>
     );
   }, [showControls, svgCode, hasLoaded, isPlaying, togglePlayPause, restartAnimation]);
-  
+
   return (
     <div className={`animated-logo-display ${className}`}>
-      <div 
-        ref={containerRef} 
+      <div
+        ref={containerRef}
         className="relative bg-white rounded-lg shadow-sm flex items-center justify-center"
-        style={{ 
+        style={{
           minHeight: '200px',
           contain: 'content', // CSS containment for performance
         }}
         data-testid="animated-logo-container"
       >
-        {!svgCode && !isVisible && (
-          <div className="text-gray-400">Loading animation...</div>
-        )}
-        {!svgCode && isVisible && (
-          <div className="text-gray-400">No animated logo available</div>
-        )}
+        {!svgCode && !isVisible && <div className="text-gray-400">Loading animation...</div>}
+        {!svgCode && isVisible && <div className="text-gray-400">No animated logo available</div>}
       </div>
-      
+
       {controlButtons}
     </div>
   );

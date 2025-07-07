@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 console.log('Running app structure fix script...');
 
 // Function to check if a directory exists
-const directoryExists = (dirPath) => {
+const directoryExists = dirPath => {
   try {
     return fs.statSync(dirPath).isDirectory();
   } catch (err) {
@@ -16,7 +16,7 @@ const directoryExists = (dirPath) => {
 };
 
 // Function to check if a file exists
-const fileExists = (filePath) => {
+const fileExists = filePath => {
   try {
     return fs.statSync(filePath).isFile();
   } catch (err) {
@@ -38,7 +38,7 @@ console.log(`Root directory: ${rootDir}`);
 if (directoryExists(appDir) && !directoryExists(backupDir)) {
   console.log('Backing up current app directory...');
   fs.mkdirSync(backupDir, { recursive: true });
-  
+
   try {
     // Copy all files from app to app-backup
     execSync(`cp -R ${appDir}/* ${backupDir}/`);
@@ -51,40 +51,40 @@ if (directoryExists(appDir) && !directoryExists(backupDir)) {
 // Step 2: Replace app with app-consolidated if it exists
 if (directoryExists(appConsolidatedDir)) {
   console.log('Replacing app directory with consolidated version...');
-  
+
   try {
     // Remove current app directory
     if (directoryExists(appDir)) {
       execSync(`rm -rf ${appDir}`);
     }
-    
+
     // Create new app directory
     fs.mkdirSync(appDir, { recursive: true });
-    
+
     // Copy consolidated version to app
     execSync(`cp -R ${appConsolidatedDir}/* ${appDir}/`);
     console.log('App directory replaced successfully');
-    
+
     // Remove redundant CSS files in other locations
     const redundantCssFiles = [
       path.join(srcDir, 'app', 'globals.css'),
-      path.join(stylesDir, 'globals.css')
+      path.join(stylesDir, 'globals.css'),
     ];
-    
+
     redundantCssFiles.forEach(cssFile => {
       if (fileExists(cssFile)) {
         console.log(`Removing redundant CSS file: ${cssFile}`);
         fs.unlinkSync(cssFile);
       }
     });
-    
+
     // Create or update src/app directory structure (needed for Next.js)
     const srcAppDir = path.join(srcDir, 'app');
     if (!directoryExists(srcAppDir)) {
       console.log('Creating src/app directory structure...');
       fs.mkdirSync(srcAppDir, { recursive: true });
     }
-    
+
     // Create a placeholder file that points to the main globals.css
     const placeholderCss = `/* 
  * This is a placeholder file.
@@ -96,7 +96,7 @@ if (directoryExists(appConsolidatedDir)) {
 `;
     fs.writeFileSync(path.join(srcAppDir, 'globals.css'), placeholderCss);
     console.log('Created placeholder CSS file in src/app');
-    
+
     // Create compatibility layout.tsx file
     const compatibilityLayout = `// This is a compatibility file that imports the main CSS
 // The main implementation is in /app/layout.tsx
@@ -111,10 +111,10 @@ export const metadata: Metadata = {
 
 import MainLayout from '../../app/layout';
 export default MainLayout;`;
-    
+
     fs.writeFileSync(path.join(srcAppDir, 'layout.tsx'), compatibilityLayout);
     console.log('Created compatibility layout file in src/app');
-    
+
     // Create compatibility page.tsx file
     const compatibilityPage = `'use client'
 
@@ -124,7 +124,7 @@ export default MainLayout;`;
 import MainPage from '../../app/page';
 
 export default MainPage;`;
-    
+
     fs.writeFileSync(path.join(srcAppDir, 'page.tsx'), compatibilityPage);
     console.log('Created compatibility page file in src/app');
   } catch (err) {
@@ -142,7 +142,7 @@ if (directoryExists(stylesDir)) {
       console.log('Removing redundant globals.css from styles directory...');
       fs.unlinkSync(stylesGlobalsCss);
     }
-    
+
     // Create a placeholder file in the styles directory
     const placeholderCss = `/* 
  * This is a placeholder file.

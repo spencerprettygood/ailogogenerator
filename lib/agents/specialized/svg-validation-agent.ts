@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  SVGValidationAgentInput, 
-  SVGValidationResultOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  SVGValidationAgentInput,
+  SVGValidationResultOutput,
 } from '../../types-agents';
 import { InputSanitizer } from '../../utils/security-utils';
 import { SVGValidator, SVGValidationResult, SVGRepairResult } from '../../utils/svg-validator';
@@ -14,20 +14,16 @@ import { handleError, ErrorCategory } from '../../utils/error-handler';
  */
 export class SVGValidationAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'svg-validation', 
-      ['svg-validation'],
-      {
-        model: 'claude-3-haiku-20240307', // Use faster model for validation
-        fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
-        temperature: 0.1, // Low temperature for consistent, deterministic output
-        maxTokens: 1000,
-        ...config
-      }
-    );
-    
+    super('svg-validation', ['svg-validation'], {
+      model: 'claude-3-haiku-20240307', // Use faster model for validation
+      fallbackModels: ['claude-3-sonnet-20240229', 'claude-3-opus-20240229'], // Fallback models if primary fails
+      temperature: 0.1, // Low temperature for consistent, deterministic output
+      maxTokens: 1000,
+      ...config,
+    });
+
     // This agent doesn't primarily use Claude - it uses direct validation and repair
-    
+
     // Set a system prompt - required to avoid "text content blocks must be non-empty" error
     this.systemPrompt = `You are a specialized SVG validation and repair agent for an AI logo generator.
     
@@ -40,7 +36,7 @@ IMPORTANT REQUIREMENTS:
 4. Maintain the original design intent and visual appearance
 5. Return only the fixed SVG without any explanations or comments`;
   }
-  
+
   /**
    * Helper function to ensure SVGValidator's ValidationIssue interface is compatible with what we expect
    */
@@ -51,19 +47,19 @@ IMPORTANT REQUIREMENTS:
         ...(validationResult.errors || []).map((error: any) => ({
           type: 'error',
           severity: 'high',
-          message: String(error)
+          message: String(error),
         })),
         ...(validationResult.warnings || []).map((warning: any) => ({
           type: 'warning',
           severity: 'low',
-          message: String(warning)
-        }))
+          message: String(warning),
+        })),
       ];
     }
-    
+
     return validationResult;
   }
-  
+
   /**
    * Generate the prompt for SVG validation.
    * This agent only generates a prompt if automated repair fails and a manual repair is needed.
@@ -84,7 +80,7 @@ IMPORTANT REQUIREMENTS:
         return ''; // Automated repair was successful
       }
     }
-    
+
     // If automated repair fails, generate a prompt for Claude
     this.log('Automated SVG repair failed, escalating to AI model.', 'warn');
     return `Please fix the following SVG logo for "${brandName}" to ensure it's valid, secure, and optimized.
@@ -102,19 +98,22 @@ ${svg}
 
 Return only the fixed SVG code without any explanations.`;
   }
-  
+
   /**
    * Process SVG validation and repair
    * This is a hybrid approach using both built-in validation and Claude for complex repairs
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGValidationResultOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<SVGValidationResultOutput> {
     const input = originalInput as SVGValidationAgentInput;
     const { svg, repair = true, optimize = true } = input;
-    
+
     try {
       // Step 1: Use comprehensive SVG validator for initial validation
       const validationResult = SVGValidator.validate(svg);
-      
+
       // If valid and no repair/optimization needed, return early
       if (validationResult.isValid && !repair && !optimize) {
         return {
@@ -122,13 +121,13 @@ Return only the fixed SVG code without any explanations.`;
           result: {
             svg,
             isValid: true,
-            ...this.extractScores(validationResult)
-          }
+            ...this.extractScores(validationResult),
+          },
         };
       }
 
       let processedSvg = svg;
-      let modifications: string[] = [];
+      const modifications: string[] = [];
 
       // Step 2: Repair if requested
       if (repair && !validationResult.isValid) {
@@ -138,18 +137,18 @@ Return only the fixed SVG code without any explanations.`;
 
         // If automated repair failed and we have a response from Claude, use it.
         if (responseContent) {
-            const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
-            if (svgMatch) {
-                const claudeRepairedSvg = svgMatch[0];
-                const claudeValidation = SVGValidator.validate(claudeRepairedSvg);
-                if (claudeValidation.isValid) {
-                    this.log('Using AI-repaired SVG.');
-                    processedSvg = claudeRepairedSvg;
-                    modifications.push('Repaired by AI model after automated repair failed.');
-                } else {
-                    this.log('AI repair was also invalid, using automated repair attempt.', 'warn');
-                }
+          const svgMatch = responseContent.match(/<svg[\s\S]*<\/svg>/);
+          if (svgMatch) {
+            const claudeRepairedSvg = svgMatch[0];
+            const claudeValidation = SVGValidator.validate(claudeRepairedSvg);
+            if (claudeValidation.isValid) {
+              this.log('Using AI-repaired SVG.');
+              processedSvg = claudeRepairedSvg;
+              modifications.push('Repaired by AI model after automated repair failed.');
+            } else {
+              this.log('AI repair was also invalid, using automated repair attempt.', 'warn');
             }
+          }
         }
       }
 
@@ -170,9 +169,11 @@ Return only the fixed SVG code without any explanations.`;
           error: handleError({
             error: 'SVG validation and repair failed',
             category: ErrorCategory.SVG,
-            details: { 
-              validationIssues: finalValidation.issues?.map(i => i.message) || ['Unknown validation error'],
-              originalSvg: svg.substring(0, 200) + '...'
+            details: {
+              validationIssues: finalValidation.issues?.map(i => i.message) || [
+                'Unknown validation error',
+              ],
+              originalSvg: svg.substring(0, 200) + '...',
             },
             retryable: false,
           }),
@@ -185,12 +186,11 @@ Return only the fixed SVG code without any explanations.`;
           svg: processedSvg,
           isValid: true,
           modifications,
-          ...this.extractScores(finalValidation)
+          ...this.extractScores(finalValidation),
         },
         tokensUsed: this.metrics.tokenUsage.total,
         processingTime: this.metrics.executionTime,
       };
-
     } catch (error) {
       return {
         success: false,
@@ -205,10 +205,10 @@ Return only the fixed SVG code without any explanations.`;
   }
 
   private extractScores(validationResult: SVGValidationResult) {
-      return {
-        securityScore: validationResult.securityScore,
-        accessibilityScore: validationResult.accessibilityScore,
-        optimizationScore: validationResult.optimizationScore,
-      };
+    return {
+      securityScore: validationResult.securityScore,
+      accessibilityScore: validationResult.accessibilityScore,
+      optimizationScore: validationResult.optimizationScore,
+    };
   }
 }

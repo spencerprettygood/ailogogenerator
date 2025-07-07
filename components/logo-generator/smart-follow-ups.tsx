@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  Sparkles, 
-  RefreshCw, 
-  Palette, 
-  Layout, 
-  Type, 
-  BarChart, 
-  ChevronDown, 
+import {
+  Sparkles,
+  RefreshCw,
+  Palette,
+  Layout,
+  Type,
+  BarChart,
+  ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 import { IndustrySearchInterface } from './industry-search-interface';
 
@@ -45,7 +45,7 @@ export function SmartFollowUps({
 }: SmartFollowUpsProps) {
   const [showIndustryAnalysis, setShowIndustryAnalysis] = useState(false);
   const [industrySuggestion, setIndustrySuggestion] = useState<string | null>(null);
-  
+
   // Generate follow-up suggestions based on the current logo
   const generateSuggestions = (): FollowUpSuggestion[] => {
     return [
@@ -54,48 +54,48 @@ export function SmartFollowUps({
         text: 'Analyze industry context',
         prompt: `Analyze how this logo compares to industry competitors and ensure it's both unique and aligned with industry expectations.`,
         icon: <BarChart className="h-4 w-4" />,
-        category: 'analysis'
+        category: 'analysis',
       },
       {
         id: 'more-modern',
         text: 'Make it more modern',
         prompt: `Redesign the logo for ${brandName} with an ultra-modern aesthetic. Use cleaner lines, more minimalist elements, and a contemporary feel.`,
         icon: <Sparkles className="h-4 w-4" />,
-        category: 'style'
+        category: 'style',
       },
       {
         id: 'more-colorful',
         text: 'Try a different color palette',
         prompt: `Redesign the logo for ${brandName} with a different color palette. Instead of ${colorPalette}, use complementary colors that maintain the brand identity but provide a fresh look.`,
         icon: <Palette className="h-4 w-4" />,
-        category: 'colors'
+        category: 'colors',
       },
       {
         id: 'different-layout',
         text: 'Alternative layout',
         prompt: `Redesign the logo for ${brandName} with a different layout arrangement. Keep the style and colors similar, but explore alternative compositions and element arrangements.`,
         icon: <Layout className="h-4 w-4" />,
-        category: 'layout'
+        category: 'layout',
       },
       {
         id: 'typography-focus',
         text: 'Focus on typography',
         prompt: `Redesign the logo for ${brandName} with more emphasis on typography. Create a sophisticated wordmark that captures the brand essence with minimal graphic elements.`,
         icon: <Type className="h-4 w-4" />,
-        category: 'typography'
+        category: 'typography',
       },
       {
         id: 'simplify',
         text: 'Simplify the design',
         prompt: `Simplify the logo for ${brandName}. Reduce complexity while maintaining brand recognition, making it more versatile for different applications and sizes.`,
         icon: <RefreshCw className="h-4 w-4" />,
-        category: 'style'
+        category: 'style',
       },
     ];
   };
 
   const suggestions = generateSuggestions();
-  
+
   // Group suggestions by category
   const groupedSuggestions: Record<string, FollowUpSuggestion[]> = {
     analysis: suggestions.filter(s => s.category === 'analysis'),
@@ -108,7 +108,7 @@ export function SmartFollowUps({
 
   const handleIndustrySelect = (industry: string) => {
     setIndustrySuggestion(industry);
-    
+
     // Call the parent callback with the industry info
     if (onSelectFollowUp) {
       onSelectFollowUp('', 'industry-analysis', { industry });
@@ -129,16 +129,16 @@ export function SmartFollowUps({
         <Sparkles className="h-4 w-4 mr-2 text-primary" />
         <span className="font-medium">Refine your logo</span>
       </div>
-      
+
       <div className="space-y-4">
         {/* Analysis section */}
         <div>
           <h3 className="text-sm font-medium mb-2">Analysis</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.analysis.map((suggestion) => (
+            {groupedSuggestions.analysis.map(suggestion => (
               <Button
                 key={suggestion.id}
-                variant={showIndustryAnalysis ? "default" : "outline"}
+                variant={showIndustryAnalysis ? 'default' : 'outline'}
                 size="sm"
                 className="h-8"
                 onClick={() => handleSuggestionClick(suggestion)}
@@ -153,10 +153,10 @@ export function SmartFollowUps({
               </Button>
             ))}
           </div>
-          
+
           {showIndustryAnalysis && designSpec && (
             <div className="mt-3">
-              <IndustrySearchInterface 
+              <IndustrySearchInterface
                 brandName={brandName}
                 designSpec={designSpec}
                 svgCode={logoSvg}
@@ -165,12 +165,12 @@ export function SmartFollowUps({
             </div>
           )}
         </div>
-        
+
         {/* Style refinements */}
         <div>
           <h3 className="text-sm font-medium mb-2">Style</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.style.map((suggestion) => (
+            {groupedSuggestions.style.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -184,12 +184,12 @@ export function SmartFollowUps({
             ))}
           </div>
         </div>
-        
+
         {/* Color refinements */}
         <div>
           <h3 className="text-sm font-medium mb-2">Colors</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.colors.map((suggestion) => (
+            {groupedSuggestions.colors.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -203,12 +203,12 @@ export function SmartFollowUps({
             ))}
           </div>
         </div>
-        
+
         {/* Layout refinements */}
         <div>
           <h3 className="text-sm font-medium mb-2">Layout</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.layout.map((suggestion) => (
+            {groupedSuggestions.layout.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -222,12 +222,12 @@ export function SmartFollowUps({
             ))}
           </div>
         </div>
-        
+
         {/* Typography refinements */}
         <div>
           <h3 className="text-sm font-medium mb-2">Typography</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.typography.map((suggestion) => (
+            {groupedSuggestions.typography.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -241,7 +241,7 @@ export function SmartFollowUps({
             ))}
           </div>
         </div>
-        
+
         {/* Industry Analysis Info */}
         {!showIndustryAnalysis && (
           <div className="mt-2 border-t pt-2">

@@ -7,7 +7,11 @@ import { generateVariants, StageFInput, StageFOutput } from './stages/stage-f-va
 import { generateBrandGuidelines, StageGInput, StageGOutput } from './stages/stage-g-guidelines';
 import { packageAssets, StageHInput, StageHOutput } from './stages/stage-h-packaging';
 import { animateLogo, StageIInput, StageIOutput } from './stages/stage-i-animation';
-import { analyzeLogoUniqueness, UniquenessAnalysisInput, UniquenessAnalysisOutput } from './stages/stage-uniqueness-analysis';
+import {
+  analyzeLogoUniqueness,
+  UniquenessAnalysisInput,
+  UniquenessAnalysisOutput,
+} from './stages/stage-uniqueness-analysis';
 import { LogoBrief, GenerationResult } from '../types';
 
 import { AnimationOptions } from '../animation/types';
@@ -74,7 +78,7 @@ export class LogoGenerationPipeline {
     currentStage: 'initializing',
     stageProgress: 0,
     overallProgress: 0,
-    statusMessage: 'Initializing logo generation pipeline'
+    statusMessage: 'Initializing logo generation pipeline',
   };
 
   constructor(options: PipelineOptions, progressCallback?: ProgressCallback) {
@@ -86,7 +90,7 @@ export class LogoGenerationPipeline {
   // Main pipeline execution method
   public async execute(): Promise<PipelineResult> {
     const startTime = Date.now();
-    
+
     try {
       // Stage A: Requirement Distillation
       if (!this.isStageSkipped('A')) {
@@ -150,7 +154,7 @@ export class LogoGenerationPipeline {
       } else {
         this.log('Skipping Stage H: Packaging & Delivery');
       }
-      
+
       // Stage I: Animation
       if (this.options.includeAnimations && !this.isStageSkipped('I')) {
         await this.executeStageI();
@@ -161,17 +165,17 @@ export class LogoGenerationPipeline {
       // Create final result
       const totalExecutionTime = Date.now() - startTime;
       const totalTokensUsed = Object.values(this.tokensUsed).reduce((acc, val) => acc + val, 0);
-      
+
       // Update final progress
       this.updateProgress('complete', 100, 100, 'Logo generation complete');
-      
+
       const stageAOutput = this.stageOutputs.stageA as StageAOutput;
       const packageOutput = this.stageOutputs.stageH as StageHOutput;
       const svgOutput = this.stageOutputs.stageD as StageDOutput;
       const variantsOutput = this.stageOutputs.stageF as StageFOutput;
       const animationOutput = this.stageOutputs.stageI as StageIOutput;
       const uniquenessOutput = this.stageOutputs.stageUniqueness as UniquenessAnalysisOutput;
-      
+
       const result: GenerationResult = {
         success: true,
         brandName: stageAOutput?.designSpec?.brand_name,
@@ -181,32 +185,32 @@ export class LogoGenerationPipeline {
         logoPngUrls: {
           size256: '/api/download?file=logo-256.png',
           size512: '/api/download?file=logo-512.png',
-          size1024: '/api/download?file=logo-1024.png'
+          size1024: '/api/download?file=logo-1024.png',
         },
         // Enhanced variant URLs
         transparentPngUrls: {
           size256: '/api/download?file=transparent/logo-256.png',
           size512: '/api/download?file=transparent/logo-512.png',
-          size1024: '/api/download?file=transparent/logo-1024.png'
+          size1024: '/api/download?file=transparent/logo-1024.png',
         },
         monochromePngUrls: {
           black: {
             size256: '/api/download?file=monochrome/logo-black-256.png',
-            size512: '/api/download?file=monochrome/logo-black-512.png'
+            size512: '/api/download?file=monochrome/logo-black-512.png',
           },
           white: {
             size256: '/api/download?file=monochrome/logo-white-256.png',
-            size512: '/api/download?file=monochrome/logo-white-512.png'
-          }
+            size512: '/api/download?file=monochrome/logo-white-512.png',
+          },
         },
         monochromeVariants: {
           blackSvg: variantsOutput?.variants?.monochrome.black || '',
-          whiteSvg: variantsOutput?.variants?.monochrome.white || ''
+          whiteSvg: variantsOutput?.variants?.monochrome.white || '',
         },
         faviconUrls: {
           ico: '/api/download?file=favicon.ico',
           png: '/api/download?file=favicon.png',
-          svg: '/api/download?file=favicon.svg'
+          svg: '/api/download?file=favicon.svg',
         },
         brandGuidelinesUrl: '/api/download?file=brand-guidelines.html',
         downloadUrl: packageOutput?.fileName
@@ -216,11 +220,11 @@ export class LogoGenerationPipeline {
         animatedSvg: animationOutput?.result?.animatedSVG?.animatedSvg,
         animationCss: animationOutput?.result?.cssCode,
         animationJs: animationOutput?.result?.jsCode,
-        
+
         // Include uniqueness analysis results if available
-        uniquenessAnalysis: uniquenessOutput?.result
+        uniquenessAnalysis: uniquenessOutput?.result,
       };
-      
+
       return {
         success: true,
         result,
@@ -229,21 +233,20 @@ export class LogoGenerationPipeline {
         stageOutputs: this.debugMode ? this.stageOutputs : undefined,
         executionTime: {
           total: totalExecutionTime,
-          stages: this.executionTime
+          stages: this.executionTime,
         },
         tokensUsed: {
           total: totalTokensUsed,
-          stages: this.tokensUsed
-        }
+          stages: this.tokensUsed,
+        },
       };
-      
     } catch (error) {
       // Handle pipeline errors
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorStage = this.progress.currentStage;
-      
+
       this.log(`ERROR in stage ${errorStage}: ${errorMessage}`);
-      
+
       // Update progress with error
       this.updateProgress(
         errorStage,
@@ -253,10 +256,10 @@ export class LogoGenerationPipeline {
         {
           stage: errorStage,
           message: errorMessage,
-          details: error instanceof Error ? error.stack : undefined
+          details: error instanceof Error ? error.stack : undefined,
         }
       );
-      
+
       return {
         success: false,
         progress: this.progress,
@@ -265,16 +268,16 @@ export class LogoGenerationPipeline {
         error: {
           stage: errorStage,
           message: errorMessage,
-          details: error instanceof Error ? error.stack : undefined
+          details: error instanceof Error ? error.stack : undefined,
         },
         executionTime: {
           total: Date.now() - startTime,
-          stages: this.executionTime
+          stages: this.executionTime,
         },
         tokensUsed: {
           total: Object.values(this.tokensUsed).reduce((acc, val) => acc + val, 0),
-          stages: this.tokensUsed
-        }
+          stages: this.tokensUsed,
+        },
       };
     }
   }
@@ -283,25 +286,25 @@ export class LogoGenerationPipeline {
   private async executeStageA(): Promise<void> {
     const stageName = 'stageA';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('A', 0, 0, 'Analyzing brand requirements...');
     this.log('Starting Stage A: Requirement Distillation');
-    
+
     const input: StageAInput = {
       brief: this.options.brief.prompt,
-      imageDescriptions: this.options.brief.image_uploads?.map(file => `Image file: ${file.name}`)
+      imageDescriptions: this.options.brief.image_uploads?.map(file => `Image file: ${file.name}`),
     };
-    
+
     const output = await distillRequirements(input.brief, input.imageDescriptions);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage A failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
     this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('A', 100, 12.5, 'Brand requirements analyzed');
     this.log('Completed Stage A: Requirement Distillation');
   }
@@ -309,29 +312,29 @@ export class LogoGenerationPipeline {
   private async executeStageB(): Promise<void> {
     const stageName = 'stageB';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('B', 0, 12.5, 'Generating design concepts...');
     this.log('Starting Stage B: Moodboard Generation');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage B requires output from Stage A');
     }
-    
+
     const input: StageBInput = {
-      designSpec: stageAOutput.designSpec
+      designSpec: stageAOutput.designSpec,
     };
-    
+
     const output = await generateMoodboard(input.designSpec);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage B failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
     this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('B', 100, 25, 'Design concepts generated');
     this.log('Completed Stage B: Moodboard Generation');
   }
@@ -339,26 +342,26 @@ export class LogoGenerationPipeline {
   private async executeStageC(): Promise<void> {
     const stageName = 'stageC';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('C', 0, 25, 'Selecting best design concept...');
     this.log('Starting Stage C: Direction Selection');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageBOutput = this.stageOutputs.stageB as StageBOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage C requires output from Stage A');
     }
-    
+
     if (!stageBOutput || !stageBOutput.moodboard) {
       throw new Error('Stage C requires output from Stage B');
     }
-    
+
     // Check if there's a manual selection
     if (this.options.manualConceptSelection !== undefined) {
       const index = this.options.manualConceptSelection;
       const concepts = stageBOutput.moodboard.concepts;
-      
+
       // Defensive: ensure index is valid and concept exists
       if (index < 0 || index >= concepts.length || !concepts[index]) {
         throw new Error(`Invalid manual concept selection index: ${index}`);
@@ -368,11 +371,11 @@ export class LogoGenerationPipeline {
         success: true,
         selection: {
           selectedConcept: concepts[index]!,
-          selectionRationale: "Manually selected by user.",
-          score: 100
+          selectionRationale: 'Manually selected by user.',
+          score: 100,
         },
         tokensUsed: 0,
-        processingTime: 0
+        processingTime: 0,
       };
       this.stageOutputs[stageName] = manualOutput;
       this.log(`Using manually selected concept ${index}`);
@@ -380,21 +383,21 @@ export class LogoGenerationPipeline {
       // Perform AI selection
       const input: StageCInput = {
         designSpec: stageAOutput.designSpec,
-        concepts: stageBOutput.moodboard.concepts
+        concepts: stageBOutput.moodboard.concepts,
       };
-      
+
       const output = await selectDirection(input);
       this.stageOutputs[stageName] = output;
-      
+
       if (!output.success) {
         throw new Error(`Stage C failed: ${output.error?.message}`);
       }
-      
+
       this.tokensUsed[stageName] = output.tokensUsed || 0;
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
-    
+
     this.updateProgress('C', 100, 37.5, 'Best design concept selected');
     this.log('Completed Stage C: Direction Selection');
   }
@@ -402,38 +405,38 @@ export class LogoGenerationPipeline {
   private async executeStageD(): Promise<void> {
     const stageName = 'stageD';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('D', 0, 37.5, 'Generating SVG logo...');
     this.log('Starting Stage D: SVG Logo Generation');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageCOutput = this.stageOutputs.stageC as StageCOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage D requires output from Stage A');
     }
-    
+
     if (!stageCOutput || !stageCOutput.selection) {
       throw new Error('Stage D requires output from Stage C');
     }
-    
+
     const input: StageDInput = {
       designSpec: stageAOutput.designSpec,
       selectedConcept: stageCOutput.selection.selectedConcept,
       industry: this.options.industry, // Pass industry context
-      referenceImages: this.options.referenceImages // Pass reference images
+      referenceImages: this.options.referenceImages, // Pass reference images
     };
-    
+
     const output = await generateSvgLogo(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage D failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
     this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('D', 100, 50, 'SVG logo generated');
     this.log('Completed Stage D: SVG Logo Generation');
   }
@@ -441,42 +444,42 @@ export class LogoGenerationPipeline {
   private async executeStageE(): Promise<void> {
     const stageName = 'stageE';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('E', 0, 50, 'Validating and optimizing SVG...');
     this.log('Starting Stage E: SVG Validation & Repair');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage E requires output from Stage A');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Stage E requires output from Stage D');
     }
-    
+
     const input: StageEInput = {
       svg: stageDOutput.result.svg,
       brandName: stageAOutput.designSpec.brand_name,
       repair: true,
-      optimize: true
+      optimize: true,
     };
-    
+
     const output = await validateAndRepairSvg(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage E failed: ${output.error?.message}`);
     }
-    
+
     // Update the SVG in stage D output with the validated/optimized version
     if (output.result && stageDOutput.result) {
       stageDOutput.result.svg = output.result.svg;
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
-    
+
     this.updateProgress('E', 100, 62.5, 'SVG validated and optimized');
     this.log('Completed Stage E: SVG Validation & Repair');
   }
@@ -484,37 +487,37 @@ export class LogoGenerationPipeline {
   private async executeStageF(): Promise<void> {
     const stageName = 'stageF';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('F', 0, 62.5, 'Generating logo variants...');
     this.log('Starting Stage F: Variant Generation');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage F requires output from Stage A');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Stage F requires output from Stage D');
     }
-    
+
     const input: StageFInput = {
       svg: stageDOutput.result.svg,
       designSpec: stageAOutput.designSpec,
-      brandName: stageAOutput.designSpec.brand_name
+      brandName: stageAOutput.designSpec.brand_name,
     };
-    
+
     const output = await generateVariants(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage F failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
     this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('F', 100, 75, 'Logo variants generated');
     this.log('Completed Stage F: Variant Generation');
   }
@@ -522,31 +525,31 @@ export class LogoGenerationPipeline {
   private async executeStageG(): Promise<void> {
     const stageName = 'stageG';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('G', 0, 75, 'Creating brand guidelines...');
     this.log('Starting Stage G: Brand Guidelines');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageCOutput = this.stageOutputs.stageC as StageCOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
     const stageFOutput = this.stageOutputs.stageF as StageFOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage G requires output from Stage A');
     }
-    
+
     if (!stageCOutput || !stageCOutput.selection) {
       throw new Error('Stage G requires output from Stage C');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Stage G requires output from Stage D');
     }
-    
+
     if (!stageFOutput || !stageFOutput.variants) {
       throw new Error('Stage G requires output from Stage F');
     }
-    
+
     const input: StageGInput = {
       variants: {
         primary: stageDOutput.result.svg,
@@ -555,13 +558,13 @@ export class LogoGenerationPipeline {
         favicon: stageFOutput.variants.favicon,
         pngVariants: stageFOutput.variants.pngVariants,
         transparentPngVariants: stageFOutput.variants.transparentPngVariants,
-        monochromePngVariants: stageFOutput.variants.monochromePngVariants
+        monochromePngVariants: stageFOutput.variants.monochromePngVariants,
       },
       designSpec: stageAOutput.designSpec,
       designRationale: stageDOutput.result.designRationale, // Pass design rationale
-      industryContext: stageDOutput.result.industryContext // Pass industry context
+      industryContext: stageDOutput.result.industryContext, // Pass industry context
     };
-    
+
     const output = await generateBrandGuidelines(input);
     this.stageOutputs[stageName] = output;
 
@@ -574,31 +577,31 @@ export class LogoGenerationPipeline {
   private async executeStageH(): Promise<void> {
     const stageName = 'stageH';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('H', 0, 87.5, 'Packaging assets for delivery...');
     this.log('Starting Stage H: Packaging & Delivery');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
     const stageFOutput = this.stageOutputs.stageF as StageFOutput;
     const stageGOutput = this.stageOutputs.stageG as StageGOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage H requires output from Stage A');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Stage H requires output from Stage D');
     }
-    
+
     if (!stageFOutput || !stageFOutput.variants) {
       throw new Error('Stage H requires output from Stage F');
     }
-    
+
     if (!stageGOutput || !stageGOutput.html) {
       throw new Error('Stage H requires output from Stage G');
     }
-    
+
     const input: StageHInput = {
       brandName: stageAOutput.designSpec.brand_name,
       svg: stageDOutput.result.svg,
@@ -607,32 +610,32 @@ export class LogoGenerationPipeline {
       favicon: {
         svg: stageFOutput.variants.favicon.svg,
         ico: stageFOutput.variants.favicon.ico,
-        png32: stageFOutput.variants.favicon.png32
+        png32: stageFOutput.variants.favicon.png32,
       },
       guidelines: {
         html: stageGOutput.html,
-        plainText: '' // Optionally generate plain text from HTML if needed
-      }
+        plainText: '', // Optionally generate plain text from HTML if needed
+      },
     };
-    
+
     // Add enhanced variants if available in the output
     if (stageFOutput.variants.transparentPngVariants) {
       input.transparentPngVariants = stageFOutput.variants.transparentPngVariants;
     }
-    
+
     if (stageFOutput.variants.monochromePngVariants) {
       input.monochromePngVariants = stageFOutput.variants.monochromePngVariants;
     }
-    
+
     const output = await packageAssets(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage H failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
-    
+
     this.updateProgress('H', 100, 100, 'Assets packaged and ready for delivery');
     this.log('Completed Stage H: Packaging & Delivery');
   }
@@ -640,75 +643,75 @@ export class LogoGenerationPipeline {
   private async executeStageI(): Promise<void> {
     const stageName = 'stageI';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('I', 0, 90, 'Adding animations to logo...');
     this.log('Starting Stage I: Animation');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Stage I requires output from Stage A');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Stage I requires output from Stage D');
     }
-    
+
     const input: StageIInput = {
       svg: stageDOutput.result.svg,
       brandName: stageAOutput.designSpec.brand_name,
       animationOptions: this.options.animationOptions,
-      autoSelectAnimation: !this.options.animationOptions // Auto-select if no specific options provided
+      autoSelectAnimation: !this.options.animationOptions, // Auto-select if no specific options provided
     };
-    
+
     const output = await animateLogo(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Stage I failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
-    
+
     this.updateProgress('I', 100, 100, 'Logo animation added successfully');
     this.log('Completed Stage I: Animation');
   }
-  
+
   private async executeUniquenessAnalysis(): Promise<void> {
     const stageName = 'stageUniqueness';
     const stageStartTime = Date.now();
-    
+
     this.updateProgress('Uniqueness', 0, 50, 'Analyzing logo uniqueness...');
     this.log('Starting Uniqueness Analysis');
-    
+
     const stageAOutput = this.stageOutputs.stageA as StageAOutput;
     const stageDOutput = this.stageOutputs.stageD as StageDOutput;
-    
+
     if (!stageAOutput || !stageAOutput.designSpec) {
       throw new Error('Uniqueness Analysis requires output from Stage A');
     }
-    
+
     if (!stageDOutput || !stageDOutput.result) {
       throw new Error('Uniqueness Analysis requires output from Stage D');
     }
-    
+
     const input: UniquenessAnalysisInput = {
       svg: stageDOutput.result.svg,
       designSpec: stageAOutput.designSpec,
-      industry: this.options.industry // Use provided industry if available
+      industry: this.options.industry, // Use provided industry if available
     };
-    
+
     const output = await analyzeLogoUniqueness(input);
     this.stageOutputs[stageName] = output;
-    
+
     if (!output.success) {
       throw new Error(`Uniqueness Analysis failed: ${output.error?.message}`);
     }
-    
+
     this.executionTime[stageName] = Date.now() - stageStartTime;
     this.tokensUsed[stageName] = output.tokensUsed || 0;
-    
+
     this.updateProgress('Uniqueness', 100, 50, 'Logo uniqueness analysis completed');
     this.log('Completed Uniqueness Analysis');
   }
@@ -730,9 +733,9 @@ export class LogoGenerationPipeline {
       stageProgress,
       overallProgress,
       statusMessage,
-      error
+      error,
     };
-    
+
     if (this.progressCallback) {
       this.progressCallback(this.progress);
     }
@@ -742,7 +745,7 @@ export class LogoGenerationPipeline {
     if (this.debugMode) {
       const timestamp = new Date().toISOString();
       this.logs.push(`[${timestamp}] ${message}`);
-      
+
       if (process.env.NODE_ENV === 'development') {
         console.log(`[Logo Pipeline] ${message}`);
       }

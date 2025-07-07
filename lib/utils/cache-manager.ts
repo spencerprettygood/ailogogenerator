@@ -2,14 +2,14 @@
  * @file cache-manager.ts
  * @module lib/utils/cache-manager
  * @description A comprehensive caching utility for the AI Logo Generator
- * 
+ *
  * This module provides an efficient in-memory caching system that:
  * - Stores frequently accessed data for rapid retrieval
  * - Implements configurable TTL (Time To Live) for all cache entries
  * - Supports different cache types (generation results, intermediate results, assets)
  * - Handles automatic cache invalidation and memory management
  * - Provides LRU (Least Recently Used) eviction for memory optimization
- * 
+ *
  * @author AILogoGenerator Team
  * @version 1.0.0
  * @copyright 2024
@@ -54,10 +54,10 @@ export type CacheType = 'generation' | 'intermediate' | 'asset' | 'progress';
 export interface CacheConfig {
   /** Whether the cache is enabled */
   enabled: boolean;
-  
+
   /** Default TTL for cache entries in milliseconds */
   defaultTTL: number;
-  
+
   /** TTL for different cache types in milliseconds */
   ttl: {
     generation: number;
@@ -65,10 +65,10 @@ export interface CacheConfig {
     asset: number;
     progress: number;
   };
-  
+
   /** Maximum number of items to store in the cache */
   maxItems: number;
-  
+
   /** Clean interval in milliseconds */
   cleanInterval: number;
 }
@@ -76,13 +76,13 @@ export interface CacheConfig {
 /**
  * @class CacheManager
  * @description Singleton manager for in-memory caching of frequently used data
- * 
+ *
  * This cache manager provides efficient storage and retrieval of:
  * - Generation results (complete logo packages)
  * - Intermediate results (partial processing results)
  * - Assets (individual files like SVGs, PNGs)
  * - Progress updates (for streaming responses)
- * 
+ *
  * It implements automatic cleanup, TTL expiration, and memory-safe storage.
  */
 export class CacheManager {
@@ -94,37 +94,37 @@ export class CacheManager {
   private counts: Record<CacheType, number>;
   private hits: Record<CacheType, number>;
   private misses: Record<CacheType, number>;
-  
+
   /**
    * Private constructor (use getInstance() instead)
    */
   private constructor() {
     // Initialize the cache
     this.cache = new Map<string, LocalCacheItem>();
-    
+
     // Set up cache counts by type
     this.counts = {
       generation: 0,
       intermediate: 0,
       asset: 0,
-      progress: 0
+      progress: 0,
     };
-    
+
     // Set up cache hit/miss counters
     this.hits = {
       generation: 0,
       intermediate: 0,
       asset: 0,
-      progress: 0
+      progress: 0,
     };
-    
+
     this.misses = {
       generation: 0,
       intermediate: 0,
       asset: 0,
-      progress: 0
+      progress: 0,
     };
-    
+
     // Initialize configuration with defaults
     this.config = {
       enabled: true,
@@ -133,22 +133,22 @@ export class CacheManager {
         generation: 24 * 60 * 60 * 1000, // 24 hours
         intermediate: 2 * 60 * 60 * 1000, // 2 hours
         asset: 24 * 60 * 60 * 1000, // 24 hours
-        progress: 15 * 60 * 1000 // 15 minutes
+        progress: 15 * 60 * 1000, // 15 minutes
       },
       maxItems: 1000,
-      cleanInterval: 10 * 60 * 1000 // 10 minutes
+      cleanInterval: 10 * 60 * 1000, // 10 minutes
     };
-    
+
     // Initialize logger
     this.logger = new Logger('CacheManager');
-    
+
     // Start the cleanup timer
     this.startCleanupTimer();
   }
-  
+
   /**
    * Get the singleton instance of the cache manager
-   * 
+   *
    * @returns {CacheManager} The singleton cache manager instance
    */
   public static getInstance(): CacheManager {
@@ -157,7 +157,7 @@ export class CacheManager {
     }
     return CacheManager.instance;
   }
-  
+
   /**
    * Start the timer that periodically cleans up expired cache entries
    */
@@ -165,17 +165,17 @@ export class CacheManager {
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
     }
-    
+
     if (this.config.enabled) {
       this.cleanupTimer = setInterval(() => {
         this.cleanup();
       }, this.config.cleanInterval);
     }
   }
-  
+
   /**
    * Configure the cache manager with custom settings
-   * 
+   *
    * @param {Partial<CacheConfig>} config - Custom configuration options
    */
   public configure(config: Partial<CacheConfig>): void {
@@ -185,64 +185,62 @@ export class CacheManager {
       ...config,
       ttl: {
         ...this.config.ttl,
-        ...(config.ttl || {})
-      }
+        ...(config.ttl || {}),
+      },
     };
-    
+
     // Restart the cleanup timer with new interval if provided
     if (config.cleanInterval) {
       this.startCleanupTimer();
     }
-    
+
     this.logger.info('Cache manager configured', { config: this.config });
   }
-  
+
   /**
    * Enable or disable the cache
-   * 
+   *
    * @param {boolean} enabled - Whether to enable the cache
    */
   public setEnabled(enabled: boolean): void {
     this.config.enabled = enabled;
-    
+
     if (enabled && !this.cleanupTimer) {
       this.startCleanupTimer();
     } else if (!enabled && this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = null;
     }
-    
+
     this.logger.info(`Cache ${enabled ? 'enabled' : 'disabled'}`);
   }
-  
+
   /**
    * Clear all items from the cache
    */
   public clear(): void {
     this.cache.clear();
-    
+
     // Reset counts
     for (const type in this.counts) {
       this.counts[type as CacheType] = 0;
     }
-    
+
     this.logger.info('Cache cleared');
   }
-  
+
   /**
    * Get cache statistics for monitoring and debugging
-   * 
+   *
    * @returns {object} Cache statistics including size, hit/miss ratio, etc.
    */
   public getStats(): any {
     const totalItems = this.cache.size;
     const totalHits = Object.values(this.hits).reduce((sum, value) => sum + value, 0);
     const totalMisses = Object.values(this.misses).reduce((sum, value) => sum + value, 0);
-    
-    const hitRatio = totalHits + totalMisses > 0 
-      ? totalHits / (totalHits + totalMisses) 
-      : 0;
-    
+
+    const hitRatio = totalHits + totalMisses > 0 ? totalHits / (totalHits + totalMisses) : 0;
+
     return {
       enabled: this.config.enabled,
       totalItems,
@@ -253,10 +251,10 @@ export class CacheManager {
       memoryUsage: this.estimateMemoryUsage(),
     };
   }
-  
+
   /**
    * Estimate the amount of memory being used by the cache
-   * 
+   *
    * @returns {number} Estimated memory usage in bytes
    */
   private estimateMemoryUsage(): number {
@@ -264,14 +262,14 @@ export class CacheManager {
       // Rough estimate: 200 bytes overhead per item plus the size of the data
       const ITEM_OVERHEAD = 200;
       let totalSize = 0;
-      
+
       for (const [key, item] of this.cache.entries()) {
         // Add key size
         totalSize += key.length * 2;
-        
+
         // Add item overhead
         totalSize += ITEM_OVERHEAD;
-        
+
         // Add data size (rough estimate)
         if (typeof item.data === 'string') {
           totalSize += item.data.length * 2;
@@ -286,17 +284,17 @@ export class CacheManager {
           }
         }
       }
-      
+
       return totalSize;
     } catch (error) {
       this.logger.warn('Error estimating cache memory usage', { error });
       return 0;
     }
   }
-  
+
   /**
    * Store a value in the cache with the specified key and type
-   * 
+   *
    * @template T Type of data being stored
    * @param {string} key - Unique identifier for the cached item
    * @param {T} value - The data to cache
@@ -313,19 +311,19 @@ export class CacheManager {
     if (this.cache.size >= this.config.maxItems) {
       this.evict();
     }
-    
+
     const now = Date.now();
     const expiresAt = now + (ttl || this.config.ttl[type] || this.config.defaultTTL);
-    
+
     const newItem: LocalCacheItem<T> = {
       data: value,
       expiresAt,
       createdAt: now,
       key,
       type,
-      lastAccessed: now
+      lastAccessed: now,
     };
-    
+
     // If the key already exists, decrement old type count
     if (this.cache.has(key)) {
       const oldItem = this.cache.get(key);
@@ -338,10 +336,10 @@ export class CacheManager {
     this.counts[type] = (this.counts[type] || 0) + 1;
     this.logger.info(`Set item in cache`, { key, type, ttl });
   }
-  
+
   /**
    * Get a value from the cache
-   * 
+   *
    * @template T The type of data to retrieve
    * @param {string} key - The key of the item to retrieve
    * @param {CacheType} type - The type of cache to access
@@ -351,9 +349,9 @@ export class CacheManager {
     if (!this.config.enabled) {
       return null;
     }
-    
+
     const item = this.cache.get(key);
-    
+
     if (item && item.type === type) {
       if (item.expiresAt > Date.now()) {
         this.hits[type]++;
@@ -365,40 +363,40 @@ export class CacheManager {
         this.delete(key, type);
       }
     }
-    
+
     this.misses[type]++;
     return null;
   }
-  
+
   /**
    * Evict the least recently used item from the cache
    */
   private evict(): void {
     let oldestItem: LocalCacheItem | null = null;
     let oldestKey: string | null = null;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (!oldestItem || (item.lastAccessed || 0) < (oldestItem.lastAccessed || 0)) {
         oldestItem = item;
         oldestKey = key;
       }
     }
-    
+
     if (oldestKey) {
       const removedType = oldestItem?.type || 'unknown';
       this.cache.delete(oldestKey);
-      
+
       if (removedType in this.counts) {
         this.counts[removedType as CacheType]--;
       }
-      
+
       this.logger.debug(`Cache evicted LRU item: ${oldestKey} (${removedType})`);
     }
   }
-  
+
   /**
    * Cache a generation result for future retrieval
-   * 
+   *
    * @param {LogoBrief} brief - The original logo brief
    * @param {GenerationResult} result - The generation result to cache
    * @param {number} [ttl] - Optional custom TTL in milliseconds
@@ -412,10 +410,10 @@ export class CacheManager {
       this.logger.warn('Failed to cache generation result', { error });
     }
   }
-  
+
   /**
    * Retrieve a cached generation result
-   * 
+   *
    * @param {LogoBrief} brief - The logo brief to look up
    * @returns {Promise<GenerationResult|null>} The cached result or null if not found
    */
@@ -428,10 +426,10 @@ export class CacheManager {
       return null;
     }
   }
-  
+
   /**
    * Cache progress information for a session
-   * 
+   *
    * @param {string} sessionId - The session ID
    * @param {PipelineProgress} progress - The progress data to cache
    * @param {number} [ttl] - Optional custom TTL in milliseconds
@@ -445,10 +443,10 @@ export class CacheManager {
       this.logger.warn('Failed to cache progress', { error, sessionId });
     }
   }
-  
+
   /**
    * Retrieve cached progress information
-   * 
+   *
    * @param {string} sessionId - The session ID to look up
    * @returns {PipelineProgress|null} The cached progress or null if not found
    */
@@ -461,10 +459,10 @@ export class CacheManager {
       return null;
     }
   }
-  
+
   /**
    * Cache an intermediate result during processing
-   * 
+   *
    * @template T Type of the intermediate data
    * @param {string} key - A unique key for this intermediate result
    * @param {T} data - The data to cache
@@ -479,10 +477,10 @@ export class CacheManager {
       this.logger.warn('Failed to cache intermediate result', { error, key });
     }
   }
-  
+
   /**
    * Retrieve a cached intermediate result
-   * 
+   *
    * @template T Expected type of the intermediate data
    * @param {string} key - The key to look up
    * @returns {T|null} The cached data or null if not found
@@ -496,10 +494,10 @@ export class CacheManager {
       return null;
     }
   }
-  
+
   /**
    * Cache an asset like an SVG, PNG, etc.
-   * 
+   *
    * @param {string} key - A unique key for this asset
    * @param {string|Buffer} data - The asset data to cache
    * @param {number} [ttl] - Optional custom TTL in milliseconds
@@ -513,10 +511,10 @@ export class CacheManager {
       this.logger.warn('Failed to cache asset', { error, key });
     }
   }
-  
+
   /**
    * Retrieve a cached asset
-   * 
+   *
    * @param {string} key - The key to look up
    * @returns {string|Buffer|null} The cached asset or null if not found
    */
@@ -529,17 +527,22 @@ export class CacheManager {
       return null;
     }
   }
-  
+
   /**
    * Cache an intermediate result for a specific session and agent
-   * 
+   *
    * @param {string} sessionId - The session ID
-   * @param {string} agentId - The agent ID  
+   * @param {string} agentId - The agent ID
    * @param {any} result - The intermediate result to cache
    * @param {number} [ttl] - Optional custom TTL in milliseconds
    * @returns {void}
    */
-  public cacheIntermediateResult(sessionId: string, agentId: string, result: any, ttl?: number): void {
+  public cacheIntermediateResult(
+    sessionId: string,
+    agentId: string,
+    result: any,
+    ttl?: number
+  ): void {
     try {
       const cacheKey = `intermediate:${sessionId}:${agentId}`;
       this.set(cacheKey, result, 'intermediate', ttl);
@@ -550,7 +553,7 @@ export class CacheManager {
 
   /**
    * Retrieve a cached intermediate result for a specific session and agent
-   * 
+   *
    * @param {string} sessionId - The session ID
    * @param {string} agentId - The agent ID
    * @returns {any|null} The cached intermediate result or null if not found
@@ -560,7 +563,11 @@ export class CacheManager {
       const cacheKey = `intermediate:${sessionId}:${agentId}`;
       return this.get<any>(cacheKey, 'intermediate');
     } catch (error) {
-      this.logger.warn('Failed to retrieve cached intermediate result', { error, sessionId, agentId });
+      this.logger.warn('Failed to retrieve cached intermediate result', {
+        error,
+        sessionId,
+        agentId,
+      });
       return null;
     }
   }
@@ -582,10 +589,10 @@ export class CacheManager {
     }
     return false;
   }
-  
+
   /**
    * Invalidate a specific cache entry
-   * 
+   *
    * @param {string} key - The cache key to invalidate
    * @param {CacheType} type - The type of cache entry
    * @returns {boolean} True if the item was removed, false if it didn't exist
@@ -603,7 +610,7 @@ export class CacheManager {
 
   /**
    * Invalidate all cache entries of a specific type
-   * 
+   *
    * @param {CacheType} type - The type of cache entries to invalidate
    * @returns {number} Number of items removed
    */
@@ -619,23 +626,23 @@ export class CacheManager {
     this.logger.info(`Invalidated ${removed} cache entries of type: ${type}`);
     return removed;
   }
-  
+
   /**
    * Clean up expired cache entries
-   * 
+   *
    * This method iterates through all items in the cache and removes any
    * that have exceeded their TTL and remove them. This prevents the
    * cache from growing indefinitely with stale data.
-   * 
+   *
    * @returns {void}
    */
   private cleanup(): void {
     if (!this.config.enabled) {
       return;
     }
-    
+
     this.logger.debug('Starting cache cleanup');
-    
+
     try {
       const now = Date.now();
       let cleaned = 0;
@@ -643,9 +650,9 @@ export class CacheManager {
         generation: 0,
         intermediate: 0,
         asset: 0,
-        progress: 0
+        progress: 0,
       };
-      
+
       for (const [key, item] of this.cache.entries()) {
         if (now > item.expiresAt) {
           this.cache.delete(key);
@@ -654,15 +661,15 @@ export class CacheManager {
           cleaned++;
         }
       }
-      
+
       if (cleaned > 0) {
         this.logger.info(`Cleaned up ${cleaned} expired cache items`, {
           totalCleaned: cleaned,
           byType: typeCleanupCounts,
           remainingItems: {
             total: this.cache.size,
-            byType: { ...this.counts }
-          }
+            byType: { ...this.counts },
+          },
         });
       } else {
         this.logger.debug('No expired cache items found during cleanup');
@@ -672,7 +679,7 @@ export class CacheManager {
         category: ErrorCategory.STORAGE,
         context: { operation: 'cleanup' },
         logLevel: 'warn',
-        silent: true // Don't report this to monitoring systems
+        silent: true, // Don't report this to monitoring systems
       });
     }
   }
@@ -720,7 +727,7 @@ export class CacheManager {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return `gen_${Math.abs(hash)}`;

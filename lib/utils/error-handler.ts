@@ -1,7 +1,7 @@
 /**
  * @file error-handler.ts
  * @description Centralized error handling utility for consistent error management
- * 
+ *
  * This utility provides standardized error handling, categorization, and reporting
  * across the application, ensuring consistent user experiences and proper error tracking.
  */
@@ -16,7 +16,7 @@ export enum ErrorSeverity {
   FATAL = 'fatal',
   ERROR = 'error',
   WARNING = 'warning',
-  INFO = 'info'
+  INFO = 'info',
 }
 
 /**
@@ -88,7 +88,7 @@ export enum HttpStatusCode {
   NOT_IMPLEMENTED = 501,
   BAD_GATEWAY = 502,
   SERVICE_UNAVAILABLE = 503,
-  GATEWAY_TIMEOUT = 504
+  GATEWAY_TIMEOUT = 504,
 }
 
 /**
@@ -110,7 +110,7 @@ export enum ErrorCode {
   SVG_ERROR = 'svg_error',
   ANIMATION_ERROR = 'animation_error',
   CLAUDE_API_ERROR = 'claude_api_error',
-  UNEXPECTED_ERROR = 'unexpected_error'
+  UNEXPECTED_ERROR = 'unexpected_error',
 }
 
 /**
@@ -143,12 +143,11 @@ const categoryToStatusCode: Record<ErrorCategory, HttpStatusCode> = {
   [ErrorCategory.DOWNLOAD]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.UNEXPECTED]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   [ErrorCategory.INTERNAL]: HttpStatusCode.INTERNAL_SERVER_ERROR,
-  [ErrorCategory.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR
-  ,
+  [ErrorCategory.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR,
   // API error categories for middleware mapping
   [ErrorCategory.VALIDATION_ERROR]: HttpStatusCode.BAD_REQUEST,
   [ErrorCategory.AUTHENTICATION_ERROR]: HttpStatusCode.UNAUTHORIZED,
-  [ErrorCategory.INTERNAL_SERVER_ERROR]: HttpStatusCode.INTERNAL_SERVER_ERROR
+  [ErrorCategory.INTERNAL_SERVER_ERROR]: HttpStatusCode.INTERNAL_SERVER_ERROR,
 };
 
 /**
@@ -181,12 +180,11 @@ const categoryToErrorCode: Record<ErrorCategory, ErrorCode> = {
   [ErrorCategory.DOWNLOAD]: ErrorCode.INTERNAL_ERROR,
   [ErrorCategory.UNEXPECTED]: ErrorCode.UNEXPECTED_ERROR,
   [ErrorCategory.INTERNAL]: ErrorCode.INTERNAL_ERROR,
-  [ErrorCategory.UNKNOWN]: ErrorCode.UNEXPECTED_ERROR
-  ,
+  [ErrorCategory.UNKNOWN]: ErrorCode.UNEXPECTED_ERROR,
   // API error categories for middleware mapping
   [ErrorCategory.VALIDATION_ERROR]: ErrorCode.VALIDATION_FAILED,
   [ErrorCategory.AUTHENTICATION_ERROR]: ErrorCode.UNAUTHORIZED,
-  [ErrorCategory.INTERNAL_SERVER_ERROR]: ErrorCode.INTERNAL_ERROR
+  [ErrorCategory.INTERNAL_SERVER_ERROR]: ErrorCode.INTERNAL_ERROR,
 };
 
 /**
@@ -198,7 +196,7 @@ const retryableCategories = new Set([
   ErrorCategory.RATE_LIMIT,
   ErrorCategory.API,
   ErrorCategory.CLAUDE_API,
-  ErrorCategory.EXTERNAL
+  ErrorCategory.EXTERNAL,
 ]);
 
 /**
@@ -238,7 +236,7 @@ export function createAppError(
   } = {}
 ): AppError {
   const category = options.category || ErrorCategory.UNKNOWN;
-  
+
   // Create error object with enhanced properties
   const error = new Error(message) as AppError;
   error.name = `AppError[${category}]`;
@@ -249,7 +247,8 @@ export function createAppError(
   error.context = options.context || {};
   error.originalError = options.cause;
   error.isOperational = options.isOperational !== undefined ? options.isOperational : true;
-  error.isRetryable = options.isRetryable !== undefined ? options.isRetryable : retryableCategories.has(category);
+  error.isRetryable =
+    options.isRetryable !== undefined ? options.isRetryable : retryableCategories.has(category);
   error.timestamp = new Date();
   error.requestId = options.requestId || crypto.randomUUID().slice(0, 8);
   error.userId = options.userId;
@@ -310,19 +309,17 @@ export function handleError<T extends Error | unknown>(
   } = options;
 
   // Normalize the error to an AppError
-  const appError = error instanceof Error && 'category' in error && typeof (error as any).severity !== 'undefined'
-    ? (error as unknown as AppError)
-    : createAppError(
-        error instanceof Error ? error.message : String(error),
-        {
+  const appError =
+    error instanceof Error && 'category' in error && typeof (error as any).severity !== 'undefined'
+      ? (error as unknown as AppError)
+      : createAppError(error instanceof Error ? error.message : String(error), {
           category,
           cause: error,
           context,
           isOperational: true,
           userId,
-          requestId
-        }
-      );
+          requestId,
+        });
 
   // Merge context if the error already had context
   if (context && Object.keys(context).length > 0) {
@@ -340,7 +337,7 @@ export function handleError<T extends Error | unknown>(
       isOperational: appError.isOperational,
       isRetryable: appError.isRetryable,
       ...(appError.requestId && { requestId: appError.requestId }),
-      ...(appError.userId && { userId: appError.userId })
+      ...(appError.userId && { userId: appError.userId }),
     };
 
     if (logLevel === 'error') {
@@ -369,9 +366,9 @@ export function handleError<T extends Error | unknown>(
             isRetryable: appError.isRetryable,
             errorId: appError.stackId,
             ...(appError.requestId && { requestId: appError.requestId }),
-            ...(appError.userId && { userId: appError.userId })
-          }
-        }, 
+            ...(appError.userId && { userId: appError.userId }),
+          },
+        },
         mapSeverityToReporter(appError.severity)
       );
     }
@@ -402,19 +399,19 @@ export function withErrorHandling<T extends (...args: unknown[]) => Promise<unkn
 ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     try {
-      return await fn(...args) as Awaited<ReturnType<T>>;
+      return (await fn(...args)) as Awaited<ReturnType<T>>;
     } catch (error) {
       const appError = handleError(error, {
-        context: { 
+        context: {
           ...options.context,
           functionName: fn.name,
-          arguments: args.map(arg => 
-            typeof arg === 'object' ? '[Object]' : String(arg)
-          ).join(', ')
+          arguments: args
+            .map(arg => (typeof arg === 'object' ? '[Object]' : String(arg)))
+            .join(', '),
         },
         category: options.category,
         rethrow: false,
-        silent: options.silent
+        silent: options.silent,
       });
       if (options.rethrow) throw appError;
       return Promise.reject(appError) as Promise<Awaited<ReturnType<T>>>;
@@ -449,74 +446,76 @@ export async function tryWithRetry<T>(
     category = ErrorCategory.UNKNOWN,
     retryableErrors = [],
     onRetry,
-    retryCondition
+    retryCondition,
   } = options;
 
   let lastError: Error | undefined;
-  
+
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
       return await operation();
     } catch (error) {
       const appError = error instanceof Error ? error : new Error(String(error));
       lastError = appError;
-      
+
       // Determine if error is retryable
-      const isRetryable = attempt <= maxRetries && (
+      const isRetryable =
+        attempt <= maxRetries &&
         // If a custom retry condition is provided, use it
-        (retryCondition && retryCondition(appError)) ||
-        
-        // If the error is an AppError with isRetryable property
-        ((appError as AppError).isRetryable) ||
-        
-        // Or if it matches any of the retryable patterns
-        (retryableErrors.length > 0 && retryableErrors.some(pattern => {
-          if (typeof pattern === 'function') {
-            return pattern(appError);
-          }
-          if (typeof pattern === 'string') {
-            return appError.message.includes(pattern);
-          }
-          return pattern.test(appError.message);
-        }))
-      );
+        ((retryCondition && retryCondition(appError)) ||
+          // If the error is an AppError with isRetryable property
+          (appError as AppError).isRetryable ||
+          // Or if it matches any of the retryable patterns
+          (retryableErrors.length > 0 &&
+            retryableErrors.some(pattern => {
+              if (typeof pattern === 'function') {
+                return pattern(appError);
+              }
+              if (typeof pattern === 'string') {
+                return appError.message.includes(pattern);
+              }
+              return pattern.test(appError.message);
+            })));
 
       if (!isRetryable) {
         break;
       }
-      
+
       // Calculate backoff delay
       const currentDelayMs = delayMs * Math.pow(backoffFactor, attempt - 1);
-      
+
       // Call onRetry callback if provided
       if (onRetry) {
         onRetry(appError, attempt, currentDelayMs);
       }
-      
+
       // Log retry attempt
-      console.warn(`[Retry ${attempt}/${maxRetries}] Operation failed, retrying in ${currentDelayMs}ms...`, {
-        error: appError.message,
-        attempt,
-        maxRetries,
-        delay: currentDelayMs,
-        category: (appError as AppError).category || category
-      });
-      
+      console.warn(
+        `[Retry ${attempt}/${maxRetries}] Operation failed, retrying in ${currentDelayMs}ms...`,
+        {
+          error: appError.message,
+          attempt,
+          maxRetries,
+          delay: currentDelayMs,
+          category: (appError as AppError).category || category,
+        }
+      );
+
       // Wait before retrying with exponential backoff
       await new Promise(resolve => setTimeout(resolve, currentDelayMs));
     }
   }
-  
+
   // If we've exhausted retries, handle the last error
   handleError(lastError!, {
     context: {
       ...context,
-      retriesAttempted: maxRetries
+      retriesAttempted: maxRetries,
     },
     category,
-    rethrow: true
+    rethrow: true,
   });
-  
+
   // This code is unreachable due to the rethrow above, but TypeScript needs it
   throw lastError;
 }
@@ -525,101 +524,104 @@ export async function tryWithRetry<T>(
  * Creates specialized error factories for common error types
  */
 export const ErrorFactory = {
-  validation: (message: string, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.VALIDATION, 
+  validation: (message: string, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.VALIDATION,
       severity: ErrorSeverity.WARNING,
       code: ErrorCode.VALIDATION_FAILED,
-      context 
+      context,
     }),
-    
-  notFound: (resource: string, id?: string | number) => 
-    createAppError(`${resource} not found${id ? `: ${id}` : ''}`, { 
-      category: ErrorCategory.NOT_FOUND, 
+
+  notFound: (resource: string, id?: string | number) =>
+    createAppError(`${resource} not found${id ? `: ${id}` : ''}`, {
+      category: ErrorCategory.NOT_FOUND,
       code: ErrorCode.NOT_FOUND,
-      context: { resource, id } 
+      context: { resource, id },
     }),
-    
-  unauthorized: (message = 'Unauthorized access', context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.AUTHENTICATION, 
+
+  unauthorized: (message = 'Unauthorized access', context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.AUTHENTICATION,
       code: ErrorCode.UNAUTHORIZED,
-      context 
+      context,
     }),
-    
-  forbidden: (message = 'Access forbidden', context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.AUTHORIZATION, 
+
+  forbidden: (message = 'Access forbidden', context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.AUTHORIZATION,
       code: ErrorCode.FORBIDDEN,
-      context 
+      context,
     }),
-    
-  network: (message: string, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.NETWORK, 
+
+  network: (message: string, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.NETWORK,
       code: ErrorCode.NETWORK_ERROR,
       isRetryable: true,
-      context 
+      context,
     }),
-    
-  timeout: (operation: string, durationMs?: number) => 
-    createAppError(`Operation timed out: ${operation}${durationMs ? ` after ${durationMs}ms` : ''}`, { 
-      category: ErrorCategory.TIMEOUT, 
-      code: ErrorCode.TIMEOUT,
-      isRetryable: true,
-      context: { operation, durationMs } 
-    }),
-    
-  rateLimit: (message = 'Rate limit exceeded', context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.RATE_LIMIT, 
+
+  timeout: (operation: string, durationMs?: number) =>
+    createAppError(
+      `Operation timed out: ${operation}${durationMs ? ` after ${durationMs}ms` : ''}`,
+      {
+        category: ErrorCategory.TIMEOUT,
+        code: ErrorCode.TIMEOUT,
+        isRetryable: true,
+        context: { operation, durationMs },
+      }
+    ),
+
+  rateLimit: (message = 'Rate limit exceeded', context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.RATE_LIMIT,
       code: ErrorCode.RATE_LIMITED,
       isRetryable: true,
-      context 
+      context,
     }),
-    
-  svg: (message: string, subCategory?: ErrorCategory, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: subCategory || ErrorCategory.SVG, 
+
+  svg: (message: string, subCategory?: ErrorCategory, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: subCategory || ErrorCategory.SVG,
       code: ErrorCode.SVG_ERROR,
-      context 
+      context,
     }),
-    
-  animation: (message: string, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.ANIMATION, 
+
+  animation: (message: string, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.ANIMATION,
       code: ErrorCode.ANIMATION_ERROR,
-      context 
+      context,
     }),
-    
-  claudeApi: (message: string, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.CLAUDE_API, 
+
+  claudeApi: (message: string, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.CLAUDE_API,
       code: ErrorCode.CLAUDE_API_ERROR,
       isRetryable: true,
-      context 
+      context,
     }),
-    
-  internal: (message: string, context?: Record<string, unknown>) => 
-    createAppError(message, { 
-      category: ErrorCategory.INTERNAL, 
+
+  internal: (message: string, context?: Record<string, unknown>) =>
+    createAppError(message, {
+      category: ErrorCategory.INTERNAL,
       severity: ErrorSeverity.ERROR,
       code: ErrorCode.INTERNAL_ERROR,
       isOperational: false,
-      context 
+      context,
     }),
-    
+
   unexpected: (error: unknown, context?: Record<string, unknown>) => {
     const message = error instanceof Error ? error.message : String(error);
-    return createAppError(`Unexpected error: ${message}`, { 
-      category: ErrorCategory.UNEXPECTED, 
+    return createAppError(`Unexpected error: ${message}`, {
+      category: ErrorCategory.UNEXPECTED,
       severity: ErrorSeverity.ERROR,
       code: ErrorCode.UNEXPECTED_ERROR,
       isOperational: false,
       cause: error,
-      context
+      context,
     });
-  }
+  },
 };
 
 /**
@@ -632,9 +634,9 @@ export function createErrorBoundaryHandler(componentName: string) {
       context: {
         component: componentName,
         componentStack: errorInfo.componentStack,
-        ui: true
+        ui: true,
       },
-      category: ErrorCategory.UI
+      category: ErrorCategory.UI,
     });
   };
 }
@@ -649,5 +651,5 @@ export default {
   ErrorCategory,
   ErrorSeverity,
   ErrorCode,
-  HttpStatusCode
+  HttpStatusCode,
 };

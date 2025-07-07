@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -35,14 +35,19 @@ export function FilePreview({ file, onRemoveAction, className }: FilePreviewProp
   const isImage = file.type.startsWith('image/');
 
   return (
-    <div className={cn("relative group w-full h-32 rounded-md overflow-hidden border border-border", className)}>
+    <div
+      className={cn(
+        'relative group w-full h-32 rounded-md overflow-hidden border border-border',
+        className
+      )}
+    >
       {isImage && previewUrl ? (
         <NextImage
           src={previewUrl}
           alt={file.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          style={{ objectFit: "cover" }}
+          style={{ objectFit: 'cover' }}
           className="transition-transform duration-300 group-hover:scale-105"
           priority={true}
         />
@@ -68,9 +73,7 @@ export function FilePreview({ file, onRemoveAction, className }: FilePreviewProp
           <Badge variant="secondary" className="text-xs">
             {file.type}
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            {formatFileSize(file.size)}
-          </span>
+          <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
         </div>
       </div>
     </div>

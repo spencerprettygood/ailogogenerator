@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  RequirementsAgentInput, 
-  RequirementsAgentOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  RequirementsAgentInput,
+  RequirementsAgentOutput,
 } from '../../types-agents';
 import { DesignSpec } from '../../types';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -14,17 +14,13 @@ import { handleError, ErrorCategory } from '../../utils/error-handler';
  */
 export class RequirementsAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'requirements', 
-      ['requirements-analysis'],
-      {
-        model: 'claude-3-haiku-20240307', // Use faster model for analysis
-        temperature: 0.1, // Low temperature for consistent, deterministic output
-        maxTokens: 2048, // Increased token limit for more detailed specs
-        ...config
-      }
-    );
-    
+    super('requirements', ['requirements-analysis'], {
+      model: 'claude-3-haiku-20240307', // Use faster model for analysis
+      temperature: 0.1, // Low temperature for consistent, deterministic output
+      maxTokens: 2048, // Increased token limit for more detailed specs
+      ...config,
+    });
+
     // Set the system prompt for this agent
     this.systemPrompt = `You are a specialized design requirements analyzer for an AI-powered logo generator.
     
@@ -48,30 +44,30 @@ Every field in the JSON is REQUIRED. If information for a field is completely mi
 Do NOT include any text before or after the JSON object.
 Your entire response must be a single, valid JSON object.`;
   }
-  
+
   /**
    * Generate the prompt for the requirements analysis
    */
   protected async generatePrompt(input: RequirementsAgentInput): Promise<string> {
     const { brief, imageDescriptions } = input;
-    
+
     let prompt = `Please analyze this logo brief and extract the key design requirements as structured JSON, following the format specified in my instructions.\n\n# Logo Brief:\n${brief}`;
-    
+
     // Add image descriptions if available
     if (imageDescriptions && imageDescriptions.length > 0) {
       prompt += `\n\n# Reference Images:\nThe user has also provided reference images with the following descriptions:\n- ${imageDescriptions.join('\n- ')}`;
     }
-    
+
     prompt += '\n\nReturn your analysis in a single, valid JSON object inside \`\`\`json tags.';
-    
+
     return prompt;
   }
-  
+
   /**
    * Process the response from the AI
    */
   protected async processResponse(
-    responseContent: string, 
+    responseContent: string,
     originalInput: AgentInput
   ): Promise<RequirementsAgentOutput> {
     const parsed = safeJsonParse(responseContent);
@@ -99,11 +95,13 @@ Your entire response must be a single, valid JSON object.`;
       'imagery',
       'target_audience',
       'additional_requests',
-      'industry'
+      'industry',
     ];
-    
-    const missingFields = requiredFields.filter(field => !(field in designSpec) || !designSpec[field]);
-    
+
+    const missingFields = requiredFields.filter(
+      field => !(field in designSpec) || !designSpec[field]
+    );
+
     if (missingFields.length > 0) {
       const errorMessage = `Missing or empty required fields in design spec: ${missingFields.join(', ')}`;
       return {
@@ -116,7 +114,7 @@ Your entire response must be a single, valid JSON object.`;
         }),
       };
     }
-    
+
     this.log('Successfully parsed and validated design spec.');
     return {
       success: true,

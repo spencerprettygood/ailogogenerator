@@ -25,17 +25,20 @@ The issue was a series of problems in the caching system and how cached data was
 ### Initial Fixes
 
 1. **Fixed API Route Cache Handling**
+
    - Added proper `await` for the async `getGenerationResult` method
    - Added error handling for cache lookup operations
    - Added logging to help debug cache hits/misses
    - Added SVG preview support for cached results
 
 2. **Enhanced the Cache Manager**
+
    - Improved error handling in the hash generation
    - Made cache key generation more robust
    - Added detailed logging for cache hits and misses
 
 3. **Improved Stream Processing**
+
    - Enhanced the `StreamProcessor` to handle cached results better
    - Added special handling for cached results in the streaming response
 
@@ -92,7 +95,7 @@ import { useCache, useMemoizedAsync } from '@/lib/hooks/use-cache';
 // Basic in-memory cache
 const { value, setValue, clear } = useCache<string[]>({
   key: 'recent-searches',
-  initialValue: []
+  initialValue: [],
 });
 ```
 
@@ -112,7 +115,7 @@ Middleware for caching API responses at the HTTP level:
 import { withCache } from '@/lib/middleware/cache-middleware';
 
 // Basic usage with default options (1 minute TTL)
-export const GET = withCache(async (req) => {
+export const GET = withCache(async req => {
   // Expensive operation...
   return NextResponse.json({ data });
 });
@@ -136,7 +139,7 @@ import { extendedCacheManager } from '@/lib/utils/cache-manager-extended';
 // Configure adaptive sizing
 extendedCacheManager.configureAdaptiveSizing({
   enabled: true,
-  memoryThresholdPercent: 80
+  memoryThresholdPercent: 80,
 });
 ```
 
@@ -173,18 +176,21 @@ The comprehensive caching system delivers significant performance improvements a
 ## Best Practices Implemented
 
 1. **Layered Caching Strategy**:
+
    - HTTP-level caching for API responses
    - Application-level caching for business logic
    - Component-level caching for UI state
    - Function-level caching for expensive operations
 
 2. **Cache Invalidation**:
+
    - TTL-based automatic expiration
    - Explicit invalidation APIs
    - Memory-pressure-aware cache clearing
    - Type-specific cache management
 
 3. **Performance Monitoring**:
+
    - Detailed cache statistics
    - Hit/miss rate tracking
    - Memory usage monitoring

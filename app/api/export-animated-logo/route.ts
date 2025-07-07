@@ -15,19 +15,10 @@ export async function POST(request: NextRequest) {
   try {
     // Parse the request body
     const body = await request.json();
-    const { 
-      svg, 
-      css, 
-      js, 
-      format = 'svg', 
-      options = {} 
-    } = body;
+    const { svg, css, js, format = 'svg', options = {} } = body;
 
     if (!svg) {
-      return NextResponse.json(
-        { error: 'SVG content is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'SVG content is required' }, { status: 400 });
     }
 
     // Process based on the requested format
@@ -61,10 +52,10 @@ export async function POST(request: NextRequest) {
 async function handleSvgExport(svg: string, css?: string, js?: string) {
   // Combine SVG with CSS and JS
   const animatedSvg = embedCssJsInSvg(svg, css, js);
-  
+
   // Store the file
   const fileId = storeFile('animated-logo.svg', Buffer.from(animatedSvg));
-  
+
   // Return the file URL
   return NextResponse.json({
     success: true,
@@ -76,7 +67,12 @@ async function handleSvgExport(svg: string, css?: string, js?: string) {
 /**
  * Handle export of HTML with embedded animated SVG
  */
-async function handleHtmlExport(svg: string, css?: string, js?: string, options?: AnimationExportOptions) {
+async function handleHtmlExport(
+  svg: string,
+  css?: string,
+  js?: string,
+  options?: AnimationExportOptions
+) {
   // Create a self-contained HTML file with the animated SVG
   const html = `
 <!DOCTYPE html>
@@ -111,10 +107,10 @@ async function handleHtmlExport(svg: string, css?: string, js?: string, options?
 </body>
 </html>
   `;
-  
+
   // Store the HTML file
   const fileId = storeFile('animated-logo.html', Buffer.from(html));
-  
+
   // Return the file URL
   return NextResponse.json({
     success: true,
@@ -128,12 +124,17 @@ async function handleHtmlExport(svg: string, css?: string, js?: string, options?
  * Note: This is a simplified implementation. In a production environment,
  * you would use a more robust solution like puppeteer to render and capture frames.
  */
-async function handleGifExport(_svg: string, _css?: string, _js?: string, _options?: AnimationExportOptions) {
+async function handleGifExport(
+  _svg: string,
+  _css?: string,
+  _js?: string,
+  _options?: AnimationExportOptions
+) {
   // For now, return an error as GIF generation requires more complex setup
   return NextResponse.json(
-    { 
+    {
       error: 'GIF export is not implemented in this version',
-      message: 'Use SVG or HTML format for animation export'
+      message: 'Use SVG or HTML format for animation export',
     },
     { status: 501 }
   );
@@ -144,12 +145,17 @@ async function handleGifExport(_svg: string, _css?: string, _js?: string, _optio
  * Note: This is a simplified implementation. In a production environment,
  * you would use a tool like FFmpeg to generate videos.
  */
-async function handleMp4Export(_svg: string, _css?: string, _js?: string, _options?: AnimationExportOptions) {
+async function handleMp4Export(
+  _svg: string,
+  _css?: string,
+  _js?: string,
+  _options?: AnimationExportOptions
+) {
   // For now, return an error as MP4 generation requires more complex setup
   return NextResponse.json(
-    { 
+    {
       error: 'MP4 export is not implemented in this version',
-      message: 'Use SVG or HTML format for animation export'
+      message: 'Use SVG or HTML format for animation export',
     },
     { status: 501 }
   );
@@ -166,7 +172,7 @@ function embedCssJsInSvg(svg: string, css?: string, js?: string): string {
   // Parse the SVG to insert style and script elements
   const styleTag = css ? `<style>${css}</style>` : '';
   const scriptTag = js ? `<script>${js}</script>` : '';
-  
+
   // Insert after the opening svg tag
   return svg.replace('<svg', `<svg>${styleTag}${scriptTag}`);
 }

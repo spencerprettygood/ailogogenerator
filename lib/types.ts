@@ -7,7 +7,11 @@ export enum ErrorCategory {
   // Add more as needed for future error types
 }
 import { SVGDesignQualityScore } from './types-agents';
-import { AnimationOptions as AnimationConfig, AnimationEasing, AnimationDirection } from './animation/types';
+import {
+  AnimationOptions as AnimationConfig,
+  AnimationEasing,
+  AnimationDirection,
+} from './animation/types';
 import { MockupInstance, MockupTemplate } from './mockups/mockup-types';
 
 export { AnimationEasing, AnimationDirection };
@@ -133,15 +137,15 @@ export interface SVGLogo {
   colors: LogoColors;
   name: string;
   // Add width/height aliases for compatibility with existing code
-  width?: number;         // Alias for inlineSize
-  height?: number;        // Alias for blockSize
-  svg?: string;           // Legacy alias for svgCode for backward compatibility
+  width?: number; // Alias for inlineSize
+  height?: number; // Alias for blockSize
+  svg?: string; // Legacy alias for svgCode for backward compatibility
 }
 
 export enum MessageRole {
   USER = 'user',
   ASSISTANT = 'assistant',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
 }
 
 export interface Message {
@@ -169,8 +173,8 @@ export interface FileDownloadInfo {
   status: 'pending' | 'downloading' | 'completed' | 'error';
   isPrimary?: boolean;
   // Add missing properties that are being accessed
-  type: string;           // File MIME type
-  category?: string;      // File category ('animation', 'mockup', etc)
+  type: string; // File MIME type
+  category?: string; // File category ('animation', 'mockup', etc)
 }
 
 export interface DownloadManagerProps {
@@ -273,7 +277,7 @@ export interface GenerationResult {
   animationCss?: string;
   animationJs?: string;
   animationOptions?: AnimationOptions;
-  uniquenessAnalysis?: import("./ai-pipeline/stages/stage-uniqueness-analysis").UniquenessAnalysisResult;
+  uniquenessAnalysis?: import('./ai-pipeline/stages/stage-uniqueness-analysis').UniquenessAnalysisResult;
   mockups?: MockupInstance[];
 }
 
@@ -379,7 +383,7 @@ export enum PipelineStage {
   I = 'animation',
   UNIQUENESS = 'uniqueness',
   CACHED = 'cached',
-  COMPLETE = 'complete'
+  COMPLETE = 'complete',
 }
 
 export interface SVGValidationResult {
@@ -405,7 +409,7 @@ export interface SVGAccessibilityAssessment {
   colorBlindnessFriendly: boolean;
   hasTitle: boolean;
   hasDesc: boolean;
-  issues: { level: 'error' | 'warning' | 'info', message: string }[];
+  issues: { level: 'error' | 'warning' | 'info'; message: string }[];
 }
 
 // A/B Testing Types
@@ -442,10 +446,10 @@ export interface VariantConfig {
 }
 
 export interface MetricResult {
-    mean: number;
-    median?: number;
-    standardDeviation?: number;
-    confidenceInterval?: [number, number];
+  mean: number;
+  median?: number;
+  standardDeviation?: number;
+  confidenceInterval?: [number, number];
 }
 
 export interface TestConfig {
@@ -454,7 +458,7 @@ export interface TestConfig {
   description: string;
   component: TestComponent;
   variants: {
-      [key in TestVariant]?: VariantConfig;
+    [key in TestVariant]?: VariantConfig;
   };
   metrics: TestMetric[];
   feedbackSources: FeedbackSource[];
@@ -477,7 +481,6 @@ export interface TestResults {
   insights: string[];
   recommendations: string[];
 }
-
 
 // API response types
 export interface ApiResponse<T = any> {
@@ -505,16 +508,16 @@ export interface ErrorDetails {
 }
 
 export interface ApplicationError {
-  errorId: string;      // Unique identifier for this error instance
-  message: string;      // Human-readable error message
-  category: string;     // Error category for grouping similar errors
-  code: string;         // Error code for programmatic handling
+  errorId: string; // Unique identifier for this error instance
+  message: string; // Human-readable error message
+  category: string; // Error category for grouping similar errors
+  code: string; // Error code for programmatic handling
   context?: Record<string, any>; // Additional context for debugging
-  timestamp: string;    // When the error occurred
+  timestamp: string; // When the error occurred
   isOperational: boolean; // Whether this is an expected operational error
-  isRetryable: boolean;   // Whether the operation can be retried
-  requestId?: string;     // Associated request ID for tracing
-  stack?: string;         // Stack trace in development
+  isRetryable: boolean; // Whether the operation can be retried
+  requestId?: string; // Associated request ID for tracing
+  stack?: string; // Stack trace in development
 }
 
 export interface ApiErrorResponse {
@@ -636,7 +639,6 @@ export interface EffectsConfig {
   shadowOpacity: number;
 }
 
-
 // API response types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -663,16 +665,16 @@ export interface ErrorDetails {
 }
 
 export interface ApplicationError {
-  errorId: string;      // Unique identifier for this error instance
-  message: string;      // Human-readable error message
-  category: string;     // Error category for grouping similar errors
-  code: string;         // Error code for programmatic handling
+  errorId: string; // Unique identifier for this error instance
+  message: string; // Human-readable error message
+  category: string; // Error category for grouping similar errors
+  code: string; // Error code for programmatic handling
   context?: Record<string, any>; // Additional context for debugging
-  timestamp: string;    // When the error occurred
+  timestamp: string; // When the error occurred
   isOperational: boolean; // Whether this is an expected operational error
-  isRetryable: boolean;   // Whether the operation can be retried
-  requestId?: string;     // Associated request ID for tracing
-  stack?: string;         // Stack trace in development
+  isRetryable: boolean; // Whether the operation can be retried
+  requestId?: string; // Associated request ID for tracing
+  stack?: string; // Stack trace in development
 }
 
 export interface ApiErrorResponse {

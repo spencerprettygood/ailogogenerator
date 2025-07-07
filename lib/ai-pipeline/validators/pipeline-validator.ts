@@ -10,27 +10,29 @@ export function validatePipelineOptions(options: PipelineOptions): string | null
   if (!options) {
     return 'Pipeline options are required';
   }
-  
+
   if (!options.brief) {
     return 'Logo brief is required';
   }
-  
+
   if (!options.brief.prompt || typeof options.brief.prompt !== 'string') {
     return 'Logo brief must include a prompt string';
   }
-  
+
   if (options.brief.prompt.length < 10) {
     return 'Logo brief prompt must be at least 10 characters';
   }
-  
+
   if (options.manualConceptSelection !== undefined) {
-    if (typeof options.manualConceptSelection !== 'number' || 
-        options.manualConceptSelection < 0 || 
-        options.manualConceptSelection > 2) {
+    if (
+      typeof options.manualConceptSelection !== 'number' ||
+      options.manualConceptSelection < 0 ||
+      options.manualConceptSelection > 2
+    ) {
       return 'Manual concept selection must be 0, 1, or 2';
     }
   }
-  
+
   return null; // No validation errors
 }
 
@@ -39,24 +41,24 @@ export function validateStageOutput(stage: string, output: unknown): string {
   if (!output) {
     return `Stage ${stage} output is undefined or null`;
   }
-  
+
   switch (stage) {
     case 'A':
     case 'stageA':
       return validateStageAOutput(output as StageAOutput);
-      
+
     case 'B':
     case 'stageB':
       return validateStageBOutput(output as StageBOutput);
-      
+
     case 'C':
     case 'stageC':
       return validateStageCOutput(output as StageCOutput);
-      
+
     case 'D':
     case 'stageD':
       return validateStageDOutput(output as StageDOutput);
-      
+
     default:
       return 'valid'; // Skip validation for other stages for now
   }
@@ -67,31 +69,31 @@ export function validatePipelineResult(result: PipelineResult): string | null {
   if (!result) {
     return 'Pipeline result is undefined or null';
   }
-  
+
   if (result.success && !result.result) {
     return 'Successful pipeline result must include a result object';
   }
-  
+
   if (!result.success && !result.error) {
     return 'Failed pipeline result must include an error object';
   }
-  
+
   if (!result.progress) {
     return 'Pipeline result must include progress information';
   }
-  
+
   if (result.success) {
     const generationResult = result.result as GenerationResult;
-    
+
     if (!generationResult.logoSvg) {
       return 'Successful result must include logoSvg';
     }
-    
+
     if (!generationResult.downloadUrl) {
       return 'Successful result must include downloadUrl';
     }
   }
-  
+
   return null; // No validation errors
 }
 
@@ -106,12 +108,12 @@ export function createValidationErrorResponse(message: string): PipelineResult {
       statusMessage: 'Validation failed',
       error: {
         stage: 'validation',
-        message
-      }
+        message,
+      },
     },
     error: {
       stage: 'validation',
-      message
-    }
+      message,
+    },
   };
 }

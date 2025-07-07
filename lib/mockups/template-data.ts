@@ -15,7 +15,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 50, // 50% from top
       inlineSize: 30, // 30% of card width
       blockSize: 30, // Auto-calculated based on logo aspect ratio
-      preserveAspectRatio: true
+      preserveAspectRatio: true,
     },
     colorVariants: ['#FFFFFF', '#000000', '#F5F5F5', '#2D3748'],
     textPlaceholders: [
@@ -28,7 +28,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 30,
         fontSize: 14,
         color: '#000000',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
       },
       {
         id: 'tagline',
@@ -39,7 +39,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 30,
         fontSize: 10,
         color: '#666666',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
       },
       {
         id: 'contact',
@@ -50,9 +50,9 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 30,
         fontSize: 8,
         color: '#666666',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ]
+        fontFamily: 'Arial, sans-serif',
+      },
+    ],
   },
   {
     id: 'website-header-1',
@@ -67,7 +67,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 50,
       inlineSize: 15,
       blockSize: 60,
-      preserveAspectRatio: true
+      preserveAspectRatio: true,
     },
     colorVariants: ['#FFFFFF', '#F8FAFC', '#1E293B', '#0F172A'],
     textPlaceholders: [
@@ -79,7 +79,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         y: 50,
         maxWidth: 10,
         fontSize: 16,
-        color: '#000000'
+        color: '#000000',
       },
       {
         id: 'nav-item-2',
@@ -89,7 +89,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         y: 50,
         maxWidth: 10,
         fontSize: 16,
-        color: '#000000'
+        color: '#000000',
       },
       {
         id: 'nav-item-3',
@@ -99,7 +99,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         y: 50,
         maxWidth: 10,
         fontSize: 16,
-        color: '#000000'
+        color: '#000000',
       },
       {
         id: 'nav-item-4',
@@ -109,9 +109,9 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         y: 50,
         maxWidth: 10,
         fontSize: 16,
-        color: '#000000'
-      }
-    ]
+        color: '#000000',
+      },
+    ],
   },
   {
     id: 'tshirt-1',
@@ -126,9 +126,9 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 30,
       inlineSize: 40,
       blockSize: 40,
-      preserveAspectRatio: true
+      preserveAspectRatio: true,
     },
-    colorVariants: ['#FFFFFF', '#000000', '#2563EB', '#DC2626', '#22C55E']
+    colorVariants: ['#FFFFFF', '#000000', '#2563EB', '#DC2626', '#22C55E'],
   },
   {
     id: 'storefront-1',
@@ -143,8 +143,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 15,
       inlineSize: 50,
       blockSize: 20,
-      preserveAspectRatio: true
-    }
+      preserveAspectRatio: true,
+    },
   },
   {
     id: 'social-media-1',
@@ -159,7 +159,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 70,
       inlineSize: 20,
       blockSize: 40,
-      preserveAspectRatio: true
+      preserveAspectRatio: true,
     },
     textPlaceholders: [
       {
@@ -171,7 +171,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 40,
         fontSize: 24,
         color: '#FFFFFF',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
       },
       {
         id: 'profile-description',
@@ -182,9 +182,9 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 40,
         fontSize: 16,
         color: '#FFFFFF',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ]
+        fontFamily: 'Arial, sans-serif',
+      },
+    ],
   },
   {
     id: 'mobile-app-1',
@@ -199,8 +199,8 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 20,
       inlineSize: 20,
       blockSize: 10,
-      preserveAspectRatio: true
-    }
+      preserveAspectRatio: true,
+    },
   },
   {
     id: 'packaging-1',
@@ -215,7 +215,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
       y: 30,
       inlineSize: 50,
       blockSize: 30,
-      preserveAspectRatio: true
+      preserveAspectRatio: true,
     },
     textPlaceholders: [
       {
@@ -227,7 +227,7 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 80,
         fontSize: 24,
         color: '#000000',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
       },
       {
         id: 'product-description',
@@ -238,10 +238,10 @@ export const DEFAULT_MOCKUP_TEMPLATES: MockupTemplate[] = [
         maxWidth: 80,
         fontSize: 14,
         color: '#666666',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ]
-  }
+        fontFamily: 'Arial, sans-serif',
+      },
+    ],
+  },
 ];
 
 /**
@@ -263,16 +263,16 @@ export function getTemplateById(id: string): MockupTemplate | undefined {
  */
 export function getTemplatesGroupedByType(): Record<MockupType, MockupTemplate[]> {
   const grouped = {} as Record<MockupType, MockupTemplate[]>;
-  
+
   // Initialize with empty arrays for all types
   Object.values(MockupType).forEach(type => {
     grouped[type] = [];
   });
-  
+
   // Fill in the templates
   DEFAULT_MOCKUP_TEMPLATES.forEach(template => {
     grouped[template.type].push(template);
   });
-  
+
   return grouped;
 }

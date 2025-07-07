@@ -40,6 +40,7 @@ return (
 ## Why This Works
 
 In JSX, the opening tag must be either:
+
 1. A valid HTML element (like `div`, `span`, etc.)
 2. A React component referenced by a single identifier (like `MyComponent`)
 3. A React fragment (`<>` or `<React.Fragment>`)
@@ -49,31 +50,31 @@ Property access expressions like `Context.Provider` cannot be used directly as t
 ## Best Practices for Context Providers in Next.js 15
 
 1. **Always wrap context providers in an HTML element or fragment**:
+
    ```jsx
    return (
      <div>
-       <MyContext.Provider value={value}>
-         {children}
-       </MyContext.Provider>
+       <MyContext.Provider value={value}>{children}</MyContext.Provider>
      </div>
    );
    ```
 
 2. **Use semantic HTML elements when appropriate**:
+
    - If your component represents a section of content, use a `section` or `article`
    - If it's a layout wrapper, use a `div` with appropriate styling
    - If you don't want to add an extra DOM node, use a fragment (`<>...</>`)
 
 3. **Minimize unnecessary DOM nesting**:
+
    - If you need to render multiple context providers but don't want extra DOM nodes, use fragments:
+
    ```jsx
    return (
      <div className="app-container">
        <ThemeContext.Provider value={theme}>
          <UserContext.Provider value={user}>
-           <SettingsContext.Provider value={settings}>
-             {children}
-           </SettingsContext.Provider>
+           <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>
          </UserContext.Provider>
        </ThemeContext.Provider>
      </div>
@@ -81,6 +82,7 @@ Property access expressions like `Context.Provider` cannot be used directly as t
    ```
 
 4. **Consider creating dedicated provider components**:
+
    ```jsx
    // Separate provider component
    export function LogoGeneratorProvider({ children }) {
@@ -93,7 +95,7 @@ Property access expressions like `Context.Provider` cannot be used directly as t
        </div>
      );
    }
-   
+
    // Usage in app
    export function LogoGeneratorApp() {
      return (

@@ -8,10 +8,7 @@
     "includePattern": "\\.tsx?$",
     "excludePattern": "(node_modules/|docs|__tests__|.test.ts)"
   },
-  "plugins": [
-    "plugins/markdown",
-    "node_modules/better-docs/typescript"
-  ],
+  "plugins": ["plugins/markdown", "node_modules/better-docs/typescript"],
   "opts": {
     "destination": "./docs/api",
     "recurse": true,

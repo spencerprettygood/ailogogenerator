@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
@@ -63,12 +63,12 @@ export function FileUpload({
       handleFiles(acceptedFiles);
       if (fileRejections.length > 0) {
         const rejectionErrors = fileRejections.map(
-          (rejection) =>
+          rejection =>
             `File ${rejection.file.name} was rejected: ${rejection.errors
-              .map((e) => e.message)
+              .map(e => e.message)
               .join(', ')}`
         );
-        setErrors((prevErrors) => [...prevErrors, ...rejectionErrors]);
+        setErrors(prevErrors => [...prevErrors, ...rejectionErrors]);
       }
     },
     [files, validationOptions]
@@ -137,15 +137,17 @@ export function FileUpload({
         />
         <UploadCloud className="h-10 w-10" />
         <p className="font-semibold">
-          {isDragActive
-            ? 'Drop the files here ...'
-            : 'Drag & drop files here, or click to select'}
+          {isDragActive ? 'Drop the files here ...' : 'Drag & drop files here, or click to select'}
         </p>
         <p className="text-xs">
           Up to {maxFiles} images, {maxFileSizeMb}MB per file.
         </p>
         <p className="text-xs">
-          Supported types: {acceptedFileTypes.map((t) => t.split('/')[1]).join(', ').toUpperCase()}
+          Supported types:{' '}
+          {acceptedFileTypes
+            .map(t => t.split('/')[1])
+            .join(', ')
+            .toUpperCase()}
         </p>
       </div>
 
@@ -167,11 +169,7 @@ export function FileUpload({
           </div>
           <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {files.map((file, index) => (
-              <FilePreview
-                key={index}
-                file={file}
-                onRemoveAction={() => removeFile(index)}
-              />
+              <FilePreview key={index} file={file} onRemoveAction={() => removeFile(index)} />
             ))}
           </div>
         </div>

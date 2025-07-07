@@ -16,7 +16,7 @@ export function Header({ onThemeToggle }: HeaderProps) {
       {/* Asymmetric accent line */}
       <div className="absolute bottom-0 left-0 w-2/3 h-[1px] bg-accent"></div>
       <div className="absolute bottom-0 right-0 w-1/3 h-[1px] bg-gray-300"></div>
-      
+
       <div className="container flex h-16 items-center justify-between p-uneven">
         {/* Logo - now with asymmetric spacing */}
         <div className="flex items-center gap-uneven-2 ml-uneven-1">
@@ -37,7 +37,7 @@ export function Header({ onThemeToggle }: HeaderProps) {
               <span className="sr-only">Toggle theme</span>
             </Button>
           )}
-          
+
           {/* No social links */}
         </div>
       </div>

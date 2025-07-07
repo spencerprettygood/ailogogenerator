@@ -2,7 +2,7 @@
 
 /**
  * Mockup Optimization Script
- * 
+ *
  * This script helps optimize background images and test mockup performance.
  * It's used for development and testing purposes.
  */
@@ -25,7 +25,7 @@ const MOCKUP_TYPES = [
   'letterhead',
   'billboard',
   'email_signature',
-  'favicon'
+  'favicon',
 ];
 
 // Create directories if they don't exist
@@ -34,12 +34,12 @@ function ensureDirectoriesExist() {
     fs.mkdirSync(BACKGROUNDS_DIR, { recursive: true });
     console.log(`Created directory: ${BACKGROUNDS_DIR}`);
   }
-  
+
   if (!fs.existsSync(PREVIEWS_DIR)) {
     fs.mkdirSync(PREVIEWS_DIR, { recursive: true });
     console.log(`Created directory: ${PREVIEWS_DIR}`);
   }
-  
+
   // Create placeholder files for each mockup type
   MOCKUP_TYPES.forEach(type => {
     const placeholderPath = path.join(BACKGROUNDS_DIR, `placeholder-${type}.jpg`);
@@ -52,33 +52,35 @@ function ensureDirectoriesExist() {
 
 // Check for missing thumbnails
 function checkMissingThumbnails() {
-  const backgrounds = fs.readdirSync(BACKGROUNDS_DIR)
+  const backgrounds = fs
+    .readdirSync(BACKGROUNDS_DIR)
     .filter(file => file.endsWith('.jpg') || file.endsWith('.png'))
     .filter(file => !file.startsWith('placeholder-'));
-  
-  const thumbnails = fs.readdirSync(PREVIEWS_DIR)
+
+  const thumbnails = fs
+    .readdirSync(PREVIEWS_DIR)
     .filter(file => file.endsWith('.jpg') || file.endsWith('.png'));
-  
+
   console.log('\nChecking for missing thumbnails:');
-  
+
   let missingCount = 0;
-  
+
   backgrounds.forEach(background => {
     const baseName = path.basename(background, path.extname(background));
     const expectedThumbName = `${baseName}-thumb${path.extname(background)}`;
-    
+
     if (!thumbnails.includes(expectedThumbName)) {
       console.log(`Missing thumbnail for: ${background}`);
-      
+
       // Create a placeholder thumbnail
       const placeholderPath = path.join(PREVIEWS_DIR, expectedThumbName);
       fs.writeFileSync(placeholderPath, `<!-- Placeholder thumbnail for ${background} -->`);
       console.log(`Created placeholder thumbnail: ${placeholderPath}`);
-      
+
       missingCount++;
     }
   });
-  
+
   if (missingCount === 0) {
     console.log('All thumbnails are present.');
   } else {
@@ -89,29 +91,34 @@ function checkMissingThumbnails() {
 // Update the registry with any new background images
 function updateRegistry() {
   console.log('\nChecking for backgrounds that need to be added to the registry:');
-  
+
   const registryPath = path.join(__dirname, '../lib/mockups/background-image-registry.ts');
   const registryContent = fs.readFileSync(registryPath, 'utf8');
-  
-  const backgrounds = fs.readdirSync(BACKGROUNDS_DIR)
-    .filter(file => (file.endsWith('.jpg') || file.endsWith('.png')) && !file.startsWith('placeholder-'));
-  
+
+  const backgrounds = fs
+    .readdirSync(BACKGROUNDS_DIR)
+    .filter(
+      file => (file.endsWith('.jpg') || file.endsWith('.png')) && !file.startsWith('placeholder-')
+    );
+
   let missingFromRegistry = 0;
-  
+
   backgrounds.forEach(background => {
     const baseName = path.basename(background, path.extname(background));
-    
+
     if (!registryContent.includes(`id: '${baseName}'`)) {
       console.log(`Background not in registry: ${background}`);
       missingFromRegistry++;
     }
   });
-  
+
   if (missingFromRegistry === 0) {
     console.log('All backgrounds are in the registry.');
   } else {
     console.log(`Found ${missingFromRegistry} backgrounds missing from registry.`);
-    console.log('Please add them to background-image-registry.ts manually with appropriate metadata.');
+    console.log(
+      'Please add them to background-image-registry.ts manually with appropriate metadata.'
+    );
   }
 }
 
@@ -126,19 +133,19 @@ function runPerformanceTests() {
 // Main function
 function main() {
   console.log('=== AI Logo Generator: Mockup Optimization Script ===\n');
-  
+
   // Ensure directories exist
   ensureDirectoriesExist();
-  
+
   // Check for missing thumbnails
   checkMissingThumbnails();
-  
+
   // Update registry
   updateRegistry();
-  
+
   // Run performance tests
   runPerformanceTests();
-  
+
   console.log('\nOptimization checks complete!');
 }
 

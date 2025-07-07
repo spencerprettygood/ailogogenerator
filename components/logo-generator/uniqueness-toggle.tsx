@@ -1,7 +1,12 @@
 import React from 'react';
 import { Switch } from '@/components/ui/switch';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip';
 
 interface UniquenessToggleProps {
   enabled: boolean;
@@ -12,13 +17,13 @@ interface UniquenessToggleProps {
 export const UniquenessToggle: React.FC<UniquenessToggleProps> = ({
   enabled,
   onToggle,
-  className = ''
+  className = '',
 }) => {
   return (
     <div className={`flex items-center justify-between ${className}`}>
       <div className="flex items-center">
         <span className="text-sm font-medium mr-2">Include uniqueness analysis</span>
-        
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -33,7 +38,7 @@ export const UniquenessToggle: React.FC<UniquenessToggleProps> = ({
           </Tooltip>
         </TooltipProvider>
       </div>
-      
+
       <Switch
         checked={enabled}
         onCheckedChange={onToggle}

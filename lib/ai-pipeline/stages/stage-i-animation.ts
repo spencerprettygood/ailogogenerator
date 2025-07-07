@@ -1,5 +1,11 @@
 import { SVGAnimationService, svgAnimationService } from '../../animation/animation-service';
-import { AnimationOptions, AnimatedSVGLogo, AnimationType, AnimationEasing, AnimationTiming } from '../../animation/types';
+import {
+  AnimationOptions,
+  AnimatedSVGLogo,
+  AnimationType,
+  AnimationEasing,
+  AnimationTiming,
+} from '../../animation/types';
 import { SVGLogo } from '../../types';
 
 export interface StageIInput {
@@ -28,25 +34,25 @@ export interface StageIOutput {
 
 /**
  * Stage I: Animation - Adds animations to the SVG logo
- * 
+ *
  * @param input The input containing the SVG logo and animation options
  * @returns The output with the animated SVG logo
  */
 export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
   const startTime = Date.now();
-  
+
   try {
     // Determine animation options
     let animationOptions: AnimationOptions;
-    
+
     if (input.animationOptions) {
       // Use provided animation options, but coerce easing to enum if needed
       animationOptions = {
         ...input.animationOptions,
         timing: {
           ...input.animationOptions.timing,
-          easing: coerceEasing(input.animationOptions.timing?.easing)
-        }
+          easing: coerceEasing(input.animationOptions.timing?.easing),
+        },
       };
     } else if (input.autoSelectAnimation) {
       // Auto-select an appropriate animation based on the logo
@@ -57,8 +63,8 @@ export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
         type: AnimationType.FADE_IN,
         timing: {
           duration: 1000,
-          easing: AnimationEasing.EASE_IN_OUT
-        }
+          easing: AnimationEasing.EASE_IN_OUT,
+        },
       };
     }
 
@@ -68,47 +74,54 @@ export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
       if (Object.values(AnimationEasing).includes(easing)) return easing as AnimationEasing;
       // Map common string values to enum
       switch (easing) {
-        case 'linear': return AnimationEasing.LINEAR;
-        case 'ease': return AnimationEasing.EASE;
-        case 'ease-in': return AnimationEasing.EASE_IN;
-        case 'ease-out': return AnimationEasing.EASE_OUT;
-        case 'ease-in-out': return AnimationEasing.EASE_IN_OUT;
-        case 'cubic-bezier(.5,2.5,.7,.7)': return AnimationEasing.ELASTIC;
-        case 'cubic-bezier(0.68, -0.55, 0.265, 1.55)': return AnimationEasing.BOUNCE;
-        default: return undefined;
+        case 'linear':
+          return AnimationEasing.LINEAR;
+        case 'ease':
+          return AnimationEasing.EASE;
+        case 'ease-in':
+          return AnimationEasing.EASE_IN;
+        case 'ease-out':
+          return AnimationEasing.EASE_OUT;
+        case 'ease-in-out':
+          return AnimationEasing.EASE_IN_OUT;
+        case 'cubic-bezier(.5,2.5,.7,.7)':
+          return AnimationEasing.ELASTIC;
+        case 'cubic-bezier(0.68, -0.55, 0.265, 1.55)':
+          return AnimationEasing.BOUNCE;
+        default:
+          return undefined;
       }
     }
-    
+
     // Apply animation to the SVG logo using the singleton instance
     const animationResponse = await svgAnimationService.animateSVG(input.svg, animationOptions);
-    
+
     if (!animationResponse.success) {
       throw new Error(`Animation failed: ${animationResponse.error?.message}`);
     }
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     return {
       success: true,
       result: {
         animatedSVG: animationResponse.result!,
         animationOptions,
         cssCode: animationResponse.result!.cssCode || '',
-        jsCode: animationResponse.result!.jsCode
+        jsCode: animationResponse.result!.jsCode,
       },
-      processingTime
+      processingTime,
     };
-    
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    
+
     return {
       success: false,
       error: {
         message: 'Failed to animate logo',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       },
-      processingTime
+      processingTime,
     };
   }
 }
@@ -117,7 +130,10 @@ export async function animateLogo(input: StageIInput): Promise<StageIOutput> {
  * Analyzes a logo and selects an appropriate animation type based on its characteristics
  * Uses regex-based analysis for server-side compatibility
  */
-async function selectAppropriateAnimation(svg: string, brandName: string): Promise<AnimationOptions> {
+async function selectAppropriateAnimation(
+  svg: string,
+  brandName: string
+): Promise<AnimationOptions> {
   try {
     let hasPaths = false;
     let hasText = false;
@@ -141,12 +157,12 @@ async function selectAppropriateAnimation(svg: string, brandName: string): Promi
         // fallback below
       }
     }
-    
+
     // Fallback to regex if DOMParser failed or not available
     if (!topLevelCount) {
       hasPaths = /<path[^>]*>/i.test(svg);
       hasText = /<text[^>]*>/i.test(svg);
-      
+
       const svgTagMatch = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
       if (svgTagMatch) {
         const inner = svgTagMatch[1] || '';
@@ -160,7 +176,7 @@ async function selectAppropriateAnimation(svg: string, brandName: string): Promi
     // Select animation type based on logo characteristics
     let animationType: AnimationType;
     let timing: AnimationTiming;
-    
+
     // Check if we have many elements that should be animated sequentially
     if (hasMultipleElements && topLevelCount > 5) {
       animationType = AnimationType.SEQUENTIAL;
@@ -175,14 +191,18 @@ async function selectAppropriateAnimation(svg: string, brandName: string): Promi
     } else if (hasText && !hasPaths) {
       animationType = AnimationType.TYPEWRITER;
       timing = { duration: 2500, easing: AnimationEasing.EASE_OUT };
-    } else if (brandName.toLowerCase().includes('tech') || 
-               brandName.toLowerCase().includes('digital') || 
-               brandName.toLowerCase().includes('data')) {
+    } else if (
+      brandName.toLowerCase().includes('tech') ||
+      brandName.toLowerCase().includes('digital') ||
+      brandName.toLowerCase().includes('data')
+    ) {
       animationType = AnimationType.ZOOM_IN;
       timing = { duration: 1200, easing: AnimationEasing.EASE_OUT };
-    } else if (brandName.toLowerCase().includes('fun') || 
-               brandName.toLowerCase().includes('kids') || 
-               brandName.toLowerCase().includes('play')) {
+    } else if (
+      brandName.toLowerCase().includes('fun') ||
+      brandName.toLowerCase().includes('kids') ||
+      brandName.toLowerCase().includes('play')
+    ) {
       animationType = AnimationType.BOUNCE;
       timing = { duration: 1200, easing: AnimationEasing.BOUNCE };
     } else {
@@ -191,7 +211,7 @@ async function selectAppropriateAnimation(svg: string, brandName: string): Promi
     }
     const animationOptions: AnimationOptions = {
       type: animationType,
-      timing
+      timing,
     };
     if (animationType === AnimationType.SEQUENTIAL) {
       (animationOptions as any).stagger = 150;
@@ -203,8 +223,8 @@ async function selectAppropriateAnimation(svg: string, brandName: string): Promi
       type: AnimationType.FADE_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     };
   }
 }

@@ -34,20 +34,24 @@ Key problems that can cause this error:
 We've updated the webpack configuration following best practices:
 
 ```javascript
-webpack: (config) => {
+webpack: config => {
   config.resolve.alias = {
     ...config.resolve.alias,
     '@components': path.resolve(__dirname, 'components'),
     '@lib': path.resolve(__dirname, 'lib'),
   };
-  
+
   config.resolve.extensions = [
-    '.tsx', '.ts', '.js', '.jsx', '.json', 
-    ...(config.resolve.extensions || [])
+    '.tsx',
+    '.ts',
+    '.js',
+    '.jsx',
+    '.json',
+    ...(config.resolve.extensions || []),
   ];
-  
+
   return config;
-}
+};
 ```
 
 ### 2. Fix Client/Server Component Boundaries
@@ -74,11 +78,13 @@ We've provided a script (`scripts/clear-next-cache.sh`) to clear the Next.js cac
 ## Testing the Fix
 
 1. Run the cache clearing script:
+
    ```bash
    ./scripts/clear-next-cache.sh
    ```
 
 2. Start the development server:
+
    ```bash
    npm run dev
    ```

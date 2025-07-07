@@ -46,7 +46,7 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
     if (overallRating === 0) return;
 
     setIsSubmitting(true);
-    
+
     const feedback: LogoFeedback = {
       sessionId,
       timestamp: new Date().toISOString(),
@@ -72,9 +72,17 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
     }
   };
 
-  const StarRating = ({ rating, setRating, size = 24 }: { rating: number; setRating: (r: number) => void; size?: number }) => (
+  const StarRating = ({
+    rating,
+    setRating,
+    size = 24,
+  }: {
+    rating: number;
+    setRating: (r: number) => void;
+    size?: number;
+  }) => (
     <div className="flex space-x-1">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[1, 2, 3, 4, 5].map(star => (
         <button
           key={star}
           type="button"
@@ -85,9 +93,7 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
           <Star
             size={size}
             className={`${
-              star <= rating
-                ? 'text-yellow-400 fill-yellow-400'
-                : 'text-gray-300'
+              star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
             } transition-colors`}
           />
         </button>
@@ -120,44 +126,28 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Overall Rating
-            </label>
+            <label className="block text-sm font-medium mb-2">Overall Rating</label>
             <StarRating rating={overallRating} setRating={setOverallRating} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Design Quality
-              </label>
-              <StarRating 
-                rating={designQualityRating} 
-                setRating={setDesignQualityRating} 
-                size={20} 
+              <label className="block text-sm font-medium mb-2">Design Quality</label>
+              <StarRating
+                rating={designQualityRating}
+                setRating={setDesignQualityRating}
+                size={20}
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Relevance
-              </label>
-              <StarRating 
-                rating={relevanceRating} 
-                setRating={setRelevanceRating} 
-                size={20} 
-              />
+              <label className="block text-sm font-medium mb-2">Relevance</label>
+              <StarRating rating={relevanceRating} setRating={setRelevanceRating} size={20} />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Uniqueness
-              </label>
-              <StarRating 
-                rating={uniquenessRating} 
-                setRating={setUniquenessRating} 
-                size={20} 
-              />
+              <label className="block text-sm font-medium mb-2">Uniqueness</label>
+              <StarRating rating={uniquenessRating} setRating={setUniquenessRating} size={20} />
             </div>
           </div>
 
@@ -166,10 +156,10 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
               What aspects would you like to provide feedback on?
             </label>
             <div className="flex flex-wrap gap-2">
-              {feedbackCategories.map((category) => (
+              {feedbackCategories.map(category => (
                 <Badge
                   key={category.value}
-                  variant={selectedCategories.includes(category.value) ? "default" : "outline"}
+                  variant={selectedCategories.includes(category.value) ? 'default' : 'outline'}
                   className="cursor-pointer"
                   onClick={() => toggleCategory(category.value)}
                 >
@@ -180,17 +170,14 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
           </div>
 
           <div>
-            <label
-              htmlFor="comments"
-              className="block text-sm font-medium mb-2"
-            >
+            <label htmlFor="comments" className="block text-sm font-medium mb-2">
               Additional Comments
             </label>
             <Textarea
               id="comments"
               placeholder="Tell us more about your experience..."
               value={comments}
-              onChange={(e) => setComments(e.target.value)}
+              onChange={e => setComments(e.target.value)}
               rows={4}
               className="w-full"
             />
@@ -198,17 +185,10 @@ export function LogoFeedback({ logoId, sessionId, onClose, onSubmit }: LogoFeedb
         </div>
 
         <div className="flex justify-end space-x-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={overallRating === 0 || isSubmitting}
-          >
+          <Button onClick={handleSubmit} disabled={overallRating === 0 || isSubmitting}>
             {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
           </Button>
         </div>

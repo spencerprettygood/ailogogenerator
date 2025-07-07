@@ -7,7 +7,7 @@ import { claudeClient } from '../../services/claude-service';
  */
 export async function enhancedSvgGeneration(input: StageDInput): Promise<StageDOutput> {
   const startTime = Date.now();
-  
+
   try {
     // Enhanced prompt approach focusing on design principles and execution quality
     const systemPrompt = `You are a professional logo designer specializing in creating SVG vector graphics. 
@@ -53,11 +53,9 @@ Additional Requirements: ${input.designSpec.additional_requests}`;
     const response = await claudeClient.sendMessage({
       model: 'claude-3-5-sonnet-20240620',
       system: systemPrompt,
-      messages: [
-        { role: 'user', content: userPrompt }
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.7,
-      max_tokens: 4000
+      max_tokens: 4000,
     });
 
     // Process response
@@ -65,7 +63,7 @@ Additional Requirements: ${input.designSpec.additional_requests}`;
     const tokenUsage = {
       input: response.usage?.input_tokens || 0,
       output: response.usage?.output_tokens || 0,
-      total: response.usage?.input_tokens + response.usage?.output_tokens || 0
+      total: response.usage?.input_tokens + response.usage?.output_tokens || 0,
     };
 
     // Clean and validate SVG
@@ -76,10 +74,10 @@ Additional Requirements: ${input.designSpec.additional_requests}`;
       result: {
         svg: cleanedSvg,
         width: 300,
-        height: 300
+        height: 300,
       },
       tokensUsed: tokenUsage.total,
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     };
   } catch (error) {
     console.error('Enhanced SVG Generation failed:', error);
@@ -87,9 +85,9 @@ Additional Requirements: ${input.designSpec.additional_requests}`;
       success: false,
       error: {
         message: error instanceof Error ? error.message : 'Unknown error in SVG generation',
-        details: error
+        details: error,
       },
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     };
   }
 }
@@ -101,19 +99,19 @@ function cleanSvgCode(svgCode: string): string {
   // Extract SVG content if wrapped in code blocks or other text
   const svgRegex = /<svg[^>]*>[\s\S]*?<\/svg>/i;
   const match = svgCode.match(svgRegex);
-  
+
   if (match) {
     svgCode = match[0];
   }
-  
+
   // Ensure proper XML declaration
   if (!svgCode.includes('<?xml version="1.0"')) {
     svgCode = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgCode;
   }
-  
+
   // Ensure viewBox is set correctly
   if (!svgCode.includes('viewBox="0 0 300 300"')) {
-    svgCode = svgCode.replace(/<svg[^>]*>/i, (match) => {
+    svgCode = svgCode.replace(/<svg[^>]*>/i, match => {
       if (match.includes('viewBox')) {
         return match.replace(/viewBox="[^"]*"/i, 'viewBox="0 0 300 300"');
       } else {
@@ -121,6 +119,6 @@ function cleanSvgCode(svgCode: string): string {
       }
     });
   }
-  
+
   return svgCode;
 }

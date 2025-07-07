@@ -1,27 +1,29 @@
 /**
  * SVG Processing Pipeline
- * 
+ *
  * This module provides an optimized pipeline for processing SVG content
  * through multiple stages like parsing, validation, sanitization, and optimization.
  * It includes caching at each stage for improved performance.
  */
 
-import { sanitizeSVG, optimizeSVGFromOptimizer as optimizeSVG, validateSVG, extractAnimatableElements, checkAnimationCompatibility } from './utils';
+import {
+  sanitizeSVG,
+  optimizeSVGFromOptimizer as optimizeSVG,
+  validateSVG,
+  extractAnimatableElements,
+  checkAnimationCompatibility,
+} from './utils';
 import { AnimationType } from './types';
 import { Logger } from '../utils/logger';
 import { createMemoizedFunction } from '../utils/cache-manager';
-import { 
-  handleError, 
-  ErrorCategory, 
-  createAppError 
-} from '../utils/error-handler';
+import { handleError, ErrorCategory, createAppError } from '../utils/error-handler';
 
 // Cache size configuration
 const CACHE_SIZES = {
   VALIDATION: 100,
   ELEMENT_EXTRACTION: 50,
   COMPATIBILITY_CHECK: 50,
-  PROCESS_FULL: 50
+  PROCESS_FULL: 50,
 };
 
 // Logger instance
@@ -80,10 +82,9 @@ function getSvgFingerprint(svg: string): string {
 /**
  * Memoized SVG validation function
  */
-export const validateSvgWithCache = createMemoizedFunction(
-  validateSVG,
-  { maxSize: CACHE_SIZES.VALIDATION }
-);
+export const validateSvgWithCache = createMemoizedFunction(validateSVG, {
+  maxSize: CACHE_SIZES.VALIDATION,
+});
 
 /**
  * Memoized function to extract animatable elements from SVG
@@ -97,11 +98,11 @@ export const extractElementsWithCache = createMemoizedFunction(
  * Memoized function to check animation compatibility
  */
 export const checkCompatibilityWithCache = createMemoizedFunction(
-  (svg: string, animationType: AnimationType): CompatibilityResult => 
+  (svg: string, animationType: AnimationType): CompatibilityResult =>
     checkAnimationCompatibility(svg, animationType),
-  { 
+  {
     maxSize: CACHE_SIZES.COMPATIBILITY_CHECK,
-    getKey: (svg, animationType) => `${getSvgFingerprint(svg)}:${animationType}`
+    getKey: (svg, animationType) => `${getSvgFingerprint(svg)}:${animationType}`,
   }
 );
 
@@ -110,14 +111,19 @@ export const checkCompatibilityWithCache = createMemoizedFunction(
  * @param svg SVG content to check
  * @returns Record mapping animation types to compatibility results
  */
-export function checkAllAnimationCompatibility(svg: string): Record<AnimationType, CompatibilityResult> {
-  const result: Record<AnimationType, CompatibilityResult> = {} as Record<AnimationType, CompatibilityResult>;
-  
+export function checkAllAnimationCompatibility(
+  svg: string
+): Record<AnimationType, CompatibilityResult> {
+  const result: Record<AnimationType, CompatibilityResult> = {} as Record<
+    AnimationType,
+    CompatibilityResult
+  >;
+
   // Check compatibility for each animation type
   Object.values(AnimationType).forEach(type => {
     result[type] = checkCompatibilityWithCache(svg, type);
   });
-  
+
   return result;
 }
 
@@ -130,27 +136,27 @@ export const processSvgWithCache = createMemoizedFunction(
   (svg: string): ProcessingResult => {
     const startTime = Date.now();
     const processingId = `proc_${Math.random().toString(36).substring(2, 9)}`;
-    
+
     logger.debug(`Starting SVG processing pipeline [${processingId}]`);
-    
+
     // Initialize result object
     const result: ProcessingResult = {
       originalSvg: svg,
       validationResult: { isValid: false },
-      processingTime: 0
+      processingTime: 0,
     };
-    
+
     try {
       // Validate SVG first
       result.validationResult = validateSvgWithCache(svg);
-      
+
       if (!result.validationResult.isValid) {
         logger.warn(`SVG validation failed [${processingId}]: ${result.validationResult.error}`);
         result.error = `Validation failed: ${result.validationResult.error}`;
         result.processingTime = Date.now() - startTime;
         return result;
       }
-      
+
       // If valid, proceed with sanitization
       try {
         result.sanitizedSvg = sanitizeSVG(svg);
@@ -158,19 +164,19 @@ export const processSvgWithCache = createMemoizedFunction(
         const appError = handleError(error, {
           category: ErrorCategory.SVG,
           context: { processingId },
-          rethrow: false
+          rethrow: false,
         });
-        
+
         logger.error(`SVG sanitization failed [${processingId}]`, {
           error: appError.message,
-          processingId
+          processingId,
         });
-        
+
         result.error = `Sanitization failed: ${appError.message}`;
         result.processingTime = Date.now() - startTime;
         return result;
       }
-      
+
       // Proceed with optimization
       try {
         result.optimizedSvg = optimizeSVG(result.sanitizedSvg);
@@ -178,44 +184,44 @@ export const processSvgWithCache = createMemoizedFunction(
         const appError = handleError(error, {
           category: ErrorCategory.SVG,
           context: { processingId },
-          rethrow: false
+          rethrow: false,
         });
-        
+
         logger.error(`SVG optimization failed [${processingId}]`, {
           error: appError.message,
-          processingId
+          processingId,
         });
-        
+
         result.error = `Optimization failed: ${appError.message}`;
         result.processingTime = Date.now() - startTime;
         return result;
       }
-      
+
       // Extract animatable elements
       const extractionResult = extractElementsWithCache(result.optimizedSvg);
       result.animatableElements = extractionResult.elements;
-      
+
       // Check animation compatibility with all animation types
       result.animationCompatibility = checkAllAnimationCompatibility(result.optimizedSvg);
-      
+
       logger.debug(`SVG processing pipeline completed successfully [${processingId}]`);
     } catch (error) {
       logger.error(`Unexpected error in SVG processing pipeline [${processingId}]`, {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        processingId
+        processingId,
       });
-      
+
       result.error = `Processing failed: ${error instanceof Error ? error.message : String(error)}`;
     } finally {
       result.processingTime = Date.now() - startTime;
     }
-    
+
     return result;
   },
-  { 
+  {
     maxSize: CACHE_SIZES.PROCESS_FULL,
-    getKey: getSvgFingerprint
+    getKey: getSvgFingerprint,
   }
 );
 
@@ -229,6 +235,6 @@ export function clearSvgProcessingCaches(): void {
   (extractElementsWithCache as any).clear();
   (checkCompatibilityWithCache as any).clear();
   (processSvgWithCache as any).clear();
-  
+
   logger.info('All SVG processing caches cleared');
 }

@@ -2,7 +2,7 @@
  * @file enhanced-svg-generation-agent.ts
  * @module lib/agents/specialized/enhanced-svg-generation-agent
  * @description Enhanced SVG logo generation agent with advanced design principles
- * 
+ *
  * This agent extends the basic SVG generation agent with sophisticated design theory:
  * - Color theory and harmonization
  * - Golden ratio and rule of thirds composition
@@ -12,11 +12,11 @@
  */
 
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  SVGGenerationAgentInput, 
-  SVGGenerationAgentOutput
+import {
+  AgentConfig,
+  AgentInput,
+  SVGGenerationAgentInput,
+  SVGGenerationAgentOutput,
 } from '../../types-agents';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -27,17 +27,13 @@ import { SVGValidator } from '../../utils/svg-validator';
  */
 export class EnhancedSVGGenerationAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'enhanced-svg-generation', 
-      ['svg-generation'],
-      {
-        model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
-        temperature: 0.5, // Balanced temperature for creativity with consistency
-        maxTokens: 4096, // Increased token limit for complex SVG generation
-        ...config
-      }
-    );
-    
+    super('enhanced-svg-generation', ['svg-generation'], {
+      model: 'claude-3-5-sonnet-20240620', // Use full model for detailed SVG generation
+      temperature: 0.5, // Balanced temperature for creativity with consistency
+      maxTokens: 4096, // Increased token limit for complex SVG generation
+      ...config,
+    });
+
     this.systemPrompt = `You are an expert SVG logo generation agent with advanced training in design theory.
     
 Your task is to generate a professional, production-ready SVG logo based on the selected design concept and specifications, applying sophisticated design principles to create truly exceptional results.
@@ -100,16 +96,20 @@ You MUST return your response as a single, valid JSON object enclosed in \`\`\`j
 The SVG code should be a complete, valid SVG with proper syntax and optimization.
 It must work when pasted directly into an HTML file or opened in a browser.`;
   }
-  
+
   /**
    * Generate the prompt for enhanced SVG generation with advanced design principles
    */
   protected async generatePrompt(input: SVGGenerationAgentInput): Promise<string> {
     const { designSpec, selectedConcept } = input;
-    
+
     const industry = designSpec.industry || this.detectIndustry(designSpec.brand_description);
-    const designPrinciples = this.getDesignPrinciplesForIndustry(industry, designSpec, selectedConcept);
-    
+    const designPrinciples = this.getDesignPrinciplesForIndustry(
+      industry,
+      designSpec,
+      selectedConcept
+    );
+
     return `Please generate a professional SVG logo based on the following design specifications and selected concept, applying advanced design principles:
 
 # Brand Details
@@ -142,11 +142,14 @@ It must work when pasted directly into an HTML file or opened in a browser.`;
 
 Please generate a complete, production-ready SVG logo applying these advanced design principles, along with a detailed design rationale explaining your decisions. Respond with your JSON object inside \`\`\`json tags.`;
   }
-  
+
   /**
    * Process the response from the AI
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SVGGenerationAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<SVGGenerationAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
     if (!parsed || typeof parsed !== 'object') {
@@ -199,9 +202,9 @@ Please generate a complete, production-ready SVG logo applying these advanced de
         error: handleError({
           error: 'Generated SVG failed validation',
           category: ErrorCategory.SVG,
-          details: { 
+          details: {
             validationErrors: svgValidation.errors,
-            svgContent 
+            svgContent,
           },
           retryable: true,
         }),
@@ -266,20 +269,28 @@ Please generate a complete, production-ready SVG logo applying these advanced de
 
     switch (industry) {
       case 'Technology':
-        basePrinciples.composition += 'Aim for a modern, clean, and innovative feel. Geometric shapes and symmetry often work well.';
-        basePrinciples.colorTheory += 'Blues, grays, and greens are common, but a unique accent color can stand out.';
+        basePrinciples.composition +=
+          'Aim for a modern, clean, and innovative feel. Geometric shapes and symmetry often work well.';
+        basePrinciples.colorTheory +=
+          'Blues, grays, and greens are common, but a unique accent color can stand out.';
         break;
       case 'Healthcare':
-        basePrinciples.composition += 'The design should evoke trust, care, and professionalism. Avoid overly complex or aggressive shapes.';
-        basePrinciples.colorTheory += 'Greens and blues are typical. The palette should feel calming and reassuring.';
+        basePrinciples.composition +=
+          'The design should evoke trust, care, and professionalism. Avoid overly complex or aggressive shapes.';
+        basePrinciples.colorTheory +=
+          'Greens and blues are typical. The palette should feel calming and reassuring.';
         break;
       case 'Food & Beverage':
-        basePrinciples.composition += 'The design can be more playful and organic. It should look appetizing and inviting.';
-        basePrinciples.colorTheory += 'Warm colors like reds, oranges, and yellows can stimulate appetite.';
+        basePrinciples.composition +=
+          'The design can be more playful and organic. It should look appetizing and inviting.';
+        basePrinciples.colorTheory +=
+          'Warm colors like reds, oranges, and yellows can stimulate appetite.';
         break;
       case 'Fashion':
-        basePrinciples.composition += 'Elegance, minimalism, and sophistication are key. The logo should be chic and timeless.';
-        basePrinciples.typography += 'Serif or clean sans-serif fonts are common. Typography is often the primary element.';
+        basePrinciples.composition +=
+          'Elegance, minimalism, and sophistication are key. The logo should be chic and timeless.';
+        basePrinciples.typography +=
+          'Serif or clean sans-serif fonts are common. Typography is often the primary element.';
         break;
       default:
         basePrinciples.composition += `Tailor the composition to the brand's specific personality: ${designSpec.style_preferences}.`;

@@ -18,29 +18,29 @@ These multiple implementations are causing confusion and potentially inconsisten
 Keep and enhance `/components/providers/theme-provider-client.tsx` as the primary implementation:
 
 ```tsx
-'use client'
+'use client';
 
-import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { type ThemeProviderProps } from 'next-themes/dist/types'
-import * as React from 'react'
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+import * as React from 'react';
 
 /**
  * Client-side ThemeProvider wrapper
- * This separate client component is needed since ThemeProvider uses client-side 
+ * This separate client component is needed since ThemeProvider uses client-side
  * functionality and the root layout should be a server component in Next.js 15+
  */
 export function ThemeProviderClient({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
 /**
  * Hook to get and set the current theme
- * 
+ *
  * @returns {Object} The theme API with current theme, set theme function, and system preference
  */
 export function useTheme() {
   const { theme, setTheme, systemTheme } = NextThemesProvider.useTheme();
-  
+
   // Check if current theme is dark (either explicitly set to dark or system preference is dark)
   const isDark = React.useMemo(() => {
     if (theme === 'system' && systemTheme) {
@@ -48,7 +48,7 @@ export function useTheme() {
     }
     return theme === 'dark';
   }, [theme, systemTheme]);
-  
+
   return {
     theme,
     setTheme,
@@ -63,21 +63,21 @@ export function useTheme() {
 Create a consolidated theme toggle component in `/components/ui/theme-toggle.tsx`:
 
 ```tsx
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useTheme } from '@/components/providers/theme-provider-client'
-import { Button } from './button'
+import * as React from 'react';
+import { useTheme } from '@/components/providers/theme-provider-client';
+import { Button } from './button';
 
 /**
  * Theme Toggle Component
- * 
+ *
  * Provides a button to toggle between light and dark mode.
  * Shows appropriate icon based on current theme.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme, isDark } = useTheme();
-  
+
   return (
     <Button
       variant="ghost"
@@ -105,6 +105,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 ### 4. Import Updates
 
 Update imports in files like:
+
 - components/logo-generator/logo-display.tsx
 - Any other component using useTheme or ThemeToggle
 

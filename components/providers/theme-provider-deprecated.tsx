@@ -1,15 +1,15 @@
 'use client';
 
-import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { type ThemeProviderProps } from "next-themes";
+import * as React from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes';
 
 /**
  * Theme Provider Component
- * 
+ *
  * Wraps Next-Themes provider to provide theme context throughout the application.
  * Enables theme switching between light, dark, and system preference.
- * 
+ *
  * @param props - Theme provider props from next-themes
  * @returns ThemeProvider component
  */
@@ -18,31 +18,27 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 
   // Prevent hydration mismatch by rendering provider regardless of mounted state
   // The suppressHydrationWarning on html element in layout.tsx handles the brief flash
-  return (
-    <NextThemesProvider {...props}>
-      {children}
-    </NextThemesProvider>
-  );
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
 /**
  * Hook to get and set the current theme
- * 
+ *
  * @returns {Object} The theme API with current theme, set theme function, and system preference
  * @example
  * const { theme, setTheme, systemTheme, isDark } = useTheme();
- * 
+ *
  * // Toggle theme
  * <button onClick={() => setTheme(isDark ? 'light' : 'dark')}>
  *   Toggle theme
  * </button>
  */
-import { useTheme as useNextTheme } from "next-themes";
+import { useTheme as useNextTheme } from 'next-themes';
 
 export function useTheme() {
   try {
     const { theme, setTheme, systemTheme } = useNextTheme();
-    
+
     // Check if current theme is dark (either explicitly set to dark or system preference is dark)
     const isDark = React.useMemo(() => {
       if (theme === 'system' && systemTheme) {
@@ -70,29 +66,21 @@ export function useTheme() {
 
 /**
  * Theme toggle button component
- * 
+ *
  * @component
  * @example
  * <ThemeToggle />
  */
-export function ThemeToggle({ 
-  className 
-}: { 
-  className?: string 
-}) {
+export function ThemeToggle({ className }: { className?: string }) {
   const { setTheme, isDark } = useTheme();
-  
+
   return (
     <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={className}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
     >
-      {isDark ? (
-        <SunIcon className="h-5 w-5" />
-      ) : (
-        <MoonIcon className="h-5 w-5" />
-      )}
+      {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
     </button>
   );
 }

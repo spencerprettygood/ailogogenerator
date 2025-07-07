@@ -17,8 +17,10 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
 
   return (
     <div className="flex items-center flex-wrap justify-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-      <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">Background:</p>
-      {backgrounds.map((background) => {
+      <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">
+        Background:
+      </p>
+      {backgrounds.map(background => {
         return (
           <Button
             key={background.id}
@@ -27,7 +29,8 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
             onClick={() => onBackgroundChange?.(background.id)}
             className={cn(
               'w-7 h-7 rounded-md transition-all duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800',
-              selectedBackgroundId === background.id && 'ring-2 ring-offset-1 ring-blue-600 dark:ring-blue-400 dark:ring-offset-gray-800',
+              selectedBackgroundId === background.id &&
+                'ring-2 ring-offset-1 ring-blue-600 dark:ring-blue-400 dark:ring-offset-gray-800',
               'p-0' // Remove padding for custom color swatches
             )}
             aria-label={`Select background ${background.name}`}
@@ -52,7 +55,7 @@ function isDarkColor(hexColor: string): boolean {
   if (!hexColor || typeof hexColor !== 'string' || hexColor.length < 4) return false; // Basic check
   const hex = hexColor.replace('#', '');
   if (hex.length !== 3 && hex.length !== 6) return false; // Check for valid hex length
-  
+
   let r, g, b;
   if (hex.length === 3) {
     r = parseInt((hex[0] || '0') + (hex[0] || '0'), 16);
@@ -63,7 +66,7 @@ function isDarkColor(hexColor: string): boolean {
     g = parseInt(hex.substring(2, 4), 16);
     b = parseInt(hex.substring(4, 6), 16);
   }
-  
+
   if (isNaN(r) || isNaN(g) || isNaN(b)) return false; // Check for valid numbers
 
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;

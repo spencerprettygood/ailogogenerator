@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat, type UIMessage } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CornerUpLeft, Download } from 'lucide-react';
 import { Raleway } from 'next/font/google';
-import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
+import { useLogoGeneration } from '@/lib/hooks/use-logo-generation';
 import { Toaster } from '@/components/ui/toaster';
 
 const raleway = Raleway({
@@ -16,29 +16,24 @@ const raleway = Raleway({
 
 // Helper to extract text from message parts, mirroring chat-interface.tsx
 function getMessageText(message: UIMessage): string {
-    if (Array.isArray((message as any).parts)) {
-      return (message as any).parts
-        .filter((part: any) => part.type === 'text' && typeof part.text === 'string')
-        .map((part: any) => part.text)
-        .join(' ');
-    }
-    // Fallback for simple content for safety, though 'parts' is the expected structure
-    if (typeof (message as any).content === 'string') {
-        return (message as any).content;
-    }
-    return '';
+  if (Array.isArray((message as any).parts)) {
+    return (message as any).parts
+      .filter((part: any) => part.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join(' ');
+  }
+  // Fallback for simple content for safety, though 'parts' is the expected structure
+  if (typeof (message as any).content === 'string') {
+    return (message as any).content;
+  }
+  return '';
 }
-
 
 export function AsymmetricalLogoChat() {
   const { messages, sendMessage, setMessages, status } = useChat({});
   const [input, setInput] = useState('');
 
-  const {
-    preview,
-    assets,
-    reset: resetLogoGeneration,
-  } = useLogoGeneration();
+  const { preview, assets, reset: resetLogoGeneration } = useLogoGeneration();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,8 +63,10 @@ export function AsymmetricalLogoChat() {
   };
 
   return (
-    <div className={`${raleway.variable} font-sans min-h-screen bg-background text-foreground flex`}>
-      <motion.div 
+    <div
+      className={`${raleway.variable} font-sans min-h-screen bg-background text-foreground flex`}
+    >
+      <motion.div
         className="w-1/3 bg-muted p-8 flex flex-col justify-between"
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -88,7 +85,7 @@ export function AsymmetricalLogoChat() {
               className="mt-8"
             >
               <h2 className="text-xl font-bold mb-4">Live Preview</h2>
-              <div 
+              <div
                 className="w-full h-64 bg-white rounded-lg shadow-inner flex items-center justify-center p-4"
                 dangerouslySetInnerHTML={{ __html: preview }}
               />
@@ -96,7 +93,7 @@ export function AsymmetricalLogoChat() {
           )}
         </AnimatePresence>
         <div className="space-y-4">
-          <button 
+          <button
             onClick={handleReset}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-foreground rounded-full hover:bg-foreground hover:text-background transition-all duration-micro"
           >
@@ -104,7 +101,7 @@ export function AsymmetricalLogoChat() {
             <span>New Session</span>
           </button>
           {assets && (
-            <a 
+            <a
               href={assets.zipPackageUrl}
               download
               className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-accent text-accent-foreground rounded-full hover:opacity-90 transition-opacity"
@@ -119,7 +116,7 @@ export function AsymmetricalLogoChat() {
       <div className="w-2/3 flex flex-col p-4">
         <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence>
-            {messages.map((m) => (
+            {messages.map(m => (
               <motion.div
                 key={m.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -128,7 +125,9 @@ export function AsymmetricalLogoChat() {
                 transition={{ duration: 0.3 }}
                 className={`flex my-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-lg p-4 rounded-2xl ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}>
+                <div
+                  className={`max-w-lg p-4 rounded-2xl ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}
+                >
                   {/* Use the helper function to render message content */}
                   <div className="text-sm">{getMessageText(m)}</div>
                 </div>
@@ -138,7 +137,7 @@ export function AsymmetricalLogoChat() {
           <div ref={messagesEndRef} />
         </div>
 
-        <motion.div 
+        <motion.div
           className="px-6 pb-6"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -148,7 +147,7 @@ export function AsymmetricalLogoChat() {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={e => setInput(e.target.value)}
               placeholder="Tell me about your logo..."
               className="w-full resize-none bg-muted border border-transparent rounded-full py-3 px-6 pr-20 focus:outline-none focus:ring-2 focus:ring-accent"
               rows={1}

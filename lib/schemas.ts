@@ -40,13 +40,12 @@ export const GeneratedAssetsSchema = z.object({
   legacy_pngVersions: z.array(z.string()).optional(),
 });
 
-
 // =================================================================================
 // API Request & Response Schemas
 // =================================================================================
 
 export const GenerateLogoRequestSchema = z.object({
-  prompt: z.string().min(10, { message: "Prompt must be at least 10 characters long." }),
+  prompt: z.string().min(10, { message: 'Prompt must be at least 10 characters long.' }),
   style: z.string().optional(),
   color_palette: z.array(z.string()).optional(),
   font: z.string().optional(),
@@ -61,13 +60,14 @@ export const GenerateLogoResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
   data: GenerateLogoResponseDataSchema.optional(),
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.any().optional(), // Allow for detailed validation errors
-  }).optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+      details: z.any().optional(), // Allow for detailed validation errors
+    })
+    .optional(),
 });
-
 
 // =================================================================================
 // Mockup & Customization Schemas
@@ -83,10 +83,12 @@ export const MockupTemplateSchema = z.object({
 export const MockupCustomizationOptionsSchema = z.object({
   backgroundColor: z.string().optional(),
   logoSize: z.number().optional(),
-  logoPosition: z.object({
-    x: z.number(),
-    y: z.number(),
-  }).optional(),
+  logoPosition: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
 });
 
 // = a.	FileDownloadInfo: This type is used for tracking file downloads. It needs a type and category property to classify downloads correctly.

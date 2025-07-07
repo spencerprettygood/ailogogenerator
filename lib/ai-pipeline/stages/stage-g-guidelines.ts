@@ -79,7 +79,11 @@ function extractHexColors(svg: string): string[] {
 // Utility: Convert HEX to RGB
 function hexToRgb(hex: string): string {
   let c = hex.replace('#', '');
-  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  if (c.length === 3)
+    c = c
+      .split('')
+      .map(x => x + x)
+      .join('');
   const num = parseInt(c, 16);
   return `rgb(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255})`;
 }
@@ -87,16 +91,20 @@ function hexToRgb(hex: string): string {
 // Utility: Convert HEX to CMYK
 function hexToCmyk(hex: string): string {
   let c = hex.replace('#', '');
-  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  if (c.length === 3)
+    c = c
+      .split('')
+      .map(x => x + x)
+      .join('');
   const r = parseInt(c.substring(0, 2), 16) / 255;
   const g = parseInt(c.substring(2, 4), 16) / 255;
   const b = parseInt(c.substring(4, 6), 16) / 255;
   const k = 1 - Math.max(r, g, b);
   const denom = 1 - k || 1;
-  const cyan = ((1 - r - k) / denom) || 0;
-  const magenta = ((1 - g - k) / denom) || 0;
-  const yellow = ((1 - b - k) / denom) || 0;
-  return `cmyk(${(cyan*100).toFixed(0)}%, ${(magenta*100).toFixed(0)}%, ${(yellow*100).toFixed(0)}%, ${(k*100).toFixed(0)}%)`;
+  const cyan = (1 - r - k) / denom || 0;
+  const magenta = (1 - g - k) / denom || 0;
+  const yellow = (1 - b - k) / denom || 0;
+  return `cmyk(${(cyan * 100).toFixed(0)}%, ${(magenta * 100).toFixed(0)}%, ${(yellow * 100).toFixed(0)}%, ${(k * 100).toFixed(0)}%)`;
 }
 
 // Utility: Simple font pairing logic
@@ -105,29 +113,27 @@ function getTypography(style: string): TypographySpec {
     return {
       primary_font: 'Inter, Arial, sans-serif',
       secondary_font: 'Roboto, Helvetica, sans-serif',
-      usage: 'Use Inter for headings, Roboto for body text.'
+      usage: 'Use Inter for headings, Roboto for body text.',
     };
   }
   if (/serif|classic|elegant/i.test(style)) {
     return {
       primary_font: 'Merriweather, Times New Roman, serif',
       secondary_font: 'Lora, Georgia, serif',
-      usage: 'Use Merriweather for headings, Lora for body text.'
+      usage: 'Use Merriweather for headings, Lora for body text.',
     };
   }
   return {
     primary_font: 'Montserrat, Arial, sans-serif',
     secondary_font: 'Open Sans, Helvetica, sans-serif',
-    usage: 'Use Montserrat for headings, Open Sans for body text.'
+    usage: 'Use Montserrat for headings, Open Sans for body text.',
   };
 }
 
 // Main function: Generate Brand Guidelines
-export async function generateBrandGuidelines(
-  input: StageGInput
-): Promise<StageGOutput> {
+export async function generateBrandGuidelines(input: StageGInput): Promise<StageGOutput> {
   const { variants, designSpec, designRationale, industryContext } = input;
-  
+
   // We're only extracting colors from the primary SVG, ignoring binary assets
   const colors = extractHexColors(variants.primary);
   const colorPalette: ColorPalette[] = colors.map(hex => ({
@@ -135,7 +141,7 @@ export async function generateBrandGuidelines(
     hex,
     rgb: hexToRgb(hex),
     cmyk: hexToCmyk(hex),
-    usage: 'Primary brand color'
+    usage: 'Primary brand color',
   }));
 
   const typography = getTypography(designSpec.style_preferences || '');
@@ -150,15 +156,15 @@ export async function generateBrandGuidelines(
   const usage_examples = `<h2>Usage Examples</h2><p>Place the logo on marketing materials, websites, and social media profiles. Ensure high contrast with the background.</p>`;
 
   const dos_and_donts = `<h2>Do's and Don'ts</h2><ul><li>Do: Use the logo consistently.</li><li>Don't: Stretch, distort, or change the colors of the logo.</li></ul>`;
-  
+
   // Add design rationale if provided
-  const design_rationale = designRationale 
-    ? `<h2>Design Rationale</h2><p>${designRationale}</p>` 
+  const design_rationale = designRationale
+    ? `<h2>Design Rationale</h2><p>${designRationale}</p>`
     : undefined;
-  
+
   // Add industry context if provided
-  const industry_context = industryContext 
-    ? `<h2>Industry Context</h2><p>${industryContext}</p>` 
+  const industry_context = industryContext
+    ? `<h2>Industry Context</h2><p>${industryContext}</p>`
     : undefined;
 
   const html = `

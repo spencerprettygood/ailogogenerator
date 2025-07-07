@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -19,7 +19,7 @@ export function PerplexitySearch({
   isGenerating,
   className = '',
   placeholder = 'Describe your perfect logo...',
-  compact = false
+  compact = false,
 }: PerplexitySearchProps) {
   const [prompt, setPrompt] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -78,12 +78,13 @@ export function PerplexitySearch({
       transition={{ duration: 0.5 }}
     >
       <form onSubmit={handleSubmit} className="relative">
-        <div 
+        <div
           className={`
             relative border-2 rounded-2xl bg-background transition-all duration-300
-            ${isFocused 
-              ? 'border-primary shadow-lg shadow-primary/20' 
-              : 'border-border hover:border-primary/50'
+            ${
+              isFocused
+                ? 'border-primary shadow-lg shadow-primary/20'
+                : 'border-border hover:border-primary/50'
             }
             ${compact ? 'rounded-xl' : ''}
           `}
@@ -122,7 +123,7 @@ export function PerplexitySearch({
               <textarea
                 ref={textareaRef}
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={e => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
@@ -135,7 +136,7 @@ export function PerplexitySearch({
                 `}
                 rows={compact ? 1 : 2}
               />
-              
+
               {/* Floating AI Icon */}
               {!prompt && !compact && (
                 <motion.div
@@ -153,7 +154,7 @@ export function PerplexitySearch({
               {/* File Upload Toggle */}
               <Button
                 type="button"
-                variant={showFileUpload ? "secondary" : "ghost"}
+                variant={showFileUpload ? 'secondary' : 'ghost'}
                 size="sm"
                 className={`h-10 w-10 p-0 ${compact ? 'h-8 w-8' : ''}`}
                 onClick={() => setShowFileUpload(!showFileUpload)}
@@ -163,10 +164,10 @@ export function PerplexitySearch({
               </Button>
 
               {/* Submit Button */}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 variant="primary"
-                disabled={!prompt.trim() && files.length === 0 || isGenerating}
+                disabled={(!prompt.trim() && files.length === 0) || isGenerating}
                 className={`
                   h-10 px-6 rounded-xl font-medium transition-all duration-200
                   ${compact ? 'h-8 px-4 text-sm' : ''}
@@ -177,7 +178,7 @@ export function PerplexitySearch({
                 {isGenerating ? (
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   >
                     <Sparkles className={`${compact ? 'w-3 h-3' : 'w-4 h-4'} mr-2`} />
                   </motion.div>
@@ -193,7 +194,15 @@ export function PerplexitySearch({
           {!compact && (
             <div className="px-4 pb-3">
               <p className="text-xs text-muted-foreground">
-                Press <kbd className="px-1 py-0.5 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">⌘</kbd> + <kbd className="px-1 py-0.5 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">Enter</kbd> to submit
+                Press{' '}
+                <kbd className="px-1 py-0.5 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">
+                  ⌘
+                </kbd>{' '}
+                +{' '}
+                <kbd className="px-1 py-0.5 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">
+                  Enter
+                </kbd>{' '}
+                to submit
               </p>
             </div>
           )}
@@ -208,7 +217,7 @@ export function PerplexitySearch({
             className="absolute top-full left-0 right-0 mt-2 z-10"
           >
             <div className="bg-background border border-border rounded-xl p-4 shadow-lg">
-              <FileUploadUnified 
+              <FileUploadUnified
                 onFilesChange={handleFilesChange}
                 maxFiles={3}
                 acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}

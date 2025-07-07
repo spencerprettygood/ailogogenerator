@@ -5,12 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  IndustryAnalysis,
-  SVGLogo,
-  PotentialIssue
-} from '@/lib/types';
-import { 
+import { IndustryAnalysis, SVGLogo, PotentialIssue } from '@/lib/types';
+import {
   Fingerprint,
   AlertTriangle,
   CheckCircle,
@@ -20,7 +16,7 @@ import {
   Lightbulb,
   AlertCircle,
   Shield,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { ErrorCategory, handleError } from '@/lib/utils/error-handler';
 
@@ -33,11 +29,11 @@ interface UniquenessAnalysisProps {
 export function UniquenessAnalysis({
   analysis,
   onApplyRecommendation,
-  className = ''
+  className = '',
 }: UniquenessAnalysisProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // No need to fetch analysis, it's passed in.
   const displayedAnalysis = analysis;
 
@@ -61,7 +57,7 @@ export function UniquenessAnalysis({
       onApplyRecommendation(recommendation);
     }
   };
-  
+
   return (
     <Card className={`w-full ${className}`}>
       <CardHeader>
@@ -78,7 +74,9 @@ export function UniquenessAnalysis({
 
         {potential_issues && potential_issues.length > 0 && (
           <div className="mt-6">
-            <h4 className="font-semibold mb-2 flex items-center"><AlertTriangle className="mr-2" /> Potential Issues</h4>
+            <h4 className="font-semibold mb-2 flex items-center">
+              <AlertTriangle className="mr-2" /> Potential Issues
+            </h4>
             <div className="space-y-4">
               {potential_issues.map((issue: PotentialIssue, index: number) => (
                 <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -101,8 +99,10 @@ export function UniquenessAnalysis({
         )}
 
         {verification_details && (
-           <div className="mt-6">
-            <h4 className="font-semibold mb-2 flex items-center"><Info className="mr-2" /> Verification Details</h4>
+          <div className="mt-6">
+            <h4 className="font-semibold mb-2 flex items-center">
+              <Info className="mr-2" /> Verification Details
+            </h4>
             <p className="text-sm text-gray-600">{verification_details}</p>
           </div>
         )}

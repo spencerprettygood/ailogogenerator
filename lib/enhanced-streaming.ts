@@ -1,6 +1,6 @@
 /**
  * Enhanced Streaming Implementation
- * 
+ *
  * This module provides advanced streaming capabilities for the AI Logo Generator,
  * with features such as:
  * - Reliable message delivery with auto-reconnect
@@ -27,7 +27,7 @@ export enum StreamMessageType {
   INFO = 'info',
   CACHE = 'cache',
   HEARTBEAT = 'heartbeat',
-  END = 'end'
+  END = 'end',
 }
 
 /**
@@ -105,10 +105,13 @@ export interface ResultStreamMessage extends BaseStreamMessage {
   metrics?: {
     totalTime: number;
     tokensUsed: number;
-    stages: Record<string, {
-      duration: number;
-      tokensUsed: number;
-    }>;
+    stages: Record<
+      string,
+      {
+        duration: number;
+        tokensUsed: number;
+      }
+    >;
   };
 }
 
@@ -234,12 +237,15 @@ export class EnhancedStreamProcessor {
   private stages: LogoStage[] = [];
   private currentStage = '';
   private abortController?: AbortController;
-  private stageHistory: Record<string, { 
-    startTime: number, 
-    endTime?: number, 
-    progress: number,
-    previews: number
-  }> = {};
+  private stageHistory: Record<
+    string,
+    {
+      startTime: number;
+      endTime?: number;
+      progress: number;
+      previews: number;
+    }
+  > = {};
 
   /**
    * Create a new EnhancedStreamProcessor
@@ -255,7 +261,7 @@ export class EnhancedStreamProcessor {
       heartbeatTimeout: 30000, // 30 seconds
       progressUpdateInterval: 250, // 250 ms
       enableTimeEstimation: true,
-      ...options
+      ...options,
     };
   }
 
@@ -275,7 +281,7 @@ export class EnhancedStreamProcessor {
     this.stageHistory = {};
     this.reconnectAttempts = 0;
     this.abortController = new AbortController();
-    
+
     try {
       // Handle URL or stream
       let stream: ReadableStream<Uint8Array>;
@@ -283,29 +289,29 @@ export class EnhancedStreamProcessor {
         // Create abort controller for fetch
         const abortController = new AbortController();
         this.abortController = abortController;
-        
+
         // Fetch from URL
         const response = await fetch(streamOrUrl, {
           ...requestInit,
-          signal: abortController.signal
+          signal: abortController.signal,
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
         }
-        
+
         if (!response.body) {
           throw new Error('Response has no body');
         }
-        
+
         stream = response.body;
       } else {
         stream = streamOrUrl;
       }
-      
+
       // Start heartbeat checker if enabled
       this.startHeartbeatChecker(callbacks);
-      
+
       // Process the stream
       await this.processStreamInternal(stream, callbacks);
     } catch (error) {
@@ -314,25 +320,23 @@ export class EnhancedStreamProcessor {
         this.options.autoReconnect &&
         this.reconnectAttempts < (this.options.maxReconnectAttempts || 3) &&
         error instanceof Error &&
-        (
-          error.name === 'AbortError' || 
-          error.name === 'NetworkError' || 
+        (error.name === 'AbortError' ||
+          error.name === 'NetworkError' ||
           error.message.includes('network') ||
-          error.message.includes('connection')
-        )
+          error.message.includes('connection'))
       ) {
         this.reconnectAttempts++;
         const delay = this.options.reconnectDelay! * Math.pow(2, this.reconnectAttempts - 1);
-        
+
         console.log(`Reconnecting (attempt ${this.reconnectAttempts}) in ${delay}ms...`);
-        
+
         // Wait before reconnecting
         await new Promise(resolve => setTimeout(resolve, delay));
-        
+
         // Try again with the same parameters
         return this.processStream(streamOrUrl, callbacks, requestInit);
       }
-      
+
       // If we reach here, either reconnect is disabled, max attempts reached, or error is not recoverable
       callbacks.onError(error instanceof Error ? error : new Error(String(error)));
     } finally {
@@ -349,33 +353,33 @@ export class EnhancedStreamProcessor {
     callbacks: EnhancedStreamingCallbacks
   ): Promise<void> {
     const reader = stream.getReader();
-    
+
     try {
       while (true) {
         const { done, value } = await reader.read();
-        
+
         // Update last heartbeat time
         this.lastHeartbeat = Date.now();
-        
+
         if (done) {
           // Process any remaining data in buffer
           if (this.buffer.trim()) {
             this.processLine(this.buffer.trim(), callbacks);
           }
-          
+
           // Send end event if not already sent
           callbacks.onEnd?.('success');
           break;
         }
-        
+
         // Decode chunk and add to buffer
         const chunk = this.decoder.decode(value, { stream: true });
         this.buffer += chunk;
-        
+
         // Process complete lines
         const lines = this.buffer.split('\n');
         this.buffer = lines.pop() || ''; // Keep incomplete line in buffer
-        
+
         for (const line of lines) {
           if (line.trim()) {
             this.processLine(line.trim(), callbacks);
@@ -409,44 +413,44 @@ export class EnhancedStreamProcessor {
         // If single parse fails, the line might contain multiple concatenated JSON objects
         // Continue to the advanced processing below
       }
-      
+
       // Advanced processing for concatenated JSON objects
       let processedCount = 0;
       let remainingText = line;
-      
+
       while (remainingText.length > 0) {
         // Find the position of the first opening brace
         const firstBracePos = remainingText.indexOf('{');
         if (firstBracePos === -1) break; // No more JSON objects
-        
+
         // Trim anything before the first brace
         remainingText = remainingText.substring(firstBracePos);
-        
+
         // Find the matching closing brace using a JSON object depth counter
         let depth = 0;
         let closingBracePos = -1;
         let inString = false;
         let escapeNext = false;
-        
+
         for (let i = 0; i < remainingText.length; i++) {
           const char = remainingText[i];
-          
+
           // Handle string literals and escape sequences correctly
           if (escapeNext) {
             escapeNext = false;
             continue;
           }
-          
+
           if (char === '\\') {
             escapeNext = true;
             continue;
           }
-          
+
           if (char === '"' && !escapeNext) {
             inString = !inString;
             continue;
           }
-          
+
           // Only count braces when not inside a string
           if (!inString) {
             if (char === '{') depth++;
@@ -459,20 +463,24 @@ export class EnhancedStreamProcessor {
             }
           }
         }
-        
+
         if (closingBracePos === -1) break; // No complete JSON object found
-        
+
         // Extract the JSON object string
         const jsonStr = remainingText.substring(0, closingBracePos + 1);
-        
+
         // Parse and process this JSON object
         try {
           const message = JSON.parse(jsonStr) as StreamMessage;
           this.processMessageObject(message, callbacks);
           processedCount++;
         } catch (parseError) {
-          console.warn(`Failed to parse JSON segment [${processedCount + 1}]:`, jsonStr, parseError);
-          
+          console.warn(
+            `Failed to parse JSON segment [${processedCount + 1}]:`,
+            jsonStr,
+            parseError
+          );
+
           // Try to salvage the JSON by fixing common issues
           try {
             // Try to fix trailing commas
@@ -485,16 +493,18 @@ export class EnhancedStreamProcessor {
             // Couldn't fix the JSON, just log the error
           }
         }
-        
+
         // Move to the remainder of the text
         remainingText = remainingText.substring(closingBracePos + 1);
       }
-      
+
       if (processedCount === 0) {
         // If we couldn't process any JSON objects, log the issue
         console.warn('Could not extract any valid JSON objects from line:', line);
       } else {
-        console.debug(`Successfully processed ${processedCount} JSON objects from concatenated stream`);
+        console.debug(
+          `Successfully processed ${processedCount} JSON objects from concatenated stream`
+        );
       }
     } catch (error) {
       console.error('Error in enhanced stream processing:', error);
@@ -505,54 +515,57 @@ export class EnhancedStreamProcessor {
   /**
    * Process a single message object and route it to the appropriate handler
    */
-  private processMessageObject(message: StreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private processMessageObject(
+    message: StreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     try {
       // Process based on message type
       switch (message.type) {
         case StreamMessageType.START:
           this.handleStartMessage(message as StartStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.PROGRESS:
           this.handleProgressMessage(message as ProgressStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.PREVIEW:
           this.handlePreviewMessage(message as PreviewStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.STAGE_COMPLETE:
           this.handleStageCompleteMessage(message as StageCompleteStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.RESULT:
           this.handleResultMessage(message as ResultStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.ERROR:
           this.handleErrorMessage(message as ErrorStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.WARNING:
           this.handleWarningMessage(message as WarningStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.INFO:
           this.handleInfoMessage(message as InfoStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.CACHE:
           this.handleCacheMessage(message as CacheStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.HEARTBEAT:
           this.handleHeartbeatMessage(message as HeartbeatStreamMessage, callbacks);
           break;
-          
+
         case StreamMessageType.END:
           this.handleEndMessage(message as EndStreamMessage, callbacks);
           break;
-          
+
         default:
           // Handle legacy/unknown message formats
           this.handleLegacyMessage(message, callbacks);
@@ -567,12 +580,15 @@ export class EnhancedStreamProcessor {
   /**
    * Handle START message
    */
-  private handleStartMessage(message: StartStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleStartMessage(
+    message: StartStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     // Store session ID and stages for reference
     if (message.stages) {
       this.stages = message.stages;
     }
-    
+
     // Call start callback
     callbacks.onStart?.(
       message.sessionId,
@@ -584,26 +600,29 @@ export class EnhancedStreamProcessor {
   /**
    * Handle PROGRESS message
    */
-  private handleProgressMessage(message: ProgressStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleProgressMessage(
+    message: ProgressStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { progress } = message;
-    
+
     // Track current stage for time estimation
     if (progress.currentStage !== this.currentStage) {
       // Record start time for new stage
       this.stageStartTimes[progress.currentStage] = Date.now();
       this.currentStage = progress.currentStage;
-      
+
       // Record in stage history
       this.stageHistory[progress.currentStage] = {
         startTime: Date.now(),
         progress: progress.stageProgress,
-        previews: 0
+        previews: 0,
       };
     } else if (this.stageHistory[progress.currentStage]) {
       // Update progress in stage history
       this.stageHistory[progress.currentStage].progress = progress.stageProgress;
     }
-    
+
     // Calculate estimated time remaining if not provided
     let estimatedTimeRemaining = progress.estimatedTimeRemaining;
     if (this.options.enableTimeEstimation && estimatedTimeRemaining === undefined) {
@@ -614,7 +633,7 @@ export class EnhancedStreamProcessor {
         this.stageHistory
       );
     }
-    
+
     // Create enhanced progress object
     const enhancedProgress: GenerationProgress = {
       status: 'generating', // Default status
@@ -626,9 +645,9 @@ export class EnhancedStreamProcessor {
       progress: progress.overallProgress, // Map to standard progress
       estimatedTimeRemaining,
       elapsedTime: Date.now() - this.startTime,
-      stage: progress.currentStage // For backward compatibility
+      stage: progress.currentStage, // For backward compatibility
     };
-    
+
     // Call progress callback
     callbacks.onProgress(enhancedProgress);
   }
@@ -636,14 +655,17 @@ export class EnhancedStreamProcessor {
   /**
    * Handle PREVIEW message
    */
-  private handlePreviewMessage(message: PreviewStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handlePreviewMessage(
+    message: PreviewStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { preview } = message;
-    
+
     // Track preview count for this stage
     if (this.stageHistory[preview.stageId]) {
       this.stageHistory[preview.stageId].previews++;
     }
-    
+
     // Convert to StagePreview format
     const stagePreview: StagePreview = {
       stageId: preview.stageId,
@@ -651,12 +673,15 @@ export class EnhancedStreamProcessor {
       content: preview.content, // Alias for backward compatibility
       contentType: preview.contentType,
       timestamp: Date.now(),
-      dimensions: preview.width && preview.height ? { 
-        width: preview.width, 
-        height: preview.height 
-      } : undefined
+      dimensions:
+        preview.width && preview.height
+          ? {
+              width: preview.width,
+              height: preview.height,
+            }
+          : undefined,
     };
-    
+
     // Call preview callback
     callbacks.onPreview(stagePreview);
   }
@@ -664,27 +689,30 @@ export class EnhancedStreamProcessor {
   /**
    * Handle STAGE_COMPLETE message
    */
-  private handleStageCompleteMessage(message: StageCompleteStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleStageCompleteMessage(
+    message: StageCompleteStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { stage, nextStage } = message;
-    
+
     // Update stage history
     if (this.stageHistory[stage.id]) {
       this.stageHistory[stage.id].endTime = Date.now();
     }
-    
+
     // Prepare for next stage if available
     if (nextStage) {
       this.stageStartTimes[nextStage.id] = Date.now();
       this.currentStage = nextStage.id;
-      
+
       // Initialize next stage in history
       this.stageHistory[nextStage.id] = {
         startTime: Date.now(),
         progress: 0,
-        previews: 0
+        previews: 0,
       };
     }
-    
+
     // Call stage complete callback
     callbacks.onStageComplete?.(stage.id, stage.name, stage.duration);
   }
@@ -692,10 +720,13 @@ export class EnhancedStreamProcessor {
   /**
    * Handle RESULT message
    */
-  private handleResultMessage(message: ResultStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleResultMessage(
+    message: ResultStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     // Call complete callback
     callbacks.onComplete(message.result, message.sessionId || '', message.metrics);
-    
+
     // Automatically call end if not already called
     callbacks.onEnd?.('success');
   }
@@ -703,19 +734,22 @@ export class EnhancedStreamProcessor {
   /**
    * Handle ERROR message
    */
-  private handleErrorMessage(message: ErrorStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleErrorMessage(
+    message: ErrorStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { error } = message;
-    
+
     // Create Error object
     const errorObj = new Error(error.message);
     if (error.code) {
       // @ts-ignore - Adding code property
       errorObj.code = error.code;
     }
-    
+
     // Call error callback
     callbacks.onError(errorObj, error.recoverable, error.retryAfter);
-    
+
     // If error is not recoverable, also call end
     if (!error.recoverable) {
       callbacks.onEnd?.('error');
@@ -725,9 +759,12 @@ export class EnhancedStreamProcessor {
   /**
    * Handle WARNING message
    */
-  private handleWarningMessage(message: WarningStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleWarningMessage(
+    message: WarningStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { warning } = message;
-    
+
     // Call warning callback if available
     callbacks.onWarning?.(warning.message, warning.code);
   }
@@ -735,9 +772,12 @@ export class EnhancedStreamProcessor {
   /**
    * Handle INFO message
    */
-  private handleInfoMessage(message: InfoStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleInfoMessage(
+    message: InfoStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     const { info } = message;
-    
+
     // Call info callback if available
     callbacks.onInfo?.(info.message, info.details);
   }
@@ -745,7 +785,10 @@ export class EnhancedStreamProcessor {
   /**
    * Handle CACHE message
    */
-  private handleCacheMessage(message: CacheStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleCacheMessage(
+    message: CacheStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     // Call cache callback if available
     callbacks.onCache?.(message.cached, message.source);
   }
@@ -753,10 +796,13 @@ export class EnhancedStreamProcessor {
   /**
    * Handle HEARTBEAT message
    */
-  private handleHeartbeatMessage(message: HeartbeatStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
+  private handleHeartbeatMessage(
+    message: HeartbeatStreamMessage,
+    callbacks: EnhancedStreamingCallbacks
+  ): void {
     // Update last heartbeat time
     this.lastHeartbeat = Date.now();
-    
+
     // Call heartbeat callback if available
     callbacks.onHeartbeat?.();
   }
@@ -767,7 +813,7 @@ export class EnhancedStreamProcessor {
   private handleEndMessage(message: EndStreamMessage, callbacks: EnhancedStreamingCallbacks): void {
     // Call end callback
     callbacks.onEnd?.(message.status);
-    
+
     // Clean up resources
     this.stopHeartbeatChecker();
   }
@@ -781,7 +827,7 @@ export class EnhancedStreamProcessor {
       callbacks.onError(new Error(message.error.message || message.error));
       return;
     }
-    
+
     // Legacy progress updates
     if (message.type === 'progress' && message.progress) {
       callbacks.onProgress({
@@ -793,10 +839,10 @@ export class EnhancedStreamProcessor {
         // For backward compatibility
         stage: message.progress.currentStage,
         progress: message.progress.overallProgress,
-        message: message.progress.statusMessage
+        message: message.progress.statusMessage,
       });
     }
-    
+
     // Legacy preview handling
     if (message.type === 'svg_preview' && message.previewSvg) {
       callbacks.onPreview({
@@ -804,7 +850,7 @@ export class EnhancedStreamProcessor {
         previewData: message.previewSvg,
         content: message.previewSvg,
         contentType: 'svg',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } else if (message.preview) {
       callbacks.onPreview({
@@ -812,17 +858,17 @@ export class EnhancedStreamProcessor {
         previewData: message.preview,
         content: message.preview,
         contentType: 'svg',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
-    
+
     // Legacy result handling
     if (message.type === 'result' && message.result) {
       callbacks.onComplete(message.result, message.result.sessionId || '');
     } else if (message.complete && message.assets) {
       callbacks.onComplete(message.assets, message.sessionId || '');
     }
-    
+
     // Legacy cache handling
     if (message.type === 'cache' && callbacks.onCache) {
       callbacks.onCache(message.cached === true);
@@ -836,13 +882,13 @@ export class EnhancedStreamProcessor {
     if (!this.options.heartbeatInterval || !this.options.heartbeatTimeout) {
       return;
     }
-    
+
     this.lastHeartbeat = Date.now();
-    
+
     this.heartbeatTimer = setInterval(() => {
       const now = Date.now();
       const timeSinceLastHeartbeat = now - this.lastHeartbeat;
-      
+
       // Check if we've exceeded the heartbeat timeout
       if (timeSinceLastHeartbeat > this.options.heartbeatTimeout!) {
         // Connection might be dead
@@ -850,10 +896,10 @@ export class EnhancedStreamProcessor {
           new Error(`Connection timeout: No response for ${timeSinceLastHeartbeat}ms`),
           true // Recoverable
         );
-        
+
         // Stop the timer
         this.stopHeartbeatChecker();
-        
+
         // Abort the connection if possible
         if (this.abortController) {
           this.abortController.abort('Heartbeat timeout');
@@ -879,7 +925,7 @@ export class EnhancedStreamProcessor {
     if (this.abortController) {
       this.abortController.abort('User cancelled');
     }
-    
+
     this.stopHeartbeatChecker();
   }
 }

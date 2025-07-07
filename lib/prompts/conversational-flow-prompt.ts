@@ -1,6 +1,6 @@
 /**
  * Enhanced system prompt for conversational logo generation
- * 
+ *
  * This prompt transforms the logo generation conversation from a form-filling
  * exercise into a natural, consultative dialogue.
  */

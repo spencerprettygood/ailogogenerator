@@ -3,36 +3,33 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   // Directory for test artifacts (screenshots, videos, etc.)
   outputDir: 'test-results/',
-  
+
   // Test timeout
   timeout: 30 * 1000,
-  
+
   // Expect timeout
   expect: {
     timeout: 5000,
   },
-  
+
   // Test directory pattern
   testDir: './e2e',
-  
+
   // Run all tests in parallel
   fullyParallel: true,
-  
+
   // Fail on console errors
   forbidOnly: !!process.env.CI,
-  
+
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
-  
+
   // Number of workers
   workers: process.env.CI ? 1 : undefined,
-  
+
   // Reporter
-  reporter: [
-    ['html', { open: 'never' }], 
-    ['list']
-  ],
-  
+  reporter: [['html', { open: 'never' }], ['list']],
+
   // Use Playwright's built-in web server
   webServer: {
     command: 'npm run dev',
@@ -40,7 +37,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
-  
+
   // Configure projects for browsers
   projects: [
     {
@@ -57,7 +54,7 @@ export default defineConfig({
     },
     {
       name: 'accessibility',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         // Axe accessibility tests setup
         extraHTTPHeaders: {
@@ -67,7 +64,7 @@ export default defineConfig({
     },
     {
       name: 'visual',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
         screenshot: 'on',

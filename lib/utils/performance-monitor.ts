@@ -2,14 +2,14 @@
  * @file performance-monitor.ts
  * @module lib/utils/performance-monitor
  * @description Performance monitoring utilities for the AI Logo Generator
- * 
+ *
  * This module provides performance monitoring capabilities including:
  * - Request timing and tracking
  * - Memory usage monitoring
  * - API call tracking
  * - Token usage monitoring
  * - Pipeline stage performance metrics
- * 
+ *
  * @author AILogoGenerator Team
  * @version 1.0.0
  * @copyright 2024
@@ -127,20 +127,20 @@ export type MetricConsumer = (metric: PerformanceMetric) => void;
 /**
  * @class PerformanceMonitor
  * @description Singleton class for monitoring and recording performance metrics
- * 
+ *
  * Provides methods for tracking various performance aspects including:
  * - API call timing and response sizes
  * - Pipeline stage performance
  * - Memory usage tracking
  * - Token usage and cost estimation
- * 
+ *
  * @example
  * // Start timing an operation
  * const timerId = PerformanceMonitor.getInstance().startTimer('database-query', 'database');
- * 
+ *
  * // Perform the operation
  * const results = await db.query(...);
- * 
+ *
  * // End the timer and record the metric
  * PerformanceMonitor.getInstance().endTimer(timerId, { records: results.length });
  */
@@ -151,7 +151,7 @@ export class PerformanceMonitor {
   private consumers: MetricConsumer[] = [];
   private maxMetricsCount: number = 1000;
   private enabled: boolean = true;
-  
+
   /**
    * @constructor
    * @private
@@ -161,7 +161,7 @@ export class PerformanceMonitor {
     // Check if we're in a Node.js environment with process.env
     if (typeof process !== 'undefined' && process.env) {
       this.enabled = process.env.PERFORMANCE_MONITORING !== 'false';
-      
+
       // Parse max metrics count from environment
       const maxCount = parseInt(process.env.PERFORMANCE_METRICS_MAX_COUNT || '1000', 10);
       if (!isNaN(maxCount) && maxCount > 0) {
@@ -169,7 +169,7 @@ export class PerformanceMonitor {
       }
     }
   }
-  
+
   /**
    * @static
    * @method getInstance
@@ -182,7 +182,7 @@ export class PerformanceMonitor {
     }
     return PerformanceMonitor.instance;
   }
-  
+
   /**
    * @method isEnabled
    * @description Checks if performance monitoring is enabled
@@ -191,7 +191,7 @@ export class PerformanceMonitor {
   public isEnabled(): boolean {
     return this.enabled;
   }
-  
+
   /**
    * @method setEnabled
    * @description Enables or disables performance monitoring
@@ -200,7 +200,7 @@ export class PerformanceMonitor {
   public setEnabled(enabled: boolean): void {
     this.enabled = enabled;
   }
-  
+
   /**
    * @method addConsumer
    * @description Adds a metric consumer function to receive metrics in real-time
@@ -209,7 +209,7 @@ export class PerformanceMonitor {
   public addConsumer(consumer: MetricConsumer): void {
     this.consumers.push(consumer);
   }
-  
+
   /**
    * @method removeConsumer
    * @description Removes a previously added metric consumer
@@ -221,7 +221,7 @@ export class PerformanceMonitor {
       this.consumers.splice(index, 1);
     }
   }
-  
+
   /**
    * @method recordMetric
    * @description Records a generic performance metric
@@ -230,20 +230,20 @@ export class PerformanceMonitor {
    */
   public recordMetric(metric: Omit<PerformanceMetric, 'id' | 'timestamp'>): string {
     if (!this.enabled) return '';
-    
+
     const id = this.generateId();
     const timestamp = Date.now();
-    
+
     const fullMetric: PerformanceMetric = {
       ...metric,
       id,
-      timestamp
+      timestamp,
     };
-    
+
     this.addMetric(fullMetric);
     return id;
   }
-  
+
   /**
    * @method startTimer
    * @description Starts timing an operation
@@ -251,7 +251,7 @@ export class PerformanceMonitor {
    * @param {string} category - Category of the operation
    * @param {Record<string, unknown>} [metadata] - Additional information about the operation
    * @returns {string} Timer ID for use with endTimer
-   * 
+   *
    * @example
    * const timerId = monitor.startTimer('database-query', 'database', { table: 'users' });
    * // ... perform operation ...
@@ -259,15 +259,15 @@ export class PerformanceMonitor {
    */
   public startTimer(name: string, category: string, metadata?: Record<string, unknown>): string {
     if (!this.enabled) return '';
-    
+
     const id = this.generateId();
     const start = Date.now();
-    
+
     this.activeTimers.set(id, { start, name, category });
-    
+
     return id;
   }
-  
+
   /**
    * @method endTimer
    * @description Ends a previously started timer and records the timing metric
@@ -277,13 +277,13 @@ export class PerformanceMonitor {
    */
   public endTimer(id: string, metadata?: Record<string, unknown>): TimingMetric | null {
     if (!this.enabled || !id) return null;
-    
+
     const timer = this.activeTimers.get(id);
     if (!timer) return null;
-    
+
     const endTime = Date.now();
     const duration = endTime - timer.start;
-    
+
     const metric: TimingMetric = {
       id,
       name: timer.name,
@@ -294,26 +294,28 @@ export class PerformanceMonitor {
       startTime: timer.start,
       endTime,
       duration,
-      metadata
+      metadata,
     };
-    
+
     this.addMetric(metric);
     this.activeTimers.delete(id);
-    
+
     return metric;
   }
-  
+
   /**
    * @method recordAPICall
    * @description Records metrics for an API call
    * @param {Omit<APIMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>} metric - API call details
    * @returns {string} The ID of the recorded metric
    */
-  public recordAPICall(metric: Omit<APIMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>): string {
+  public recordAPICall(
+    metric: Omit<APIMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>
+  ): string {
     if (!this.enabled) return '';
-    
+
     const duration = metric.endTime - metric.startTime;
-    
+
     const apiMetric: APIMetric = {
       ...metric,
       id: this.generateId(),
@@ -322,22 +324,24 @@ export class PerformanceMonitor {
       value: duration,
       unit: 'ms',
       timestamp: metric.endTime,
-      duration
+      duration,
     };
-    
+
     this.addMetric(apiMetric);
     return apiMetric.id;
   }
-  
+
   /**
    * @method recordTokenUsage
    * @description Records token usage metrics from AI model calls
    * @param {Omit<TokenUsageMetric, 'id' | 'timestamp' | 'value' | 'unit'>} metric - Token usage details
    * @returns {string} The ID of the recorded metric
    */
-  public recordTokenUsage(metric: Omit<TokenUsageMetric, 'id' | 'timestamp' | 'value' | 'unit'>): string {
+  public recordTokenUsage(
+    metric: Omit<TokenUsageMetric, 'id' | 'timestamp' | 'value' | 'unit'>
+  ): string {
     if (!this.enabled) return '';
-    
+
     const tokenMetric: TokenUsageMetric = {
       ...metric,
       id: this.generateId(),
@@ -345,24 +349,26 @@ export class PerformanceMonitor {
       category: 'tokens',
       value: metric.totalTokens,
       unit: 'tokens',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     this.addMetric(tokenMetric);
     return tokenMetric.id;
   }
-  
+
   /**
    * @method recordPipelineStage
    * @description Records performance metrics for a pipeline stage
    * @param {Omit<PipelineMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>} metric - Pipeline stage details
    * @returns {string} The ID of the recorded metric
    */
-  public recordPipelineStage(metric: Omit<PipelineMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>): string {
+  public recordPipelineStage(
+    metric: Omit<PipelineMetric, 'id' | 'timestamp' | 'duration' | 'value' | 'unit'>
+  ): string {
     if (!this.enabled) return '';
-    
+
     const duration = metric.endTime - metric.startTime;
-    
+
     const pipelineMetric: PipelineMetric = {
       ...metric,
       id: this.generateId(),
@@ -371,13 +377,13 @@ export class PerformanceMonitor {
       value: duration,
       unit: 'ms',
       timestamp: metric.endTime,
-      duration
+      duration,
     };
-    
+
     this.addMetric(pipelineMetric);
     return pipelineMetric.id;
   }
-  
+
   /**
    * @method recordMemoryUsage
    * @description Records current memory usage metrics
@@ -386,15 +392,14 @@ export class PerformanceMonitor {
    */
   public recordMemoryUsage(metadata?: Record<string, unknown>): string {
     if (!this.enabled) return '';
-    
+
     // Avoid using process.memoryUsage in Edge Runtime
-    const isEdgeRuntime = typeof process !== 'undefined' && 
-                         process.env && 
-                         process.env.NEXT_RUNTIME === 'edge';
-    
+    const isEdgeRuntime =
+      typeof process !== 'undefined' && process.env && process.env.NEXT_RUNTIME === 'edge';
+
     // Generate a unique ID for this metric
     const metricId = this.generateId();
-    
+
     try {
       // Create a basic memory metric structure that works in all environments
       const memoryMetric: Partial<MemoryMetric> = {
@@ -405,21 +410,27 @@ export class PerformanceMonitor {
         timestamp: Date.now(),
         metadata: {
           ...metadata,
-          environment: isEdgeRuntime ? 'edge' : (typeof window !== 'undefined' ? 'browser' : 'node')
+          environment: isEdgeRuntime ? 'edge' : typeof window !== 'undefined' ? 'browser' : 'node',
         },
         // Set default values
         value: 0,
         heapUsed: 0,
         heapTotal: 0,
         external: 0,
-        rss: 0
+        rss: 0,
       };
-      
+
       // Try to get memory info based on environment without using restricted APIs
-      if (typeof window !== 'undefined' && window.performance && typeof (window.performance as { memory?: unknown }).memory !== 'undefined') {
+      if (
+        typeof window !== 'undefined' &&
+        window.performance &&
+        typeof (window.performance as { memory?: unknown }).memory !== 'undefined'
+      ) {
         // Browser environment with performance.memory API (Chrome)
         try {
-          const browserMemory = (window.performance as { memory?: { usedJSHeapSize?: number; totalJSHeapSize?: number } }).memory;
+          const browserMemory = (
+            window.performance as { memory?: { usedJSHeapSize?: number; totalJSHeapSize?: number } }
+          ).memory;
           memoryMetric.value = browserMemory?.usedJSHeapSize || 0;
           memoryMetric.heapUsed = browserMemory?.usedJSHeapSize || 0;
           memoryMetric.heapTotal = browserMemory?.totalJSHeapSize || 0;
@@ -427,10 +438,14 @@ export class PerformanceMonitor {
           // Silently continue with default values if browser memory API fails
           memoryMetric.metadata = {
             ...memoryMetric.metadata,
-            memoryApiError: 'Browser memory API access failed'
+            memoryApiError: 'Browser memory API access failed',
           };
         }
-      } else if (!isEdgeRuntime && typeof process !== 'undefined' && typeof process.memoryUsage === 'function') {
+      } else if (
+        !isEdgeRuntime &&
+        typeof process !== 'undefined' &&
+        typeof process.memoryUsage === 'function'
+      ) {
         // Only try to use process.memoryUsage in non-Edge Node.js environments
         try {
           const nodeMemory = process.memoryUsage();
@@ -443,19 +458,19 @@ export class PerformanceMonitor {
           // Fallback for restricted environments
           memoryMetric.metadata = {
             ...memoryMetric.metadata,
-            memoryApiError: 'Node.js memory API access failed'
+            memoryApiError: 'Node.js memory API access failed',
           };
         }
       } else {
         // Edge Runtime or environment where memory APIs are not available
         memoryMetric.metadata = {
           ...memoryMetric.metadata,
-          note: isEdgeRuntime 
-            ? 'Memory metrics not available in Edge Runtime' 
-            : 'Memory metrics not available in this environment'
+          note: isEdgeRuntime
+            ? 'Memory metrics not available in Edge Runtime'
+            : 'Memory metrics not available in this environment',
         };
       }
-      
+
       // Add the metric to our store
       this.addMetric(memoryMetric as MemoryMetric);
       return metricId;
@@ -465,7 +480,7 @@ export class PerformanceMonitor {
       return metricId; // Still return the ID even if there was an error
     }
   }
-  
+
   /**
    * @method getMetrics
    * @description Gets all recorded metrics
@@ -475,89 +490,95 @@ export class PerformanceMonitor {
    * @param {number} [options.limit] - Maximum number of metrics to return
    * @returns {PerformanceMetric[]} Array of metrics matching the filters
    */
-  public getMetrics(options?: { 
-    category?: string; 
-    since?: number; 
-    limit?: number 
+  public getMetrics(options?: {
+    category?: string;
+    since?: number;
+    limit?: number;
   }): PerformanceMetric[] {
     if (!this.enabled) return [];
-    
+
     let result = [...this.metrics];
-    
+
     // Apply filters
     if (options) {
       if (options.category) {
         result = result.filter(m => m.category === options.category);
       }
-      
+
       if (options.since) {
         result = result.filter(m => m.timestamp >= options.since!);
       }
     }
-    
+
     // Sort by timestamp (newest first)
     result.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     // Apply limit
     if (options?.limit && options.limit > 0) {
       result = result.slice(0, options.limit);
     }
-    
+
     return result;
   }
-  
+
   /**
    * @method getSummary
    * @description Gets a summary of performance metrics by category
    * @returns {Record<string, { count: number; avgValue: number; minValue: number; maxValue: number; }>}
    * Summary statistics for each metric category
    */
-  public getSummary(): Record<string, { 
-    count: number; 
-    avgValue: number; 
-    minValue: number; 
-    maxValue: number;
-    totalValue: number;
-    unit: string;
-  }> {
-    if (!this.enabled || this.metrics.length === 0) {
-      return {};
-    }
-    
-    const summary: Record<string, { 
-      count: number; 
-      avgValue: number; 
-      minValue: number; 
+  public getSummary(): Record<
+    string,
+    {
+      count: number;
+      avgValue: number;
+      minValue: number;
       maxValue: number;
       totalValue: number;
       unit: string;
-    }> = {};
-    
+    }
+  > {
+    if (!this.enabled || this.metrics.length === 0) {
+      return {};
+    }
+
+    const summary: Record<
+      string,
+      {
+        count: number;
+        avgValue: number;
+        minValue: number;
+        maxValue: number;
+        totalValue: number;
+        unit: string;
+      }
+    > = {};
+
     // Group metrics by category
     const categories = new Set(this.metrics.map(m => m.category));
-    
+
     for (const category of categories) {
       const categoryMetrics = this.metrics.filter(m => m.category === category);
-      
+
       if (categoryMetrics.length === 0) continue;
-      
+
       const values = categoryMetrics.map(m => m.value);
       const unit = categoryMetrics[0]?.unit ?? '';
       const totalValue = values.reduce((sum, val) => sum + val, 0);
-      
+
       summary[category] = {
         count: categoryMetrics.length,
         avgValue: totalValue / categoryMetrics.length,
         minValue: Math.min(...values),
         maxValue: Math.max(...values),
         totalValue,
-        unit
+        unit,
       };
     }
-    
+
     return summary;
   }
-  
+
   /**
    * @method clearMetrics
    * @description Clears all recorded metrics
@@ -566,7 +587,7 @@ export class PerformanceMonitor {
     this.metrics = [];
     this.activeTimers.clear();
   }
-  
+
   /**
    * @private
    * @method addMetric
@@ -576,12 +597,12 @@ export class PerformanceMonitor {
   private addMetric(metric: PerformanceMetric): void {
     // Add to internal store
     this.metrics.push(metric);
-    
+
     // Enforce maximum metrics count
     if (this.metrics.length > this.maxMetricsCount) {
       this.metrics = this.metrics.slice(-this.maxMetricsCount);
     }
-    
+
     // Notify consumers
     for (const consumer of this.consumers) {
       try {
@@ -591,7 +612,7 @@ export class PerformanceMonitor {
       }
     }
   }
-  
+
   /**
    * @private
    * @method generateId

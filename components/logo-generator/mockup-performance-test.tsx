@@ -10,25 +10,26 @@ import { SVGLogo } from '@/lib/types';
 import { EnhancedMockupPreview } from './enhanced-mockup-preview';
 import { EnhancedMockupService } from '@/lib/mockups/enhanced-mockup-service';
 import { TEST_SVG_LOGOS, testMockupPerformance } from '@/lib/mockups/mockup-test-utils';
-import { getOptimizedEffectsConfig, detectDeviceCapabilities } from '@/lib/mockups/mockup-performance-optimizer';
+import {
+  getOptimizedEffectsConfig,
+  detectDeviceCapabilities,
+} from '@/lib/mockups/mockup-performance-optimizer';
 
 interface MockupPerformanceTestProps {
   className?: string;
 }
 
-export function MockupPerformanceTest({
-  className = ''
-}: MockupPerformanceTestProps) {
+export function MockupPerformanceTest({ className = '' }: MockupPerformanceTestProps) {
   const [selectedSvgKey, setSelectedSvgKey] = useState<string>('simple');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [performanceResults, setPerformanceResults] = useState<Record<string, number> | null>(null);
   const [isTestRunning, setIsTestRunning] = useState<boolean>(false);
   const [deviceCapabilities, setDeviceCapabilities] = useState<any>(null);
   const [effectsIntensity, setEffectsIntensity] = useState<number>(50);
-  
+
   // Get templates
   const templates = EnhancedMockupService.getAllTemplates();
-  
+
   // Set initial template
   useEffect(() => {
     if (templates.length > 0 && !selectedTemplateId) {
@@ -37,17 +38,17 @@ export function MockupPerformanceTest({
         setSelectedTemplateId(firstTemplate.id);
       }
     }
-    
+
     // Detect device capabilities
     if (typeof window !== 'undefined') {
       setDeviceCapabilities(detectDeviceCapabilities());
     }
   }, [templates, selectedTemplateId]);
-  
+
   // Calculate effects config based on intensity
   const effectsConfig = React.useMemo(() => {
     const intensity = effectsIntensity / 100;
-    
+
     const baseConfig = {
       applyLighting: intensity > 0.1,
       lightDirection: 'top' as const,
@@ -57,21 +58,21 @@ export function MockupPerformanceTest({
         rotateX: intensity > 0.4 ? 10 * intensity : 0,
         rotateY: intensity > 0.4 ? 15 * intensity : 0,
         rotateZ: 0,
-        translateZ: 0
+        translateZ: 0,
       },
       applyShadow: intensity > 0.2,
       shadowBlur: intensity > 0.2 ? 8 * intensity : 0,
-      shadowOpacity: intensity > 0.2 ? 0.5 * intensity : 0
+      shadowOpacity: intensity > 0.2 ? 0.5 * intensity : 0,
     };
-    
+
     // Apply optimizations based on device capabilities
     return getOptimizedEffectsConfig(baseConfig);
   }, [effectsIntensity]);
-  
+
   // Run performance test
   const runPerformanceTest = async () => {
     setIsTestRunning(true);
-    
+
     try {
       const results = await testMockupPerformance(3);
       setPerformanceResults(results);
@@ -94,7 +95,7 @@ export function MockupPerformanceTest({
             <TabsTrigger value="test">Performance Test</TabsTrigger>
             <TabsTrigger value="device">Device Capabilities</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="preview" className="space-y-4 py-4">
             <div className="space-y-4">
               <div>
@@ -112,16 +113,16 @@ export function MockupPerformanceTest({
                   ))}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Effects Intensity</Label>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-sm">Simple</span>
                   <Slider
                     value={[effectsIntensity]}
-                    onValueChange={(values) => {
+                    onValueChange={values => {
                       if (values[0] !== undefined) {
-                        setEffectsIntensity(values[0])
+                        setEffectsIntensity(values[0]);
                       }
                     }}
                     min={0}
@@ -132,7 +133,7 @@ export function MockupPerformanceTest({
                   <span className="text-sm">Complex</span>
                 </div>
               </div>
-              
+
               <div>
                 <Label>Template</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
@@ -149,7 +150,7 @@ export function MockupPerformanceTest({
                 </div>
               </div>
             </div>
-            
+
             {selectedTemplateId && selectedSvgKey && TEST_SVG_LOGOS[selectedSvgKey] && (
               <div className="mt-6">
                 <EnhancedMockupPreview
@@ -162,49 +163,82 @@ export function MockupPerformanceTest({
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="test" className="space-y-4 py-4">
             <div className="flex justify-center mb-4">
-              <Button 
-                onClick={runPerformanceTest} 
-                disabled={isTestRunning}
-              >
+              <Button onClick={runPerformanceTest} disabled={isTestRunning}>
                 {isTestRunning ? 'Running Test...' : 'Run Performance Test'}
               </Button>
             </div>
-            
+
             {performanceResults && (
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Test Results (avg ms per render)</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {Object.entries(performanceResults).map(([key, value]) => (
                     <div key={key} className="bg-muted p-4 rounded-md">
-                      <div className="font-medium">{key.charAt(0).toUpperCase() + key.slice(1)}</div>
+                      <div className="font-medium">
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                      </div>
                       <div className="text-2xl font-bold">{value.toFixed(2)}ms</div>
                       <div className="text-xs text-muted-foreground">
-                        {value < 20 ? 'Excellent' : value < 50 ? 'Good' : value < 100 ? 'Fair' : 'Poor'} performance
+                        {value < 20
+                          ? 'Excellent'
+                          : value < 50
+                            ? 'Good'
+                            : value < 100
+                              ? 'Fair'
+                              : 'Poor'}{' '}
+                        performance
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="bg-muted p-4 rounded-md mt-4">
                   <h4 className="font-medium mb-2">Performance Insights</h4>
                   <ul className="text-sm space-y-1">
                     <li>• Basic mockups render in {performanceResults.basic?.toFixed(2)}ms</li>
-                    <li>• Adding lighting effects adds {((performanceResults.lighting || 0) - (performanceResults.basic || 0)).toFixed(2)}ms</li>
-                    <li>• Adding shadows adds {((performanceResults.shadow || 0) - (performanceResults.basic || 0)).toFixed(2)}ms</li>
-                    <li>• Adding perspective adds {((performanceResults.perspective || 0) - (performanceResults.basic || 0)).toFixed(2)}ms</li>
-                    <li>• All effects combined add {((performanceResults.allEffects || 0) - (performanceResults.basic || 0)).toFixed(2)}ms</li>
+                    <li>
+                      • Adding lighting effects adds{' '}
+                      {(
+                        (performanceResults.lighting || 0) - (performanceResults.basic || 0)
+                      ).toFixed(2)}
+                      ms
+                    </li>
+                    <li>
+                      • Adding shadows adds{' '}
+                      {((performanceResults.shadow || 0) - (performanceResults.basic || 0)).toFixed(
+                        2
+                      )}
+                      ms
+                    </li>
+                    <li>
+                      • Adding perspective adds{' '}
+                      {(
+                        (performanceResults.perspective || 0) - (performanceResults.basic || 0)
+                      ).toFixed(2)}
+                      ms
+                    </li>
+                    <li>
+                      • All effects combined add{' '}
+                      {(
+                        (performanceResults.allEffects || 0) - (performanceResults.basic || 0)
+                      ).toFixed(2)}
+                      ms
+                    </li>
                   </ul>
-                  
+
                   <h4 className="font-medium mt-4 mb-2">Recommendations</h4>
                   <ul className="text-sm space-y-1">
                     {(performanceResults.allEffects || 0) > 100 && (
                       <li>• Consider limiting effects on low-end devices</li>
                     )}
                     {(performanceResults.lighting || 0) > 50 && (
-                      <li>• Lighting effects are expensive - consider optimizing or disabling for better performance</li>
+                      <li>
+                        • Lighting effects are expensive - consider optimizing or disabling for
+                        better performance
+                      </li>
                     )}
                     {(performanceResults.perspective || 0) > 50 && (
                       <li>• Perspective transforms are expensive - use with caution</li>
@@ -220,7 +254,7 @@ export function MockupPerformanceTest({
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="device" className="space-y-4 py-4">
             {deviceCapabilities ? (
               <div className="space-y-4">
@@ -232,30 +266,30 @@ export function MockupPerformanceTest({
                       {deviceCapabilities.supportsComplexEffects ? 'Yes' : 'Limited'}
                     </div>
                   </div>
-                  
+
                   <div className="bg-muted p-4 rounded-md">
                     <div className="font-medium">High Resolution Support</div>
                     <div className="text-xl font-bold">
                       {deviceCapabilities.supportsHighResolution ? 'Yes' : 'No'}
                     </div>
                   </div>
-                  
+
                   <div className="bg-muted p-4 rounded-md">
                     <div className="font-medium">Memory Constrained</div>
                     <div className="text-xl font-bold">
                       {deviceCapabilities.memoryConstrained ? 'Yes' : 'No'}
                     </div>
                   </div>
-                  
+
                   <div className="bg-muted p-4 rounded-md">
                     <div className="font-medium">Recommended Quality</div>
                     <div className="text-xl font-bold">
-                      {deviceCapabilities.recommendedQuality.charAt(0).toUpperCase() + 
+                      {deviceCapabilities.recommendedQuality.charAt(0).toUpperCase() +
                         deviceCapabilities.recommendedQuality.slice(1)}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-muted p-4 rounded-md mt-4">
                   <h4 className="font-medium mb-2">Recommendations for this Device</h4>
                   <ul className="text-sm space-y-1">
@@ -272,9 +306,10 @@ export function MockupPerformanceTest({
                     {deviceCapabilities.supportsHighResolution && (
                       <li>• High-DPI display detected - higher quality mockups recommended</li>
                     )}
-                    {!deviceCapabilities.memoryConstrained && deviceCapabilities.supportsComplexEffects && (
-                      <li>• This device supports all advanced effects - no limitations needed</li>
-                    )}
+                    {!deviceCapabilities.memoryConstrained &&
+                      deviceCapabilities.supportsComplexEffects && (
+                        <li>• This device supports all advanced effects - no limitations needed</li>
+                      )}
                   </ul>
                 </div>
               </div>

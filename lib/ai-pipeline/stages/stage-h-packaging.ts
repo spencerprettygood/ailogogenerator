@@ -118,27 +118,27 @@ class StageHValidator {
     if (!input.brandName || typeof input.brandName !== 'string') {
       throw new Error('Brand name is required');
     }
-    
+
     if (!input.svg || typeof input.svg !== 'string') {
       throw new Error('SVG is required and must be a string');
     }
-    
+
     if (!input.pngVariants) {
       throw new Error('PNG variants are required');
     }
-    
+
     if (!input.pngVariants.png256 || !Buffer.isBuffer(input.pngVariants.png256)) {
       throw new Error('PNG 256x256 variant is required and must be a Buffer');
     }
-    
+
     if (!input.pngVariants.png512 || !Buffer.isBuffer(input.pngVariants.png512)) {
       throw new Error('PNG 512x512 variant is required and must be a Buffer');
     }
-    
+
     if (!input.pngVariants.png1024 || !Buffer.isBuffer(input.pngVariants.png1024)) {
       throw new Error('PNG 1024x1024 variant is required and must be a Buffer');
     }
-    
+
     // Validate enhanced variants if present
     if (input.transparentPngVariants) {
       if (!Buffer.isBuffer(input.transparentPngVariants.png256)) {
@@ -151,7 +151,7 @@ class StageHValidator {
         throw new Error('Transparent PNG 1024x1024 variant must be a Buffer');
       }
     }
-    
+
     if (input.monochromePngVariants) {
       if (!Buffer.isBuffer(input.monochromePngVariants.black.png256)) {
         throw new Error('Black monochrome PNG 256x256 variant must be a Buffer');
@@ -166,39 +166,39 @@ class StageHValidator {
         throw new Error('White monochrome PNG 512x512 variant must be a Buffer');
       }
     }
-    
+
     if (!input.monochrome) {
       throw new Error('Monochrome variants are required');
     }
-    
+
     if (!input.monochrome.black || typeof input.monochrome.black !== 'string') {
       throw new Error('Monochrome black variant is required and must be a string');
     }
-    
+
     if (!input.monochrome.white || typeof input.monochrome.white !== 'string') {
       throw new Error('Monochrome white variant is required and must be a string');
     }
-    
+
     if (!input.favicon) {
       throw new Error('Favicon is required');
     }
-    
+
     if (!input.favicon.svg || typeof input.favicon.svg !== 'string') {
       throw new Error('Favicon SVG is required and must be a string');
     }
-    
+
     if (!input.favicon.ico || !Buffer.isBuffer(input.favicon.ico)) {
       throw new Error('Favicon ICO is required and must be a Buffer');
     }
-    
+
     if (!input.guidelines) {
       throw new Error('Guidelines are required');
     }
-    
+
     if (!input.guidelines.html || typeof input.guidelines.html !== 'string') {
       throw new Error('Guidelines HTML is required and must be a string');
     }
-    
+
     if (!input.guidelines.plainText || typeof input.guidelines.plainText !== 'string') {
       throw new Error('Guidelines plain text is required and must be a string');
     }
@@ -206,9 +206,7 @@ class StageHValidator {
 }
 
 // Main packaging function
-export async function packageAssets(
-  input: StageHInput
-): Promise<StageHOutput> {
+export async function packageAssets(input: StageHInput): Promise<StageHOutput> {
   const startTime = Date.now();
   try {
     StageHValidator.validateInput(input);
@@ -230,7 +228,7 @@ export async function packageAssets(
       faviconPng: input.favicon.png32,
       guidelinesHtml: input.guidelines.html,
     };
-    
+
     // Add enhanced variants if available
     if (input.transparentPngVariants) {
       packageData.transparentPngExports = {
@@ -239,7 +237,7 @@ export async function packageAssets(
         png1024: input.transparentPngVariants.png1024,
       };
     }
-    
+
     if (input.monochromePngVariants) {
       packageData.monochromePngExports = {
         black: {
@@ -249,14 +247,14 @@ export async function packageAssets(
         white: {
           png256: input.monochromePngVariants.white.png256,
           png512: input.monochromePngVariants.white.png512,
-        }
+        },
       };
     }
 
     const zipBuffer = await createLogoPackage(packageData);
-    
+
     const fileName = `${input.brandName.toLowerCase().replace(/\s+/g, '-')}-logo-package.zip`;
-    
+
     // Store the file and get a file ID (which will be part of the URL)
     const fileId = storeFile(fileName, zipBuffer);
 
@@ -279,7 +277,10 @@ export async function packageAssets(
     return {
       success: false,
       error: {
-        type: error instanceof Error && error.message.includes('required') ? 'validation_error' : 'packaging_error',
+        type:
+          error instanceof Error && error.message.includes('required')
+            ? 'validation_error'
+            : 'packaging_error',
         message: error instanceof Error ? error.message : 'Failed to package assets',
         details: error instanceof Error ? error.stack : String(error),
       },

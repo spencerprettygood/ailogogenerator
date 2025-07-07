@@ -1,6 +1,6 @@
 /**
  * Design Tokens for the Monochrome + #FF4233 Accent Design System
- * 
+ *
  * This file centralizes all design tokens for the asymmetric design system.
  * Use these values when you need programmatic access to design values.
  */
@@ -9,7 +9,7 @@ export const colors = {
   // Base palette
   background: '#FFFFFF',
   foreground: '#0D0D0D',
-  
+
   // Accent colors
   accent: {
     DEFAULT: '#FF4233',
@@ -17,7 +17,7 @@ export const colors = {
     dark: '#D32E20',
     foreground: '#FFFFFF',
   },
-  
+
   // Grayscale
   gray: {
     50: '#FAFAFA',
@@ -32,7 +32,7 @@ export const colors = {
     900: '#171717',
     950: '#0D0D0D',
   },
-  
+
   // UI Colors
   primary: {
     DEFAULT: '#FF4233',
@@ -40,21 +40,21 @@ export const colors = {
     dark: '#D32E20',
     foreground: '#FFFFFF',
   },
-  
+
   secondary: {
     DEFAULT: '#0D0D0D',
     foreground: '#FFFFFF',
   },
-  
+
   muted: {
     DEFAULT: '#F5F5F5',
     foreground: '#737373',
   },
-  
+
   border: '#D4D4D4',
   input: '#E5E5E5',
   ring: '#FF4233',
-  
+
   destructive: {
     DEFAULT: '#FF4233',
     foreground: '#FFFFFF',
@@ -66,7 +66,7 @@ export const typography = {
     inter: 'Inter, sans-serif',
     mono: 'IBM Plex Mono, monospace',
   },
-  
+
   fontWeight: {
     light: 300,
     normal: 400,
@@ -74,19 +74,19 @@ export const typography = {
     semibold: 600,
     bold: 700,
   },
-  
+
   fontSize: {
-    xs: '0.75rem',    // 12px
-    sm: '0.875rem',   // 14px
-    base: '1rem',     // 16px
-    lg: '1.125rem',   // 18px
-    xl: '1.25rem',    // 20px
-    '2xl': '1.5rem',  // 24px
+    xs: '0.75rem', // 12px
+    sm: '0.875rem', // 14px
+    base: '1rem', // 16px
+    lg: '1.125rem', // 18px
+    xl: '1.25rem', // 20px
+    '2xl': '1.5rem', // 24px
     '3xl': '1.875rem', // 30px
     '4xl': '2.25rem', // 36px
-    '5xl': '3rem',    // 48px
+    '5xl': '3rem', // 48px
   },
-  
+
   lineHeight: {
     none: 1,
     tight: 1.2,
@@ -100,37 +100,37 @@ export const typography = {
 export const spacing = {
   // Asymmetric spacing scale
   uneven: {
-    1: '0.375rem',  // 6px
-    2: '0.625rem',  // 10px
-    3: '1.125rem',  // 18px
-    4: '1.875rem',  // 30px
-    5: '3.125rem',  // 50px
+    1: '0.375rem', // 6px
+    2: '0.625rem', // 10px
+    3: '1.125rem', // 18px
+    4: '1.875rem', // 30px
+    5: '3.125rem', // 50px
   },
-  
+
   // Standard spacing scale
   0: '0',
-  1: '0.25rem',     // 4px
-  2: '0.5rem',      // 8px
-  3: '0.75rem',     // 12px
-  4: '1rem',        // 16px
-  5: '1.25rem',     // 20px
-  6: '1.5rem',      // 24px
-  8: '2rem',        // 32px
-  10: '2.5rem',     // 40px
-  12: '3rem',       // 48px
-  16: '4rem',       // 64px
-  20: '5rem',       // 80px
-  24: '6rem',       // 96px
-  32: '8rem',       // 128px
+  1: '0.25rem', // 4px
+  2: '0.5rem', // 8px
+  3: '0.75rem', // 12px
+  4: '1rem', // 16px
+  5: '1.25rem', // 20px
+  6: '1.5rem', // 24px
+  8: '2rem', // 32px
+  10: '2.5rem', // 40px
+  12: '3rem', // 48px
+  16: '4rem', // 64px
+  20: '5rem', // 80px
+  24: '6rem', // 96px
+  32: '8rem', // 128px
 };
 
 export const borderRadius = {
   none: '0',
-  sm: '0.25rem',    // 4px
-  md: '0.5rem',     // 8px
-  lg: '0.75rem',    // 12px
-  xl: '1rem',       // 16px
-  
+  sm: '0.25rem', // 4px
+  md: '0.5rem', // 8px
+  lg: '0.75rem', // 12px
+  xl: '1rem', // 16px
+
   // Asymmetric border radius values
   uneven: '0.25rem 0.5rem 0.25rem 0.75rem',
   asymmetric: '1rem 0 1rem 0.25rem',
@@ -143,12 +143,12 @@ export const shadows = {
   md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
   lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
   xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-  
+
   // Asymmetric shadows
   'asymmetric-sm': '2px 3px 10px -3px rgba(0, 0, 0, 0.1)',
   'asymmetric-md': '4px 6px 16px -2px rgba(0, 0, 0, 0.12)',
   'asymmetric-lg': '6px 8px 24px -4px rgba(0, 0, 0, 0.15)',
-  'accent': '3px 3px 0 0 #FF4233',
+  accent: '3px 3px 0 0 #FF4233',
   'accent-light': '2px 2px 0 0 rgba(255, 66, 51, 0.6)',
 };
 
@@ -158,11 +158,11 @@ export const animations = {
     standard: '240ms',
     emphasized: '400ms',
   },
-  
+
   timingFunctions: {
     asymmetric: 'cubic-bezier(0.22, 1, 0.36, 1)',
   },
-  
+
   keyframes: {
     'off-center-fade': {
       '0%': { transform: 'scale(0.94) translateX(-6px)', opacity: '0' },

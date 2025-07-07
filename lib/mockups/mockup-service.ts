@@ -1,18 +1,7 @@
 import { SVGLogo } from '@/lib/types';
-import { 
-  MockupTemplate, 
-  MockupType
-} from './mockup-types';
-import { 
-  generateMockupSvg, 
-  svgToDataUrl, 
-  convertMockupToPng 
-} from './mockup-generator';
-import { 
-  DEFAULT_MOCKUP_TEMPLATES, 
-  getTemplateById, 
-  getTemplatesByType 
-} from './template-data';
+import { MockupTemplate, MockupType } from './mockup-types';
+import { generateMockupSvg, svgToDataUrl, convertMockupToPng } from './mockup-generator';
+import { DEFAULT_MOCKUP_TEMPLATES, getTemplateById, getTemplatesByType } from './template-data';
 
 /**
  * Mockup Service - Handles generating and managing mockups
@@ -50,18 +39,12 @@ export class MockupService {
     brandName: string = 'Brand Name'
   ): string {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       throw new Error(`Template with ID "${templateId}" not found`);
     }
-    
-    return generateMockupSvg(
-      logo,
-      template,
-      customText,
-      selectedColorVariant,
-      brandName
-    );
+
+    return generateMockupSvg(logo, template, customText, selectedColorVariant, brandName);
   }
 
   /**
@@ -74,14 +57,8 @@ export class MockupService {
     selectedColorVariant?: string,
     brandName: string = 'Brand Name'
   ): string {
-    const svg = this.generateMockup(
-      logo,
-      templateId,
-      customText,
-      selectedColorVariant,
-      brandName
-    );
-    
+    const svg = this.generateMockup(logo, templateId, customText, selectedColorVariant, brandName);
+
     return svgToDataUrl(svg);
   }
 
@@ -96,14 +73,8 @@ export class MockupService {
     selectedColorVariant?: string,
     brandName: string = 'Brand Name'
   ): Promise<string> {
-    const svg = this.generateMockup(
-      logo,
-      templateId,
-      customText,
-      selectedColorVariant,
-      brandName
-    );
-    
+    const svg = this.generateMockup(logo, templateId, customText, selectedColorVariant, brandName);
+
     return convertMockupToPng(svg, width);
   }
 
@@ -121,14 +92,14 @@ export class MockupService {
     brandName: string = 'Brand Name'
   ): Promise<void> {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       throw new Error(`Template with ID "${templateId}" not found`);
     }
-    
+
     const defaultFilename = `${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}.${format}`;
     const outputFilename = filename || defaultFilename;
-    
+
     if (format === 'svg') {
       const svg = this.generateMockup(
         logo,
@@ -137,7 +108,7 @@ export class MockupService {
         selectedColorVariant,
         brandName
       );
-      
+
       const dataUrl = svgToDataUrl(svg);
       this.triggerDownload(dataUrl, outputFilename);
     } else {
@@ -149,7 +120,7 @@ export class MockupService {
         selectedColorVariant,
         brandName
       );
-      
+
       this.triggerDownload(pngDataUrl, outputFilename);
     }
   }

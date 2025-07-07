@@ -1,9 +1,9 @@
 /**
  * Animation Service
- * 
+ *
  * This module provides the main service for applying animations to SVG logos.
  * It coordinates between different animation providers and manages the animation process.
- * 
+ *
  * Key responsibilities:
  * - Registering and managing animation providers
  * - Selecting the appropriate provider for a given animation type
@@ -13,15 +13,15 @@
  * - Providing animation templates and presets
  */
 
-import { 
-  AnimationProvider, 
-  AnimationType, 
+import {
+  AnimationProvider,
+  AnimationType,
   AnimationOptions,
   AnimationResponse,
   AnimatedSVGLogo,
   AnimationEasing,
   AnimationTemplate,
-  AnimationTrigger
+  AnimationTrigger,
 } from './types';
 import { AnimationRegistry } from './animation-registry';
 import { sanitizeSVG, validateSVG, extractAnimatableElements } from './utils';
@@ -29,12 +29,12 @@ import { sanitizeSVG, validateSVG, extractAnimatableElements } from './utils';
 import { Logger } from '../utils/logger';
 import { withRetry } from '../retry';
 import { CSSAnimationProvider } from './providers/css-provider';
-import { 
-  handleError, 
-  withErrorHandling, 
-  ErrorCategory, 
+import {
+  handleError,
+  withErrorHandling,
+  ErrorCategory,
   ErrorSeverity,
-  createAppError
+  createAppError,
 } from '../utils/error-handler';
 import { createMemoizedFunction } from '../utils/cache-manager';
 import { processSvgWithCache } from './svg-processing-pipeline';
@@ -47,8 +47,8 @@ const DEFAULT_ANIMATION_OPTIONS: Partial<AnimationOptions> = {
     duration: 1000,
     delay: 0,
     easing: AnimationEasing.EASE_OUT,
-    iterations: 1
-  }
+    iterations: 1,
+  },
 };
 
 /**
@@ -60,7 +60,7 @@ export enum AnimationErrorCode {
   PROVIDER_FAILED = 'provider_failed',
   SANITIZATION_FAILED = 'sanitization_failed',
   OPTIMIZATION_FAILED = 'optimization_failed',
-  UNEXPECTED_ERROR = 'unexpected_error'
+  UNEXPECTED_ERROR = 'unexpected_error',
 }
 
 /**
@@ -70,19 +70,19 @@ const CACHE_SIZES = {
   PROVIDER_SELECTION: 50,
   FALLBACK_ANIMATION: 20,
   CSS_GENERATION: 30,
-  OPTION_MERGING: 100
+  OPTION_MERGING: 100,
 };
 
 /**
  * SVG Animation Service
- * 
+ *
  * Main service for applying animations to SVG logos.
  */
 export class SVGAnimationService {
   private registry: AnimationRegistry;
   private logger: Logger;
   private animationCache: Map<string, AnimationResponse>;
-  
+
   // Memoized functions
   private memoizedGetProvider: (type: AnimationType) => AnimationProvider | undefined;
   private memoizedMergeOptions: (options: AnimationOptions) => AnimationOptions;
@@ -93,7 +93,7 @@ export class SVGAnimationService {
     pulse: (animationId: string, options: AnimationOptions) => string;
     default: (animationId: string, options: AnimationOptions) => string;
   };
-  
+
   /**
    * Create a new SVGAnimationService
    */
@@ -101,38 +101,44 @@ export class SVGAnimationService {
     this.registry = AnimationRegistry.getInstance();
     this.logger = new Logger('SVGAnimationService');
     this.animationCache = new Map();
-    
+
     // Register default CSS animation provider
     this.registerProvider(new CSSAnimationProvider());
-    
+
     // Initialize memoized functions
-    this.memoizedGetProvider = createMemoizedFunction(
-      this.getBestProviderForAnimation.bind(this),
-      { maxSize: CACHE_SIZES.PROVIDER_SELECTION }
-    );
-    
-    this.memoizedMergeOptions = createMemoizedFunction(
-      this.mergeWithDefaultOptions.bind(this),
-      { 
-        maxSize: CACHE_SIZES.OPTION_MERGING,
-        getKey: (options) => `${options.type}:${JSON.stringify(options.timing || {})}`
-      }
-    );
-    
+    this.memoizedGetProvider = createMemoizedFunction(this.getBestProviderForAnimation.bind(this), {
+      maxSize: CACHE_SIZES.PROVIDER_SELECTION,
+    });
+
+    this.memoizedMergeOptions = createMemoizedFunction(this.mergeWithDefaultOptions.bind(this), {
+      maxSize: CACHE_SIZES.OPTION_MERGING,
+      getKey: options => `${options.type}:${JSON.stringify(options.timing || {})}`,
+    });
+
     this.memoizedGenerateCss = {
-      fadeIn: createMemoizedFunction(this.generateFadeInCss.bind(this), { maxSize: CACHE_SIZES.CSS_GENERATION }),
-      zoomIn: createMemoizedFunction(this.generateZoomInCss.bind(this), { maxSize: CACHE_SIZES.CSS_GENERATION }),
-      spin: createMemoizedFunction(this.generateSpinCss.bind(this), { maxSize: CACHE_SIZES.CSS_GENERATION }),
-      pulse: createMemoizedFunction(this.generatePulseCss.bind(this), { maxSize: CACHE_SIZES.CSS_GENERATION }),
-      default: createMemoizedFunction(this.generateDefaultCss.bind(this), { maxSize: CACHE_SIZES.CSS_GENERATION })
+      fadeIn: createMemoizedFunction(this.generateFadeInCss.bind(this), {
+        maxSize: CACHE_SIZES.CSS_GENERATION,
+      }),
+      zoomIn: createMemoizedFunction(this.generateZoomInCss.bind(this), {
+        maxSize: CACHE_SIZES.CSS_GENERATION,
+      }),
+      spin: createMemoizedFunction(this.generateSpinCss.bind(this), {
+        maxSize: CACHE_SIZES.CSS_GENERATION,
+      }),
+      pulse: createMemoizedFunction(this.generatePulseCss.bind(this), {
+        maxSize: CACHE_SIZES.CSS_GENERATION,
+      }),
+      default: createMemoizedFunction(this.generateDefaultCss.bind(this), {
+        maxSize: CACHE_SIZES.CSS_GENERATION,
+      }),
     };
-    
+
     this.logger.info('SVG Animation Service initialized with default providers');
   }
-  
+
   /**
    * Register an animation provider with the service
-   * 
+   *
    * @param provider - The animation provider to register
    */
   public registerProvider(provider: AnimationProvider): void {
@@ -140,20 +146,20 @@ export class SVGAnimationService {
       this.registry.registerProvider(provider);
       this.logger.info(`Provider registered: ${provider.id}`, {
         providerName: provider.name,
-        supportedTypes: provider.supportedAnimationTypes
+        supportedTypes: provider.supportedAnimationTypes,
       });
     } catch (error) {
       this.logger.error(`Failed to register provider: ${provider.id}`, {
         providerName: provider.name,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
   }
-  
+
   /**
    * Get all registered animation providers
-   * 
+   *
    * @returns Array of all registered providers
    */
   public getProviders(): AnimationProvider[] {
@@ -161,10 +167,10 @@ export class SVGAnimationService {
     this.logger.debug(`Retrieved ${providers.length} providers`);
     return providers;
   }
-  
+
   /**
    * Generate a cache key for an animation request
-   * 
+   *
    * @param svg - The SVG content
    * @param options - Animation options
    * @returns A unique cache key for this animation request
@@ -173,16 +179,16 @@ export class SVGAnimationService {
     // Use first 40 chars + length + last 40 chars of SVG for a quick fingerprint
     const svgLength = svg.length;
     const svgFingerprint = `${svg.substring(0, 40)}:${svgLength}:${svg.substring(Math.max(0, svgLength - 40))}`;
-    
+
     // Combine with animation type and timing settings for a unique key
     const optionsKey = `${options.type}:${options.timing?.duration || 0}:${options.timing?.easing || ''}`;
-    
+
     return `${svgFingerprint}:${optionsKey}`;
   }
-  
+
   /**
    * Animate an SVG with the specified animation options
-   * 
+   *
    * @param svg - The SVG content to animate
    * @param options - Animation options to apply
    * @returns Promise resolving to an AnimationResponse
@@ -191,26 +197,26 @@ export class SVGAnimationService {
     // Use Date.now() for server compatibility instead of performance.now()
     const startTime = Date.now();
     const animationId = `anim_${Date.now().toString(36)}`;
-    
+
     // Check cache for this exact animation request
     const cacheKey = this.getCacheKey(svg, options);
     if (this.animationCache.has(cacheKey)) {
       const cachedResult = this.animationCache.get(cacheKey)!;
       this.logger.info(`Retrieved animation from cache [${animationId}]`);
-      
+
       // Clone the result to avoid modifying the cached version
       return {
         ...cachedResult,
         processingTime: 0, // Reset timing since we didn't actually process
-        fromCache: true
+        fromCache: true,
       };
     }
-    
+
     this.logger.info(`Starting animation process [${animationId}]`, {
       animationType: options.type,
-      animationId
+      animationId,
     });
-    
+
     try {
       // Validate input
       if (!svg || svg.trim() === '') {
@@ -220,168 +226,180 @@ export class SVGAnimationService {
           error: {
             message: 'Empty SVG content provided',
             details: 'The SVG content must not be empty',
-            code: AnimationErrorCode.INVALID_INPUT
+            code: AnimationErrorCode.INVALID_INPUT,
           },
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
-      
+
       // Use the improved SVG processing pipeline to handle validation, sanitization, and optimization
       const processingResult = processSvgWithCache(svg);
-      
+
       // Check for validation errors
       if (!processingResult.validationResult.isValid) {
         this.logger.error(`Invalid SVG structure [${animationId}]`, {
           error: processingResult.validationResult.error,
-          animationId
+          animationId,
         });
         return {
           success: false,
           error: {
             message: 'Invalid SVG structure',
-            details: processingResult.validationResult.error || 'The SVG content is not properly structured',
-            code: AnimationErrorCode.INVALID_INPUT
+            details:
+              processingResult.validationResult.error ||
+              'The SVG content is not properly structured',
+            code: AnimationErrorCode.INVALID_INPUT,
           },
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
-      
+
       // Check for processing errors
       if (processingResult.error || !processingResult.optimizedSvg) {
         this.logger.error(`SVG processing failed [${animationId}]`, {
           error: processingResult.error,
-          animationId
+          animationId,
         });
         return {
           success: false,
           error: {
             message: 'Failed to process SVG',
             details: processingResult.error || 'Unknown processing error',
-            code: processingResult.error?.includes('sanitize') 
-              ? AnimationErrorCode.SANITIZATION_FAILED 
-              : AnimationErrorCode.OPTIMIZATION_FAILED
+            code: processingResult.error?.includes('sanitize')
+              ? AnimationErrorCode.SANITIZATION_FAILED
+              : AnimationErrorCode.OPTIMIZATION_FAILED,
           },
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
-      
+
       // Merge with default options using memoized function
       const mergedOptions = this.memoizedMergeOptions(options);
-      
+
       // Use the optimized SVG from the processing pipeline
       const optimizedSVG = processingResult.optimizedSvg;
-      
+
       // If we have animatable elements from the processing pipeline and options doesn't specify elements,
       // add them to the options for better targeting
       if (processingResult.animatableElements?.length && !mergedOptions.elements) {
         mergedOptions.elements = processingResult.animatableElements;
       }
-      
+
       // Check animation compatibility if available
-      if (processingResult.animationCompatibility && 
-          processingResult.animationCompatibility[mergedOptions.type] &&
-          !processingResult.animationCompatibility[mergedOptions.type].isCompatible) {
-        this.logger.warn(`Animation type ${mergedOptions.type} not compatible with this SVG [${animationId}]`, {
-          reason: processingResult.animationCompatibility[mergedOptions.type].reason,
-          animationId
-        });
+      if (
+        processingResult.animationCompatibility &&
+        processingResult.animationCompatibility[mergedOptions.type] &&
+        !processingResult.animationCompatibility[mergedOptions.type].isCompatible
+      ) {
+        this.logger.warn(
+          `Animation type ${mergedOptions.type} not compatible with this SVG [${animationId}]`,
+          {
+            reason: processingResult.animationCompatibility[mergedOptions.type].reason,
+            animationId,
+          }
+        );
         // Continue anyway, but log the warning
       }
-      
+
       // Get the best provider for this animation type using memoized function
       const provider = this.memoizedGetProvider(mergedOptions.type);
-      
+
       if (!provider) {
-        this.logger.warn(`No provider found for animation type: ${mergedOptions.type}, using fallback [${animationId}]`);
-        
+        this.logger.warn(
+          `No provider found for animation type: ${mergedOptions.type}, using fallback [${animationId}]`
+        );
+
         // If no provider is available, use fallback implementation
         try {
-          const fallbackResult = await this.applyFallbackAnimation(optimizedSVG, mergedOptions, animationId);
-          
+          const fallbackResult = await this.applyFallbackAnimation(
+            optimizedSVG,
+            mergedOptions,
+            animationId
+          );
+
           this.logger.info(`Applied fallback animation successfully [${animationId}]`, {
             animationType: mergedOptions.type,
             processingTime: Date.now() - startTime,
-            animationId
+            animationId,
           });
-          
+
           const response: AnimationResponse = {
             success: true,
             result: fallbackResult,
-            processingTime: Date.now() - startTime
+            processingTime: Date.now() - startTime,
           };
-          
+
           // Cache successful result
           this.animationCache.set(cacheKey, response);
-          
+
           return response;
         } catch (error) {
           this.logger.error(`Fallback animation failed [${animationId}]`, {
             error: error instanceof Error ? error.message : String(error),
-            animationId
+            animationId,
           });
-          
+
           return {
             success: false,
             error: {
               message: 'Fallback animation failed',
               details: error instanceof Error ? error.message : String(error),
-              code: AnimationErrorCode.UNEXPECTED_ERROR
+              code: AnimationErrorCode.UNEXPECTED_ERROR,
             },
-            processingTime: Date.now() - startTime
+            processingTime: Date.now() - startTime,
           };
         }
       }
-      
-      this.logger.info(`Using provider ${provider.id} for animation type ${mergedOptions.type} [${animationId}]`);
-      
+
+      this.logger.info(
+        `Using provider ${provider.id} for animation type ${mergedOptions.type} [${animationId}]`
+      );
+
       // Apply animation using the selected provider with retry logic
       try {
-        const animatedSVG = await withRetry(
-          () => provider.animate(optimizedSVG, mergedOptions),
-          {
-            maxAttempts: 2,
-            baseDelay: 500,
-            backoffFactor: 1.5,
-            maxDelay: 2000
-          }
-        );
-        
+        const animatedSVG = await withRetry(() => provider.animate(optimizedSVG, mergedOptions), {
+          maxAttempts: 2,
+          baseDelay: 500,
+          backoffFactor: 1.5,
+          maxDelay: 2000,
+        });
+
         // Calculate processing time
         const processingTime = Date.now() - startTime;
-        
+
         this.logger.info(`Animation completed successfully [${animationId}]`, {
           animationType: mergedOptions.type,
           provider: provider.id,
           processingTime,
-          animationId
+          animationId,
         });
-        
+
         const response: AnimationResponse = {
           success: true,
           result: animatedSVG,
-          processingTime
+          processingTime,
         };
-        
+
         // Cache successful result
         this.animationCache.set(cacheKey, response);
-        
+
         return response;
       } catch (error) {
         this.logger.error(`Provider ${provider.id} failed to apply animation [${animationId}]`, {
           error: error instanceof Error ? error.message : String(error),
           provider: provider.id,
           animationType: mergedOptions.type,
-          animationId
+          animationId,
         });
-        
+
         return {
           success: false,
           error: {
             message: `Provider ${provider.id} failed to apply animation`,
             details: error instanceof Error ? error.message : String(error),
-            code: AnimationErrorCode.PROVIDER_FAILED
+            code: AnimationErrorCode.PROVIDER_FAILED,
           },
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
     } catch (error) {
@@ -390,24 +408,24 @@ export class SVGAnimationService {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
         animationType: options.type,
-        animationId
+        animationId,
       });
-      
+
       return {
         success: false,
         error: {
           message: 'Failed to animate SVG due to an unexpected error',
           details: errorMessage,
-          code: AnimationErrorCode.UNEXPECTED_ERROR
+          code: AnimationErrorCode.UNEXPECTED_ERROR,
         },
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
     }
   }
-  
+
   /**
    * Clear the animation cache or remove specific entries
-   * 
+   *
    * @param cacheKey - Optional specific cache key to remove, if not provided clears entire cache
    * @param clearProcessingCache - Whether to also clear the SVG processing caches (default: false)
    */
@@ -418,7 +436,7 @@ export class SVGAnimationService {
     } else {
       this.animationCache.clear();
       this.logger.info('Cleared entire animation cache');
-      
+
       // Also clear SVG processing caches if requested
       if (clearProcessingCache) {
         // Import dynamically to avoid circular dependency
@@ -429,102 +447,104 @@ export class SVGAnimationService {
       }
     }
   }
-  
+
   /**
    * Get the best provider for the specified animation type
-   * 
+   *
    * @param animationType - The animation type to find a provider for
    * @returns The best provider for the animation type, or undefined if none found
    */
   private getBestProviderForAnimation(animationType: AnimationType): AnimationProvider | undefined {
     const provider = this.registry.getBestProviderForType(animationType);
-    
+
     if (provider) {
       this.logger.debug(`Selected provider ${provider.id} for animation type ${animationType}`);
     } else {
       this.logger.debug(`No provider found for animation type ${animationType}`);
     }
-    
+
     return provider;
   }
-  
+
   /**
    * Apply a fallback animation when no provider is available
-   * 
+   *
    * @param svg - The SVG content to animate
    * @param options - Animation options to apply
    * @param animationId - Unique identifier for this animation operation
    * @returns Promise resolving to an AnimatedSVGLogo
    */
   private async applyFallbackAnimation(
-    svg: string, 
-    options: AnimationOptions, 
+    svg: string,
+    options: AnimationOptions,
     animationId: string
   ): Promise<AnimatedSVGLogo> {
     this.logger.info(`Applying fallback animation for type: ${options.type} [${animationId}]`);
-    
+
     // Basic CSS animation as fallback
     const cssAnimationId = `anim_${Math.random().toString(36).slice(2, 11)}`;
     let cssCode = '';
     let animatedSvg = svg;
-    
+
     // Extract the root SVG element
     const svgMatch = svg.match(/<svg[^>]*>/);
     if (!svgMatch) {
       this.logger.error(`Invalid SVG: No SVG element found in fallback animation [${animationId}]`);
       throw new Error('Invalid SVG: No SVG element found');
     }
-    
+
     try {
       const svgOpen = svgMatch[0];
       const svgWithClass = svgOpen.replace(/(<svg[^>]*)>/, `$1 class="${cssAnimationId}">`);
       animatedSvg = svg.replace(svgOpen, svgWithClass);
-      
+
       this.logger.debug(`Added animation class ${cssAnimationId} to SVG [${animationId}]`);
-      
+
       // Generate basic CSS based on animation type using memoized functions
       switch (options.type) {
         case AnimationType.FADE_IN:
           cssCode = this.memoizedGenerateCss.fadeIn(cssAnimationId, options);
           break;
-          
+
         case AnimationType.ZOOM_IN:
           cssCode = this.memoizedGenerateCss.zoomIn(cssAnimationId, options);
           break;
-          
+
         case AnimationType.SPIN:
           cssCode = this.memoizedGenerateCss.spin(cssAnimationId, options);
           break;
-          
+
         case AnimationType.PULSE:
           cssCode = this.memoizedGenerateCss.pulse(cssAnimationId, options);
           break;
-          
+
         default:
           // Default to fade-in for unsupported types
-          this.logger.debug(`Using default fade-in for unsupported type ${options.type} [${animationId}]`);
+          this.logger.debug(
+            `Using default fade-in for unsupported type ${options.type} [${animationId}]`
+          );
           cssCode = this.memoizedGenerateCss.default(cssAnimationId, options);
           break;
       }
-      
+
       this.logger.debug(`Generated CSS for fallback animation [${animationId}]`);
-      
+
       return {
         originalSvg: svg,
         animatedSvg,
         cssCode,
-        animationOptions: options
+        animationOptions: options,
       };
     } catch (error) {
       this.logger.error(`Error in fallback animation generation [${animationId}]`, {
         error: error instanceof Error ? error.message : String(error),
         animationType: options.type,
-        animationId
+        animationId,
       });
       throw error;
     }
   }
-  
+
   /**
    * Generate CSS for fade-in animation
    */
@@ -544,7 +564,7 @@ export class SVGAnimationService {
       }
     `;
   }
-  
+
   /**
    * Generate CSS for zoom-in animation
    */
@@ -565,7 +585,7 @@ export class SVGAnimationService {
       }
     `;
   }
-  
+
   /**
    * Generate CSS for spin animation
    */
@@ -586,14 +606,17 @@ export class SVGAnimationService {
       }
     `;
   }
-  
+
   /**
    * Generate CSS for pulse animation
    */
   private generatePulseCss(animationId: string, options: AnimationOptions): string {
-    const iterationCount = typeof options.timing.iterations === 'number'
-      ? (options.timing.iterations === Infinity ? 'infinite' : options.timing.iterations)
-      : 'infinite';
+    const iterationCount =
+      typeof options.timing.iterations === 'number'
+        ? options.timing.iterations === Infinity
+          ? 'infinite'
+          : options.timing.iterations
+        : 'infinite';
     return `
       @keyframes ${animationId}_pulse {
         0% { transform: scale(1); }
@@ -611,7 +634,7 @@ export class SVGAnimationService {
       }
     `;
   }
-  
+
   /**
    * Generate CSS for default animation (fade-in)
    */
@@ -631,10 +654,10 @@ export class SVGAnimationService {
       }
     `;
   }
-  
+
   /**
    * Merge provided animation options with defaults
-   * 
+   *
    * @param options - The animation options to merge
    * @returns Complete animation options with defaults applied
    */
@@ -644,8 +667,8 @@ export class SVGAnimationService {
       ...options,
       timing: {
         ...DEFAULT_ANIMATION_OPTIONS.timing,
-        ...options.timing
-      }
+        ...options.timing,
+      },
     } as AnimationOptions;
   }
 }
@@ -671,13 +694,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1000,
         delay: 0,
         easing: AnimationEasing.EASE_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/fade-in.png'
+    thumbnailUrl: '/assets/animations/thumbnails/fade-in.png',
   },
   {
     id: 'zoom-in',
@@ -690,13 +713,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1200,
         delay: 0,
         easing: AnimationEasing.EASE_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/zoom-in.png'
+    thumbnailUrl: '/assets/animations/thumbnails/zoom-in.png',
   },
   {
     id: 'draw',
@@ -709,13 +732,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 2000,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: false,
     compatibleWithText: false,
-    thumbnailUrl: '/assets/animations/thumbnails/draw.png'
+    thumbnailUrl: '/assets/animations/thumbnails/draw.png',
   },
   {
     id: 'spin',
@@ -728,13 +751,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1500,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/spin.png'
+    thumbnailUrl: '/assets/animations/thumbnails/spin.png',
   },
   {
     id: 'pulse',
@@ -747,13 +770,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1500,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: Infinity
+        iterations: Infinity,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/pulse.png'
+    thumbnailUrl: '/assets/animations/thumbnails/pulse.png',
   },
   {
     id: 'bounce',
@@ -766,13 +789,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1000,
         delay: 0,
         easing: AnimationEasing.BOUNCE,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/bounce.png'
+    thumbnailUrl: '/assets/animations/thumbnails/bounce.png',
   },
   {
     id: 'sequential',
@@ -785,14 +808,14 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 500,
         delay: 0,
         easing: AnimationEasing.EASE_OUT,
-        iterations: 1
+        iterations: 1,
       },
       trigger: AnimationTrigger.LOAD,
-      stagger: 150
+      stagger: 150,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/sequential.png'
+    thumbnailUrl: '/assets/animations/thumbnails/sequential.png',
   },
   {
     id: 'morph',
@@ -805,13 +828,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1800,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     compatibleWithLayers: false,
     compatibleWithText: false,
-    thumbnailUrl: '/assets/animations/thumbnails/morph.png'
+    thumbnailUrl: '/assets/animations/thumbnails/morph.png',
   },
   {
     id: 'hover-pulse',
@@ -824,13 +847,13 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 800,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: Infinity
+        iterations: Infinity,
       },
-      trigger: AnimationTrigger.HOVER
+      trigger: AnimationTrigger.HOVER,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/hover-pulse.png'
+    thumbnailUrl: '/assets/animations/thumbnails/hover-pulse.png',
   },
   {
     id: 'click-spin',
@@ -843,12 +866,12 @@ export const animationTemplates: AnimationTemplate[] = [
         duration: 1000,
         delay: 0,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 1
+        iterations: 1,
       },
-      trigger: AnimationTrigger.CLICK
+      trigger: AnimationTrigger.CLICK,
     },
     compatibleWithLayers: true,
     compatibleWithText: true,
-    thumbnailUrl: '/assets/animations/thumbnails/click-spin.png'
-  }
+    thumbnailUrl: '/assets/animations/thumbnails/click-spin.png',
+  },
 ];

@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { 
-  AnimationType, 
-  AnimationEasing, 
-  AnimationTrigger, 
-  AnimationOptions
+import {
+  AnimationType,
+  AnimationEasing,
+  AnimationTrigger,
+  AnimationOptions,
 } from '@/lib/animation/types';
 import { ErrorCategory, handleError } from '@/lib/utils/error-handler';
 
@@ -23,7 +23,7 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
   initialOptions,
   onSave,
   onPreview,
-  className = ''
+  className = '',
 }) => {
   // Default animation options
   const defaultOptions: AnimationOptions = {
@@ -31,66 +31,66 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
     timing: {
       duration: 1000,
       delay: 0,
-      easing: AnimationEasing.EASE_IN_OUT
+      easing: AnimationEasing.EASE_IN_OUT,
     },
-    trigger: AnimationTrigger.LOAD
+    trigger: AnimationTrigger.LOAD,
   };
-  
+
   // State for animation options
   const [options, setOptions] = useState<AnimationOptions>(initialOptions || defaultOptions);
-  
+
   // Update options when initialOptions change
   useEffect(() => {
     if (initialOptions) {
       setOptions(initialOptions);
     }
   }, [initialOptions]);
-  
+
   // Handle changes to animation options
   const handleDurationChange = useCallback((value: number[]) => {
     setOptions(prev => ({
       ...prev,
       timing: {
         ...prev.timing,
-        duration: value[0] || 1000
-      }
+        duration: value[0] || 1000,
+      },
     }));
   }, []);
-  
+
   const handleDelayChange = useCallback((value: number[]) => {
     setOptions(prev => ({
       ...prev,
       timing: {
         ...prev.timing,
-        delay: value[0] || 0
-      }
+        delay: value[0] || 0,
+      },
     }));
   }, []);
-  
+
   const handleEasingChange = useCallback((easing: AnimationEasing) => {
     setOptions(prev => ({
       ...prev,
       timing: {
         ...prev.timing,
-        easing
-      }
+        easing,
+      },
     }));
   }, []);
-  
+
   const handleTriggerChange = useCallback((trigger: AnimationTrigger) => {
     setOptions(prev => ({
       ...prev,
-      trigger
+      trigger,
     }));
   }, []);
-  
+
   const handleTypeChange = useCallback((type: AnimationType) => {
     setOptions(prev => ({
       ...prev,
-      type
+      type,
     }));
   }, []);
-  
+
   // Handle preview and save actions
   const handlePreview = useCallback(() => {
     try {
@@ -101,12 +101,12 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         context: {
           component: 'AnimationCustomizer',
           operation: 'preview',
-          options
-        }
+          options,
+        },
       });
     }
   }, [options, onPreview]);
-  
+
   const handleSave = useCallback(() => {
     try {
       onSave(options);
@@ -116,8 +116,8 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         context: {
           component: 'AnimationCustomizer',
           operation: 'save',
-          options
-        }
+          options,
+        },
       });
     }
   }, [options, onSave]);
@@ -131,24 +131,24 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
         <div className="space-y-2">
           <label className="text-sm font-medium">Animation Type</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {Object.values(AnimationType).slice(0, 6).map(type => (
-              <Button 
-                key={type}
-                variant={options.type === type ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTypeChange(type)}
-                className="text-xs"
-              >
-                {type.replace('_', ' ')}
-              </Button>
-            ))}
+            {Object.values(AnimationType)
+              .slice(0, 6)
+              .map(type => (
+                <Button
+                  key={type}
+                  variant={options.type === type ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleTypeChange(type)}
+                  className="text-xs"
+                >
+                  {type.replace('_', ' ')}
+                </Button>
+              ))}
           </div>
         </div>
-        
+
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Duration: {options.timing.duration}ms
-          </label>
+          <label className="text-sm font-medium">Duration: {options.timing.duration}ms</label>
           <Slider
             value={[options.timing.duration]}
             min={100}
@@ -157,11 +157,9 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             onValueChange={handleDurationChange}
           />
         </div>
-        
+
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Delay: {options.timing.delay || 0}ms
-          </label>
+          <label className="text-sm font-medium">Delay: {options.timing.delay || 0}ms</label>
           <Slider
             value={[options.timing.delay || 0]}
             min={0}
@@ -170,14 +168,14 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             onValueChange={handleDelayChange}
           />
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Easing Function</label>
           <div className="grid grid-cols-2 gap-2">
             {Object.values(AnimationEasing).map(easing => (
-              <Button 
+              <Button
                 key={easing}
-                variant={options.timing.easing === easing ? "default" : "outline"}
+                variant={options.timing.easing === easing ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleEasingChange(easing)}
                 className="text-xs whitespace-nowrap overflow-hidden text-ellipsis"
@@ -187,14 +185,14 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             ))}
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Trigger</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {Object.values(AnimationTrigger).map(trigger => (
-              <Button 
+              <Button
                 key={trigger}
-                variant={options.trigger === trigger ? "default" : "outline"}
+                variant={options.trigger === trigger ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleTriggerChange(trigger)}
                 className="text-xs"
@@ -204,14 +202,12 @@ export const AnimationCustomizer: React.FC<AnimationCustomizerProps> = ({
             ))}
           </div>
         </div>
-        
+
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={handlePreview}>
             Preview
           </Button>
-          <Button onClick={handleSave}>
-            Save Settings
-          </Button>
+          <Button onClick={handleSave}>Save Settings</Button>
         </div>
       </CardContent>
     </Card>

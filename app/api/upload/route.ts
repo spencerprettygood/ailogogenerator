@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message },
-      { status: 400 }, // The webhook will retry 5 times waiting for a 200
+      { status: 400 } // The webhook will retry 5 times waiting for a 200
     );
   }
 }

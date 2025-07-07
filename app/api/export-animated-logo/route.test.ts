@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 
 // Mock dependencies
 vi.mock('@/lib/utils/file-storage', () => ({
-  storeFile: vi.fn()
+  storeFile: vi.fn(),
 }));
 
 // Sample SVG for testing
@@ -37,7 +37,7 @@ describe('Export Animated Logo API', () => {
   // Mock NextRequest
   const createMockRequest = (body: any) => {
     return {
-      json: vi.fn().mockResolvedValue(body)
+      json: vi.fn().mockResolvedValue(body),
     } as unknown as NextRequest;
   };
 
@@ -50,28 +50,28 @@ describe('Export Animated Logo API', () => {
   });
 
   it('should return 400 when SVG content is missing', async () => {
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       format: 'svg',
       css: sampleCss,
-      js: sampleJs
+      js: sampleJs,
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(400);
     expect(data.error).toContain('SVG content is required');
   });
 
   it('should return 400 when export format is unsupported', async () => {
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
-      format: 'unsupported_format'
+      format: 'unsupported_format',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(400);
     expect(data.error).toContain('Unsupported export format');
   });
@@ -80,24 +80,24 @@ describe('Export Animated Logo API', () => {
     // Mock storeFile to return a file ID
     vi.mocked(storeFile).mockReturnValue('abc123');
 
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
       css: sampleCss,
       js: sampleJs,
-      format: 'svg'
+      format: 'svg',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.fileUrl).toBe('/api/download?file=abc123');
     expect(data.format).toBe('svg');
-    
+
     // Verify storeFile was called correctly
     expect(storeFile).toHaveBeenCalledWith('animated-logo.svg', expect.any(Buffer));
-    
+
     // Verify the SVG content includes embedded CSS and JS
     const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toContain(sampleSvg.trim());
@@ -109,24 +109,24 @@ describe('Export Animated Logo API', () => {
     // Mock storeFile to return a file ID
     vi.mocked(storeFile).mockReturnValue('def456');
 
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
       css: sampleCss,
       js: sampleJs,
-      format: 'html'
+      format: 'html',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.fileUrl).toBe('/api/download?file=def456');
     expect(data.format).toBe('html');
-    
+
     // Verify storeFile was called correctly
     expect(storeFile).toHaveBeenCalledWith('animated-logo.html', expect.any(Buffer));
-    
+
     // Verify the HTML content includes the SVG, CSS, and JS
     const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toContain('<!DOCTYPE html>');
@@ -136,31 +136,31 @@ describe('Export Animated Logo API', () => {
   });
 
   it('should return 501 for GIF export (not implemented)', async () => {
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
       css: sampleCss,
       js: sampleJs,
-      format: 'gif'
+      format: 'gif',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(501);
     expect(data.error).toContain('GIF export is not implemented');
   });
 
   it('should return 501 for MP4 export (not implemented)', async () => {
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
       css: sampleCss,
       js: sampleJs,
-      format: 'mp4'
+      format: 'mp4',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(501);
     expect(data.error).toContain('MP4 export is not implemented');
   });
@@ -171,16 +171,16 @@ describe('Export Animated Logo API', () => {
       throw new Error('Storage error');
     });
 
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
       css: sampleCss,
       js: sampleJs,
-      format: 'svg'
+      format: 'svg',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(500);
     expect(data.error).toContain('Internal server error during animation export');
   });
@@ -189,20 +189,20 @@ describe('Export Animated Logo API', () => {
     // Mock storeFile to return a file ID
     vi.mocked(storeFile).mockReturnValue('ghi789');
 
-    const req = createMockRequest({ 
+    const req = createMockRequest({
       svg: sampleSvg,
-      format: 'svg'
+      format: 'svg',
     });
-    
+
     const response = await POST(req);
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    
+
     // Verify storeFile was called correctly
     expect(storeFile).toHaveBeenCalledWith('animated-logo.svg', expect.any(Buffer));
-    
+
     // Verify the SVG content is unchanged when no CSS/JS is provided
     const storedContent = vi.mocked(storeFile).mock.calls[0]?.[1]?.toString();
     expect(storedContent).toBe(sampleSvg);

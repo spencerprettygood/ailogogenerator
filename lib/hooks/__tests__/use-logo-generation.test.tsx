@@ -8,213 +8,196 @@ import { streamProcessor } from '../../streaming';
 vi.mock('../../api', () => ({
   logoAPI: {
     generateLogo: vi.fn(),
-    downloadPackage: vi.fn()
-  }
+    downloadPackage: vi.fn(),
+  },
 }));
 
 vi.mock('../../streaming', () => ({
   streamProcessor: {
-    processStream: vi.fn()
-  }
+    processStream: vi.fn(),
+  },
 }));
 
 describe('useLogoGeneration', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Mock stream return value
     logoAPI.generateLogo.mockResolvedValue(new ReadableStream());
   });
-  
+
   afterEach(() => {
     vi.resetAllMocks();
   });
-  
+
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useLogoGeneration());
-    
-    expect(result.current).toEqual(expect.objectContaining({
-      isGenerating: false,
-      progress: null,
-      preview: null,
-      assets: null,
-      sessionId: null,
-      error: null,
-      fromCache: false
-    }));
+
+    expect(result.current).toEqual(
+      expect.objectContaining({
+        isGenerating: false,
+        progress: null,
+        preview: null,
+        assets: null,
+        sessionId: null,
+        error: null,
+        fromCache: false,
+      })
+    );
   });
-  
+
   it('should handle generateLogo action', async () => {
     // Setup mock implementation
-    streamProcessor.processStream.mockImplementation(
-      (stream, callbacks) => {
-        // Simulate progress update
-        callbacks.onProgress({
-          currentStage: 'stage-a',
-          stageProgress: 50,
-          overallProgress: 25,
-          statusMessage: 'Processing requirements'
-        });
-        
-        // Simulate completion
-        callbacks.onComplete(
-          { logoSvg: '<svg></svg>' },
-          'test-session-123'
-        );
-      }
-    );
-    
+    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+      // Simulate progress update
+      callbacks.onProgress({
+        currentStage: 'stage-a',
+        stageProgress: 50,
+        overallProgress: 25,
+        statusMessage: 'Processing requirements',
+      });
+
+      // Simulate completion
+      callbacks.onComplete({ logoSvg: '<svg></svg>' }, 'test-session-123');
+    });
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Verify API was called
     expect(logoAPI.generateLogo).toHaveBeenCalledWith('Create a logo', []);
-    
+
     // Verify stream was processed
     expect(streamProcessor.processStream).toHaveBeenCalled();
-    
+
     // Check final state
     expect(result.current.isGenerating).toBe(false);
     expect(result.current.progress).toEqual({
       currentStage: 'stage-a',
       stageProgress: 50,
       overallProgress: 25,
-      statusMessage: 'Processing requirements'
+      statusMessage: 'Processing requirements',
     });
     expect(result.current.assets).toEqual({ logoSvg: '<svg></svg>' });
     expect(result.current.sessionId).toBe('test-session-123');
   });
-  
+
   it('should handle errors', async () => {
     // Setup error case
     logoAPI.generateLogo.mockRejectedValue(new Error('API error'));
-    
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Check error state
     expect(result.current.isGenerating).toBe(false);
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('API error');
   });
-  
+
   it('should handle streaming errors', async () => {
     // Setup streaming error
-    streamProcessor.processStream.mockImplementation(
-      (stream, callbacks) => {
-        callbacks.onError(new Error('Stream error'));
-      }
-    );
-    
+    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+      callbacks.onError(new Error('Stream error'));
+    });
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Check error state
     expect(result.current.isGenerating).toBe(false);
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('Stream error');
   });
-  
+
   it('should handle previews', async () => {
     // Setup preview
-    streamProcessor.processStream.mockImplementation(
-      (stream, callbacks) => {
-        callbacks.onPreview({
-          stageId: 'stage-d',
-          content: '<svg>preview</svg>',
-          contentType: 'svg',
-          timestamp: Date.now()
-        });
-      }
-    );
-    
+    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+      callbacks.onPreview({
+        stageId: 'stage-d',
+        content: '<svg>preview</svg>',
+        contentType: 'svg',
+        timestamp: Date.now(),
+      });
+    });
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Check preview
     expect(result.current.preview).toBe('<svg>preview</svg>');
   });
-  
+
   it('should handle cached results', async () => {
     // Setup cache hit
-    streamProcessor.processStream.mockImplementation(
-      (stream, callbacks) => {
-        callbacks.onCache?.(true);
-        
-        // Immediately complete with cache result
-        callbacks.onProgress({
-          currentStage: 'cached',
-          stageProgress: 100,
-          overallProgress: 100,
-          statusMessage: 'Retrieved from cache'
-        });
-        
-        callbacks.onComplete(
-          { logoSvg: '<svg>cached</svg>' },
-          'cached-session'
-        );
-      }
-    );
-    
+    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+      callbacks.onCache?.(true);
+
+      // Immediately complete with cache result
+      callbacks.onProgress({
+        currentStage: 'cached',
+        stageProgress: 100,
+        overallProgress: 100,
+        statusMessage: 'Retrieved from cache',
+      });
+
+      callbacks.onComplete({ logoSvg: '<svg>cached</svg>' }, 'cached-session');
+    });
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Check cache state
     expect(result.current.fromCache).toBe(true);
     expect(result.current.progress?.currentStage).toBe('cached');
     expect(result.current.progress?.overallProgress).toBe(100);
     expect(result.current.assets?.logoSvg).toBe('<svg>cached</svg>');
   });
-  
+
   it('should reset state correctly', async () => {
     // Setup successful generation
-    streamProcessor.processStream.mockImplementation(
-      (stream, callbacks) => {
-        callbacks.onProgress({
-          currentStage: 'stage-a',
-          stageProgress: 50,
-          overallProgress: 25,
-          statusMessage: 'Processing'
-        });
-        
-        callbacks.onComplete(
-          { logoSvg: '<svg></svg>' },
-          'test-session'
-        );
-      }
-    );
-    
+    streamProcessor.processStream.mockImplementation((stream, callbacks) => {
+      callbacks.onProgress({
+        currentStage: 'stage-a',
+        stageProgress: 50,
+        overallProgress: 25,
+        statusMessage: 'Processing',
+      });
+
+      callbacks.onComplete({ logoSvg: '<svg></svg>' }, 'test-session');
+    });
+
     const { result } = renderHook(() => useLogoGeneration());
-    
+
     // Generate a logo
     await act(async () => {
       await result.current.generateLogo('Create a logo', []);
     });
-    
+
     // Verify state was updated
     expect(result.current.assets).not.toBeNull();
-    
+
     // Reset state
     act(() => {
       result.current.reset();
     });
-    
+
     // Verify state was reset
     expect(result.current.isGenerating).toBe(false);
     expect(result.current.progress).toBeNull();

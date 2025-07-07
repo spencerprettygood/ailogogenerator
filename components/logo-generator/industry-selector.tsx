@@ -22,17 +22,17 @@ const INDUSTRIES = [
   { id: 'travel', name: 'Travel & Hospitality' },
   { id: 'creative', name: 'Creative & Art' },
   { id: 'sports', name: 'Sports & Fitness' },
-  { id: 'general', name: 'General Business' }
+  { id: 'general', name: 'General Business' },
 ];
 
 export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
   detectedIndustry,
   detectedConfidence,
-  onSelectIndustry
+  onSelectIndustry,
 }) => {
   const [selectedIndustry, setSelectedIndustry] = useState(detectedIndustry || 'general');
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const handleSelectIndustry = (industry: string) => {
     setSelectedIndustry(industry);
     onSelectIndustry(industry);
@@ -40,12 +40,13 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
   };
 
   // Find selected industry name
-  const selectedIndustryName = INDUSTRIES.find(i => i.id === selectedIndustry)?.name || 'General Business';
+  const selectedIndustryName =
+    INDUSTRIES.find(i => i.id === selectedIndustry)?.name || 'General Business';
 
   return (
     <div>
       <p className="text-sm font-medium mb-2">Industry (helps optimize the logo style)</p>
-      
+
       <div className="relative">
         <Button
           variant="outline"
@@ -55,11 +56,11 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
           <span>{selectedIndustryName}</span>
           <ChevronDown size={16} />
         </Button>
-        
+
         {isOpen && (
           <div className="absolute mt-1 w-full z-10 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto">
             <div className="py-1">
-              {INDUSTRIES.map((industry) => (
+              {INDUSTRIES.map(industry => (
                 <div
                   key={industry.id}
                   className={`px-4 py-2 cursor-pointer flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${
@@ -75,7 +76,7 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
           </div>
         )}
       </div>
-      
+
       {detectedIndustry && detectedConfidence > 0.7 && (
         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
           <span className="mr-2">Detected industry:</span>

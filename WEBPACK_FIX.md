@@ -1,6 +1,7 @@
 # Next.js 15 Webpack Error Fix
 
 This guide addresses the error:
+
 ```
 TypeError: Cannot read properties of undefined (reading 'call')
 at options.factory (webpack.js)
@@ -21,10 +22,12 @@ The error occurs due to a combination of factors in Next.js 15.2.3:
 ## Implemented Fixes
 
 1. **Updated Component Exports**
+
    - Converted `LogoGeneratorApp` to use `export default` for cleaner importing
    - Added named export for backward compatibility
 
 2. **Enhanced Webpack Configuration**
+
    - Created a new `next.config.mjs` file (ESM format for better compatibility)
    - Added proper module parsing rules for exports
    - Fixed React Server Components configuration
@@ -48,12 +51,14 @@ chmod +x scripts/fix-webpack-issues.sh
 ### Option 2: Manual Steps
 
 1. **Clear Next.js cache**
+
    ```bash
    rm -rf .next
    rm -rf node_modules/.cache
    ```
 
 2. **Use the new next.config.mjs**
+
    - Delete or rename the old next.config.js
    - The new next.config.mjs has been created with proper settings
 

@@ -4,7 +4,7 @@
 
 /**
  * Copy text to clipboard with fallback for browsers that don't support clipboard API
- * 
+ *
  * @param text The text to copy to clipboard
  * @returns Promise resolving to true if successful, false otherwise
  */
@@ -25,7 +25,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /**
  * Fallback method for copying text to clipboard using textarea element
- * 
+ *
  * @param text The text to copy to clipboard
  * @returns true if successful, false otherwise
  */
@@ -34,22 +34,22 @@ function fallbackCopyToClipboard(text: string): boolean {
     // Create textarea element
     const textArea = document.createElement('textarea');
     textArea.value = text;
-    
+
     // Make the textarea out of viewport
     textArea.style.position = 'fixed';
     textArea.style.left = '-999999px';
     textArea.style.top = '-999999px';
-    
+
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     // Execute copy command
     const successful = document.execCommand('copy');
-    
+
     // Clean up
     document.body.removeChild(textArea);
-    
+
     return successful;
   } catch (err) {
     console.error('Fallback clipboard error:', err);
@@ -59,7 +59,7 @@ function fallbackCopyToClipboard(text: string): boolean {
 
 /**
  * Check if clipboard API is supported in the current browser
- * 
+ *
  * @returns boolean indicating if Clipboard API is supported
  */
 export function isClipboardSupported(): boolean {

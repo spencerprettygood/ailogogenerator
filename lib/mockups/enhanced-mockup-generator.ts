@@ -18,14 +18,14 @@ export function applyLightingEffects(
 ): string {
   // Extract the SVG content without the outer SVG tag
   const innerContent = extractSvgContent(svgContent);
-  
+
   // Create filter for lighting effects
   const filterId = `lighting-${Math.random().toString(36).substring(2, 9)}`;
-  
+
   // Calculate light position based on direction
   let lightX = 0;
   let lightY = 0;
-  
+
   switch (lightDirection) {
     case 'top':
       lightX = 0;
@@ -44,7 +44,7 @@ export function applyLightingEffects(
       lightY = 0;
       break;
   }
-  
+
   // Create the lighting filter
   const filter = `
     <filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">
@@ -74,7 +74,7 @@ export function applyLightingEffects(
       <feGaussianBlur stdDeviation="2" />
     </filter>
   `;
-  
+
   // Apply filter to the content
   const wrappedContent = `
     <defs>${filter}</defs>
@@ -82,7 +82,7 @@ export function applyLightingEffects(
       ${innerContent}
     </g>
   `;
-  
+
   return wrappedContent;
 }
 
@@ -99,20 +99,20 @@ export function applyPerspectiveTransform(
   }
 ): string {
   const { rotateX = 0, rotateY = 0, rotateZ = 0, translateZ = 0 } = transform;
-  
+
   // Extract inner content
   const innerContent = extractSvgContent(svgContent);
-  
+
   // Create a transform that applies the perspective
   const transformValue = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) translateZ(${translateZ}px)`;
-  
+
   // Apply the transform with a perspective container
   const transformed = `
     <g style="transform-origin: center center; transform: ${transformValue}; transform-style: preserve-3d;">
       ${innerContent}
     </g>
   `;
-  
+
   return transformed;
 }
 
@@ -128,7 +128,7 @@ export function createShadowEffect(
   offsetY: number = 5
 ): string {
   const shadowId = `shadow-${Math.random().toString(36).substring(2, 9)}`;
-  
+
   return `
     <defs>
       <filter id="${shadowId}" x="-50%" y="-50%" width="200%" height="200%">
@@ -179,72 +179,68 @@ export function positionLogoWithEffects(
     perspectiveTransform = { rotateX: 0, rotateY: 0, rotateZ: 0, translateZ: 0 },
     applyShadow = false,
     shadowBlur = 10,
-    shadowOpacity = 0.3
+    shadowOpacity = 0.3,
   } = effects;
-  
+
   // Parse the SVG to get its viewBox
   const viewBoxMatch = logoSvg.match(/viewBox=["']([^"']*)["']/);
-  const viewBox = viewBoxMatch && viewBoxMatch[1]
-    ? viewBoxMatch[1].split(/\s+/).map(Number) 
-    : [0, 0, 300, 300];
-  
+  const viewBox =
+    viewBoxMatch && viewBoxMatch[1] ? viewBoxMatch[1].split(/\s+/).map(Number) : [0, 0, 300, 300];
+
   // Calculate logo dimensions based on template placement
   const logoWidth = (template.logoPlacement.inlineSize / 100) * width;
-  const logoHeight = template.logoPlacement.preserveAspectRatio 
+  const logoHeight = template.logoPlacement.preserveAspectRatio
     ? logoWidth / template.aspectRatio
     : (template.logoPlacement.blockSize / 100) * height;
-  
+
   // Calculate position
   const logoX = (template.logoPlacement.x / 100) * width;
   const logoY = (template.logoPlacement.y / 100) * height;
-  
+
   // Apply rotation if specified
-  const rotation = template.logoPlacement.rotation 
-    ? `transform="rotate(${template.logoPlacement.rotation}, ${logoX + logoWidth/2}, ${logoY + logoHeight/2})"` 
+  const rotation = template.logoPlacement.rotation
+    ? `transform="rotate(${template.logoPlacement.rotation}, ${logoX + logoWidth / 2}, ${logoY + logoHeight / 2})"`
     : '';
-  
+
   // Clean the SVG to ensure it works within the mockup
   const cleanedSvg = cleanSvgForMockup(logoSvg);
-  
+
   // Apply effects to the SVG content
   let svgContent = extractSvgContent(cleanedSvg);
-  
+
   // Store original content for shadow usage
   const originalContent = svgContent;
-  
+
   // Apply lighting effect if requested
   if (applyLighting) {
     svgContent = applyLightingEffects(
-      svgContent, 
+      svgContent,
       lightDirection,
       lightIntensity,
       0.7 // ambient light level
     );
   }
-  
+
   // Apply perspective transform if requested
   if (applyPerspective) {
-    svgContent = applyPerspectiveTransform(
-      svgContent,
-      perspectiveTransform
-    );
+    svgContent = applyPerspectiveTransform(svgContent, perspectiveTransform);
   }
-  
+
   // Set up shadow effect if requested
-  const shadowEffect = applyShadow 
+  const shadowEffect = applyShadow
     ? createShadowEffect(
-        logoWidth, 
-        logoHeight, 
-        shadowBlur, 
+        logoWidth,
+        logoHeight,
+        shadowBlur,
         shadowOpacity,
         3, // offsetX
-        3  // offsetY
+        3 // offsetY
       )
     : '';
-  
+
   // Define the logo content for reference by the shadow
   const contentWithId = `<g id="logo-content">${originalContent}</g>`;
-  
+
   // Combine everything
   return `
     <g class="mockup-logo enhanced" ${rotation}>
@@ -291,29 +287,23 @@ export function generateRealisticMockupSvg(
 ): string {
   // Extract SVG code if SVGLogo object is provided
   const svgCode = typeof logoSvg === 'string' ? logoSvg : logoSvg.svgCode;
-  
+
   // Calculate dimensions based on aspect ratio
   const width = 1000;
   const height = width / template.aspectRatio;
-  
+
   // Position the logo with effects
-  const positionedLogo = positionLogoWithEffects(
-    svgCode, 
-    template, 
-    width, 
-    height,
-    effectsConfig
-  );
-  
+  const positionedLogo = positionLogoWithEffects(svgCode, template, width, height, effectsConfig);
+
   // Render text elements
   const textElements = renderRealisticTextPlaceholders(
-    template, 
-    width, 
-    height, 
-    customText, 
+    template,
+    width,
+    height,
+    customText,
     brandName
   );
-  
+
   // Build the final SVG with background image
   return `
     <svg 
@@ -353,22 +343,22 @@ export function renderRealisticTextPlaceholders(
   if (!template.textPlaceholders) {
     return '';
   }
-  
+
   const textElements: string[] = [];
-  
+
   template.textPlaceholders.forEach((placeholder: TextPlaceholder) => {
     // Get text, replace {BRAND_NAME} with actual brand name
     let text = customText[placeholder.id] || placeholder.default;
     text = text.replace('{BRAND_NAME}', brandName);
-    
+
     // Calculate position and dimensions
     const x = (placeholder.x / 100) * width;
     const y = (placeholder.y / 100) * height;
     const maxWidth = (placeholder.maxWidth / 100) * width;
-    
+
     // Split text into lines if it contains newlines
     const lines = text.split('\\n');
-    
+
     // Create text element with proper styling and enhanced effects
     const textElement = `
       <g class="text-element">
@@ -391,22 +381,30 @@ export function renderRealisticTextPlaceholders(
           font-family="${placeholder.fontFamily || 'Arial, sans-serif'}" 
           font-size="${placeholder.fontSize}px" 
           fill="${placeholder.color}"
-          text-anchor="${placeholder.textAlign === 'center' ? 'middle' : 
-                      placeholder.textAlign === 'right' ? 'end' : 'start'}"
+          text-anchor="${
+            placeholder.textAlign === 'center'
+              ? 'middle'
+              : placeholder.textAlign === 'right'
+                ? 'end'
+                : 'start'
+          }"
           font-weight="${placeholder.fontWeight || 'normal'}"
           filter="url(#text-shadow-${placeholder.id})"
           ${maxWidth ? `textLength="${maxWidth}" lengthAdjust="spacingAndGlyphs"` : ''}
         >
-          ${lines.map((line: string, i: number) => 
-            `<tspan x="${x}" dy="${i === 0 ? 0 : placeholder.fontSize * 1.2}">${line}</tspan>`
-          ).join('')}
+          ${lines
+            .map(
+              (line: string, i: number) =>
+                `<tspan x="${x}" dy="${i === 0 ? 0 : placeholder.fontSize * 1.2}">${line}</tspan>`
+            )
+            .join('')}
         </text>
       </g>
     `;
-    
+
     textElements.push(textElement);
   });
-  
+
   return textElements.join('');
 }
 
@@ -427,12 +425,12 @@ function cleanSvgForMockup(svgString: string): string {
   let cleaned = svgString
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, '');
-  
+
   // Ensure the SVG has xmlns attribute
   if (!cleaned.includes('xmlns=')) {
     cleaned = cleaned.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   }
-  
+
   return cleaned;
 }
 
@@ -448,7 +446,7 @@ export function svgToRealisticDataUrl(svg: string): string {
  * This function is meant to be used in browser environments
  */
 export async function convertRealisticMockupToPng(
-  svgString: string, 
+  svgString: string,
   width: number = 1200
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -456,46 +454,47 @@ export async function convertRealisticMockupToPng(
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       // Calculate height based on SVG's aspect ratio
       const svgMatch = svgString.match(/viewBox=["']([^"']*)["']/);
-      const viewBox = svgMatch && svgMatch[1] ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
+      const viewBox =
+        svgMatch && svgMatch[1] ? svgMatch[1].split(/\s+/).map(Number) : [0, 0, 1000, 1000];
       const aspectRatio = (viewBox[2] || 1000) / (viewBox[3] || 1000);
-      
+
       const height = width / aspectRatio;
-      
+
       // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
-      
+
       // Convert SVG to data URL
       const dataUrl = svgToRealisticDataUrl(svgString);
-      
+
       img.onload = () => {
         if (ctx) {
           // Apply high quality rendering
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          
+
           // Draw with slight blur for anti-aliasing
           ctx.filter = 'blur(0.5px)';
           ctx.drawImage(img, 0, 0, width, height);
-          
+
           // Reset filter and draw again for sharper edges
           ctx.filter = 'none';
           ctx.globalAlpha = 0.8;
           ctx.drawImage(img, 0, 0, width, height);
-          
+
           resolve(canvas.toDataURL('image/png'));
         } else {
           reject(new Error('Could not get canvas context'));
         }
       };
-      
-      img.onerror = (error) => {
+
+      img.onerror = error => {
         reject(error || new Error('Failed to load SVG'));
       };
-      
+
       img.src = dataUrl;
     } catch (error) {
       reject(error);

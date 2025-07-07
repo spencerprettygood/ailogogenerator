@@ -13,12 +13,10 @@ npm install --save-dev eslint @next/eslint-plugin-next
 ```
 
 **Configuration (.eslintrc.json):**
+
 ```json
 {
-  "extends": [
-    "next/core-web-vitals",
-    "plugin:@next/next/recommended"
-  ],
+  "extends": ["next/core-web-vitals", "plugin:@next/next/recommended"],
   "plugins": ["@next/next"],
   "rules": {
     "@next/next/no-html-link-for-pages": "error",
@@ -38,6 +36,7 @@ npm install --save-dev @vercel/style-guide eslint typescript
 ```
 
 **Configuration (.eslintrc.js):**
+
 ```js
 module.exports = {
   extends: [
@@ -45,11 +44,11 @@ module.exports = {
     '@vercel/style-guide/eslint/browser',
     '@vercel/style-guide/eslint/typescript',
     '@vercel/style-guide/eslint/react',
-    '@vercel/style-guide/eslint/next'
+    '@vercel/style-guide/eslint/next',
   ],
   parserOptions: {
-    project: 'tsconfig.json'
-  }
+    project: 'tsconfig.json',
+  },
 };
 ```
 
@@ -62,6 +61,7 @@ npx next lint --fix
 ```
 
 Add to package.json:
+
 ```json
 "scripts": {
   "lint": "next lint --fix",
@@ -79,6 +79,7 @@ npm install --save-dev next-transpile-modules
 ```
 
 **Usage in next.config.js:**
+
 ```js
 const withTM = require('next-transpile-modules')(['module-to-transpile']);
 
@@ -96,15 +97,15 @@ npm install --save-dev next-compose-plugins
 ```
 
 **Usage in next.config.js:**
+
 ```js
 const withPlugins = require('next-compose-plugins');
 const withTM = require('next-transpile-modules')(['module-a']);
-const withBundleAnalyzer = require('@next/bundle-analyzer')({ enabled: process.env.ANALYZE === 'true' });
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
 
-module.exports = withPlugins([
-  withTM,
-  withBundleAnalyzer
-], {
+module.exports = withPlugins([withTM, withBundleAnalyzer], {
   // Next.js config
 });
 ```
@@ -118,12 +119,11 @@ npm install --save-dev typescript-plugin-css-modules
 ```
 
 **Configuration (tsconfig.json):**
+
 ```json
 {
   "compilerOptions": {
-    "plugins": [
-      { "name": "typescript-plugin-css-modules" }
-    ]
+    "plugins": [{ "name": "typescript-plugin-css-modules" }]
   }
 }
 ```
@@ -163,9 +163,9 @@ name: Next.js CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -193,6 +193,7 @@ npx husky add .husky/pre-commit "npx lint-staged"
 ```
 
 **Configuration (package.json):**
+
 ```json
 "lint-staged": {
   "*.{js,jsx,ts,tsx}": [

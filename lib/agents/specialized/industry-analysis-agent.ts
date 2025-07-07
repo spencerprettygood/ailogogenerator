@@ -1,14 +1,14 @@
 import { BaseAgent } from '../base/base-agent';
 import { withRetry } from '../../retry';
-import { 
-  AgentCapability, 
-  AgentConfig, 
-  AgentContext, 
-  AgentInput, 
-  IndustryAnalysisAgentInput, 
+import {
+  AgentCapability,
+  AgentConfig,
+  AgentContext,
+  AgentInput,
+  IndustryAnalysisAgentInput,
   IndustryAnalysisAgentOutput,
   CompetitorLogo,
-  IndustryTrend
+  IndustryTrend,
 } from '../../types-agents';
 import { DesignSpec } from '../../types';
 import { WebSearchService } from '../../services/web-search-service';
@@ -37,10 +37,12 @@ Your analysis must be thorough, data-driven, and presented in a structured JSON 
     const { brandName, industry, designSpec, context } = input;
 
     // Context can be used to provide external data, like web search results
-    const externalDataContext = context?.externalData ? `
+    const externalDataContext = context?.externalData
+      ? `
 ## External Context & Research
 ${JSON.stringify(context.externalData, null, 2)}
-` : '';
+`
+      : '';
 
     const prompt = `
 # Industry Logo Analysis Task
@@ -100,7 +102,7 @@ Provide your complete analysis in a single, valid JSON object enclosed in \`\`\`
 
   protected async processResponse(
     responseContent: string,
-    originalInput: AgentInput,
+    originalInput: AgentInput
   ): Promise<IndustryAnalysisAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 

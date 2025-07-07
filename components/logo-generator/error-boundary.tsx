@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
@@ -37,22 +37,22 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console
     console.error('Error Boundary caught an error:', error, errorInfo);
-    
+
     // Store errorInfo for display
     this.setState({ errorInfo, componentStack: errorInfo.componentStack ?? undefined });
-    
+
     // Call onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // In production, send to error reporting service
     if (process.env.NODE_ENV === 'production') {
       import('@/lib/utils/error-reporter').then(module => {
         const errorReporter = module.default;
         errorReporter.reportError(error, {
           component: errorInfo.componentStack ?? undefined,
-          url: typeof window !== 'undefined' ? window.location.href : undefined
+          url: typeof window !== 'undefined' ? window.location.href : undefined,
         });
       });
     }
@@ -80,21 +80,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       // Use the error reporter service
       import('@/lib/utils/error-reporter').then(module => {
         const errorReporter = module.default;
-        
+
         errorReporter.reportError(this.state.error!, {
           component: this.state.componentStack,
           url: window.location.href,
           additionalInfo: {
             userReported: true,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
-        
+
         // Also capture user feedback
         errorReporter.submitFeedback('User manually reported error', {
-          url: window.location.href
+          url: window.location.href,
         });
-        
+
         alert('Error reported. Thank you for helping improve the application.');
       });
     }
@@ -109,7 +109,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
       // Default fallback UI
       return (
-        <div className={`${this.props.containerClassName || 'min-h-screen bg-background flex items-center justify-center p-4'}`}>
+        <div
+          className={`${this.props.containerClassName || 'min-h-screen bg-background flex items-center justify-center p-4'}`}
+        >
           <Card className="w-full max-w-md border-destructive/20 shadow-lg">
             <CardHeader className="space-y-1">
               <div className="flex justify-center mb-2">
@@ -119,66 +121,60 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </div>
               <CardTitle className="text-center">Something went wrong</CardTitle>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 The application encountered an unexpected error. You can try refreshing the page or
                 going back to the previous screen.
               </p>
-              
+
               {/* Show error details in development or if manually enabled */}
-              {(process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SHOW_ERROR_DETAILS === 'true') && 
+              {(process.env.NODE_ENV === 'development' ||
+                process.env.NEXT_PUBLIC_SHOW_ERROR_DETAILS === 'true') &&
                 this.state.error && (
-                <details className="text-xs bg-muted p-3 rounded border">
-                  <summary className="cursor-pointer font-medium">Error Details</summary>
-                  <div className="mt-2 overflow-auto">
-                    <p className="font-semibold text-destructive mt-2">Message:</p>
-                    <pre className="p-2 bg-muted/50 rounded">{this.state.error.message}</pre>
-                    
-                    {this.state.error.stack && (
-                      <>
-                        <p className="font-semibold text-destructive mt-2">Stack Trace:</p>
-                        <pre className="p-2 bg-muted/50 rounded max-h-40 overflow-auto">
-                          {this.state.error.stack}
-                        </pre>
-                      </>
-                    )}
-                    
-                    {this.state.componentStack && (
-                      <>
-                        <p className="font-semibold text-destructive mt-2">Component Stack:</p>
-                        <pre className="p-2 bg-muted/50 rounded max-h-40 overflow-auto">
-                          {this.state.componentStack}
-                        </pre>
-                      </>
-                    )}
-                  </div>
-                </details>
-              )}
+                  <details className="text-xs bg-muted p-3 rounded border">
+                    <summary className="cursor-pointer font-medium">Error Details</summary>
+                    <div className="mt-2 overflow-auto">
+                      <p className="font-semibold text-destructive mt-2">Message:</p>
+                      <pre className="p-2 bg-muted/50 rounded">{this.state.error.message}</pre>
+
+                      {this.state.error.stack && (
+                        <>
+                          <p className="font-semibold text-destructive mt-2">Stack Trace:</p>
+                          <pre className="p-2 bg-muted/50 rounded max-h-40 overflow-auto">
+                            {this.state.error.stack}
+                          </pre>
+                        </>
+                      )}
+
+                      {this.state.componentStack && (
+                        <>
+                          <p className="font-semibold text-destructive mt-2">Component Stack:</p>
+                          <pre className="p-2 bg-muted/50 rounded max-h-40 overflow-auto">
+                            {this.state.componentStack}
+                          </pre>
+                        </>
+                      )}
+                    </div>
+                  </details>
+                )}
             </CardContent>
-            
+
             <CardFooter className="flex-col space-y-2">
               <div className="flex gap-2 w-full">
-                <Button 
-                  variant="outline"
-                  onClick={() => window.history.back()}
-                  className="flex-1"
-                >
+                <Button variant="outline" onClick={() => window.history.back()} className="flex-1">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Go Back
                 </Button>
-                
-                <Button 
-                  onClick={() => window.location.reload()}
-                  className="flex-1 bg-primary"
-                >
+
+                <Button onClick={() => window.location.reload()} className="flex-1 bg-primary">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Page
                 </Button>
               </div>
-              
-              <Button 
-                variant="ghost" 
+
+              <Button
+                variant="ghost"
                 onClick={this.handleReportError}
                 className="w-full text-sm text-muted-foreground"
               >

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PositioningControlsProps } from '@/lib/types-customization';
@@ -7,20 +7,20 @@ import { PositioningControlsProps } from '@/lib/types-customization';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight
+import {
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   // These imports are not used
   // MoveHorizontal, MoveVertical, RotateCcw
 } from 'lucide-react';
 
-const PositioningControls: React.FC<PositioningControlsProps> = ({
-  element,
-  onUpdate,
-}) => {
+const PositioningControls: React.FC<PositioningControlsProps> = ({ element, onUpdate }) => {
   // Initialize position values based on element type
   const [position, setPosition] = useState(() => {
     const { attributes } = element;
-    
+
     // Different elements store position in different attributes
     switch (element.type) {
       case 'rect':
@@ -44,9 +44,7 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
         if (attributes.transform) {
           const match = /translate\(([^,]+),([^)]+)\)/.exec(attributes.transform as string);
           if (match) {
-            return {               x: parseFloat(match?.[1] || '0') || 0,
-               y: parseFloat(match?.[2] || '0') || 0,
-            };
+            return { x: parseFloat(match?.[1] || '0') || 0, y: parseFloat(match?.[2] || '0') || 0 };
           }
         }
         return { x: 0, y: 0 }; // Default for paths
@@ -58,13 +56,14 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
   // Initialize rotation
   const [rotation, setRotation] = useState(() => {
     const { attributes } = element;
-    
+
     if (attributes.transform) {
       const rotateMatch = /rotate\(([^)]+)\)/.exec(attributes.transform as string);
-      if (rotateMatch) {         return parseFloat(rotateMatch?.[1] || '0') || 0;
+      if (rotateMatch) {
+        return parseFloat(rotateMatch?.[1] || '0') || 0;
       }
     }
-    
+
     return 0;
   });
 
@@ -72,7 +71,7 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
   const updateElementWithPosition = useCallback(() => {
     const updatedElement = { ...element };
     const { attributes } = element;
-    
+
     // Update position based on element type
     switch (element.type) {
       case 'rect':
@@ -102,26 +101,26 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
       default:
         // For other elements, use transform attribute
         let transform = '';
-        
+
         // Add translation
         transform += `translate(${position.x},${position.y}) `;
-        
+
         // Add rotation if present
         if (rotation !== 0) {
           // Rotate around element center
           transform += `rotate(${rotation})`;
         }
-        
+
         updatedElement.attributes = {
           ...attributes,
           transform: transform.trim(),
         };
         break;
     }
-    
+
     onUpdate(updatedElement);
   }, [element, position, rotation, onUpdate]);
-  
+
   // Update position when form changes
   useEffect(() => {
     updateElementWithPosition();
@@ -164,83 +163,63 @@ const PositioningControls: React.FC<PositioningControlsProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="position-x">X Position</Label>
-          <Input
-            id="position-x"
-            type="number"
-            value={position.x}
-            onChange={handleXChange}
-          />
+          <Input id="position-x" type="number" value={position.x} onChange={handleXChange} />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="position-y">Y Position</Label>
-          <Input
-            id="position-y"
-            type="number"
-            value={position.y}
-            onChange={handleYChange}
-          />
+          <Input id="position-y" type="number" value={position.y} onChange={handleYChange} />
         </div>
       </div>
-      
+
       {/* Fine-tuning controls */}
       <div className="space-y-2">
         <Label>Fine Adjustments</Label>
         <div className="grid grid-cols-3 gap-2">
           <div></div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => moveElement(0, -1)}
-            title="Move Up"
-          >
+          <Button variant="outline" size="icon" onClick={() => moveElement(0, -1)} title="Move Up">
             <ArrowUp className="h-4 w-4" />
           </Button>
           <div></div>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
+
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => moveElement(-1, 0)}
             title="Move Left"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
+
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => moveElement(0, 0)}
             title="Reset Position"
             disabled
           >
             <div className="h-4 w-4 rounded-full border-2 border-current"></div>
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
+
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => moveElement(1, 0)}
             title="Move Right"
           >
             <ArrowRight className="h-4 w-4" />
           </Button>
-          
+
           <div></div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => moveElement(0, 1)}
-            title="Move Down"
-          >
+          <Button variant="outline" size="icon" onClick={() => moveElement(0, 1)} title="Move Down">
             <ArrowDown className="h-4 w-4" />
           </Button>
           <div></div>
         </div>
       </div>
-      
+
       {/* Rotation controls */}
-      {(element.type !== 'text' && element.type !== 'rect') && (
+      {element.type !== 'text' && element.type !== 'rect' && (
         <div className="space-y-2">
           <Label htmlFor="rotation">Rotation (degrees)</Label>
           <div className="flex items-center gap-3">

@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TestComponent, FeedbackSource, TestConfig, TestMetric, TestResults, TestVariant, MetricResult, VariantConfig } from '@/lib/types';
+import {
+  TestComponent,
+  FeedbackSource,
+  TestConfig,
+  TestMetric,
+  TestResults,
+  TestVariant,
+  MetricResult,
+  VariantConfig,
+} from '@/lib/types';
 import { getTestManager } from '../index';
 
 interface ResultsDashboardProps {
@@ -11,10 +20,7 @@ interface ResultsDashboardProps {
  * Dashboard for viewing A/B test results
  * For internal use by the team to analyze test performance
  */
-export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
-  testIds,
-  className = ''
-}) => {
+export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ testIds, className = '' }) => {
   const [activeTests, setActiveTests] = useState<TestConfig[]>([]);
   const [testResults, setTestResults] = useState<Record<string, TestResults>>({});
   const [loading, setLoading] = useState<boolean>(true);
@@ -26,16 +32,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     try {
       setLoading(true);
       const testManager = getTestManager();
-      
+
       // Mock implementation for demo
       const mockActiveTests = await getMockTests();
       setActiveTests(mockActiveTests);
-      
+
       // Set first test as selected by default
       if (mockActiveTests.length > 0 && mockActiveTests[0] && !selectedTestId) {
         setSelectedTestId(mockActiveTests[0].id);
       }
-      
+
       setLoading(false);
     } catch (err) {
       setError('Failed to load tests');
@@ -48,15 +54,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     try {
       setLoading(true);
       const testManager = getTestManager();
-      
+
       // Mock implementation for demo
       const results = await getMockResults(testId);
-      
+
       setTestResults(prev => ({
         ...prev,
-        [testId]: results
+        [testId]: results,
       }));
-      
+
       setLoading(false);
     } catch (err) {
       setError(`Failed to load results for test ${testId}`);
@@ -82,45 +88,55 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   };
 
   // Get currently selected test
-  const selectedTest = selectedTestId 
-    ? activeTests.find(test => test.id === selectedTestId) 
-    : null;
-  
+  const selectedTest = selectedTestId ? activeTests.find(test => test.id === selectedTestId) : null;
+
   // Get results for selected test
-  const selectedResults = selectedTestId 
-    ? testResults[selectedTestId] 
-    : null;
+  const selectedResults = selectedTestId ? testResults[selectedTestId] : null;
 
   return (
     <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${className}`}>
       <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
         <h2 className="text-lg font-medium text-gray-900">A/B Test Results Dashboard</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          View and analyze the results of your A/B tests
-        </p>
+        <p className="mt-1 text-sm text-gray-600">View and analyze the results of your A/B tests</p>
       </div>
-      
+
       {loading && (
         <div className="flex justify-center items-center p-8">
-          <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            className="animate-spin h-8 w-8 text-blue-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
         </div>
       )}
-      
+
       {error && (
         <div className="bg-red-50 p-4 border-l-4 border-red-500">
           <p className="text-red-700">{error}</p>
         </div>
       )}
-      
+
       {!loading && !error && (
         <div className="flex">
           {/* Test list sidebar */}
           <div className="w-64 border-r border-gray-200 bg-gray-50 p-4">
             <h3 className="font-medium text-gray-700 mb-2">Active Tests</h3>
-            
+
             {activeTests.length === 0 ? (
               <p className="text-sm text-gray-500">No active tests found</p>
             ) : (
@@ -143,7 +159,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </ul>
             )}
           </div>
-          
+
           {/* Test results content */}
           <div className="flex-1 p-6">
             {!selectedTest ? (
@@ -155,13 +171,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 <div className="mb-6">
                   <h2 className="text-xl font-medium text-gray-900">
                     {/* Only render selectedTest.name, not the object */}
-                    {typeof selectedTest.name === 'string' ? selectedTest.name : String(selectedTest.name)}
+                    {typeof selectedTest.name === 'string'
+                      ? selectedTest.name
+                      : String(selectedTest.name)}
                   </h2>
                   <p className="mt-1 text-gray-600">
                     {/* Only render selectedTest.description, not the object */}
-                    {typeof selectedTest.description === 'string' ? selectedTest.description : String(selectedTest.description)}
+                    {typeof selectedTest.description === 'string'
+                      ? selectedTest.description
+                      : String(selectedTest.description)}
                   </p>
-                  
+
                   <div className="grid grid-cols-3 gap-4 mt-4">
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <p className="text-sm text-blue-700 font-medium">Status</p>
@@ -183,13 +203,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         )}
                       </p>
                     </div>
-                    
+
                     <div className="bg-indigo-50 p-3 rounded-lg">
                       <p className="text-sm text-indigo-700 font-medium">Sample Size</p>
                       <p className="mt-1 font-medium">
                         {selectedResults && (
                           <span>
-                            {Object.values(selectedResults.sampleSize).reduce((sum, val) => sum + val, 0)}
+                            {Object.values(selectedResults.sampleSize).reduce(
+                              (sum, val) => sum + val,
+                              0
+                            )}
                             <span className="text-xs text-indigo-500 ml-1">
                               ({selectedTest.minimumSampleSize} min)
                             </span>
@@ -197,18 +220,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         )}
                       </p>
                     </div>
-                    
+
                     <div className="bg-emerald-50 p-3 rounded-lg">
                       <p className="text-sm text-emerald-700 font-medium">Winner</p>
                       <p className="mt-1 font-medium">
                         {selectedResults?.winner ? (
                           <span className="flex items-center">
                             Variant {selectedResults.winner}
-                            {typeof selectedResults.winnerConfidence === 'number' &&
+                            {typeof selectedResults.winnerConfidence === 'number' && (
                               <span className="ml-2 text-xs text-emerald-500">
                                 ({Math.round(selectedResults.winnerConfidence * 100)}% confidence)
                               </span>
-                            }
+                            )}
                           </span>
                         ) : (
                           <span className="text-gray-500">Not determined</span>
@@ -217,28 +240,38 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Metrics */}
                 {selectedResults && (
                   <div className="mb-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-3">Metrics</h3>
-                    
+
                     <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                       <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
+                            <th
+                              scope="col"
+                              className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900"
+                            >
                               Metric
                             </th>
                             {Object.keys(selectedResults.sampleSize).map(variant => (
-                              <th key={variant} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                Variant {variant} 
+                              <th
+                                key={variant}
+                                scope="col"
+                                className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                              >
+                                Variant {variant}
                                 <span className="ml-2 text-xs text-gray-500">
                                   (n={selectedResults.sampleSize[variant as TestVariant] || 0})
                                 </span>
                               </th>
                             ))}
-                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            <th
+                              scope="col"
+                              className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                            >
                               Difference
                             </th>
                           </tr>
@@ -250,12 +283,24 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                                 {formatMetricName(metric)}
                               </td>
                               {Object.keys(selectedResults.sampleSize).map(variant => (
-                                <td key={`${metric}-${variant}`} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                <td
+                                  key={`${metric}-${variant}`}
+                                  className="whitespace-nowrap px-3 py-4 text-sm text-gray-500"
+                                >
                                   {values[variant as TestVariant] ? (
                                     <span>
-                                      {formatMetricValue(metric, values[variant as TestVariant]?.mean)}
+                                      {formatMetricValue(
+                                        metric,
+                                        values[variant as TestVariant]?.mean
+                                      )}
                                       <span className="block text-xs text-gray-400">
-                                        ±{formatMetricValue(metric, (values[variant as TestVariant]?.confidenceInterval?.[1] || 0) - (values[variant as TestVariant]?.mean || 0))}
+                                        ±
+                                        {formatMetricValue(
+                                          metric,
+                                          (values[variant as TestVariant]
+                                            ?.confidenceInterval?.[1] || 0) -
+                                            (values[variant as TestVariant]?.mean || 0)
+                                        )}
                                       </span>
                                     </span>
                                   ) : (
@@ -273,7 +318,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Insights and Recommendations */}
                 {selectedResults && (
                   <div className="grid grid-cols-2 gap-6">
@@ -295,7 +340,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="bg-white overflow-hidden shadow rounded-lg">
                       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                         <h3 className="text-sm font-medium text-gray-900">Recommendations</h3>
@@ -343,9 +388,10 @@ function formatMetricName(metric: string): string {
     case TestMetric.TOKEN_EFFICIENCY:
       return 'Token Efficiency';
     default:
-      return metric.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
+      return metric
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
   }
 }
 
@@ -354,7 +400,7 @@ function formatMetricValue(metric: string, value: number | undefined): string {
   if (typeof value !== 'number') {
     return '-';
   }
-  
+
   switch (metric) {
     case TestMetric.CONVERSION_RATE:
     case TestMetric.ENGAGEMENT:
@@ -373,7 +419,10 @@ function formatMetricValue(metric: string, value: number | undefined): string {
 }
 
 // Calculate difference between variant values for a metric
-function calculateDifference(values: { [key in TestVariant]?: MetricResult }, metric: TestMetric): React.ReactNode {
+function calculateDifference(
+  values: { [key in TestVariant]?: MetricResult },
+  metric: TestMetric
+): React.ReactNode {
   const variantKeys = Object.keys(values) as TestVariant[];
   if (variantKeys.length < 2) {
     return '-';
@@ -382,7 +431,7 @@ function calculateDifference(values: { [key in TestVariant]?: MetricResult }, me
   const firstVariantKey = variantKeys[0];
   const secondVariantKey = variantKeys[1];
 
-  if(!firstVariantKey || !secondVariantKey) return '-';
+  if (!firstVariantKey || !secondVariantKey) return '-';
 
   const firstValue = values[firstVariantKey]?.mean || 0;
   const secondValue = values[secondVariantKey]?.mean || 0;
@@ -405,15 +454,19 @@ async function getMockTests(): Promise<TestConfig[]> {
           description: 'Description for Test 1',
           component: TestComponent.LOGO_GENERATION_UI,
           variants: {
-              [TestVariant.A]: { name: 'Control', description: 'Original version' },
-              [TestVariant.B]: { name: 'Variant B', description: 'New header' },
-              [TestVariant.C]: { name: 'Variant C', description: 'Different CTA' },
+            [TestVariant.A]: { name: 'Control', description: 'Original version' },
+            [TestVariant.B]: { name: 'Variant B', description: 'New header' },
+            [TestVariant.C]: { name: 'Variant C', description: 'Different CTA' },
           },
-          metrics: [TestMetric.CONVERSION_RATE, TestMetric.ENGAGEMENT, TestMetric.USER_SATISFACTION],
+          metrics: [
+            TestMetric.CONVERSION_RATE,
+            TestMetric.ENGAGEMENT,
+            TestMetric.USER_SATISFACTION,
+          ],
           feedbackSources: [FeedbackSource.DIRECT_FEEDBACK, FeedbackSource.SURVEY],
           minimumSampleSize: 100,
           maxDurationDays: 14,
-          confidenceThreshold: 0.95
+          confidenceThreshold: 0.95,
         },
         {
           id: 'test2',
@@ -428,8 +481,8 @@ async function getMockTests(): Promise<TestConfig[]> {
           feedbackSources: [FeedbackSource.USAGE_ANALYTICS],
           minimumSampleSize: 1000,
           maxDurationDays: 30,
-          confidenceThreshold: 0.99
-        }
+          confidenceThreshold: 0.99,
+        },
       ]);
     }, 1000);
   });
@@ -445,7 +498,7 @@ async function getMockResults(testId: string): Promise<TestResults> {
           sampleSize: {
             [TestVariant.A]: 50,
             [TestVariant.B]: 55,
-            [TestVariant.C]: 60
+            [TestVariant.C]: 60,
           },
           winner: undefined,
           winnerConfidence: 0,
@@ -453,16 +506,16 @@ async function getMockResults(testId: string): Promise<TestResults> {
             [TestMetric.CONVERSION_RATE]: {
               [TestVariant.A]: { mean: 2.5, confidenceInterval: [2.0, 3.0] },
               [TestVariant.B]: { mean: 3.0, confidenceInterval: [2.5, 3.5] },
-              [TestVariant.C]: { mean: 3.5, confidenceInterval: [3.0, 4.0] }
+              [TestVariant.C]: { mean: 3.5, confidenceInterval: [3.0, 4.0] },
             },
             [TestMetric.ENGAGEMENT]: {
               [TestVariant.A]: { mean: 75, confidenceInterval: [70, 80] },
               [TestVariant.B]: { mean: 80, confidenceInterval: [75, 85] },
-              [TestVariant.C]: { mean: 85, confidenceInterval: [80, 90] }
-            }
+              [TestVariant.C]: { mean: 85, confidenceInterval: [80, 90] },
+            },
           },
           insights: [],
-          recommendations: []
+          recommendations: [],
         });
       } else {
         resolve({
@@ -471,7 +524,7 @@ async function getMockResults(testId: string): Promise<TestResults> {
           sampleSize: {
             [TestVariant.A]: 150,
             [TestVariant.B]: 160,
-            [TestVariant.C]: 170
+            [TestVariant.C]: 170,
           },
           winner: TestVariant.C,
           winnerConfidence: 0.95,
@@ -479,16 +532,16 @@ async function getMockResults(testId: string): Promise<TestResults> {
             [TestMetric.CONVERSION_RATE]: {
               [TestVariant.A]: { mean: 2.8, confidenceInterval: [2.3, 3.3] },
               [TestVariant.B]: { mean: 3.2, confidenceInterval: [2.7, 3.7] },
-              [TestVariant.C]: { mean: 4.0, confidenceInterval: [3.5, 4.5] }
+              [TestVariant.C]: { mean: 4.0, confidenceInterval: [3.5, 4.5] },
             },
             [TestMetric.ENGAGEMENT]: {
               [TestVariant.A]: { mean: 78, confidenceInterval: [73, 83] },
               [TestVariant.B]: { mean: 82, confidenceInterval: [77, 87] },
-              [TestVariant.C]: { mean: 88, confidenceInterval: [83, 93] }
-            }
+              [TestVariant.C]: { mean: 88, confidenceInterval: [83, 93] },
+            },
           },
           insights: ['Variant C showed a significant lift in conversion rate.'],
-          recommendations: ['Roll out Variant C to all users.']
+          recommendations: ['Roll out Variant C to all users.'],
         });
       }
     }, 500);

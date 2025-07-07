@@ -1,7 +1,7 @@
 /**
  * @file colors.ts
  * @description Design token system for colors - single source of truth
- * 
+ *
  * This file defines all color tokens for the design system.
  * Color values should NEVER be hardcoded anywhere in the application.
  * Always import and use these tokens.
@@ -60,7 +60,7 @@ export const colors = {
     // State colors
     focus: '#FF4233', // Focus indicator (uses accent)
     selection: 'rgba(255, 66, 51, 0.1)', // Selection background
-    
+
     // Status colors
     info: '#0D0D0D', // Informational (uses gray instead of blue)
     success: '#0D0D0D', // Success (uses gray instead of green)
@@ -94,7 +94,7 @@ export const colors = {
     // State colors
     focus: '#FF5A4A', // Lightened accent for better contrast in dark mode
     selection: 'rgba(255, 90, 74, 0.2)',
-    
+
     // Status colors
     info: '#D4D4D4',
     success: '#D4D4D4',
@@ -110,7 +110,7 @@ export const colorHsl = {
     light: '5 100% 68%', // #FF6B5D
     dark: '5 74% 48%', // #D32E20
   },
-  
+
   // Grayscale HSL values
   gray: {
     50: '0 0% 98%', // #FAFAFA
@@ -139,7 +139,7 @@ export type MonochromeToken = keyof typeof colors.monochrome.gray;
 
 // Helper function to get a color safely with fallbacks
 export function getColor(token: ColorToken, mode: 'light' | 'dark' = 'light'): string {
-  return mode === 'light' 
+  return mode === 'light'
     ? colors.light[token as keyof typeof colors.light] || colors.light.text
     : colors.dark[token as keyof typeof colors.dark] || colors.dark.text;
 }

@@ -30,7 +30,11 @@ export interface OrchestratorOptions {
   cacheTTLSeconds: number;
 }
 
-export type ClaudeModel = 'claude-3-5-sonnet-20240620' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307';
+export type ClaudeModel =
+  | 'claude-3-5-sonnet-20240620'
+  | 'claude-3-opus-20240229'
+  | 'claude-3-sonnet-20240229'
+  | 'claude-3-haiku-20240307';
 
 export interface AgentConfig {
   model: ClaudeModel;
@@ -74,20 +78,20 @@ export interface AgentContext {
 export type AgentStatus = 'idle' | 'working' | 'completed' | 'failed' | 'retrying' | 'preview';
 
 // Agent capabilities
-export type AgentCapability = 
-  'requirements-analysis' | 
-  'concept-generation' | 
-  'selection' | 
-  'svg-generation' | 
-  'svg-validation' | 
-  'variant-generation' | 
-  'guideline-creation' | 
-  'asset-packaging' |
-  'design-theory' |
-  'industry-analysis' |
-  'animation-generation' |
-  'animation' |
-  'uniqueness-verification';
+export type AgentCapability =
+  | 'requirements-analysis'
+  | 'concept-generation'
+  | 'selection'
+  | 'svg-generation'
+  | 'svg-validation'
+  | 'variant-generation'
+  | 'guideline-creation'
+  | 'asset-packaging'
+  | 'design-theory'
+  | 'industry-analysis'
+  | 'animation-generation'
+  | 'animation'
+  | 'uniqueness-verification';
 
 // Agent message types
 export interface AgentMessage {
@@ -458,7 +462,7 @@ export interface Agent {
   status: AgentStatus;
   metrics: AgentMetrics;
   config: AgentConfig;
-  
+
   initialize(context: AgentContext): Promise<void>;
   execute(input: AgentInput): Promise<AgentOutput>;
   getStatus(): AgentStatus;
@@ -470,8 +474,23 @@ export interface AgentMap {
   [key: string]: Agent;
 }
 
-// Enhanced execution stage
-export interface AgentExecutionStage {
+// Execution stage enum for orchestrator
+export enum AgentExecutionStage {
+  INITIALIZATION = 'initialization',
+  ANALYSIS = 'analysis',
+  CONCEPTUALIZATION = 'conceptualization',
+  GENERATION = 'generation',
+  VALIDATION = 'validation',
+  REFINEMENT = 'refinement',
+  DOCUMENTATION = 'documentation',
+  PACKAGING = 'packaging',
+  ANIMATION = 'animation',
+  COMPLETE = 'complete',
+  ERROR = 'error'
+}
+
+// Enhanced execution stage interface
+export interface AgentExecutionStageConfig {
   id: string;
   name: string;
   agents: string[];
@@ -482,7 +501,7 @@ export interface AgentExecutionStage {
 }
 
 export interface AgentExecutionPlan {
-  stages: AgentExecutionStage[];
+  stages: AgentExecutionStageConfig[];
 }
 
 // Retry strategies

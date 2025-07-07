@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { LogoCustomizerProps, SVGElement, LogoCustomizationState } from '@/lib/types-customization';
@@ -10,7 +10,19 @@ import ElementEditor from './customizer/element-editor';
 import ElementSelector from './customizer/element-selector';
 import ShapeLibrary from './customizer/shape-library';
 import HistoryControls from './customizer/history-controls';
-import { ArrowLeftIcon, UndoIcon, RedoIcon, SaveIcon, Shapes, Layers, Group, MoveUp, MoveDown, ArrowUpToLine, ArrowDownToLine } from 'lucide-react';
+import {
+  ArrowLeftIcon,
+  UndoIcon,
+  RedoIcon,
+  SaveIcon,
+  Shapes,
+  Layers,
+  Group,
+  MoveUp,
+  MoveDown,
+  ArrowUpToLine,
+  ArrowDownToLine,
+} from 'lucide-react';
 
 // Default color palette if none provided
 const DEFAULT_COLOR_PALETTE = [
@@ -107,7 +119,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       // Truncate future history if we're not at the end
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements,
@@ -119,7 +131,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
 
   const handleUndo = useCallback(() => {
     if (!canUndo) return;
-    
+
     setCustomizationState(prev => {
       const newIndex = prev.historyIndex - 1;
       const historyItem = prev.history[newIndex];
@@ -134,7 +146,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
 
   const handleRedo = useCallback(() => {
     if (!canRedo) return;
-    
+
     setCustomizationState(prev => {
       const newIndex = prev.historyIndex + 1;
       const historyItem = prev.history[newIndex];
@@ -150,14 +162,14 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
   // Element update handler
   const handleElementUpdate = useCallback((updatedElement: SVGElement) => {
     setCustomizationState(prev => {
-      const updatedElements = prev.elements.map(el => 
+      const updatedElements = prev.elements.map(el =>
         el.id === updatedElement.id ? updatedElement : el
       );
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: updatedElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: updatedElements,
@@ -176,7 +188,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         const newSelectedIds = isAlreadySelected
           ? prev.selectedElementIds.filter(id => id !== elementId)
           : [...prev.selectedElementIds, elementId];
-        
+
         return {
           ...prev,
           selectedElementId: elementId, // Still set as the "primary" selection
@@ -197,11 +209,11 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
   const handleAddShape = useCallback((newElement: SVGElement) => {
     setCustomizationState(prev => {
       const updatedElements = [...prev.elements, newElement];
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: updatedElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: updatedElements,
@@ -212,16 +224,16 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   // Group selected elements
   const handleGroupElements = useCallback(() => {
     setCustomizationState(prev => {
       // Need at least 2 elements to form a group
       if (prev.selectedElementIds.length < 2) return prev;
-      
+
       // Generate a unique ID for the group
       const groupId = `group_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
+
       // Create the group element
       const groupElement: SVGElement = {
         id: groupId,
@@ -229,9 +241,9 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         attributes: {
           id: groupId,
         },
-        children: []
+        children: [],
       };
-      
+
       // Filter out the selected elements from the main elements array
       // and collect them to add to the group
       const selectedElements: SVGElement[] = [];
@@ -242,7 +254,7 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         }
         return true;
       });
-      
+
       // Add the selected elements as children of the group
       // We need to update their attributes to make them relative to the group
       const groupChildren = selectedElements.map(el => ({
@@ -250,22 +262,22 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         attributes: {
           ...el.attributes,
           parent: groupId, // Mark the parent for SVG rendering
-        }
+        },
       }));
-      
+
       // Create the new elements array with the group added
       const updatedElements = [
         ...remainingElements,
         {
           ...groupElement,
-          children: groupChildren
-        }
+          children: groupChildren,
+        },
       ];
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: updatedElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: updatedElements,
@@ -276,21 +288,26 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   // Ungroup elements
   const handleUngroupElements = useCallback(() => {
     setCustomizationState(prev => {
       // Must have a single group selected to ungroup
       if (prev.selectedElementIds.length !== 1) return prev;
-      
+
       const selectedId = prev.selectedElementId;
       const selectedElement = prev.elements.find(el => el.id === selectedId);
-      
+
       // Must be a group element with children
-      if (!selectedElement || selectedElement.type !== 'g' || !selectedElement.children || selectedElement.children.length === 0) {
+      if (
+        !selectedElement ||
+        selectedElement.type !== 'g' ||
+        !selectedElement.children ||
+        selectedElement.children.length === 0
+      ) {
         return prev;
       }
-      
+
       // Extract all children from the group and remove the parent attribute
       const ungroupedChildren = selectedElement.children.map(child => {
         const { parent, ...attributes } = child.attributes;
@@ -299,20 +316,21 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
           attributes,
         };
       });
-      
+
       // Filter out the group from the elements array and add the children
       const updatedElements = [
         ...prev.elements.filter(el => el.id !== selectedId),
-        ...ungroupedChildren
+        ...ungroupedChildren,
       ];
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: updatedElements, timestamp: Date.now() });
-      
+
       // Select the first child as the new selected element
-      const newSelectedId = ungroupedChildren.length > 0 && ungroupedChildren[0] ? ungroupedChildren[0].id : null;
-      
+      const newSelectedId =
+        ungroupedChildren.length > 0 && ungroupedChildren[0] ? ungroupedChildren[0].id : null;
+
       return {
         ...prev,
         elements: updatedElements,
@@ -323,15 +341,15 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   // Z-index controls
   const moveElementUp = useCallback(() => {
     setCustomizationState(prev => {
       if (!prev.selectedElementId) return prev;
-      
+
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
       if (elementIndex < 0 || elementIndex >= prev.elements.length - 1) return prev;
-      
+
       // Swap the element with the one above it
       const newElements = [...prev.elements];
       const elementToMove = newElements[elementIndex];
@@ -341,11 +359,11 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         newElements[elementIndex] = elementToSwap;
         newElements[elementIndex + 1] = elementToMove;
       }
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: newElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: newElements,
@@ -354,14 +372,14 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   const moveElementDown = useCallback(() => {
     setCustomizationState(prev => {
       if (!prev.selectedElementId) return prev;
-      
+
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
       if (elementIndex <= 0) return prev;
-      
+
       // Swap the element with the one below it
       const newElements = [...prev.elements];
       const elementToMove = newElements[elementIndex];
@@ -371,11 +389,11 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
         newElements[elementIndex] = elementToSwap;
         newElements[elementIndex - 1] = elementToMove;
       }
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: newElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: newElements,
@@ -384,26 +402,27 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   const moveElementToFront = useCallback(() => {
     setCustomizationState(prev => {
       if (!prev.selectedElementId) return prev;
-      
+
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
       const elementToMove = prev.elements[elementIndex];
 
-      if (!elementToMove || elementIndex === -1 || elementIndex === prev.elements.length - 1) return prev;
-      
+      if (!elementToMove || elementIndex === -1 || elementIndex === prev.elements.length - 1)
+        return prev;
+
       // Remove the element and add it to the end (top)
       const newElements = [
         ...prev.elements.filter(el => el.id !== prev.selectedElementId),
-        elementToMove
+        elementToMove,
       ].filter((el): el is SVGElement => !!el);
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: newElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: newElements,
@@ -412,26 +431,26 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       };
     });
   }, []);
-  
+
   const moveElementToBack = useCallback(() => {
     setCustomizationState(prev => {
       if (!prev.selectedElementId) return prev;
-      
+
       const elementIndex = prev.elements.findIndex(el => el.id === prev.selectedElementId);
       const elementToMove = prev.elements[elementIndex];
 
       if (!elementToMove || elementIndex <= 0) return prev;
-      
+
       // Remove the element and add it to the beginning (bottom)
       const newElements = [
         elementToMove,
-        ...prev.elements.filter(el => el.id !== prev.selectedElementId)
+        ...prev.elements.filter(el => el.id !== prev.selectedElementId),
       ].filter((el): el is SVGElement => !!el);
-      
+
       // Add to history
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push({ elements: newElements, timestamp: Date.now() });
-      
+
       return {
         ...prev,
         elements: newElements,
@@ -512,8 +531,8 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                   <h3 className="text-sm font-medium">Elements</h3>
                   <div className="flex flex-col space-y-1">
                     <div className="flex space-x-1">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={customizationState.selectedElementIds.length < 2}
                         onClick={handleGroupElements}
@@ -521,16 +540,17 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                       >
                         <Group className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={
                           customizationState.selectedElementIds.length !== 1 ||
                           !customizationState.elements.find(
-                            el => el.id === customizationState.selectedElementId && 
-                                 el.type === 'g' && 
-                                 el.children && 
-                                 el.children.length > 0
+                            el =>
+                              el.id === customizationState.selectedElementId &&
+                              el.type === 'g' &&
+                              el.children &&
+                              el.children.length > 0
                           )
                         }
                         onClick={handleUngroupElements}
@@ -539,11 +559,11 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                         <Layers className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     {/* Z-index controls */}
                     <div className="flex space-x-1">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={!customizationState.selectedElementId}
                         onClick={moveElementToFront}
@@ -551,8 +571,8 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                       >
                         <ArrowUpToLine className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={!customizationState.selectedElementId}
                         onClick={moveElementUp}
@@ -560,8 +580,8 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                       >
                         <MoveUp className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={!customizationState.selectedElementId}
                         onClick={moveElementDown}
@@ -569,8 +589,8 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                       >
                         <MoveDown className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         disabled={!customizationState.selectedElementId}
                         onClick={moveElementToBack}
@@ -604,13 +624,11 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-48 bg-gray-100 dark:bg-gray-700 rounded-md">
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Select an element to edit
-                  </p>
+                  <p className="text-gray-600 dark:text-gray-300">Select an element to edit</p>
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="add" className="mt-0">
               <ShapeLibrary
                 onAddShape={handleAddShape}
@@ -622,26 +640,20 @@ const LogoCustomizer: React.FC<LogoCustomizerProps> = ({
       </div>
 
       <CardFooter className="bg-gray-50 dark:bg-gray-800 flex justify-between">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={onCancel || handleReset}
           className="flex items-center gap-1"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           {onCancel ? 'Cancel' : 'Reset'}
         </Button>
-        
+
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-          >
+          <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
-          <Button 
-            onClick={handleSave}
-            className="flex items-center gap-1"
-          >
+          <Button onClick={handleSave} className="flex items-center gap-1">
             <SaveIcon className="h-4 w-4" />
             Save Changes
           </Button>

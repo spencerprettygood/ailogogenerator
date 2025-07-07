@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { ElementSelectorProps, SVGElement } from '@/lib/types-customization';
@@ -30,23 +30,23 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
     // Try to get user-friendly name
     const id = element.id;
     const nameMatch = id.match(/([a-zA-Z]+)_\d+/);
-    
+
     if (element.type === 'text' && element.content) {
       // For text elements, show content snippet
       const contentPreview = element.content.substring(0, 15);
       return `Text: "${contentPreview}${element.content.length > 15 ? '...' : ''}"`;
     }
-    
+
     if (element.attributes.class) {
       // Use class if available
       return `${element.type.charAt(0).toUpperCase() + element.type.slice(1)}: ${element.attributes.class}`;
     }
-    
+
     if (nameMatch) {
       // Use name part of the ID
       return `${(nameMatch?.[1] || '').charAt(0).toUpperCase() + (nameMatch?.[1] || '').slice(1)}`;
     }
-    
+
     // Default to element type and ID
     return `${element.type.charAt(0).toUpperCase() + element.type.slice(1)} ${id.split('_').pop() || ''}`;
   };
@@ -64,10 +64,8 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-        Logo Elements
-      </h3>
-      
+      <h3 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Logo Elements</h3>
+
       <ScrollArea className="h-[300px] rounded-md border">
         <div className="p-4 space-y-4">
           {Object.entries(groupedElements).map(([type, typeElements]) => (
@@ -75,33 +73,32 @@ const ElementSelector: React.FC<ElementSelectorProps> = ({
               <h4 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                 {type}
               </h4>
-              
+
               <div className="space-y-1">
-                {typeElements.map((element) => (
+                {typeElements.map(element => (
                   <Button
                     key={element.id}
-                    variant={
-                      selectedElementIds.includes(element.id) 
-                        ? "default" 
-                        : "outline"
-                    }
+                    variant={selectedElementIds.includes(element.id) ? 'default' : 'outline'}
                     className={`w-full justify-start text-left h-auto py-2 px-3 ${
-                      selectedElementId === element.id ? "ring-2 ring-primary" : ""
+                      selectedElementId === element.id ? 'ring-2 ring-primary' : ''
                     }`}
-                    onClick={(e) => {
+                    onClick={e => {
                       // Handle multi-select with Shift or Ctrl/Cmd key
-                      const isMultiSelect = allowMultiSelect && (e.shiftKey || e.ctrlKey || e.metaKey);
+                      const isMultiSelect =
+                        allowMultiSelect && (e.shiftKey || e.ctrlKey || e.metaKey);
                       onSelectElement(element.id, isMultiSelect);
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: getElementColor(element) }}
                       />
                       <span className="text-sm truncate">{getElementName(element)}</span>
                       {element.type === 'g' && element.children && element.children.length > 0 && (
-                        <span className="text-xs text-muted-foreground ml-auto">Group ({element.children.length})</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          Group ({element.children.length})
+                        </span>
                       )}
                     </div>
                   </Button>

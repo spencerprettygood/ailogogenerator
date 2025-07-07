@@ -9,9 +9,9 @@ const { SelectionAgent } = require('./lib/agents/specialized/selection-agent');
 
 async function testSelectionAgent() {
   console.log('🧪 Testing Selection Agent JSON Parsing Fixes...\n');
-  
+
   const agent = new SelectionAgent();
-  
+
   // Test cases with various malformed JSON scenarios
   const testCases = [
     {
@@ -28,7 +28,7 @@ async function testSelectionAgent() {
     "selectionRationale": "This concept\x0Bworks well",
     "score": 85
   }
-}`
+}`,
     },
     {
       name: 'JSON with unescaped newlines',
@@ -47,7 +47,7 @@ multiple lines",
 works well for the brand",
     "score": 85
   }
-}`
+}`,
     },
     {
       name: 'JSON with markdown code blocks',
@@ -65,7 +65,7 @@ works well for the brand",
     "score": 85
   }
 }
-\`\`\``
+\`\`\``,
     },
     {
       name: 'JSON with trailing commas',
@@ -81,24 +81,24 @@ works well for the brand",
     "selectionRationale": "This concept works well",
     "score": 85,
   },
-}`
+}`,
     },
     {
       name: 'Completely malformed text (should trigger fallback)',
-      input: `I analyzed the concepts and selected concept 1 which is called "Modern Logo" with a clean, minimal design. The colors are blue (#0066CC) and the style is modern. This was selected because it best matches the brand requirements and target audience. I would rate this selection at 85 out of 100.`
-    }
+      input: `I analyzed the concepts and selected concept 1 which is called "Modern Logo" with a clean, minimal design. The colors are blue (#0066CC) and the style is modern. This was selected because it best matches the brand requirements and target audience. I would rate this selection at 85 out of 100.`,
+    },
   ];
-  
+
   let successCount = 0;
   const totalTests = testCases.length;
-  
+
   for (const testCase of testCases) {
     console.log(`📝 Testing: ${testCase.name}`);
-    
+
     try {
       // Access the private sanitization method
       const sanitized = agent.sanitizeJsonString(testCase.input);
-      
+
       try {
         const parsed = JSON.parse(sanitized);
         console.log('  ✅ Primary parsing successful');
@@ -106,10 +106,10 @@ works well for the brand",
         successCount++;
       } catch (parseError) {
         console.log('  ⚠️ Primary parsing failed, testing fallback...');
-        
+
         // Test fallback parsing
         const fallbackResult = agent.extractSelectionDataFallback(testCase.input);
-        
+
         if (fallbackResult && fallbackResult.selection) {
           console.log('  ✅ Fallback parsing successful');
           console.log('  📊 Concept:', fallbackResult.selection.selectedConcept?.name || 'Unknown');
@@ -121,12 +121,14 @@ works well for the brand",
     } catch (error) {
       console.log('  ❌ Sanitization failed:', error.message);
     }
-    
+
     console.log('');
   }
-  
-  console.log(`🎯 Test Results: ${successCount}/${totalTests} tests passed (${Math.round(successCount/totalTests*100)}% success rate)`);
-  
+
+  console.log(
+    `🎯 Test Results: ${successCount}/${totalTests} tests passed (${Math.round((successCount / totalTests) * 100)}% success rate)`
+  );
+
   if (successCount === totalTests) {
     console.log('🎉 All tests passed! The JSON parsing fixes are working correctly.');
   } else {

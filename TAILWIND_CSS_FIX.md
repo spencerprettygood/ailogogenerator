@@ -16,7 +16,7 @@ The issue was fixed by replacing the `@import "tailwindcss";` statement with the
 
 ```css
 /* Before */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* After */
 @tailwind base;
@@ -37,13 +37,14 @@ According to Tailwind CSS v4 documentation:
 The project is correctly configured with:
 
 1. **PostCSS Configuration** (`postcss.config.mjs`):
+
    ```js
    const config = {
      plugins: {
        '@tailwindcss/postcss': {},
      },
    };
-   
+
    export default config;
    ```
 
@@ -59,6 +60,7 @@ The project is correctly configured with:
 
 1. **Proper Directive Order**:
    Always include the three core Tailwind directives in this order:
+
    ```css
    @tailwind base;
    @tailwind components;
@@ -67,15 +69,16 @@ The project is correctly configured with:
 
 2. **Custom Styles**:
    Add custom styles using the `@layer` directive to ensure they work correctly with Tailwind's utility classes:
+
    ```css
    @layer base {
      /* Base styles */
    }
-   
+
    @layer components {
      /* Component styles */
    }
-   
+
    @layer utilities {
      /* Custom utilities */
    }
@@ -85,7 +88,7 @@ The project is correctly configured with:
    In the root layout, import the globals.css file before any other styles:
    ```tsx
    // app/layout.tsx
-   import './globals.css';  // Must be first
+   import './globals.css'; // Must be first
    ```
 
 ## References

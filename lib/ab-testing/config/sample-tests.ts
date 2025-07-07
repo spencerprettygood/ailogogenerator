@@ -1,10 +1,4 @@
-import { 
-  TestConfig, 
-  TestVariant, 
-  TestComponent, 
-  TestMetric, 
-  FeedbackSource 
-} from '../types';
+import { TestConfig, TestVariant, TestComponent, TestMetric, FeedbackSource } from '../types';
 
 /**
  * Sample A/B test configuration for SVG generation
@@ -20,7 +14,7 @@ export const svgGenerationTest: TestConfig = {
       description: 'Current standard approach to SVG generation',
       implementation: {
         // Uses the default approach, no changes
-      }
+      },
     },
     [TestVariant.B]: {
       id: 'enhanced_approach',
@@ -28,28 +22,21 @@ export const svgGenerationTest: TestConfig = {
       implementation: {
         customLogic: 'enhancedSvgGeneration',
         modelSettings: {
-          temperature: 0.7
-        }
-      }
-    }
+          temperature: 0.7,
+        },
+      },
+    },
   },
-  metrics: [
-    TestMetric.LOGO_QUALITY,
-    TestMetric.USER_SATISFACTION,
-    TestMetric.GENERATION_SPEED
-  ],
-  feedbackSources: [
-    FeedbackSource.EXPLICIT_RATING,
-    FeedbackSource.COMPARATIVE_SELECTION
-  ],
+  metrics: [TestMetric.LOGO_QUALITY, TestMetric.USER_SATISFACTION, TestMetric.GENERATION_SPEED],
+  feedbackSources: [FeedbackSource.EXPLICIT_RATING, FeedbackSource.COMPARATIVE_SELECTION],
   trafficAllocation: {
     [TestVariant.A]: 50,
-    [TestVariant.B]: 50
+    [TestVariant.B]: 50,
   },
   startDate: new Date('2025-06-15'),
   endDate: new Date('2025-07-15'),
   minimumSampleSize: 30,
-  isActive: true
+  isActive: true,
 };
 
 /**
@@ -66,36 +53,29 @@ export const uiLayoutTest: TestConfig = {
       description: 'Current standard centered layout',
       implementation: {
         componentProps: {
-          layout: 'centered'
-        }
-      }
+          layout: 'centered',
+        },
+      },
     },
     [TestVariant.B]: {
       id: 'asymmetrical_layout',
       description: 'New asymmetrical layout with side panels',
       implementation: {
         componentProps: {
-          layout: 'asymmetrical'
-        }
-      }
-    }
+          layout: 'asymmetrical',
+        },
+      },
+    },
   },
-  metrics: [
-    TestMetric.USER_SATISFACTION,
-    TestMetric.ENGAGEMENT,
-    TestMetric.CONVERSION_RATE
-  ],
-  feedbackSources: [
-    FeedbackSource.EXPLICIT_RATING,
-    FeedbackSource.IMPLICIT_BEHAVIOR
-  ],
+  metrics: [TestMetric.USER_SATISFACTION, TestMetric.ENGAGEMENT, TestMetric.CONVERSION_RATE],
+  feedbackSources: [FeedbackSource.EXPLICIT_RATING, FeedbackSource.IMPLICIT_BEHAVIOR],
   trafficAllocation: {
     [TestVariant.A]: 50,
-    [TestVariant.B]: 50
+    [TestVariant.B]: 50,
   },
   startDate: new Date('2025-06-15'),
   minimumSampleSize: 50,
-  isActive: true
+  isActive: true,
 };
 
 /**
@@ -112,45 +92,40 @@ export const moodboardTest: TestConfig = {
       description: 'Standard text-only concept descriptions',
       implementation: {
         // Default approach
-      }
+      },
     },
     [TestVariant.B]: {
       id: 'visual_elements',
       description: 'Enhanced with visual style descriptions and references',
       implementation: {
-        promptTemplate: 'Use vivid visual language and style references from established design systems. Describe textures, patterns, and spatial relationships in detail.',
+        promptTemplate:
+          'Use vivid visual language and style references from established design systems. Describe textures, patterns, and spatial relationships in detail.',
         modelSettings: {
-          temperature: 0.8
-        }
-      }
+          temperature: 0.8,
+        },
+      },
     },
     [TestVariant.C]: {
       id: 'industry_templates',
       description: 'Industry-specific templates and benchmarks',
       implementation: {
         pipelineOptions: {
-          useIndustryTemplates: true
+          useIndustryTemplates: true,
         },
-        customLogic: 'industrySpecificMoodboard'
-      }
-    }
+        customLogic: 'industrySpecificMoodboard',
+      },
+    },
   },
-  metrics: [
-    TestMetric.LOGO_QUALITY,
-    TestMetric.USER_SATISFACTION
-  ],
-  feedbackSources: [
-    FeedbackSource.EXPLICIT_RATING,
-    FeedbackSource.COMPARATIVE_SELECTION
-  ],
+  metrics: [TestMetric.LOGO_QUALITY, TestMetric.USER_SATISFACTION],
+  feedbackSources: [FeedbackSource.EXPLICIT_RATING, FeedbackSource.COMPARATIVE_SELECTION],
   trafficAllocation: {
     [TestVariant.A]: 34,
     [TestVariant.B]: 33,
-    [TestVariant.C]: 33
+    [TestVariant.C]: 33,
   },
   startDate: new Date('2025-06-15'),
   minimumSampleSize: 30,
-  isActive: true
+  isActive: true,
 };
 
 /**
@@ -167,9 +142,9 @@ export const modelSelectionTest: TestConfig = {
       description: 'Claude 3.5 Sonnet for all stages',
       implementation: {
         modelSettings: {
-          model: 'claude-3-5-sonnet-20240620'
-        }
-      }
+          model: 'claude-3-5-sonnet-20240620',
+        },
+      },
     },
     [TestVariant.B]: {
       id: 'mixed_models',
@@ -182,28 +157,21 @@ export const modelSelectionTest: TestConfig = {
             stageC: 'claude-3-haiku-20240307',
             stageD: 'claude-3-5-sonnet-20240620',
             stageF: 'claude-3-haiku-20240307',
-            stageG: 'claude-3-5-sonnet-20240620'
-          }
-        }
-      }
-    }
+            stageG: 'claude-3-5-sonnet-20240620',
+          },
+        },
+      },
+    },
   },
-  metrics: [
-    TestMetric.LOGO_QUALITY,
-    TestMetric.GENERATION_SPEED,
-    TestMetric.TOKEN_EFFICIENCY
-  ],
-  feedbackSources: [
-    FeedbackSource.EXPLICIT_RATING,
-    FeedbackSource.EXPERT_EVALUATION
-  ],
+  metrics: [TestMetric.LOGO_QUALITY, TestMetric.GENERATION_SPEED, TestMetric.TOKEN_EFFICIENCY],
+  feedbackSources: [FeedbackSource.EXPLICIT_RATING, FeedbackSource.EXPERT_EVALUATION],
   trafficAllocation: {
     [TestVariant.A]: 50,
-    [TestVariant.B]: 50
+    [TestVariant.B]: 50,
   },
   startDate: new Date('2025-06-15'),
   minimumSampleSize: 30,
-  isActive: true
+  isActive: true,
 };
 
 /**
@@ -213,5 +181,5 @@ export const sampleTests: TestConfig[] = [
   svgGenerationTest,
   uiLayoutTest,
   moodboardTest,
-  modelSelectionTest
+  modelSelectionTest,
 ];

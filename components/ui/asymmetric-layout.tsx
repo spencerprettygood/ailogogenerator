@@ -9,27 +9,26 @@ interface AsymmetricContainerProps {
 export function AsymmetricContainer({
   children,
   className = '',
-  variant = 'default'
+  variant = 'default',
 }: AsymmetricContainerProps) {
   // Base styles applied to all variants
   const baseStyles = 'relative overflow-hidden';
-  
+
   // Variant-specific styles
   const variantStyles = {
     default: 'rounded-asymmetric bg-white p-6 shadow-asymmetric-md',
     inverse: 'rounded-asymmetric bg-foreground text-white p-6 shadow-asymmetric-md',
-    accent: 'rounded-asymmetric bg-white border-l-4 border-t-0 border-r-0 border-b-2 border-accent p-6 shadow-asymmetric-sm',
-    offset: 'rounded-md bg-white p-6 shadow-accent'
+    accent:
+      'rounded-asymmetric bg-white border-l-4 border-t-0 border-r-0 border-b-2 border-accent p-6 shadow-asymmetric-sm',
+    offset: 'rounded-md bg-white p-6 shadow-accent',
   };
-  
+
   return (
     <div className={`${baseStyles} ${variantStyles[variant]} ${className}`}>
       {variant === 'default' && (
         <div className="absolute top-0 right-0 w-5 h-5 bg-accent clip-path-triangle" />
       )}
-      {variant === 'accent' && (
-        <div className="absolute bottom-0 right-0 w-16 h-1 bg-accent" />
-      )}
+      {variant === 'accent' && <div className="absolute bottom-0 right-0 w-16 h-1 bg-accent" />}
       {children}
     </div>
   );
@@ -44,7 +43,7 @@ interface AsymmetricGridProps {
 export function AsymmetricGrid({
   children,
   className = '',
-  variant = 'split-2-1'
+  variant = 'split-2-1',
 }: AsymmetricGridProps) {
   // Variant-specific grid layouts
   const variantStyles = {
@@ -53,11 +52,9 @@ export function AsymmetricGrid({
     'split-3-2-1': 'grid-cols-1 md:grid-cols-asymmetric-3', // 3fr 2fr 1fr
     'split-1-3': 'grid-cols-1 md:grid-cols-asymmetric-4', // 1fr 3fr
   };
-  
+
   return (
-    <div className={`grid gap-4 md:gap-6 ${variantStyles[variant]} ${className}`}>
-      {children}
-    </div>
+    <div className={`grid gap-4 md:gap-6 ${variantStyles[variant]} ${className}`}>{children}</div>
   );
 }
 
@@ -74,14 +71,14 @@ export function AsymmetricSection({
   className = '',
   title,
   subtitle,
-  accentPosition = 'left'
+  accentPosition = 'left',
 }: AsymmetricSectionProps) {
   // Different accent marker positions
   const accentStyles = {
     left: 'border-l-4 border-accent pl-4 -ml-4',
-    right: 'border-r-4 border-accent pr-4 -mr-4'
+    right: 'border-r-4 border-accent pr-4 -mr-4',
   };
-  
+
   return (
     <section className={`mb-12 ${className}`}>
       {(title || subtitle) && (
@@ -104,27 +101,23 @@ interface AsymmetricPanelProps {
 export function AsymmetricPanel({
   children,
   className = '',
-  variant = 'corner-clip'
+  variant = 'corner-clip',
 }: AsymmetricPanelProps) {
   // Variant-specific panel styles
   const variantStyles = {
     'corner-clip': 'clip-asymmetric-1 bg-white p-6 shadow-asymmetric-sm',
     'accent-border': 'border-l-0 border-t-2 border-r-2 border-b-0 border-accent p-5 bg-white',
-    'shadow-offset': 'transform -translate-x-1 -translate-y-1 bg-white p-6 shadow-accent'
+    'shadow-offset': 'transform -translate-x-1 -translate-y-1 bg-white p-6 shadow-accent',
   };
-  
-  return (
-    <div className={`${variantStyles[variant]} ${className}`}>
-      {children}
-    </div>
-  );
+
+  return <div className={`${variantStyles[variant]} ${className}`}>{children}</div>;
 }
 
 // Utility component for creating focus points with asymmetric highlight
 export function AsymmetricHighlight({
   children,
   className = '',
-  position = 'top-right'
+  position = 'top-right',
 }: {
   children: ReactNode;
   className?: string;
@@ -133,15 +126,17 @@ export function AsymmetricHighlight({
   const positionStyles = {
     'top-right': 'before:top-0 before:right-0 before:w-1/3 before:h-1/4',
     'bottom-left': 'before:bottom-0 before:left-0 before:w-1/3 before:h-1/4',
-    'custom': '' // For custom positioning via className
+    custom: '', // For custom positioning via className
   };
-  
+
   return (
-    <div className={`
+    <div
+      className={`
       relative 
       before:absolute before:bg-accent/10 before:rounded-sm before:-z-10
       ${positionStyles[position]} ${className}
-    `}>
+    `}
+    >
       {children}
     </div>
   );
@@ -153,7 +148,7 @@ export function AsymmetricImage({
   alt,
   className = '',
   width,
-  height
+  height,
 }: {
   src: string;
   alt: string;
@@ -163,8 +158,8 @@ export function AsymmetricImage({
 }) {
   return (
     <div className="relative inline-block">
-      <img 
-        src={src} 
+      <img
+        src={src}
         alt={alt}
         width={width}
         height={height}

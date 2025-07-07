@@ -10,31 +10,31 @@ jest.mock('../../../utils/security-utils');
 
 describe('SVGValidationAgent', () => {
   let agent: SVGValidationAgent;
-  
+
   // Sample SVG for testing
   const validSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
     <title>Test Logo</title>
     <rect width="100" height="100" fill="blue" />
   </svg>`;
-  
+
   const invalidSvg = `<svg width="300" height="300">
     <script>alert('XSS')</script>
     <rect width="100" height="100" fill="blue" />
   </svg>`;
-  
+
   beforeEach(() => {
     // Clear mocks
     jest.clearAllMocks();
-    
+
     // Create agent instance for testing
     agent = new SVGValidationAgent({
       model: 'claude-3-haiku-20240307',
       temperature: 0.1,
-      maxTokens: 1000
+      maxTokens: 1000,
     });
-    
+
     // Mock SVGValidator methods
-    (SVGValidator.validate as jest.Mock).mockImplementation((svg) => {
+    (SVGValidator.validate as jest.Mock).mockImplementation(svg => {
       if (svg.includes('<script>')) {
         return {
           isValid: false,
@@ -43,13 +43,13 @@ describe('SVGValidationAgent', () => {
               type: 'security',
               severity: 'critical',
               message: 'Contains disallowed element: script',
-              autoFixable: true
-            }
+              autoFixable: true,
+            },
           ],
           securityScore: 0,
           accessibilityScore: 50,
           optimizationScore: 70,
-          fileSize: svg.length
+          fileSize: svg.length,
         };
       } else {
         return {
@@ -58,33 +58,33 @@ describe('SVGValidationAgent', () => {
           securityScore: 100,
           accessibilityScore: 90,
           optimizationScore: 85,
-          fileSize: svg.length
+          fileSize: svg.length,
         };
       }
     });
-    
-    (SVGValidator.repair as jest.Mock).mockImplementation((svg) => {
+
+    (SVGValidator.repair as jest.Mock).mockImplementation(svg => {
       const repairedSvg = svg.replace(/<script>.*?<\/script>/g, '');
       return {
         original: svg,
         repaired: repairedSvg,
         fileSize: {
           before: svg.length,
-          after: repairedSvg.length
+          after: repairedSvg.length,
         },
         issuesFixed: [
           {
             type: 'security',
             severity: 'critical',
             message: 'Removed disallowed element: script',
-            autoFixable: true
-          }
+            autoFixable: true,
+          },
         ],
-        issuesRemaining: []
+        issuesRemaining: [],
       };
     });
-    
-    (SVGValidator.optimize as jest.Mock).mockImplementation((svg) => {
+
+    (SVGValidator.optimize as jest.Mock).mockImplementation(svg => {
       const optimizedSvg = svg.replace(/\s+/g, ' ').trim();
       return {
         original: svg,
@@ -92,18 +92,18 @@ describe('SVGValidationAgent', () => {
         fileSize: {
           before: svg.length,
           after: optimizedSvg.length,
-          savings: 10
+          savings: 10,
         },
-        optimizations: ['Removed unnecessary whitespace']
+        optimizations: ['Removed unnecessary whitespace'],
       };
     });
-    
-    (SVGValidator.process as jest.Mock).mockImplementation((svg) => {
+
+    (SVGValidator.process as jest.Mock).mockImplementation(svg => {
       const processed = svg
         .replace(/<script>.*?<\/script>/g, '')
         .replace(/\s+/g, ' ')
         .trim();
-      
+
       return {
         original: svg,
         processed,
@@ -111,35 +111,35 @@ describe('SVGValidationAgent', () => {
         repair: SVGValidator.repair(svg),
         optimization: SVGValidator.optimize(svg.replace(/<script>.*?<\/script>/g, '')),
         overallScore: 85,
-        success: !svg.includes('<script>')
+        success: !svg.includes('<script>'),
       };
     });
-    
+
     // Mock InputSanitizer methods for backward compatibility
-    (InputSanitizer.validateSVG as jest.Mock).mockImplementation((svg) => {
+    (InputSanitizer.validateSVG as jest.Mock).mockImplementation(svg => {
       return {
         isValid: !svg.includes('<script>'),
         errors: svg.includes('<script>') ? ['Contains script tag'] : [],
-        warnings: []
+        warnings: [],
       };
     });
-    
-    (InputSanitizer.cleanSVG as jest.Mock).mockImplementation((svg) => {
+
+    (InputSanitizer.cleanSVG as jest.Mock).mockImplementation(svg => {
       return svg.replace(/<script>.*?<\/script>/g, '');
     });
   });
-  
+
   it('should successfully validate a valid SVG', async () => {
     const input = {
       id: 'test',
       svg: validSvg,
       brandName: 'TestBrand',
       repair: false,
-      optimize: false
+      optimize: false,
     };
-    
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(true);
     expect(output.result?.isValid).toBe(true);
     expect(output.result?.securityScore).toBe(100);
@@ -147,74 +147,76 @@ describe('SVGValidationAgent', () => {
     expect(output.result?.optimizationScore).toBe(85);
     expect(SVGValidator.validate).toHaveBeenCalledWith(validSvg);
   });
-  
+
   it('should repair an invalid SVG', async () => {
     const input = {
       id: 'test',
       svg: invalidSvg,
       brandName: 'TestBrand',
       repair: true,
-      optimize: false
+      optimize: false,
     };
-    
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(true);
     expect(output.result?.isValid).toBe(true);
-    expect(output.result?.modifications).toContain('Fixed critical security issue: Removed disallowed element: script');
+    expect(output.result?.modifications).toContain(
+      'Fixed critical security issue: Removed disallowed element: script'
+    );
     expect(SVGValidator.repair).toHaveBeenCalledWith(invalidSvg);
   });
-  
+
   it('should optimize an SVG when requested', async () => {
     const input = {
       id: 'test',
       svg: validSvg,
       brandName: 'TestBrand',
       repair: false,
-      optimize: true
+      optimize: true,
     };
-    
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(true);
     expect(output.result?.optimizationResults).toBeDefined();
     expect(output.result?.modifications).toContain('Removed unnecessary whitespace');
     expect(SVGValidator.optimize).toHaveBeenCalled();
   });
-  
+
   it('should process SVG with both repair and optimization', async () => {
     const input = {
       id: 'test',
       svg: invalidSvg,
       brandName: 'TestBrand',
       repair: true,
-      optimize: true
+      optimize: true,
     };
-    
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(true);
     expect(output.result?.isValid).toBe(true);
     expect(output.result?.overallScore).toBe(85);
     expect(SVGValidator.process).toHaveBeenCalledWith(invalidSvg);
   });
-  
+
   it('should return error for invalid SVG when repair is not requested', async () => {
     const input = {
       id: 'test',
       svg: invalidSvg,
       brandName: 'TestBrand',
       repair: false,
-      optimize: false
+      optimize: false,
     };
-    
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(false);
     expect(output.error?.message).toBe('SVG validation failed');
     expect(output.error?.details).toContain('CRITICAL: Contains disallowed element: script');
   });
-  
+
   it('should use Claude response for complex repairs when needed', async () => {
     // Mock the processResponse method to simulate Claude fixing an SVG
     const claudeResponse = `Here's the fixed SVG:
@@ -226,9 +228,9 @@ describe('SVGValidationAgent', () => {
       <rect width="100" height="100" fill="blue" />
     </svg>
     \`\`\``;
-    
+
     // Setup a special case where automatic repair fails
-    (SVGValidator.process as jest.Mock).mockImplementationOnce((svg) => {
+    (SVGValidator.process as jest.Mock).mockImplementationOnce(svg => {
       return {
         original: svg,
         processed: svg, // Simulating no change
@@ -239,20 +241,20 @@ describe('SVGValidationAgent', () => {
               type: 'structure',
               severity: 'critical',
               message: 'Complex structural issue',
-              autoFixable: false
-            }
+              autoFixable: false,
+            },
           ],
           securityScore: 50,
           accessibilityScore: 40,
           optimizationScore: 30,
-          fileSize: svg.length
+          fileSize: svg.length,
         },
         repair: {
           original: svg,
           repaired: svg, // No repair happened
           fileSize: {
             before: svg.length,
-            after: svg.length
+            after: svg.length,
           },
           issuesFixed: [],
           issuesRemaining: [
@@ -260,62 +262,64 @@ describe('SVGValidationAgent', () => {
               type: 'structure',
               severity: 'critical',
               message: 'Complex structural issue',
-              autoFixable: false
-            }
-          ]
+              autoFixable: false,
+            },
+          ],
         },
         overallScore: 40,
-        success: false
+        success: false,
       };
     });
-    
+
     // Mock Claude's validation of the fixed SVG
-    (SVGValidator.validate as jest.Mock).mockImplementationOnce(() => {
-      return {
-        isValid: false,
-        issues: [
-          {
-            type: 'structure',
-            severity: 'critical',
-            message: 'Complex structural issue',
-            autoFixable: false
-          }
-        ],
-        securityScore: 50,
-        accessibilityScore: 40,
-        optimizationScore: 30,
-        fileSize: invalidSvg.length
-      };
-    }).mockImplementationOnce(() => {
-      return {
-        isValid: true,
-        issues: [],
-        securityScore: 100,
-        accessibilityScore: 100,
-        optimizationScore: 90,
-        fileSize: claudeResponse.length
-      };
-    });
-    
+    (SVGValidator.validate as jest.Mock)
+      .mockImplementationOnce(() => {
+        return {
+          isValid: false,
+          issues: [
+            {
+              type: 'structure',
+              severity: 'critical',
+              message: 'Complex structural issue',
+              autoFixable: false,
+            },
+          ],
+          securityScore: 50,
+          accessibilityScore: 40,
+          optimizationScore: 30,
+          fileSize: invalidSvg.length,
+        };
+      })
+      .mockImplementationOnce(() => {
+        return {
+          isValid: true,
+          issues: [],
+          securityScore: 100,
+          accessibilityScore: 100,
+          optimizationScore: 90,
+          fileSize: claudeResponse.length,
+        };
+      });
+
     const input = {
       id: 'test',
       svg: invalidSvg,
       brandName: 'TestBrand',
       repair: true,
-      optimize: true
+      optimize: true,
     };
-    
+
     // Mock the generatePrompt method to avoid actual API calls
     jest.spyOn(agent as any, 'generatePrompt').mockResolvedValue('mock prompt');
-    jest.spyOn(agent as any, 'processResponse').mockImplementationOnce(
-      async (response: any, originalInput: any) => {
+    jest
+      .spyOn(agent as any, 'processResponse')
+      .mockImplementationOnce(async (response: any, originalInput: any) => {
         // Call the original method with our simulated Claude response
         return (agent as any).processResponse.bind(agent)(claudeResponse, originalInput);
-      }
-    );
-    
+      });
+
     const output = await agent.execute(input);
-    
+
     expect(output.success).toBe(true);
     expect(output.result?.modifications).toContain('Applied advanced Claude-based SVG repair');
   });

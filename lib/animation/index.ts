@@ -1,6 +1,6 @@
 /**
  * Animation System Main Entry Point
- * 
+ *
  * This file provides a simplified interface to the animation system.
  * It exports all core types, services, and utilities needed for animating SVGs.
  */
@@ -24,16 +24,16 @@ import { createDefaultProviders } from './providers';
 
 /**
  * Create and initialize a ready-to-use animation service
- * 
+ *
  * @returns Initialized SVGAnimationService with default providers
  */
 export function createAnimationService(): SVGAnimationService {
   const service = new SVGAnimationService();
-  
+
   // Register default providers
   const providers = createDefaultProviders();
   providers.forEach(provider => service.registerProvider(provider));
-  
+
   return service;
 }
 

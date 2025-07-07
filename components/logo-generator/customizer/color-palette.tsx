@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,7 @@ interface ColorPaletteProps {
   className?: string;
 }
 
-const ColorPalette: React.FC<ColorPaletteProps> = ({
-  colors,
-  onChange,
-  className = '',
-}) => {
+const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, onChange, className = '' }) => {
   const [newColor, setNewColor] = useState<string>('#000000');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -34,7 +30,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
   const handleRemoveColor = (index: number) => {
     const updatedColors = colors.filter((_, i) => i !== index);
     onChange(updatedColors);
-    
+
     // If we were editing this color, cancel the edit
     if (editingIndex === index) {
       setEditingIndex(null);
@@ -76,16 +72,11 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                   <Input
                     type="text"
                     value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
+                    onChange={e => setEditValue(e.target.value)}
                     className="w-24 h-8 text-xs"
                     pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleSaveEdit}
-                  >
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveEdit}>
                     <Check className="h-3 w-3" />
                   </Button>
                 </div>
@@ -118,13 +109,13 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
               )}
             </div>
           ))}
-          
+
           <div className="flex items-end gap-2">
             <div>
               <Input
                 type="color"
                 value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
+                onChange={e => setNewColor(e.target.value)}
                 className="w-8 h-8 p-1 cursor-pointer"
               />
             </div>
@@ -139,7 +130,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
             </Button>
           </div>
         </div>
-        
+
         <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           Click on a color to edit, or use the color picker to add new colors.
         </div>

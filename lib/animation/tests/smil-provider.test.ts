@@ -1,13 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SMILAnimationProvider } from '../providers/smil-provider';
 import { AnimationType, AnimationEasing } from '../types';
-import { 
-  simpleSvg, 
-  pathSvg, 
-  textSvg, 
-  MockDOMParser, 
-  MockXMLSerializer 
-} from './utils/mock-svg';
+import { simpleSvg, pathSvg, textSvg, MockDOMParser, MockXMLSerializer } from './utils/mock-svg';
 
 // Mock DOM APIs for testing in Node environment
 global.DOMParser = MockDOMParser as any;
@@ -30,7 +24,7 @@ describe('SMILAnimationProvider', () => {
     expect(provider.supportsAnimationType(AnimationType.FADE_IN)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.SPIN)).toBe(true);
     expect(provider.supportsAnimationType(AnimationType.DRAW)).toBe(true);
-    
+
     // Test some unsupported types (SMIL can handle most animations, so this list might be small)
     expect(provider.supportsAnimationType(AnimationType.TYPEWRITER)).toBe(false);
   });
@@ -40,11 +34,11 @@ describe('SMILAnimationProvider', () => {
     vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
       if (selector === 'svg > *') {
         return [
-          { 
+          {
             appendChild: vi.fn(),
             getAttribute: () => null,
-            setAttribute: vi.fn()
-          }
+            setAttribute: vi.fn(),
+          },
         ] as any;
       }
       return [] as any;
@@ -54,8 +48,8 @@ describe('SMILAnimationProvider', () => {
       type: AnimationType.FADE_IN,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
-      }
+        easing: AnimationEasing.EASE_IN_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -69,12 +63,12 @@ describe('SMILAnimationProvider', () => {
     vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
       if (selector === 'path') {
         return [
-          { 
+          {
             appendChild: vi.fn(),
-            getAttribute: (attr: string) => attr === 'd' ? 'M10,10 L90,90' : null,
+            getAttribute: (attr: string) => (attr === 'd' ? 'M10,10 L90,90' : null),
             setAttribute: vi.fn(),
-            getTotalLength: () => 100
-          }
+            getTotalLength: () => 100,
+          },
         ] as any;
       }
       return [] as any;
@@ -84,8 +78,8 @@ describe('SMILAnimationProvider', () => {
       type: AnimationType.DRAW,
       timing: {
         duration: 2000,
-        easing: AnimationEasing.EASE_OUT
-      }
+        easing: AnimationEasing.EASE_OUT,
+      },
     });
 
     expect(result.originalSvg).toBe(pathSvg);
@@ -105,7 +99,7 @@ describe('SMILAnimationProvider', () => {
             if (attr === 'height') return '100';
             return null;
           },
-          setAttribute: vi.fn()
+          setAttribute: vi.fn(),
         } as any;
       }
       return null;
@@ -115,8 +109,8 @@ describe('SMILAnimationProvider', () => {
       type: AnimationType.SPIN,
       timing: {
         duration: 3000,
-        iterations: Infinity
-      }
+        iterations: Infinity,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -130,21 +124,21 @@ describe('SMILAnimationProvider', () => {
     vi.spyOn(document, 'querySelectorAll').mockImplementation((selector: string) => {
       if (selector === 'svg > *') {
         return [
-          { 
+          {
             appendChild: vi.fn(),
             getAttribute: () => null,
-            setAttribute: vi.fn()
+            setAttribute: vi.fn(),
           },
-          { 
+          {
             appendChild: vi.fn(),
             getAttribute: () => null,
-            setAttribute: vi.fn()
+            setAttribute: vi.fn(),
           },
-          { 
+          {
             appendChild: vi.fn(),
             getAttribute: () => null,
-            setAttribute: vi.fn()
-          }
+            setAttribute: vi.fn(),
+          },
         ] as any;
       }
       return [] as any;
@@ -154,9 +148,9 @@ describe('SMILAnimationProvider', () => {
       type: AnimationType.SEQUENTIAL,
       timing: {
         duration: 500,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       },
-      stagger: 200
+      stagger: 200,
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -171,8 +165,8 @@ describe('SMILAnimationProvider', () => {
       if (selector === 'svg') {
         return {
           appendChild: vi.fn(),
-          getAttribute: (attr: string) => attr === 'viewBox' ? '0 0 100 100' : null,
-          setAttribute: vi.fn()
+          getAttribute: (attr: string) => (attr === 'viewBox' ? '0 0 100 100' : null),
+          setAttribute: vi.fn(),
         } as any;
       }
       return null;
@@ -182,8 +176,8 @@ describe('SMILAnimationProvider', () => {
       type: AnimationType.PULSE,
       timing: {
         duration: 2000,
-        iterations: Infinity
-      }
+        iterations: Infinity,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -195,12 +189,12 @@ describe('SMILAnimationProvider', () => {
   it('should handle custom animations', async () => {
     // Not all providers support custom animations in the same way
     // For SMIL, we can test a basic implementation or a fallback
-    
+
     const result = await provider.animate(simpleSvg, {
       type: AnimationType.CUSTOM,
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE
+        easing: AnimationEasing.EASE,
       },
       // A custom SMIL code snippet could be provided here if the provider supports it
     });
@@ -216,8 +210,8 @@ describe('SMILAnimationProvider', () => {
       timing: {
         duration: 1000,
         easing: AnimationEasing.BOUNCE,
-        iterations: 2
-      }
+        iterations: 2,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);
@@ -232,12 +226,14 @@ describe('SMILAnimationProvider', () => {
       throw new Error('Validation error');
     });
 
-    await expect(provider.animate(simpleSvg, {
-      type: AnimationType.FADE_IN,
-      timing: {
-        duration: 1000
-      }
-    })).rejects.toThrow('Validation error');
+    await expect(
+      provider.animate(simpleSvg, {
+        type: AnimationType.FADE_IN,
+        timing: {
+          duration: 1000,
+        },
+      })
+    ).rejects.toThrow('Validation error');
   });
 
   it('should apply default animation when type is not supported', async () => {
@@ -245,8 +241,8 @@ describe('SMILAnimationProvider', () => {
     const result = await provider.animate(simpleSvg, {
       type: 'unsupported_type',
       timing: {
-        duration: 1000
-      }
+        duration: 1000,
+      },
     });
 
     expect(result.originalSvg).toBe(simpleSvg);

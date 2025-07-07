@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ElementEditorProps, SVGElement } from '@/lib/types-customization';
@@ -23,10 +23,14 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
   // Element type-specific properties
   const isText = element.type === 'text';
   const isShape = ['path', 'rect', 'circle', 'polygon', 'ellipse'].includes(element.type);
-  
+
   // Get current colors
-  const [fillColor, setFillColor] = useState<string>((element.attributes.fill as string) || '#000000');
-  const [strokeColor, setStrokeColor] = useState<string>((element.attributes.stroke as string) || 'none');
+  const [fillColor, setFillColor] = useState<string>(
+    (element.attributes.fill as string) || '#000000'
+  );
+  const [strokeColor, setStrokeColor] = useState<string>(
+    (element.attributes.stroke as string) || 'none'
+  );
   const [strokeWidth, setStrokeWidth] = useState<number>(
     Number(element.attributes['stroke-width']) || 1
   );
@@ -35,20 +39,20 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
   useEffect(() => {
     const updatedElement = { ...element };
     updatedElement.attributes = { ...element.attributes };
-    
+
     // Only update if changed to avoid unnecessary rerenders
     if (element.attributes.fill !== fillColor) {
       updatedElement.attributes.fill = fillColor;
     }
-    
+
     if (element.attributes.stroke !== strokeColor) {
       updatedElement.attributes.stroke = strokeColor;
     }
-    
+
     if (element.attributes['stroke-width'] !== strokeWidth) {
       updatedElement.attributes['stroke-width'] = strokeWidth;
     }
-    
+
     onUpdate(updatedElement);
   }, [fillColor, strokeColor, strokeWidth, element, onUpdate]);
 
@@ -138,7 +142,7 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
                   presetColors={colorPalette}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="stroke-width">Stroke Width</Label>
                 <div className="flex items-center gap-3">
@@ -168,10 +172,7 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
 
         {/* Position Tab */}
         <TabsContent value="position" className="pt-4">
-          <PositioningControls
-            element={element}
-            onUpdate={handlePositionUpdate}
-          />
+          <PositioningControls element={element} onUpdate={handlePositionUpdate} />
         </TabsContent>
 
         {/* Typography Tab - Only for text elements */}
@@ -192,21 +193,21 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
             <Input
               id="element-id"
               value={element.id}
-              onChange={(e) => handleAttributeChange('id', e.target.value)}
+              onChange={e => handleAttributeChange('id', e.target.value)}
             />
           </div>
-          
+
           {element.type === 'g' && (
             <div className="space-y-2">
               <Label htmlFor="transform">Transform</Label>
               <Input
                 id="transform"
-                value={element.attributes.transform as string || ''}
-                onChange={(e) => handleAttributeChange('transform', e.target.value)}
+                value={(element.attributes.transform as string) || ''}
+                onChange={e => handleAttributeChange('transform', e.target.value)}
               />
             </div>
           )}
-          
+
           {isShape && element.type !== 'path' && (
             <div className="space-y-2">
               <Label htmlFor="opacity">Opacity</Label>
@@ -217,8 +218,8 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
                   min="0"
                   max="1"
                   step="0.1"
-                  value={element.attributes.opacity as string || '1'}
-                  onChange={(e) => handleAttributeChange('opacity', e.target.value)}
+                  value={(element.attributes.opacity as string) || '1'}
+                  onChange={e => handleAttributeChange('opacity', e.target.value)}
                   className="w-20"
                 />
                 <input
@@ -226,8 +227,8 @@ const ElementEditor: React.FC<ElementEditorProps> = ({
                   min="0"
                   max="1"
                   step="0.1"
-                  value={element.attributes.opacity as string || '1'}
-                  onChange={(e) => handleAttributeChange('opacity', e.target.value)}
+                  value={(element.attributes.opacity as string) || '1'}
+                  onChange={e => handleAttributeChange('opacity', e.target.value)}
                   className="flex-1"
                 />
               </div>

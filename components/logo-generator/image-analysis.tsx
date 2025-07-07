@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,12 +20,14 @@ export function ImageAnalysis({ file }: ImageAnalysisProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    analyzeImage(file).then(result => {
-      setAnalysis(result);
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    analyzeImage(file)
+      .then(result => {
+        setAnalysis(result);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, [file]);
 
   if (loading) {
@@ -69,7 +71,7 @@ export function ImageAnalysis({ file }: ImageAnalysisProps) {
             </div>
           </div>
         )}
-        
+
         <div>
           <span className="text-xs text-muted-foreground">Brightness:</span>
           <Badge variant="outline" className="ml-2 text-xs">
@@ -96,7 +98,7 @@ export function ImageAnalysis({ file }: ImageAnalysisProps) {
 
 // Simple image analysis function
 async function analyzeImage(file: File): Promise<AnalysisResult> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const img = new Image();
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -122,7 +124,7 @@ async function analyzeImage(file: File): Promise<AnalysisResult> {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
-        
+
         if (r === undefined || g === undefined || b === undefined) continue;
 
         const brightness = (r + g + b) / 3;
@@ -136,7 +138,7 @@ async function analyzeImage(file: File): Promise<AnalysisResult> {
       const brightness = avgBrightness > 170 ? 'light' : avgBrightness < 85 ? 'dark' : 'balanced';
 
       const dominantColors = Object.entries(colors)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
         .map(([color]) => color);
 

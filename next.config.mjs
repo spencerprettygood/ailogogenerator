@@ -19,31 +19,31 @@ console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
  */
 const nextConfig = {
   reactStrictMode: true,
-  
+
   // Output standalone for optimized deployment on Vercel
   output: 'standalone',
-  
+
   // Type checking and linting settings
   typescript: {
     ignoreBuildErrors: process.env.NODE_ENV !== 'development',
   },
-  
+
   eslint: {
     ignoreDuringBuilds: process.env.NODE_ENV !== 'development',
   },
-  
+
   // Image optimization configuration
   images: {
     domains: [],
     formats: ['image/avif', 'image/webp'],
   },
-  
+
   // Reduce bundle size with file compression
   compress: true,
-  
+
   // Trailing slash for consistency
   trailingSlash: false,
-  
+
   // Enhance with security headers
   async headers() {
     return [
@@ -59,15 +59,11 @@ const nextConfig = {
       },
       {
         source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
       },
       {
         source: '/_next/static/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         source: '/assets/:path*',
@@ -77,7 +73,7 @@ const nextConfig = {
       },
     ];
   },
-  
+
   // Webpack configuration optimized based on Next.js 15 documentation
   webpack: (config, { isServer, dev }) => {
     // Add proper path aliases
@@ -85,27 +81,27 @@ const nextConfig = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
     };
-    
+
     // Only apply these optimizations for client bundles
     if (!isServer) {
       // Polyfill handling for browser
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        'fs': false,
-        'path': false,
-        'os': false,
-        'crypto': false,
-        'stream': false,
-        'http': false,
-        'https': false,
-        'zlib': false,
-        'async_hooks': false,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        async_hooks: false,
       };
-      
+
       // Production optimizations
       if (!dev) {
         const webpack = require('webpack');
-        
+
         // Ignore certain modules in the browser
         config.plugins.push(
           new webpack.IgnorePlugin({
@@ -114,35 +110,32 @@ const nextConfig = {
         );
       }
     }
-    
+
     // Ensure extensions are properly configured
     config.resolve.extensions = [
-      '.tsx', 
-      '.ts', 
-      '.js', 
-      '.jsx', 
-      '.json', 
-      ...(config.resolve.extensions || [])
+      '.tsx',
+      '.ts',
+      '.js',
+      '.jsx',
+      '.json',
+      ...(config.resolve.extensions || []),
     ];
-    
+
     // SVG handling
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
-    
+
     return config;
   },
-  
+
   // External packages that should be transpiled
   experimental: {
     // Use serverComponentsExternalPackages instead of transpilePackages
-    serverComponentsExternalPackages: [
-      'next-themes',
-      '@anthropic-ai/sdk',
-    ]
+    serverComponentsExternalPackages: ['next-themes', '@anthropic-ai/sdk'],
   },
-  
+
   // Explicitly provide environment variables
   env: {
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,

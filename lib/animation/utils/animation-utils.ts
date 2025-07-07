@@ -32,64 +32,64 @@ export function createDefaultAnimationOptions(type: AnimationType): AnimationOpt
     [AnimationType.FADE_IN]: {
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     [AnimationType.ZOOM_IN]: {
       timing: {
         duration: 1200,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       },
       trigger: AnimationTrigger.LOAD,
-      transformOrigin: 'center'
+      transformOrigin: 'center',
     },
     [AnimationType.DRAW]: {
       timing: {
         duration: 1500,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     [AnimationType.SPIN]: {
       timing: {
         duration: 1000,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: 1
+        iterations: 1,
       },
       trigger: AnimationTrigger.LOAD,
-      transformOrigin: 'center'
+      transformOrigin: 'center',
     },
     [AnimationType.PULSE]: {
       timing: {
         duration: 1500,
         easing: AnimationEasing.EASE_IN_OUT,
-        iterations: Infinity
+        iterations: Infinity,
       },
-      trigger: AnimationTrigger.LOAD
+      trigger: AnimationTrigger.LOAD,
     },
     [AnimationType.CUSTOM]: {
       timing: {
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       },
       trigger: AnimationTrigger.LOAD,
       customKeyframes: `
         0% { opacity: 0; transform: scale(0.8); }
         100% { opacity: 1; transform: scale(1); }
-      `
-    }
+      `,
+    },
   };
-  
+
   // Set defaults for other animation types
   const fallbackOptions = {
     timing: {
       duration: 1000,
-      easing: AnimationEasing.EASE_IN_OUT
+      easing: AnimationEasing.EASE_IN_OUT,
     },
-    trigger: AnimationTrigger.LOAD
+    trigger: AnimationTrigger.LOAD,
   };
-  
+
   return {
     type,
     ...(defaultOptions[type] || fallbackOptions),
@@ -97,8 +97,8 @@ export function createDefaultAnimationOptions(type: AnimationType): AnimationOpt
       duration: 1000,
       easing: AnimationEasing.EASE_IN_OUT,
       iterations: 1, // Default to 1 iteration
-      ...(defaultOptions[type]?.timing || {})
-    }
+      ...(defaultOptions[type]?.timing || {}),
+    },
   } as AnimationOptions;
 }
 
@@ -107,23 +107,30 @@ export function createDefaultAnimationOptions(type: AnimationType): AnimationOpt
  * @param feature Feature to check
  * @returns Boolean indicating if the feature is supported
  */
-export function isBrowserSupported(feature: 'css-animations' | 'smil' | 'web-animations-api'): boolean {
+export function isBrowserSupported(
+  feature: 'css-animations' | 'smil' | 'web-animations-api'
+): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false; // Server-side rendering
   }
-  
+
   switch (feature) {
     case 'css-animations':
-      return 'animation' in document.documentElement.style || 
-             'webkitAnimation' in document.documentElement.style;
-      
+      return (
+        'animation' in document.documentElement.style ||
+        'webkitAnimation' in document.documentElement.style
+      );
+
     case 'smil':
       // A more reliable check for SMIL is to see if animation elements have the beginElement method.
-      return typeof (document.createElementNS('http://www.w3.org/2000/svg', 'animate') as any).beginElement === 'function';
-      
+      return (
+        typeof (document.createElementNS('http://www.w3.org/2000/svg', 'animate') as any)
+          .beginElement === 'function'
+      );
+
     case 'web-animations-api':
       return typeof Element.prototype.animate === 'function';
-      
+
     default:
       return false;
   }
@@ -144,15 +151,15 @@ export function parseSVGElements(svgString: string): {
     // Server-side rendering fallback
     return { paths: [], shapes: [], groups: [], root: null };
   }
-  
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  
+
   return {
     paths: Array.from(doc.querySelectorAll('path')),
     shapes: Array.from(doc.querySelectorAll('rect, circle, ellipse, polygon, polyline')),
     groups: Array.from(doc.querySelectorAll('g')),
-    root: doc.querySelector('svg')
+    root: doc.querySelector('svg'),
   };
 }
 
@@ -162,39 +169,45 @@ export function parseSVGElements(svgString: string): {
  * @param options Animation options
  * @returns CSS keyframes string
  */
-export function generateKeyframes(type: AnimationType, options?: Partial<AnimationOptions>): string {
+export function generateKeyframes(
+  type: AnimationType,
+  options?: Partial<AnimationOptions>
+): string {
   switch (type) {
     case AnimationType.FADE_IN:
       return `
         0% { opacity: 0; }
         100% { opacity: 1; }
       `;
-      
+
     case AnimationType.ZOOM_IN:
       return `
         0% { opacity: 0; transform: scale(0.5); }
         100% { opacity: 1; transform: scale(1); }
       `;
-      
+
     case AnimationType.SPIN:
       return `
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       `;
-      
+
     case AnimationType.PULSE:
       return `
         0% { transform: scale(1); }
         50% { transform: scale(1.1); }
         100% { transform: scale(1); }
       `;
-      
+
     case AnimationType.CUSTOM:
-      return options?.customKeyframes || `
+      return (
+        options?.customKeyframes ||
+        `
         0% { opacity: 0; transform: scale(0.8); }
         100% { opacity: 1; transform: scale(1); }
-      `;
-      
+      `
+      );
+
     default:
       return `
         0% { opacity: 0; }
@@ -217,9 +230,7 @@ export function detectAnimationSupport(): { css: boolean; smil: boolean; webAnim
 /**
  * Generate JS code snippet to check browser compatibility for an animation type
  */
-export function generateBrowserCompatibilityCheck(
-  type: 'css' | 'smil' | 'web-animations'
-): string {
+export function generateBrowserCompatibilityCheck(type: 'css' | 'smil' | 'web-animations'): string {
   switch (type) {
     case 'css':
       return `
@@ -265,10 +276,14 @@ export function convertTimingToCSS(options: {
   if (options.delay) parts.push(`${options.delay}ms`);
   parts.push(`${options.easing}`);
   if (options.iterations !== undefined) {
-    parts.push(options.iterations === Infinity || options.iterations === 'infinite' ? 'infinite' : `${options.iterations}`);
+    parts.push(
+      options.iterations === Infinity || options.iterations === 'infinite'
+        ? 'infinite'
+        : `${options.iterations}`
+    );
   }
   if (options.direction) parts.push(options.direction);
-  
+
   return parts.join(' ');
 }
 
@@ -311,7 +326,7 @@ export function convertTimingToSMIL(options: {
     }
   } else {
     // Fallback for custom cubic-bezier or other values
-    attrs.calcMode = 'linear'; 
+    attrs.calcMode = 'linear';
   }
 
   return attrs;
@@ -346,9 +361,11 @@ export function optimizeSVGForAnimation(svg: string): SVGOptimizationResult {
     }
 
     // 1. Add IDs to elements that don't have them
-    const elementsToId = Array.from(doc.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, g, text'));
+    const elementsToId = Array.from(
+      doc.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, g, text')
+    );
     let addedIdsCount = 0;
-    elementsToId.forEach((el) => {
+    elementsToId.forEach(el => {
       if (!el.id) {
         el.id = generateAnimationId();
         addedIdsCount++;
@@ -359,7 +376,9 @@ export function optimizeSVGForAnimation(svg: string): SVGOptimizationResult {
     }
 
     // 2. Ensure stroke-width on elements with stroke
-    const elementsWithStroke = Array.from(doc.querySelectorAll('path, line, polyline, polygon, rect, circle, ellipse'));
+    const elementsWithStroke = Array.from(
+      doc.querySelectorAll('path, line, polyline, polygon, rect, circle, ellipse')
+    );
     let addedStrokeWidthCount = 0;
     elementsWithStroke.forEach(el => {
       if (el.getAttribute('stroke') && !el.getAttribute('stroke-width')) {
@@ -374,7 +393,6 @@ export function optimizeSVGForAnimation(svg: string): SVGOptimizationResult {
     const serializer = new XMLSerializer();
     result.svg = serializer.serializeToString(doc.documentElement);
     result.isOptimized = true;
-
   } catch (e: any) {
     result.errors.push(`An unexpected error occurred: ${e.message}`);
   }

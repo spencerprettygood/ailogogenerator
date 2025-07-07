@@ -5,16 +5,16 @@ import { SVGElement } from '../types-customization';
  * @param svgCode Raw SVG code string
  * @returns Array of structured SVG elements
  */
-export function parseSvgToElements(svgCode: string): { 
-  elements: SVGElement[], 
-  viewBox: string,
-  svgAttrs: Record<string, string | number>
+export function parseSvgToElements(svgCode: string): {
+  elements: SVGElement[];
+  viewBox: string;
+  svgAttrs: Record<string, string | number>;
 } {
   // Create a temporary DOM element to parse SVG
   const parser = new DOMParser();
   const svgDoc = parser.parseFromString(svgCode, 'image/svg+xml');
   const svgElement = svgDoc.querySelector('svg');
-  
+
   if (!svgElement) {
     throw new Error('Invalid SVG: No root SVG element found');
   }
@@ -41,13 +41,13 @@ export function parseSvgToElements(svgCode: string): {
 function processChildren(parent: Element, elements: SVGElement[], parentId: string = '') {
   Array.from(parent.children).forEach((child, index) => {
     const tagName = child.tagName.toLowerCase();
-    
+
     // Skip unsupported elements
     if (!isSupported(tagName)) return;
-    
+
     // Create element ID if not present
     const id = child.id || `${tagName}_${parentId ? `${parentId}_` : ''}${index}`;
-    
+
     // Collect element attributes
     const attributes: Record<string, string | number> = {};
     Array.from(child.attributes).forEach(attr => {
@@ -56,24 +56,24 @@ function processChildren(parent: Element, elements: SVGElement[], parentId: stri
         attributes[attr.name] = attr.value;
       }
     });
-    
+
     // Add id attribute
     attributes['id'] = id;
-    
+
     // Create the element object
     const element: SVGElement = {
       id,
       type: tagName as SVGElement['type'],
       attributes,
     };
-    
+
     // Handle text content
     if (tagName === 'text') {
       element.content = child.textContent || '';
     }
-    
+
     elements.push(element);
-    
+
     // Process children recursively if this is a group
     if (tagName === 'g') {
       processChildren(child, elements, id);
@@ -86,8 +86,15 @@ function processChildren(parent: Element, elements: SVGElement[], parentId: stri
  */
 function isSupported(tagName: string): boolean {
   const supportedElements = [
-    'path', 'rect', 'circle', 'text', 
-    'polygon', 'ellipse', 'line', 'g', 'image'
+    'path',
+    'rect',
+    'circle',
+    'text',
+    'polygon',
+    'ellipse',
+    'line',
+    'g',
+    'image',
   ];
   return supportedElements.includes(tagName);
 }
@@ -96,41 +103,42 @@ function isSupported(tagName: string): boolean {
  * Serialize SVG elements back to SVG code
  */
 export function elementsToSvgCode(
-  elements: SVGElement[], 
+  elements: SVGElement[],
   viewBox: string,
   svgAttrs: Record<string, string | number>
 ): string {
   // Create new SVG document
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  
+
   // Set attributes
   svg.setAttribute('viewBox', viewBox);
-  
+
   for (const [key, value] of Object.entries(svgAttrs)) {
-    if (key !== 'xmlns' && key !== 'viewBox') { // Skip xmlns as it's added below
+    if (key !== 'xmlns' && key !== 'viewBox') {
+      // Skip xmlns as it's added below
       svg.setAttribute(key, String(value));
     }
   }
-  
+
   // Add required namespaces
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  
+
   // Build element hierarchy
   const elementMap = new Map<string, SVGElement>();
   const rootElements: SVGElement[] = [];
-  
+
   // First pass: index all elements
   elements.forEach(el => {
     elementMap.set(el.id, el);
   });
-  
+
   // Second pass: determine hierarchy
   elements.forEach(el => {
     if (el.attributes.parent) {
       // This is a child element
       const parentId = el.attributes.parent as string;
       const parent = elementMap.get(parentId);
-      
+
       if (parent) {
         if (!parent.children) parent.children = [];
         parent.children.push(el);
@@ -142,12 +150,12 @@ export function elementsToSvgCode(
       rootElements.push(el);
     }
   });
-  
+
   // Build SVG DOM from elements
   rootElements.forEach(el => {
     appendElementToSvg(svg, el);
   });
-  
+
   // Get the SVG code as string
   const serializer = new XMLSerializer();
   return serializer.serializeToString(svg);
@@ -158,22 +166,23 @@ export function elementsToSvgCode(
  */
 function appendElementToSvg(parent: Element, element: SVGElement) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', element.type);
-  
+
   // Set attributes
   for (const [key, value] of Object.entries(element.attributes)) {
-    if (key !== 'parent') { // Skip our custom 'parent' attribute
+    if (key !== 'parent') {
+      // Skip our custom 'parent' attribute
       el.setAttribute(key, String(value));
     }
   }
-  
+
   // Set content for text elements
   if (element.type === 'text' && element.content) {
     el.textContent = element.content;
   }
-  
+
   // Append to parent
   parent.appendChild(el);
-  
+
   // Process children if any
   if (element.children) {
     element.children.forEach(child => {
@@ -185,41 +194,30 @@ function appendElementToSvg(parent: Element, element: SVGElement) {
 /**
  * Updates a single SVG element in the elements array
  */
-export function updateElement(
-  elements: SVGElement[], 
-  updatedElement: SVGElement
-): SVGElement[] {
-  return elements.map(element => 
-    element.id === updatedElement.id ? updatedElement : element
-  );
+export function updateElement(elements: SVGElement[], updatedElement: SVGElement): SVGElement[] {
+  return elements.map(element => (element.id === updatedElement.id ? updatedElement : element));
 }
 
 /**
  * Adds a new SVG element to the elements array
  * If the element is a group with children, adds all children as well
  */
-export function addElement(
-  elements: SVGElement[],
-  newElement: SVGElement
-): SVGElement[] {
+export function addElement(elements: SVGElement[], newElement: SVGElement): SVGElement[] {
   const updatedElements = [...elements];
-  
+
   // Add the main element
   updatedElements.push(newElement);
-  
+
   return updatedElements;
 }
 
 /**
  * Updates the color of an SVG element
  */
-export function updateElementColor(
-  element: SVGElement, 
-  color: string
-): SVGElement {
+export function updateElementColor(element: SVGElement, color: string): SVGElement {
   const updatedElement = { ...element };
   const updatedAttributes = { ...element.attributes };
-  
+
   // Update color attribute based on element type
   switch (element.type) {
     case 'path':
@@ -238,7 +236,7 @@ export function updateElementColor(
       updatedAttributes.fill = color;
       break;
   }
-  
+
   updatedElement.attributes = updatedAttributes;
   return updatedElement;
 }
@@ -246,14 +244,10 @@ export function updateElementColor(
 /**
  * Updates the position of an SVG element
  */
-export function updateElementPosition(
-  element: SVGElement,
-  x: number,
-  y: number
-): SVGElement {
+export function updateElementPosition(element: SVGElement, x: number, y: number): SVGElement {
   const updatedElement = { ...element };
   const updatedAttributes = { ...element.attributes };
-  
+
   // Update position attributes based on element type
   switch (element.type) {
     case 'rect':
@@ -276,7 +270,7 @@ export function updateElementPosition(
       updatedAttributes.transform = `translate(${x},${y})`;
       break;
   }
-  
+
   updatedElement.attributes = updatedAttributes;
   return updatedElement;
 }
@@ -293,14 +287,14 @@ export function updateElementTypography(
   if (element.type !== 'text') {
     return element;
   }
-  
+
   const updatedElement = { ...element };
   const updatedAttributes = { ...element.attributes };
-  
+
   updatedAttributes['font-family'] = fontFamily;
   updatedAttributes['font-size'] = fontSize;
   updatedAttributes['font-weight'] = fontWeight;
-  
+
   updatedElement.attributes = updatedAttributes;
   return updatedElement;
 }

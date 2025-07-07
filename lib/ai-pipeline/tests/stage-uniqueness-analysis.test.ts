@@ -1,44 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { analyzeLogoUniqueness, UniquenessAnalysisInput } from '../stages/stage-uniqueness-analysis';
+import {
+  analyzeLogoUniqueness,
+  UniquenessAnalysisInput,
+} from '../stages/stage-uniqueness-analysis';
 
 // Mock the AI service calls
 vi.mock('@/lib/retry', () => ({
   callAIWithRetry: vi.fn().mockResolvedValue({
-    content: [{ text: JSON.stringify({
-      uniquenessScore: 82,
-      analysis: {
-        overallAssessment: "The logo is sufficiently unique for the technology industry.",
-        uniqueElements: ["Custom typography", "Distinctive color palette"],
-        potentialIssues: [],
-        industryConventions: ["Use of blue color", "Modern minimalism"],
-        differentiators: ["Unique icon design", "Custom letterform"]
+    content: [
+      {
+        text: JSON.stringify({
+          uniquenessScore: 82,
+          analysis: {
+            overallAssessment: 'The logo is sufficiently unique for the technology industry.',
+            uniqueElements: ['Custom typography', 'Distinctive color palette'],
+            potentialIssues: [],
+            industryConventions: ['Use of blue color', 'Modern minimalism'],
+            differentiators: ['Unique icon design', 'Custom letterform'],
+          },
+          similarLogos: [
+            {
+              companyName: 'TechCorp',
+              similarityScore: 30,
+              similarElements: ['Similar color palette'],
+            },
+          ],
+          recommendations: [
+            {
+              text: 'Your logo is unique and should stand out in the industry.',
+              severity: 'info',
+            },
+          ],
+        }),
       },
-      similarLogos: [
-        {
-          companyName: "TechCorp",
-          similarityScore: 30,
-          similarElements: ["Similar color palette"]
-        }
-      ],
-      recommendations: [
-        {
-          text: "Your logo is unique and should stand out in the industry.",
-          severity: "info"
-        }
-      ]
-    }) }],
+    ],
     usage: {
       input_tokens: 300,
-      output_tokens: 500
-    }
-  })
+      output_tokens: 500,
+    },
+  }),
 }));
 
 describe('Stage: Uniqueness Analysis', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  
+
   it('should analyze logo uniqueness successfully', async () => {
     // Test input
     const input: UniquenessAnalysisInput = {
@@ -51,13 +58,13 @@ describe('Stage: Uniqueness Analysis', () => {
         imagery: 'Abstract, geometric',
         target_audience: 'Tech professionals',
         additional_requests: 'Make it unique',
-        industry: 'Technology'
-      }
+        industry: 'Technology',
+      },
     };
-    
+
     // Execute the function
     const result = await analyzeLogoUniqueness(input);
-    
+
     // Verify results
     expect(result.success).toBe(true);
     expect(result.result).toBeDefined();

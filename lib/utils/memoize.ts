@@ -1,9 +1,9 @@
 /**
  * @file memoize.ts
  * @description Function memoization utilities for caching repetitive operations
- * 
+ *
  * This module provides utilities for memoizing function results, allowing
- * expensive operations to be cached and reused when called with the same 
+ * expensive operations to be cached and reused when called with the same
  * parameters. This can significantly improve performance for repetitive
  * operations like SVG processing, data transformations, and API requests.
  */
@@ -19,36 +19,36 @@ export interface MemoizeOptions {
    * @default 100
    */
   maxSize?: number;
-  
+
   /**
    * Time-to-live in milliseconds (0 = no expiration)
    * @default 0
    */
   ttl?: number;
-  
+
   /**
    * Function to generate cache keys from function arguments
    * By default, JSON.stringify is used
    */
   keyGenerator?: (...args: unknown[]) => string;
-  
+
   /**
    * Flag to determine if the memoize cache should be cleared when memory pressure is high
    * @default true
    */
   clearOnMemoryPressure?: boolean;
-  
+
   /**
    * Custom cache storage to use instead of the default Map
    */
   cache?: Map<string, CacheItem>;
-  
+
   /**
    * Whether to cache rejected promises (errors)
    * @default false
    */
   cacheRejections?: boolean;
-  
+
   /**
    * Name for this memoized function (for debugging and monitoring)
    */
@@ -63,17 +63,17 @@ interface CacheItem {
    * The cached function result
    */
   value: unknown;
-  
+
   /**
    * Timestamp when this item expires (0 = no expiration)
    */
   expiresAt: number;
-  
+
   /**
    * Timestamp when this item was created
    */
   createdAt: number;
-  
+
   /**
    * Number of times this cached result has been used
    */
@@ -83,17 +83,20 @@ interface CacheItem {
 /**
  * Registry of all memoized functions for global management
  */
-const memoizeRegistry = new Map<string, {
-  fn: Function;
-  cache: Map<string, CacheItem>;
-  options: MemoizeOptions;
-  stats: {
-    hits: number;
-    misses: number;
-    size: number;
-    lastCleared: number;
-  };
-}>();
+const memoizeRegistry = new Map<
+  string,
+  {
+    fn: Function;
+    cache: Map<string, CacheItem>;
+    options: MemoizeOptions;
+    stats: {
+      hits: number;
+      misses: number;
+      size: number;
+      lastCleared: number;
+    };
+  }
+>();
 
 /**
  * Default options for memoization
@@ -108,23 +111,21 @@ const defaultOptions: MemoizeOptions = {
       return JSON.stringify(args);
     } catch (error) {
       // If serialization fails (e.g., circular references), fall back to simple string
-      return args.map(arg => 
-        typeof arg === 'object' 
-          ? `obj:${Object.keys(arg).join(',')}` 
-          : String(arg)
-      ).join('|');
+      return args
+        .map(arg => (typeof arg === 'object' ? `obj:${Object.keys(arg).join(',')}` : String(arg)))
+        .join('|');
     }
-  }
+  },
 };
 
 /**
  * Memoizes a function, caching its results for repeated calls with the same arguments
- * 
+ *
  * @template T The function to memoize
  * @param fn The function to memoize
  * @param options Configuration options for the memoization
  * @returns A memoized version of the function
- * 
+ *
  * @example
  * // Memoize an expensive calculation
  * const calculateComplexValue = memoize(
@@ -134,10 +135,10 @@ const defaultOptions: MemoizeOptions = {
  *   },
  *   { maxSize: 50, ttl: 60 * 1000 } // Cache up to 50 results for 1 minute
  * );
- * 
+ *
  * // First call: performs the calculation
  * calculateComplexValue(42); // logs "Calculating..." and returns result
- * 
+ *
  * // Second call with same input: returns cached result without calculation
  * calculateComplexValue(42); // returns cached result without logging
  */
@@ -154,7 +155,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
   const opts = { ...defaultOptions, ...options };
   const cache = opts.cache || new Map<string, CacheItem>();
   const name = opts.name || fn.name || `memoized-${Math.random().toString(36).substring(2, 9)}`;
-  
+
   // Register this memoized function
   memoizeRegistry.set(name, {
     fn,
@@ -164,10 +165,10 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
       hits: 0,
       misses: 0,
       size: 0,
-      lastCleared: Date.now()
-    }
+      lastCleared: Date.now(),
+    },
   });
-  
+
   // Create the memoized function
   const memoized = function (this: unknown, ...args: Parameters<T>): ReturnType<T> {
     try {
@@ -188,7 +189,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
         value: result as unknown as ReturnType<T>,
         expiresAt: 0,
         createdAt: Date.now(),
-        hits: 1
+        hits: 1,
       });
       return result as ReturnType<T>;
     } catch (error) {
@@ -196,7 +197,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
       return fn.apply(this, args) as ReturnType<T>;
     }
   };
-  
+
   // Add helper methods to the memoized function
   function clearCache() {
     cache.clear();
@@ -214,7 +215,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
       hits: stats.hits,
       misses: stats.misses,
       size: cache.size,
-      lastCleared: stats.lastCleared
+      lastCleared: stats.lastCleared,
     };
   }
   return {
@@ -222,7 +223,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
     clearCache,
     invalidate,
     getStats,
-    original: fn
+    original: fn,
   };
 }
 
@@ -232,20 +233,20 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
 export function clearAllMemoizationCaches(): void {
   try {
     let totalCleared = 0;
-    
+
     for (const [name, entry] of memoizeRegistry.entries()) {
       totalCleared += entry.cache.size;
       entry.cache.clear();
       entry.stats.lastCleared = Date.now();
       entry.stats.size = 0;
     }
-    
+
     console.info(`Cleared ${totalCleared} items from ${memoizeRegistry.size} memoization caches`);
   } catch (error) {
     handleError(error, {
       category: ErrorCategory.STORAGE,
       context: { operation: 'clearAllMemoizationCaches' },
-      logLevel: 'warn'
+      logLevel: 'warn',
     });
   }
 }
@@ -253,16 +254,9 @@ export function clearAllMemoizationCaches(): void {
 /**
  * Gets statistics for all memoized functions
  */
-export function getMemoizationStats(): Record<string, {
-  hits: number;
-  misses: number;
-  size: number;
-  hitRate: number;
-  maxSize: number | undefined;
-  ttl: number | undefined;
-  lastCleared: Date;
-}> {
-  const stats: Record<string, {
+export function getMemoizationStats(): Record<
+  string,
+  {
     hits: number;
     misses: number;
     size: number;
@@ -270,11 +264,24 @@ export function getMemoizationStats(): Record<string, {
     maxSize: number | undefined;
     ttl: number | undefined;
     lastCleared: Date;
-  }> = {};
-  
+  }
+> {
+  const stats: Record<
+    string,
+    {
+      hits: number;
+      misses: number;
+      size: number;
+      hitRate: number;
+      maxSize: number | undefined;
+      ttl: number | undefined;
+      lastCleared: Date;
+    }
+  > = {};
+
   for (const [name, entry] of memoizeRegistry.entries()) {
     const { hits, misses, size, lastCleared } = entry.stats;
-    
+
     stats[name] = {
       hits,
       misses,
@@ -282,10 +289,10 @@ export function getMemoizationStats(): Record<string, {
       hitRate: hits + misses > 0 ? hits / (hits + misses) : 0,
       maxSize: entry.options.maxSize,
       ttl: entry.options.ttl,
-      lastCleared: new Date(lastCleared)
+      lastCleared: new Date(lastCleared),
     };
   }
-  
+
   return stats;
 }
 
@@ -293,13 +300,13 @@ export function getMemoizationStats(): Record<string, {
  * Creates a memoized version of an async function with debouncing
  * This is useful for expensive operations that might be called rapidly,
  * such as real-time search or UI updates based on user input
- * 
+ *
  * @template T The function to memoize and debounce
  * @param fn The async function to memoize and debounce
  * @param wait The debounce wait time in milliseconds
  * @param options Configuration options for the memoization
  * @returns A memoized and debounced version of the function
- * 
+ *
  * @example
  * // Create a memoized and debounced search function
  * const searchUsers = memoizeDebounced(
@@ -310,7 +317,7 @@ export function getMemoizationStats(): Record<string, {
  *   300, // Debounce for 300ms
  *   { maxSize: 20, ttl: 30 * 1000 } // Cache up to 20 results for 30 seconds
  * );
- * 
+ *
  * // Usage in a component
  * const handleSearch = (query) => {
  *   searchUsers(query).then(results => {
@@ -324,41 +331,46 @@ export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unkno
   options: MemoizeOptions = {}
 ): T {
   const opts = { ...defaultOptions, ...options };
-  const name = opts.name || fn.name || `memoized-debounced-${Math.random().toString(36).substring(2, 9)}`;
-  
+  const name =
+    opts.name || fn.name || `memoized-debounced-${Math.random().toString(36).substring(2, 9)}`;
+
   // Create a map of pending promises
-  const pending = new Map<string, { 
-    promise: Promise<any>;
-    timer: NodeJS.Timeout;
-  }>();
-  
+  const pending = new Map<
+    string,
+    {
+      promise: Promise<any>;
+      timer: NodeJS.Timeout;
+    }
+  >();
+
   // Create the memoized function first
   const memoized = memoize(fn, {
     ...opts,
-    name
+    name,
   });
-  
+
   // Add debouncing behavior
   const debouncedMemoized = function (this: unknown, ...args: Parameters<T>): ReturnType<T> {
     try {
       // Generate the cache key
       const key = opts.keyGenerator!(...args);
-      
+
       // Check if we have a pending operation for this key
       if (pending.has(key)) {
         // Cancel the previous timer
         clearTimeout(pending.get(key)!.timer);
-        
+
         // Return the existing promise
         return pending.get(key)!.promise as ReturnType<T>;
       }
-      
+
       // Create a new promise for this operation
       const promise = new Promise<any>((resolve, reject) => {
         // Set a timer to execute the operation after the wait period
         const timer = setTimeout(() => {
           // Execute the memoized function
-          (memoized as unknown as (...args: Parameters<T>) => ReturnType<T>).apply(this, args)
+          (memoized as unknown as (...args: Parameters<T>) => ReturnType<T>)
+            .apply(this, args)
             .then((result: any) => {
               // Remove from pending
               pending.delete(key);
@@ -372,35 +384,35 @@ export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unkno
               reject(error);
             });
         }, wait);
-        
+
         // Store the timer and promise
         pending.set(key, { promise, timer });
       });
-      
+
       return promise as ReturnType<T>;
     } catch (error) {
       // If anything goes wrong, just call the original function
       handleError(error, {
         category: ErrorCategory.STORAGE,
-        context: { 
+        context: {
           operation: 'memoizeDebounced',
-          functionName: name
+          functionName: name,
         },
         logLevel: 'warn',
-        rethrow: false
+        rethrow: false,
       });
-      
+
       return fn.apply(this, args) as ReturnType<T>;
     }
   } as unknown as T; // Type assertion: we trust this shape for debounced memoized
-  
+
   // Add helper methods to the debounced memoized function
   return Object.assign(debouncedMemoized, {
     clearCache: memoized.clearCache,
     invalidate: memoized.invalidate,
     getStats: memoized.getStats,
     original: fn,
-    
+
     /**
      * Cancels all pending debounced operations
      */
@@ -410,11 +422,11 @@ export function memoizeDebounced<T extends (...args: unknown[]) => Promise<unkno
       }
       pending.clear();
     },
-    
+
     /**
      * Returns stats about the pending operations
      */
-    getPendingCount: () => pending.size
+    getPendingCount: () => pending.size,
   });
 }
 

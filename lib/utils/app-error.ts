@@ -39,10 +39,10 @@ export class AppError extends Error implements ApplicationError {
     requestId?: string;
   }) {
     super(message);
-    
+
     // Maintain proper prototype chain for instanceof checks
     Object.setPrototypeOf(this, AppError.prototype);
-    
+
     this.name = this.constructor.name;
     this.errorId = nanoid(6);
     this.category = category;
@@ -52,7 +52,7 @@ export class AppError extends Error implements ApplicationError {
     this.isOperational = isOperational;
     this.isRetryable = isRetryable;
     this.requestId = requestId;
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -74,7 +74,7 @@ export class AppError extends Error implements ApplicationError {
       isOperational: this.isOperational,
       isRetryable: this.isRetryable,
       requestId: this.requestId,
-      stack: process.env.NODE_ENV !== 'production' ? this.stack : undefined
+      stack: process.env.NODE_ENV !== 'production' ? this.stack : undefined,
     };
   }
 

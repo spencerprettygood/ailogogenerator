@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -45,25 +45,25 @@ export function StreamingResponse({
   const [showDetails, setShowDetails] = useState(false);
   const [showStageInfo, setShowStageInfo] = useState<Record<string, boolean>>({});
   const [stageHighlights, setStageHighlights] = useState<Record<string, string>>({
-    "A": "Analyzing your brand requirements...",
-    "B": "Creating design concepts...",
-    "C": "Selecting the optimal design direction...",
-    "D": "Generating your SVG logo...",
-    "E": "Validating and optimizing logo...",
-    "F": "Creating variants and formats...",
-    "G": "Preparing brand guidelines...",
-    "H": "Packaging assets for download...",
-    "cached": "Retrieved from cache"
+    A: 'Analyzing your brand requirements...',
+    B: 'Creating design concepts...',
+    C: 'Selecting the optimal design direction...',
+    D: 'Generating your SVG logo...',
+    E: 'Validating and optimizing logo...',
+    F: 'Creating variants and formats...',
+    G: 'Preparing brand guidelines...',
+    H: 'Packaging assets for download...',
+    cached: 'Retrieved from cache',
   });
 
   // ALL hooks must be called unconditionally at the top level
-  const lastUserMessage = useMemo(() => 
-    [...messages].reverse().find(message => message.role === 'user'), 
+  const lastUserMessage = useMemo(
+    () => [...messages].reverse().find(message => message.role === 'user'),
     [messages]
   );
 
-  const lastUserFiles = useMemo(() => 
-    (lastUserMessage as Message & { files?: File[] })?.files || [], 
+  const lastUserFiles = useMemo(
+    () => (lastUserMessage as Message & { files?: File[] })?.files || [],
     [lastUserMessage]
   );
 
@@ -82,7 +82,10 @@ export function StreamingResponse({
     return progressData.stages[currentIndex - 1]?.id || null;
   }, [progressData]);
 
-  const currentStage = useMemo(() => progressData?.currentStageId || null, [progressData?.currentStageId]);
+  const currentStage = useMemo(
+    () => progressData?.currentStageId || null,
+    [progressData?.currentStageId]
+  );
 
   // Safely render message content
   const renderMessageContent = useCallback((content: any) => {
@@ -111,7 +114,7 @@ export function StreamingResponse({
   }
 
   return (
-    <motion.div 
+    <motion.div
       className={`w-full max-w-5xl mx-auto space-y-6 ${className}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -132,10 +135,10 @@ export function StreamingResponse({
           </div>
         </Card>
       )}
-      
+
       {/* Logo preview */}
       {previewSvg && (
-        <motion.div 
+        <motion.div
           className="flex flex-col items-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,7 +157,7 @@ export function StreamingResponse({
           />
         </motion.div>
       )}
-      
+
       {/* Progress timeline */}
       {progressData && progressData.stages && (progressData.stages.length > 0 || isGenerating) && (
         <motion.div
@@ -168,11 +171,11 @@ export function StreamingResponse({
             overallProgress={progressData.overallProgress || 0}
             estimatedTimeRemaining={progressData.estimatedTimeRemaining}
             className="mt-6"
-            onStageClick={(stageId) => {
+            onStageClick={stageId => {
               // Track stage clicks if needed
             }}
           />
-        
+
           {/* Stage transition animation */}
           <StageTransition
             currentStage={progressData.currentStageId}
@@ -182,13 +185,13 @@ export function StreamingResponse({
           />
         </motion.div>
       )}
-      
+
       {/* Response messages */}
       <div className="space-y-4 mt-6">
-        {responseMessages.map((message) => {
+        {responseMessages.map(message => {
           const safeMessage = {
             ...message,
-            id: message.id || `msg-${Math.random().toString(36).substring(2, 9)}`
+            id: message.id || `msg-${Math.random().toString(36).substring(2, 9)}`,
           };
 
           if (message.role === 'user') {
@@ -199,11 +202,11 @@ export function StreamingResponse({
             return <SystemMessage key={safeMessage.id} message={safeMessage} />;
           }
         })}
-        
+
         {isGenerating && (
-          <EnhancedTypingIndicator 
+          <EnhancedTypingIndicator
             stage={currentStage || undefined}
-            message={stageHighlights[currentStage || ''] || "Creating your perfect logo..."}
+            message={stageHighlights[currentStage || ''] || 'Creating your perfect logo...'}
           />
         )}
         <div ref={messagesEndRef} />

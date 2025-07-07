@@ -13,17 +13,20 @@ This error occurred when Claude AI returned responses containing control charact
 ## Root Cause Analysis
 
 ### Primary Causes
+
 1. **Control Characters in AI Response**: Claude AI sometimes includes control characters (0x00-0x1F, 0x7F-0x9F) in JSON responses
 2. **Unescaped Special Characters**: Newlines, tabs, and quotes within string values were not properly escaped
 3. **Markdown Formatting**: Claude occasionally wrapped JSON in markdown code blocks
 4. **Extra Text**: Non-JSON content before or after the JSON object
 
 ### Secondary Causes
+
 1. **Insufficient System Prompt**: The original system prompt wasn't explicit enough about JSON formatting requirements
 2. **Limited Error Recovery**: Basic JSON.parse() with no fallback mechanisms
 3. **Inconsistent Response Format**: Variability in Claude's response structure
 
 ### Tertiary Causes
+
 1. **Model Variations**: Different Claude models produce different response formats
 2. **Context Sensitivity**: Response format changes based on conversation context
 3. **Unicode Issues**: Various Unicode control characters and BOM markers
@@ -129,6 +132,7 @@ try {
 ### Testing Strategy
 
 Created comprehensive test cases covering:
+
 - Control characters in JSON
 - Unescaped newlines and special characters
 - Markdown code blocks
@@ -140,12 +144,14 @@ Created comprehensive test cases covering:
 ## Results
 
 ### Before Fix
+
 - JSON parsing errors blocking production deployment
 - Inconsistent agent behavior
 - Poor error recovery
 - User-facing crashes
 
 ### After Fix
+
 - Robust JSON parsing with 99.9% success rate
 - Graceful degradation for malformed responses
 - Comprehensive error recovery
@@ -162,12 +168,14 @@ Created comprehensive test cases covering:
 ## Monitoring and Maintenance
 
 ### Logging Strategy
+
 - Log all sanitization attempts
 - Track fallback usage rates
 - Monitor parsing success rates
 - Alert on emergency fallback usage
 
 ### Key Metrics
+
 - Primary parsing success rate: >95%
 - Fallback parsing success rate: >99%
 - Total response success rate: >99.9%

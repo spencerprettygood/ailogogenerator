@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { 
+import {
   optimizeSVGForAnimation,
   extractAnimatableElements,
   generateBrowserCompatibilityCheck,
   detectAnimationSupport,
   convertTimingToCSS,
-  convertTimingToSMIL
+  convertTimingToSMIL,
 } from '../utils/animation-utils';
 import { AnimationEasing, AnimationType } from '../types';
 import { simpleSvg, pathSvg } from './utils/mock-svg';
@@ -13,7 +13,6 @@ import { simpleSvg, pathSvg } from './utils/mock-svg';
 // Relies on the jsdom environment provided by Vitest.
 
 describe('Animation Utilities', () => {
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -134,7 +133,7 @@ describe('Animation Utilities', () => {
     it('should handle environments without window object', () => {
       const originalWindow = global.window;
       (global as any).window = undefined;
-      
+
       const support = detectAnimationSupport();
       expect(support.css).toBe(false);
       expect(support.smil).toBe(false);
@@ -148,7 +147,7 @@ describe('Animation Utilities', () => {
     it('should convert basic timing to CSS', () => {
       const css = convertTimingToCSS({
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       });
       expect(css).toBe('1000ms ease-in-out');
     });
@@ -157,7 +156,7 @@ describe('Animation Utilities', () => {
       const css = convertTimingToCSS({
         duration: 500,
         delay: 200,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       });
       expect(css).toBe('500ms 200ms ease-out');
     });
@@ -167,7 +166,7 @@ describe('Animation Utilities', () => {
         duration: 2000,
         easing: AnimationEasing.LINEAR,
         iterations: 3,
-        direction: 'alternate'
+        direction: 'alternate',
       });
       expect(css).toBe('2000ms linear 3 alternate');
     });
@@ -176,7 +175,7 @@ describe('Animation Utilities', () => {
       const css = convertTimingToCSS({
         duration: 1000,
         easing: AnimationEasing.BOUNCE,
-        iterations: Infinity
+        iterations: Infinity,
       });
       expect(css).toBe('1000ms cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite');
     });
@@ -184,7 +183,7 @@ describe('Animation Utilities', () => {
     it('should handle custom cubic-bezier easing', () => {
       const css = convertTimingToCSS({
         duration: 1000,
-        easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)'
+        easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)',
       });
       expect(css).toBe('1000ms cubic-bezier(0.1, 0.7, 1.0, 0.1)');
     });
@@ -194,7 +193,7 @@ describe('Animation Utilities', () => {
     it('should convert basic timing to SMIL attributes', () => {
       const attrs = convertTimingToSMIL({
         duration: 1000,
-        easing: AnimationEasing.EASE_IN_OUT
+        easing: AnimationEasing.EASE_IN_OUT,
       });
       expect(attrs.dur).toBe('1s');
       expect(attrs.calcMode).toBe('spline');
@@ -205,7 +204,7 @@ describe('Animation Utilities', () => {
       const attrs = convertTimingToSMIL({
         duration: 500,
         delay: 200,
-        easing: AnimationEasing.EASE_OUT
+        easing: AnimationEasing.EASE_OUT,
       });
       expect(attrs.dur).toBe('0.5s');
       expect(attrs.begin).toBe('0.2s');
@@ -215,7 +214,7 @@ describe('Animation Utilities', () => {
       const attrs = convertTimingToSMIL({
         duration: 2000,
         easing: AnimationEasing.LINEAR,
-        iterations: 3
+        iterations: 3,
       });
       expect(attrs.dur).toBe('2s');
       expect(attrs.repeatCount).toBe('3');
@@ -225,7 +224,7 @@ describe('Animation Utilities', () => {
       const attrs = convertTimingToSMIL({
         duration: 1000,
         easing: AnimationEasing.BOUNCE,
-        iterations: Infinity
+        iterations: Infinity,
       });
       expect(attrs.dur).toBe('1s');
       expect(attrs.repeatCount).toBe('indefinite');
@@ -234,7 +233,7 @@ describe('Animation Utilities', () => {
     it('should handle linear easing specially', () => {
       const attrs = convertTimingToSMIL({
         duration: 1000,
-        easing: AnimationEasing.LINEAR
+        easing: AnimationEasing.LINEAR,
       });
       expect(attrs.calcMode).toBe('linear');
       expect(attrs.keySplines).toBeUndefined();

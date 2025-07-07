@@ -21,9 +21,9 @@ const mockClaudeResponses = [
     "score": 85
   }
 }`,
-    expectedToWork: true
+    expectedToWork: true,
   },
-  
+
   // Case 2: Markdown wrapped JSON
   {
     name: 'Markdown Wrapped',
@@ -46,9 +46,9 @@ const mockClaudeResponses = [
 \`\`\`
 
 This is the best choice for the brand.`,
-    expectedToWork: true
+    expectedToWork: true,
   },
-  
+
   // Case 3: Unescaped newlines
   {
     name: 'Unescaped Newlines',
@@ -69,15 +69,15 @@ craftsmanship",
     "score": 88
   }
 }`,
-    expectedToWork: true
+    expectedToWork: true,
   },
-  
+
   // Case 4: Completely malformed (should trigger fallback)
   {
     name: 'Natural Language Response',
     response: `After careful consideration of all the concepts, I believe the best choice is the "Morning Brew Elite" concept. This design features a sophisticated coffee cup silhouette with elegant typography in rich browns (#8B4513) and cream (#F5DEB3). The concept embodies warmth and quality that would appeal to coffee enthusiasts. The reasoning behind this selection is that it perfectly balances modern aesthetics with traditional coffee culture. I would rate this selection at 94 out of 100 for its strong brand alignment.`,
-    expectedToWork: true // Should work via fallback
-  }
+    expectedToWork: true, // Should work via fallback
+  },
 ];
 
 console.log('🧪 Testing Selection Agent Production Readiness\n');
@@ -86,27 +86,27 @@ console.log('🧪 Testing Selection Agent Production Readiness\n');
 mockClaudeResponses.forEach((testCase, index) => {
   console.log(`Test ${index + 1}: ${testCase.name}`);
   console.log('Response preview:', testCase.response.substring(0, 100) + '...');
-  
+
   try {
     // This would be the actual sanitization process
     let cleaned = testCase.response.trim();
-    
+
     // Remove markdown
     cleaned = cleaned.replace(/```(?:json)?\s*\n?/gi, '');
     cleaned = cleaned.replace(/```\s*$/g, '');
-    
+
     // Extract JSON
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       cleaned = jsonMatch[0];
     }
-    
+
     // Remove control characters
     cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
-    
+
     // Test parsing
     const parsed = JSON.parse(cleaned);
-    
+
     if (parsed.selection && parsed.selection.selectedConcept) {
       console.log('✅ Primary parsing successful');
       console.log(`   Concept: ${parsed.selection.selectedConcept.name}`);
@@ -122,7 +122,7 @@ mockClaudeResponses.forEach((testCase, index) => {
       console.log('❌ Parsing failed:', parseError.message);
     }
   }
-  
+
   console.log('');
 });
 

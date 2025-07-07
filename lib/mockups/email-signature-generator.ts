@@ -21,7 +21,7 @@ export function generateEmailSignature(
   try {
     // Extract SVG code if SVGLogo object is provided
     const svgCode = typeof logo === 'string' ? logo : logo.svgCode;
-    
+
     // Get the template
     const template = EMAIL_SIGNATURE_TEMPLATES.find(t => t.id === templateId);
     if (!template) {
@@ -30,44 +30,44 @@ export function generateEmailSignature(
 
     // Convert SVG to data URL for embedding in HTML
     const logoDataUrl = svgToDataUrl(svgCode);
-    
+
     // Get colors based on scheme
     const colors = colorScheme === 'dark' ? template.darkColors : template.lightColors;
-    
+
     // Replace template variables with actual values
     let html = template.html;
-    
+
     // Replace logo placeholder
     html = html.replace(/\{LOGO_URL\}/g, logoDataUrl);
-    
+
     // Replace color placeholders
     html = html.replace(/\{COLOR_PRIMARY\}/g, colors.primary);
     html = html.replace(/\{COLOR_SECONDARY\}/g, colors.secondary);
     html = html.replace(/\{COLOR_TEXT\}/g, colors.text);
     html = html.replace(/\{COLOR_BACKGROUND\}/g, colors.background);
     html = html.replace(/\{COLOR_ACCENT\}/g, colors.accent);
-    
+
     // Replace brand name
     html = html.replace(/\{BRAND_NAME\}/g, brandName);
-    
+
     // Replace user data fields
     Object.entries(userData).forEach(([key, value]) => {
       const regex = new RegExp(`\\{${key.toUpperCase()}\\}`, 'g');
       html = html.replace(regex, value);
     });
-    
+
     // Replace any remaining placeholders with empty strings
     html = html.replace(/\{[A-Z_]+\}/g, '');
-    
+
     return html;
   } catch (error: unknown) {
     handleError(error, {
       category: ErrorCategory.EXTERNAL,
       context: {
         templateId,
-        operation: 'generateEmailSignature'
+        operation: 'generateEmailSignature',
       },
-      rethrow: true
+      rethrow: true,
     });
     return ''; // Unreachable due to rethrow, but TypeScript needs it
   }
@@ -82,11 +82,11 @@ export function generateEmailSignatureFile(
   userData: Record<string, string>,
   brandName: string = 'Brand Name',
   colorScheme: 'light' | 'dark' = 'light'
-): { html: string, filename: string } {
+): { html: string; filename: string } {
   const signature = generateEmailSignature(logo, templateId, userData, brandName, colorScheme);
   const template = EMAIL_SIGNATURE_TEMPLATES.find(t => t.id === templateId);
   const filename = `${brandName.replace(/\s+/g, '-').toLowerCase()}-email-signature.html`;
-  
+
   // Wrap in a complete HTML document for easy importing
   const html = `<!DOCTYPE html>
 <html>
@@ -146,19 +146,25 @@ export function downloadEmailSignature(
   colorScheme: 'light' | 'dark' = 'light'
 ): void {
   try {
-    const { html, filename } = generateEmailSignatureFile(logo, templateId, userData, brandName, colorScheme);
-    
+    const { html, filename } = generateEmailSignatureFile(
+      logo,
+      templateId,
+      userData,
+      brandName,
+      colorScheme
+    );
+
     // Create a Blob and download link
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Clean up
     setTimeout(() => URL.revokeObjectURL(url), 100);
   } catch (error) {
@@ -166,8 +172,8 @@ export function downloadEmailSignature(
       category: ErrorCategory.UI,
       context: {
         operation: 'downloadEmailSignature',
-        templateId
-      }
+        templateId,
+      },
     });
   }
 }
@@ -186,14 +192,14 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       secondary: '#1E40AF',
       text: '#1F2937',
       background: '#FFFFFF',
-      accent: '#DBEAFE'
+      accent: '#DBEAFE',
     },
     darkColors: {
       primary: '#3B82F6',
       secondary: '#93C5FD',
       text: '#F3F4F6',
       background: '#1F2937',
-      accent: '#1E40AF'
+      accent: '#1E40AF',
     },
     html: `
     <table cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: {COLOR_TEXT}; max-width: 500px; border-collapse: collapse;">
@@ -211,7 +217,7 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
         </td>
       </tr>
     </table>
-    `
+    `,
   },
   {
     id: 'professional',
@@ -223,14 +229,14 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       secondary: '#334155',
       text: '#1F2937',
       background: '#FFFFFF',
-      accent: '#E2E8F0'
+      accent: '#E2E8F0',
     },
     darkColors: {
       primary: '#E2E8F0',
       secondary: '#94A3B8',
       text: '#F3F4F6',
       background: '#1F2937',
-      accent: '#334155'
+      accent: '#334155',
     },
     html: `
     <table cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: {COLOR_TEXT}; max-width: 550px; border-collapse: collapse; border-bottom: 1px solid {COLOR_ACCENT}; padding-bottom: 15px;">
@@ -262,7 +268,7 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
         </td>
       </tr>
     </table>
-    `
+    `,
   },
   {
     id: 'creative',
@@ -274,14 +280,14 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       secondary: '#6D28D9',
       text: '#1F2937',
       background: '#FFFFFF',
-      accent: '#EDE9FE'
+      accent: '#EDE9FE',
     },
     darkColors: {
       primary: '#A78BFA',
       secondary: '#C4B5FD',
       text: '#F3F4F6',
       background: '#1F2937',
-      accent: '#6D28D9'
+      accent: '#6D28D9',
     },
     html: `
     <table cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: {COLOR_TEXT}; max-width: 550px; border-collapse: collapse; background-color: {COLOR_BACKGROUND}; border-radius: 8px; overflow: hidden;">
@@ -307,7 +313,7 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
         </td>
       </tr>
     </table>
-    `
+    `,
   },
   {
     id: 'compact',
@@ -319,14 +325,14 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       secondary: '#059669',
       text: '#1F2937',
       background: '#FFFFFF',
-      accent: '#D1FAE5'
+      accent: '#D1FAE5',
     },
     darkColors: {
       primary: '#34D399',
       secondary: '#6EE7B7',
       text: '#F3F4F6',
       background: '#1F2937',
-      accent: '#059669'
+      accent: '#059669',
     },
     html: `
     <table cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: {COLOR_TEXT}; max-width: 400px; border-collapse: collapse;">
@@ -345,8 +351,8 @@ export const EMAIL_SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
         </td>
       </tr>
     </table>
-    `
-  }
+    `,
+  },
 ];
 
 /**

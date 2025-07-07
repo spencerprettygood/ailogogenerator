@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  MoodboardAgentInput, 
-  MoodboardAgentOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  MoodboardAgentInput,
+  MoodboardAgentOutput,
 } from '../../types-agents';
 import { safeJsonParse } from '../../utils/json-utils';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
@@ -13,17 +13,13 @@ import { handleError, ErrorCategory } from '../../utils/error-handler';
  */
 export class MoodboardAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'moodboard', 
-      ['concept-generation'],
-      {
-        model: 'claude-3-5-sonnet-20240620',
-        temperature: 0.75, // Higher temperature for creative variety
-        maxTokens: 4096, // Increased token limit for 3 detailed concepts
-        ...config
-      }
-    );
-    
+    super('moodboard', ['concept-generation'], {
+      model: 'claude-3-5-sonnet-20240620',
+      temperature: 0.75, // Higher temperature for creative variety
+      maxTokens: 4096, // Increased token limit for 3 detailed concepts
+      ...config,
+    });
+
     this.systemPrompt = `You are a specialized creative director for an AI-powered logo generator.
 Your task is to generate 3 distinct and compelling visual concepts for a logo based on the provided design specifications.
 Each concept must represent a unique creative direction but still adhere to the core requirements.
@@ -45,13 +41,13 @@ IMPORTANT: You MUST return your concepts as a single, valid JSON object enclosed
 
 For each concept, ensure the name is distinctive, the description is vivid, the style is specific, and the color palette is well-defined with hex codes. Make each concept truly different from the others.`;
   }
-  
+
   /**
    * Generate the prompt for the moodboard generation
    */
   protected async generatePrompt(input: MoodboardAgentInput): Promise<string> {
     const { designSpec } = input;
-    
+
     const prompt = `
 # Logo Concept Generation Task
 
@@ -67,13 +63,13 @@ Follow the instructions in the system prompt precisely, ensuring your output is 
 `;
     return prompt;
   }
-  
+
   /**
    * Process the response from the AI
    */
   protected async processResponse(
     responseContent: string,
-    originalInput: AgentInput,
+    originalInput: AgentInput
   ): Promise<MoodboardAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
@@ -93,7 +89,7 @@ Follow the instructions in the system prompt precisely, ensuring your output is 
       return {
         success: false,
         error: handleError({
-          error: 'Invalid moodboard format: The \'concepts\' array must contain at least 3 concepts.',
+          error: "Invalid moodboard format: The 'concepts' array must contain at least 3 concepts.",
           category: ErrorCategory.VALIDATION,
           details: { parsedResponse: parsed },
           retryable: true,

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * DEPRECATED: This file is deprecated in favor of @/components/providers/theme-fixed
@@ -10,7 +10,7 @@ import {
   ThemeProvider as FixedThemeProvider,
   useTheme as fixedUseTheme,
   useThemeSafe as fixedUseThemeSafe,
-  default as FixedThemedLayout
+  default as FixedThemedLayout,
 } from '@/components/providers/theme-fixed';
 
 // Re-export with safe versions
@@ -20,34 +20,30 @@ export const useThemeSafe = fixedUseThemeSafe;
 export default FixedThemedLayout;
 
 // Fallback ThemeToggle component
-export function ThemeToggle({ 
+export function ThemeToggle({
   className,
   buttonClassName,
-  iconClassName = "h-5 w-5"
-}: { 
+  iconClassName = 'h-5 w-5',
+}: {
   className?: string;
   buttonClassName?: string;
   iconClassName?: string;
 }) {
   const { isDark, setTheme } = fixedUseThemeSafe();
-  
+
   const toggleTheme = () => {
     setTheme(isDark ? 'light' : 'dark');
   };
-  
+
   return (
     <div className={className}>
       <button
         onClick={toggleTheme}
         className={`p-2 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${buttonClassName || ''}`}
-        aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+        aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       >
         <div className="relative w-5 h-5">
-          {isDark ? (
-            <SunIcon className={iconClassName} />
-          ) : (
-            <MoonIcon className={iconClassName} />
-          )}
+          {isDark ? <SunIcon className={iconClassName} /> : <MoonIcon className={iconClassName} />}
         </div>
       </button>
     </div>

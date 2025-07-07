@@ -1,6 +1,6 @@
 /**
  * Design System Components Index
- * 
+ *
  * This file exports all design system components for easy import
  */
 
@@ -14,7 +14,7 @@ export {
   AsymmetricSection,
   AsymmetricPanel,
   AsymmetricHighlight,
-  AsymmetricImage
+  AsymmetricImage,
 } from './asymmetric-layout';
 
 // UI Components
@@ -26,7 +26,7 @@ export {
   AsymmetricBadge,
   AsymmetricAlert,
   AsymmetricProgress,
-  AsymmetricTabs
+  AsymmetricTabs,
 } from './asymmetric-components';
 
 // Documentation Component

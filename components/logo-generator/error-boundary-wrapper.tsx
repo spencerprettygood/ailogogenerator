@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { ErrorBoundary } from './error-boundary';
@@ -13,8 +13,8 @@ interface ErrorBoundaryWrapperProps {
 }
 
 /**
- * A wrapper around the ErrorBoundary component that integrates with our 
- * standardized error handling system. This component automatically 
+ * A wrapper around the ErrorBoundary component that integrates with our
+ * standardized error handling system. This component automatically
  * creates an error handler with the appropriate component name.
  */
 export function ErrorBoundaryWrapper({
@@ -22,13 +22,13 @@ export function ErrorBoundaryWrapper({
   fallback,
   componentName,
   resetOnUpdate = false,
-  containerClassName
+  containerClassName,
 }: ErrorBoundaryWrapperProps) {
   // Create an error handler that's integrated with our error reporting system
   const errorHandler = createErrorBoundaryHandler(componentName);
-  
+
   return (
-    <ErrorBoundary 
+    <ErrorBoundary
       onError={errorHandler}
       fallback={fallback}
       resetOnUpdate={resetOnUpdate}

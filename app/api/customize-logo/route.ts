@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 
 /**
  * API endpoint for customizing an SVG logo
- * 
+ *
  * Takes a customized SVG and generates PNG variants at different sizes
  */
 export async function POST(req: NextRequest) {
@@ -16,10 +16,7 @@ export async function POST(req: NextRequest) {
     const { svgCode, format = 'all' } = data;
 
     if (!svgCode) {
-      return NextResponse.json(
-        { error: 'Missing required svgCode parameter' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required svgCode parameter' }, { status: 400 });
     }
 
     // Secure and optimize the SVG
@@ -27,24 +24,24 @@ export async function POST(req: NextRequest) {
 
     // If only SVG is requested, return it directly
     if (format === 'svg') {
-      return NextResponse.json({ 
-        svg: sanitizedSvg 
+      return NextResponse.json({
+        svg: sanitizedSvg,
       });
     }
 
     // Convert the SVG to PNG at different sizes
     const sizes = [256, 512, 1024];
     const pngBuffers: Record<string, Buffer> = {};
-    
+
     // Process each size in parallel
     await Promise.all(
-      sizes.map(async (size) => {
+      sizes.map(async size => {
         try {
           const pngBuffer = await sharp(Buffer.from(sanitizedSvg))
             .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
             .png()
             .toBuffer();
-          
+
           // Store the buffer
           pngBuffers[`size${size}`] = pngBuffer;
         } catch (error) {
@@ -67,9 +64,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error customizing logo:', error);
-    return NextResponse.json(
-      { error: 'Failed to process logo customization' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process logo customization' }, { status: 500 });
   }
 }

@@ -1,17 +1,9 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BookOpen, 
-  Info, 
-  TrendingUp, 
-  Palette, 
-  Plus, 
-  Minus,
-  ExternalLink
-} from 'lucide-react';
+import { BookOpen, Info, TrendingUp, Palette, Plus, Minus, ExternalLink } from 'lucide-react';
 
 interface DesignPrinciple {
   id: string;
@@ -57,21 +49,24 @@ export function DesignCitations({
     {
       id: 'simplicity',
       title: 'Simplicity',
-      description: 'Simple logos are more recognizable, memorable, and versatile. They work well across different media and sizes, from large billboards to small mobile icons.',
-      link: 'https://www.nngroup.com/articles/simplicity-vs-complexity/'
+      description:
+        'Simple logos are more recognizable, memorable, and versatile. They work well across different media and sizes, from large billboards to small mobile icons.',
+      link: 'https://www.nngroup.com/articles/simplicity-vs-complexity/',
     },
     {
       id: 'scalability',
       title: 'Scalability',
-      description: 'Effective logos maintain their integrity and legibility at any size, from a tiny favicon to a large billboard. Vector formats ensure logos remain crisp at any scale.',
-      link: 'https://www.logodesignlove.com/logo-design-tips'
+      description:
+        'Effective logos maintain their integrity and legibility at any size, from a tiny favicon to a large billboard. Vector formats ensure logos remain crisp at any scale.',
+      link: 'https://www.logodesignlove.com/logo-design-tips',
     },
     {
       id: 'versatility',
       title: 'Versatility',
-      description: 'A good logo works across all required applications, backgrounds, and contexts without losing its impact or recognition value.',
-      link: 'https://99designs.com/blog/tips/5-characteristics-of-an-effective-logo/'
-    }
+      description:
+        'A good logo works across all required applications, backgrounds, and contexts without losing its impact or recognition value.',
+      link: 'https://99designs.com/blog/tips/5-characteristics-of-an-effective-logo/',
+    },
   ];
 
   // Default design trends
@@ -79,17 +74,19 @@ export function DesignCitations({
     {
       id: 'minimalism',
       title: 'Minimalism',
-      description: 'Clean designs with ample white space, simple color schemes, and reduced elements continue to dominate logo design in the digital era.',
+      description:
+        'Clean designs with ample white space, simple color schemes, and reduced elements continue to dominate logo design in the digital era.',
       year: '2023',
-      link: 'https://www.creativebloq.com/features/logo-design-trends'
+      link: 'https://www.creativebloq.com/features/logo-design-trends',
     },
     {
       id: 'responsive-logos',
       title: 'Responsive Logos',
-      description: 'Logos that adapt and simplify for different contexts and screen sizes, maintaining brand recognition even in their most minimalist form.',
+      description:
+        'Logos that adapt and simplify for different contexts and screen sizes, maintaining brand recognition even in their most minimalist form.',
       year: '2023',
-      link: 'https://designshack.net/articles/trends/responsive-logo-design/'
-    }
+      link: 'https://designshack.net/articles/trends/responsive-logo-design/',
+    },
   ];
 
   // Default color theory
@@ -97,17 +94,19 @@ export function DesignCitations({
     {
       id: 'complementary',
       title: 'Complementary Colors',
-      description: 'Colors opposite each other on the color wheel create strong contrast and visual interest when used together.',
+      description:
+        'Colors opposite each other on the color wheel create strong contrast and visual interest when used together.',
       colors: ['#0066ff', '#ff9900'],
-      link: 'https://www.colormatters.com/color-and-design/basic-color-theory'
+      link: 'https://www.colormatters.com/color-and-design/basic-color-theory',
     },
     {
       id: 'analogous',
       title: 'Analogous Colors',
-      description: 'Colors adjacent to each other on the color wheel create harmonious, cohesive designs with less contrast.',
+      description:
+        'Colors adjacent to each other on the color wheel create harmonious, cohesive designs with less contrast.',
       colors: ['#0066ff', '#0099ff', '#00ccff'],
-      link: 'https://www.canva.com/colors/color-wheel/'
-    }
+      link: 'https://www.canva.com/colors/color-wheel/',
+    },
   ];
 
   // Use provided arrays or fallback to defaults
@@ -119,7 +118,7 @@ export function DesignCitations({
   const toggleExpanded = (id: string) => {
     setExpandedItems(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !prev[id],
     }));
   };
 
@@ -136,7 +135,7 @@ export function DesignCitations({
           <BookOpen className="h-4 w-4 mr-2" />
           Design Principles
         </Button>
-        
+
         <Button
           variant={activeTab === 'trends' ? 'default' : 'ghost'}
           size="sm"
@@ -147,7 +146,7 @@ export function DesignCitations({
           <TrendingUp className="h-4 w-4 mr-2" />
           2023 Trends
         </Button>
-        
+
         <Button
           variant={activeTab === 'colors' ? 'default' : 'ghost'}
           size="sm"
@@ -159,7 +158,7 @@ export function DesignCitations({
           Color Theory
         </Button>
       </div>
-      
+
       {/* Design Principles */}
       {activeTab === 'principles' && (
         <div className="space-y-3">
@@ -167,10 +166,10 @@ export function DesignCitations({
             <Info className="h-4 w-4 inline-block mr-1" />
             Applied design principles in your logo:
           </div>
-          
+
           {principles.map(principle => (
             <div key={principle.id} className="border rounded-lg p-3">
-              <div 
+              <div
                 className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleExpanded(principle.id)}
               >
@@ -183,14 +182,14 @@ export function DesignCitations({
                   )}
                 </Button>
               </div>
-              
+
               {expandedItems[principle.id] && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   <p>{principle.description}</p>
                   {principle.link && (
-                    <a 
-                      href={principle.link} 
-                      target="_blank" 
+                    <a
+                      href={principle.link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary flex items-center mt-2 text-xs"
                     >
@@ -204,7 +203,7 @@ export function DesignCitations({
           ))}
         </div>
       )}
-      
+
       {/* Design Trends */}
       {activeTab === 'trends' && (
         <div className="space-y-3">
@@ -212,10 +211,10 @@ export function DesignCitations({
             <TrendingUp className="h-4 w-4 inline-block mr-1" />
             Current design trends incorporated:
           </div>
-          
+
           {trends.map(trend => (
             <div key={trend.id} className="border rounded-lg p-3">
-              <div 
+              <div
                 className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleExpanded(trend.id)}
               >
@@ -231,14 +230,14 @@ export function DesignCitations({
                   )}
                 </Button>
               </div>
-              
+
               {expandedItems[trend.id] && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   <p>{trend.description}</p>
                   {trend.link && (
-                    <a 
-                      href={trend.link} 
-                      target="_blank" 
+                    <a
+                      href={trend.link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary flex items-center mt-2 text-xs"
                     >
@@ -252,7 +251,7 @@ export function DesignCitations({
           ))}
         </div>
       )}
-      
+
       {/* Color Theory */}
       {activeTab === 'colors' && (
         <div className="space-y-3">
@@ -260,10 +259,10 @@ export function DesignCitations({
             <Palette className="h-4 w-4 inline-block mr-1" />
             Color theory applied in your logo:
           </div>
-          
+
           {colors.map(color => (
             <div key={color.id} className="border rounded-lg p-3">
-              <div 
+              <div
                 className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleExpanded(color.id)}
               >
@@ -271,9 +270,9 @@ export function DesignCitations({
                   <h3 className="font-medium mr-2">{color.title}</h3>
                   <div className="flex">
                     {color.colors.map((c, i) => (
-                      <div 
-                        key={i} 
-                        className="h-4 w-4 rounded-full border" 
+                      <div
+                        key={i}
+                        className="h-4 w-4 rounded-full border"
                         style={{ backgroundColor: c, marginLeft: i > 0 ? '-4px' : '0' }}
                       />
                     ))}
@@ -287,14 +286,14 @@ export function DesignCitations({
                   )}
                 </Button>
               </div>
-              
+
               {expandedItems[color.id] && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   <p>{color.description}</p>
                   {color.link && (
-                    <a 
-                      href={color.link} 
-                      target="_blank" 
+                    <a
+                      href={color.link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary flex items-center mt-2 text-xs"
                     >

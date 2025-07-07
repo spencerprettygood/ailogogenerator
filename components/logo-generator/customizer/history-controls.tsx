@@ -1,16 +1,11 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { HistoryControlsProps } from '@/lib/types-customization';
 import { Button } from '@/components/ui/button';
 import { UndoIcon, RedoIcon } from 'lucide-react';
 
-const HistoryControls: React.FC<HistoryControlsProps> = ({
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-}) => {
+const HistoryControls: React.FC<HistoryControlsProps> = ({ canUndo, canRedo, onUndo, onRedo }) => {
   return (
     <div className="flex items-center gap-2">
       <Button
@@ -23,7 +18,7 @@ const HistoryControls: React.FC<HistoryControlsProps> = ({
       >
         <UndoIcon className="h-4 w-4" />
       </Button>
-      
+
       <Button
         variant="outline"
         size="icon"

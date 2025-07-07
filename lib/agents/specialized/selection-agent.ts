@@ -1,9 +1,9 @@
 import { BaseAgent } from '../base/base-agent';
-import { 
-  AgentConfig, 
-  AgentInput, 
-  SelectionAgentInput, 
-  SelectionAgentOutput 
+import {
+  AgentConfig,
+  AgentInput,
+  SelectionAgentInput,
+  SelectionAgentOutput,
 } from '../../types-agents';
 import { handleError, ErrorCategory } from '../../utils/error-handler';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -13,17 +13,13 @@ import { safeJsonParse } from '../../utils/json-utils';
  */
 export class SelectionAgent extends BaseAgent {
   constructor(config?: Partial<AgentConfig>) {
-    super(
-      'selection', 
-      ['selection'],
-      {
-        model: 'claude-3-haiku-20240307', // Use faster model for analysis
-        temperature: 0.3, // Low temperature for consistent decision-making
-        maxTokens: 1000,
-        ...config
-      }
-    );
-    
+    super('selection', ['selection'], {
+      model: 'claude-3-haiku-20240307', // Use faster model for analysis
+      temperature: 0.3, // Low temperature for consistent decision-making
+      maxTokens: 1000,
+      ...config,
+    });
+
     this.systemPrompt = `You are a specialized selection agent for an AI-powered logo generator.
     
 Your task is to evaluate multiple logo concepts and select the one that best matches the design specifications.
@@ -56,13 +52,13 @@ Your selection rationale should analyze:
 
 The score should be a number from 0-100 representing how well this concept matches the requirements.`;
   }
-  
+
   /**
    * Generate the prompt for the concept selection
    */
   protected async generatePrompt(input: SelectionAgentInput): Promise<string> {
     const { designSpec, concepts } = input;
-    
+
     // Create a detailed prompt that includes both the design spec and the concepts
     let prompt = `Please evaluate these logo concepts and select the best one based on these design specifications:
 
@@ -89,16 +85,19 @@ The score should be a number from 0-100 representing how well this concept match
 
 `;
     });
-    
+
     prompt += `Please select the BEST concept that most closely matches the design specifications and explain your reasoning. Respond with your JSON object inside \`\`\`json tags.`;
-    
+
     return prompt;
   }
-  
+
   /**
    * Process the response from the AI
    */
-  protected async processResponse(responseContent: string, originalInput: AgentInput): Promise<SelectionAgentOutput> {
+  protected async processResponse(
+    responseContent: string,
+    originalInput: AgentInput
+  ): Promise<SelectionAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
     if (!parsed || typeof parsed !== 'object') {
@@ -164,8 +163,8 @@ The score should be a number from 0-100 representing how well this concept match
         selection: {
           selectedConcept,
           selectionRationale: parsed.selectionRationale,
-          score
-        }
+          score,
+        },
       },
       tokensUsed: this.metrics.tokenUsage.total,
       processingTime: this.metrics.executionTime,

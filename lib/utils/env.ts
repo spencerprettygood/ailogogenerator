@@ -1,6 +1,6 @@
 /**
  * Environment Variables Validation Module
- * 
+ *
  * This module provides secure, type-safe access to environment variables
  * with validation to ensure all required variables are properly set.
  */
@@ -31,42 +31,51 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z
     .string()
     .min(12)
-    .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter" })
-    .regex(/[0-9]/, { message: "Must contain at least one number" })
-    .regex(/[^A-Za-z0-9]/, { message: "Must contain at least one special character" })
+    .regex(/[A-Z]/, { message: 'Must contain at least one uppercase letter' })
+    .regex(/[0-9]/, { message: 'Must contain at least one number' })
+    .regex(/[^A-Za-z0-9]/, { message: 'Must contain at least one special character' })
     .optional(),
-  
+
   // API Keys (sensitive)
   // Anthropic API Key: optional in development and test with dummy default, required in production
-  ANTHROPIC_API_KEY: (getNodeEnv() !== 'production')
-    ? z.string().min(20).optional().default('dummy-key-for-development-only')
-    : z.string().min(20),
+  ANTHROPIC_API_KEY:
+    getNodeEnv() !== 'production'
+      ? z.string().min(20).optional().default('dummy-key-for-development-only')
+      : z.string().min(20),
   CLAUDE_API_KEY: z.string().min(20).optional(),
   OPENAI_API_KEY: z.string().min(20).optional(),
-  
+
   // API URLs
   ANTHROPIC_API_URL: z.string().url().optional().default('https://api.anthropic.com'),
-  
+
   // Next.js Configuration
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   VERCEL_URL: z.string().optional(),
-  
+
   // Deployment Settings
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   DEPLOYMENT_ENV: z.string().optional(),
-  
+
   // Rate Limiting
   RATE_LIMIT_MAX: z.coerce.number().int().positive().optional().default(100),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().optional().default(3600),
-  
+
   // Feature Flags
-  ENABLE_ANIMATION_FEATURES: z.enum(['true', 'false']).transform(val => val === 'true').optional().default('true'),
-  ENABLE_MOCKUPS: z.enum(['true', 'false']).transform(val => val === 'true').optional().default('true'),
-  
+  ENABLE_ANIMATION_FEATURES: z
+    .enum(['true', 'false'])
+    .transform(val => val === 'true')
+    .optional()
+    .default('true'),
+  ENABLE_MOCKUPS: z
+    .enum(['true', 'false'])
+    .transform(val => val === 'true')
+    .optional()
+    .default('true'),
+
   // Cache Settings
   CACHE_TTL_SECONDS: z.coerce.number().int().positive().optional().default(3600),
-  
+
   // Database Configuration
   POSTGRES_URL: z.string().url().optional(),
   POSTGRES_URL_NON_POOLING: z.string().url().optional(),
@@ -87,7 +96,7 @@ export interface EnvWithHelpers extends Env {
   get: (key: keyof Env, defaultValue?: string) => string;
   getNumber: (key: keyof Env, defaultValue?: number) => number;
   getBool: (key: keyof Env, defaultValue?: boolean) => boolean;
-  
+
   // Environment indicator flags
   isProduction: boolean;
   isDevelopment: boolean;
@@ -109,16 +118,20 @@ export function validateEnv(): Env {
     if (error instanceof z.ZodError) {
       const formattedError = error.format();
       console.error('❌ Invalid environment variables:', JSON.stringify(formattedError, null, 2));
-      
+
       // Identify missing required variables
       const missingVars = Object.entries(formattedError)
-        .filter(([key, value]) => key !== '_errors' && typeof value === 'object' && '_errors' in value)
+        .filter(
+          ([key, value]) => key !== '_errors' && typeof value === 'object' && '_errors' in value
+        )
         .map(([key]) => key);
-      
+
       if (missingVars.length > 0) {
         // In development, try to provide defaults for missing variables
         if (isDevelopment()) {
-          console.warn(`Using mock values for missing environment variables: ${missingVars.join(', ')}`);
+          console.warn(
+            `Using mock values for missing environment variables: ${missingVars.join(', ')}`
+          );
           const mockEnv = {
             ...process.env,
             ANTHROPIC_API_KEY: 'dummy-key-for-development-only',
@@ -133,7 +146,7 @@ export function validateEnv(): Env {
         }
       }
     }
-    
+
     console.error('❌ Failed to validate environment variables', error);
     if (isDevelopment()) {
       console.warn('Using mock environment in development');
@@ -171,12 +184,12 @@ export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
-  
+
   // On Vercel, use the automatically provided URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  
+
   // Fallback for local development
   return 'http://localhost:3000';
 }
@@ -189,7 +202,7 @@ export function getBaseUrl(): string {
  */
 export function getEnv(key: keyof Env, defaultValue?: string): string {
   const value = validatedEnv[key];
-  
+
   if (value === undefined) {
     if (defaultValue !== undefined) {
       return defaultValue;
@@ -201,7 +214,7 @@ export function getEnv(key: keyof Env, defaultValue?: string): string {
     }
     throw new Error(`Environment variable ${key} is not configured`);
   }
-  
+
   return String(value);
 }
 
@@ -213,16 +226,16 @@ export function getEnv(key: keyof Env, defaultValue?: string): string {
  */
 export function getEnvNumber(key: keyof Env, defaultValue?: number): number {
   const value = validatedEnv[key];
-  
+
   if (value === undefined) {
     return defaultValue || 0;
   }
-  
+
   const num = Number(value);
   if (isNaN(num)) {
     return defaultValue || 0;
   }
-  
+
   return num;
 }
 
@@ -234,21 +247,42 @@ export function getEnvNumber(key: keyof Env, defaultValue?: number): number {
  */
 export function getEnvBool(key: keyof Env, defaultValue = false): boolean {
   const value = validatedEnv[key];
-  
+
   if (value === undefined) {
     return defaultValue;
   }
-  
+
   if (typeof value === 'boolean') {
     return value;
   }
-  
+
   const strValue = String(value).toLowerCase();
   return strValue === 'true' || strValue === '1' || strValue === 'yes';
 }
 
 // Basic validated environment variables
-let validatedEnv: { ANTHROPIC_API_KEY: string; ANTHROPIC_API_URL: string; NODE_ENV: "development" | "production" | "test"; RATE_LIMIT_MAX: number; RATE_LIMIT_WINDOW_SECONDS: number; ENABLE_ANIMATION_FEATURES: boolean; ENABLE_MOCKUPS: boolean; CACHE_TTL_SECONDS: number; ADMIN_USERNAME?: string | undefined; ADMIN_PASSWORD?: string | undefined; CLAUDE_API_KEY?: string | undefined; OPENAI_API_KEY?: string | undefined; NEXT_PUBLIC_APP_URL?: string | undefined; VERCEL_URL?: string | undefined; VERCEL_ENV?: "preview" | "development" | "production" | undefined; DEPLOYMENT_ENV?: string | undefined; POSTGRES_URL?: string | undefined; POSTGRES_URL_NON_POOLING?: string | undefined; POSTGRES_DATABASE?: string | undefined; DATABASE_URL?: string | undefined; };
+let validatedEnv: {
+  ANTHROPIC_API_KEY: string;
+  ANTHROPIC_API_URL: string;
+  NODE_ENV: 'development' | 'production' | 'test';
+  RATE_LIMIT_MAX: number;
+  RATE_LIMIT_WINDOW_SECONDS: number;
+  ENABLE_ANIMATION_FEATURES: boolean;
+  ENABLE_MOCKUPS: boolean;
+  CACHE_TTL_SECONDS: number;
+  ADMIN_USERNAME?: string | undefined;
+  ADMIN_PASSWORD?: string | undefined;
+  CLAUDE_API_KEY?: string | undefined;
+  OPENAI_API_KEY?: string | undefined;
+  NEXT_PUBLIC_APP_URL?: string | undefined;
+  VERCEL_URL?: string | undefined;
+  VERCEL_ENV?: 'preview' | 'development' | 'production' | undefined;
+  DEPLOYMENT_ENV?: string | undefined;
+  POSTGRES_URL?: string | undefined;
+  POSTGRES_URL_NON_POOLING?: string | undefined;
+  POSTGRES_DATABASE?: string | undefined;
+  DATABASE_URL?: string | undefined;
+};
 
 // In browser context or development mode, provide mock environment if needed
 if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
@@ -284,17 +318,17 @@ if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
  */
 export const env: EnvWithHelpers = {
   ...validatedEnv,
-  
+
   // Helper methods
   get: getEnv,
   getNumber: getEnvNumber,
   getBool: getEnvBool,
-  
+
   // Environment indicator flags
   isProduction: isProduction(),
   isDevelopment: isDevelopment(),
   isTest: isTest(),
-  isClient: typeof window !== 'undefined'
+  isClient: typeof window !== 'undefined',
 };
 
 export default env;

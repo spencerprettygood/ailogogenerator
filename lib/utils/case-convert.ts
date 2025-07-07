@@ -9,7 +9,7 @@ export function camelToSnake<T>(obj: T): T {
     return Object.fromEntries(
       Object.entries(obj as AnyObject).map(([k, v]) => [
         k.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`),
-        camelToSnake(v)
+        camelToSnake(v),
       ])
     ) as T;
   }
@@ -23,7 +23,7 @@ export function snakeToCamel<T>(obj: T): T {
     return Object.fromEntries(
       Object.entries(obj as AnyObject).map(([k, v]) => [
         k.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
-        snakeToCamel(v)
+        snakeToCamel(v),
       ])
     ) as T;
   }

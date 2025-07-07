@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { ShapeLibraryProps, ShapeTemplate } from '@/lib/types-customization';
@@ -9,7 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import ColorPicker from './color-picker';
-import { Circle, Square, Triangle, Star, PlusCircle, Minus, CircleDashed, Squircle, Hash, Waves, Sparkles } from 'lucide-react';
+import {
+  Circle,
+  Square,
+  Triangle,
+  Star,
+  PlusCircle,
+  Minus,
+  CircleDashed,
+  Squircle,
+  Hash,
+  Waves,
+  Sparkles,
+} from 'lucide-react';
 
 // Basic shape templates
 const BASIC_SHAPES: ShapeTemplate[] = [
@@ -23,8 +35,8 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       r: 30,
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
+      'stroke-width': 0,
+    },
   },
   {
     name: 'Square',
@@ -37,8 +49,8 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       height: 60,
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
+      'stroke-width': 0,
+    },
   },
   {
     name: 'Rectangle',
@@ -51,8 +63,8 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       height: 40,
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
+      'stroke-width': 0,
+    },
   },
   {
     name: 'Triangle',
@@ -62,8 +74,8 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       points: '50,20 80,80 20,80',
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
+      'stroke-width': 0,
+    },
   },
   {
     name: 'Ellipse',
@@ -76,8 +88,8 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       ry: 25,
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
+      'stroke-width': 0,
+    },
   },
   {
     name: 'Star',
@@ -87,9 +99,9 @@ const BASIC_SHAPES: ShapeTemplate[] = [
       points: '50,15 61,40 90,40 66,56 74,80 50,67 26,80 34,56 10,40 39,40',
       fill: '#000000',
       stroke: 'none',
-      'stroke-width': 0
-    }
-  }
+      'stroke-width': 0,
+    },
+  },
 ];
 
 // Decorative elements
@@ -105,8 +117,8 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
       y2: 50,
       stroke: '#000000',
       'stroke-width': 3,
-      fill: 'none'
-    }
+      fill: 'none',
+    },
   },
   {
     name: 'Dotted Circle',
@@ -119,15 +131,15 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
       fill: 'none',
       stroke: '#000000',
       'stroke-width': 2,
-      'stroke-dasharray': '4 4'
-    }
+      'stroke-dasharray': '4 4',
+    },
   },
   {
     name: 'Dots',
     type: 'g',
     icon: Hash,
     attributes: {
-      fill: '#000000'
+      fill: '#000000',
     },
     children: [
       {
@@ -136,8 +148,8 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
           cx: 30,
           cy: 50,
           r: 5,
-          fill: '#000000'
-        }
+          fill: '#000000',
+        },
       },
       {
         type: 'circle',
@@ -145,8 +157,8 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
           cx: 50,
           cy: 50,
           r: 5,
-          fill: '#000000'
-        }
+          fill: '#000000',
+        },
       },
       {
         type: 'circle',
@@ -154,10 +166,10 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
           cx: 70,
           cy: 50,
           r: 5,
-          fill: '#000000'
-        }
-      }
-    ]
+          fill: '#000000',
+        },
+      },
+    ],
   },
   {
     name: 'Wave',
@@ -167,39 +179,39 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
       d: 'M10,50 C20,30 30,70 40,50 C50,30 60,70 70,50 C80,30 90,70 100,50',
       fill: 'none',
       stroke: '#000000',
-      'stroke-width': 2
-    }
+      'stroke-width': 2,
+    },
   },
   {
     name: 'Sparkles',
     type: 'g',
     icon: Sparkles,
     attributes: {
-      fill: '#000000'
+      fill: '#000000',
     },
     children: [
       {
         type: 'polygon',
         attributes: {
           points: '30,40 33,47 40,50 33,53 30,60 27,53 20,50 27,47',
-          fill: '#000000'
-        }
+          fill: '#000000',
+        },
       },
       {
         type: 'polygon',
         attributes: {
           points: '60,25 63,32 70,35 63,38 60,45 57,38 50,35 57,32',
-          fill: '#000000'
-        }
+          fill: '#000000',
+        },
       },
       {
         type: 'polygon',
         attributes: {
           points: '70,60 73,67 80,70 73,73 70,80 67,73 60,70 67,67',
-          fill: '#000000'
-        }
-      }
-    ]
+          fill: '#000000',
+        },
+      },
+    ],
   },
   {
     name: 'Arc',
@@ -209,48 +221,45 @@ const DECORATIVE_ELEMENTS: ShapeTemplate[] = [
       d: 'M20,70 A40,40 0 0,1 80,70',
       fill: 'none',
       stroke: '#000000',
-      'stroke-width': 2
-    }
-  }
+      'stroke-width': 2,
+    },
+  },
 ];
 
-const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
-  onAddShape,
-  colorPalette,
-}) => {
+const ShapeLibrary: React.FC<ShapeLibraryProps> = ({ onAddShape, colorPalette }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<ShapeTemplate | null>(null);
   const [customizedAttributes, setCustomizedAttributes] = useState<Record<string, any>>({});
-  
+
   // Handle shape selection
   const handleShapeSelect = (template: ShapeTemplate) => {
     setSelectedTemplate(template);
     // Initialize customization with template attributes
     setCustomizedAttributes({ ...template.attributes });
   };
-  
+
   // Handle attribute changes
   const handleAttributeChange = (attr: string, value: string | number) => {
     setCustomizedAttributes(prev => ({
       ...prev,
-      [attr]: value
+      [attr]: value,
     }));
   };
-  
+
   // Generate a unique ID for the new shape
   const generateUniqueId = () => {
     return `shape_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
   };
-  
+
   // Add the shape to the logo
   const handleAddShape = () => {
     if (!selectedTemplate) return;
-    
+
     const newElement = {
       id: generateUniqueId(),
       type: selectedTemplate.type,
       attributes: { ...customizedAttributes },
     };
-    
+
     // Handle group elements with children
     if (selectedTemplate.children) {
       // Clone the children and assign new IDs
@@ -260,30 +269,32 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
         // Preserve the connection to the parent
         attributes: {
           ...child.attributes,
-          parent: newElement.id
-        }
+          parent: newElement.id,
+        },
       }));
-      
+
       // Add the children elements first
       childrenWithIds.forEach(child => {
         onAddShape(child);
       });
     }
-    
+
     // Add the main element
     onAddShape(newElement);
-    
+
     // Reset selection
     setSelectedTemplate(null);
   };
-  
+
   // Render a shape template
   const renderShapeTemplate = (template: ShapeTemplate) => {
     return (
-      <div 
+      <div
         key={template.name}
         className={`p-3 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
-          selectedTemplate?.name === template.name ? 'ring-2 ring-primary bg-gray-100 dark:bg-gray-700' : ''
+          selectedTemplate?.name === template.name
+            ? 'ring-2 ring-primary bg-gray-100 dark:bg-gray-700'
+            : ''
         }`}
         onClick={() => handleShapeSelect(template)}
       >
@@ -294,7 +305,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
       </div>
     );
   };
-  
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="basic">
@@ -302,14 +313,12 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
           <TabsTrigger value="basic">Basic Shapes</TabsTrigger>
           <TabsTrigger value="decorative">Decorative</TabsTrigger>
         </TabsList>
-        
+
         {/* Basic Shapes Tab */}
         <TabsContent value="basic" className="mt-3">
-          <div className="grid grid-cols-3 gap-2">
-            {BASIC_SHAPES.map(renderShapeTemplate)}
-          </div>
+          <div className="grid grid-cols-3 gap-2">{BASIC_SHAPES.map(renderShapeTemplate)}</div>
         </TabsContent>
-        
+
         {/* Decorative Elements Tab */}
         <TabsContent value="decorative" className="mt-3">
           <div className="grid grid-cols-3 gap-2">
@@ -317,35 +326,35 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
           </div>
         </TabsContent>
       </Tabs>
-      
+
       {/* Shape Customization Panel */}
       {selectedTemplate && (
         <Card className="mt-4">
           <CardContent className="pt-4 space-y-3">
             <h3 className="text-sm font-medium">{selectedTemplate.name} Settings</h3>
-            
+
             {/* Color settings */}
             <div className="space-y-2">
               <Label>Color</Label>
               <ColorPicker
                 color={customizedAttributes.fill || '#000000'}
-                onChange={(color) => handleAttributeChange('fill', color)}
+                onChange={color => handleAttributeChange('fill', color)}
                 presetColors={colorPalette}
               />
             </div>
-            
+
             {/* Stroke settings (if applicable) */}
-            {(selectedTemplate.type !== 'g') && (
+            {selectedTemplate.type !== 'g' && (
               <div className="space-y-2">
                 <Label>Stroke Color</Label>
                 <ColorPicker
                   color={customizedAttributes.stroke || 'none'}
-                  onChange={(color) => handleAttributeChange('stroke', color)}
+                  onChange={color => handleAttributeChange('stroke', color)}
                   presetColors={[...colorPalette, 'none']}
                 />
               </div>
             )}
-            
+
             {/* Stroke width (if applicable) */}
             {customizedAttributes.stroke && customizedAttributes.stroke !== 'none' && (
               <div className="space-y-2">
@@ -356,21 +365,23 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     min="0"
                     step="0.5"
                     value={customizedAttributes['stroke-width'] || 0}
-                    onChange={(e) => handleAttributeChange('stroke-width', parseFloat(e.target.value))}
+                    onChange={e =>
+                      handleAttributeChange('stroke-width', parseFloat(e.target.value))
+                    }
                     className="w-20"
                   />
                   <Slider
-                    value={[parseFloat(customizedAttributes['stroke-width'] as string || '0')]}
+                    value={[parseFloat((customizedAttributes['stroke-width'] as string) || '0')]}
                     min={0}
                     max={10}
                     step={0.5}
-                    onValueChange={(value) => handleAttributeChange('stroke-width', value[0] || 1)}
+                    onValueChange={value => handleAttributeChange('stroke-width', value[0] || 1)}
                     className="flex-1"
                   />
                 </div>
               </div>
             )}
-            
+
             {/* Size controls - different for different shape types */}
             {selectedTemplate.type === 'circle' && (
               <div className="space-y-2">
@@ -380,21 +391,21 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     type="number"
                     min="1"
                     value={customizedAttributes.r || 30}
-                    onChange={(e) => handleAttributeChange('r', parseFloat(e.target.value))}
+                    onChange={e => handleAttributeChange('r', parseFloat(e.target.value))}
                     className="w-20"
                   />
                   <Slider
-                    value={[parseFloat(customizedAttributes.r as string || '30')]}
+                    value={[parseFloat((customizedAttributes.r as string) || '30')]}
                     min={5}
                     max={50}
                     step={1}
-                    onValueChange={(value) => handleAttributeChange('r', value[0] || 50)}
+                    onValueChange={value => handleAttributeChange('r', value[0] || 50)}
                     className="flex-1"
                   />
                 </div>
               </div>
             )}
-            
+
             {selectedTemplate.type === 'rect' && (
               <>
                 <div className="space-y-2">
@@ -404,15 +415,15 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       type="number"
                       min="1"
                       value={customizedAttributes.width || 60}
-                      onChange={(e) => handleAttributeChange('width', parseFloat(e.target.value))}
+                      onChange={e => handleAttributeChange('width', parseFloat(e.target.value))}
                       className="w-20"
                     />
                     <Slider
-                      value={[parseFloat(customizedAttributes.width as string || '60')]}
+                      value={[parseFloat((customizedAttributes.width as string) || '60')]}
                       min={5}
                       max={100}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('width', value[0] || 100)}
+                      onValueChange={value => handleAttributeChange('width', value[0] || 100)}
                       className="flex-1"
                     />
                   </div>
@@ -424,22 +435,22 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       type="number"
                       min="1"
                       value={customizedAttributes.height || 60}
-                      onChange={(e) => handleAttributeChange('height', parseFloat(e.target.value))}
+                      onChange={e => handleAttributeChange('height', parseFloat(e.target.value))}
                       className="w-20"
                     />
                     <Slider
-                      value={[parseFloat(customizedAttributes.height as string || '60')]}
+                      value={[parseFloat((customizedAttributes.height as string) || '60')]}
                       min={5}
                       max={100}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('height', value[0] || 100)}
+                      onValueChange={value => handleAttributeChange('height', value[0] || 100)}
                       className="flex-1"
                     />
                   </div>
                 </div>
               </>
             )}
-            
+
             {selectedTemplate.type === 'ellipse' && (
               <>
                 <div className="space-y-2">
@@ -449,15 +460,15 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       type="number"
                       min="1"
                       value={customizedAttributes.rx || 40}
-                      onChange={(e) => handleAttributeChange('rx', parseFloat(e.target.value))}
+                      onChange={e => handleAttributeChange('rx', parseFloat(e.target.value))}
                       className="w-20"
                     />
                     <Slider
-                      value={[parseFloat(customizedAttributes.rx as string || '40')]}
+                      value={[parseFloat((customizedAttributes.rx as string) || '40')]}
                       min={5}
                       max={50}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('rx', value[0] || 5)}
+                      onValueChange={value => handleAttributeChange('rx', value[0] || 5)}
                       className="flex-1"
                     />
                   </div>
@@ -469,33 +480,39 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                       type="number"
                       min="1"
                       value={customizedAttributes.ry || 25}
-                      onChange={(e) => handleAttributeChange('ry', parseFloat(e.target.value))}
+                      onChange={e => handleAttributeChange('ry', parseFloat(e.target.value))}
                       className="w-20"
                     />
                     <Slider
-                      value={[parseFloat(customizedAttributes.ry as string || '25')]}
+                      value={[parseFloat((customizedAttributes.ry as string) || '25')]}
                       min={5}
                       max={50}
                       step={1}
-                      onValueChange={(value) => handleAttributeChange('ry', value[0] || 5)}
+                      onValueChange={value => handleAttributeChange('ry', value[0] || 5)}
                       className="flex-1"
                     />
                   </div>
                 </div>
               </>
             )}
-            
+
             {selectedTemplate.type === 'line' && (
               <>
                 <div className="space-y-2">
                   <Label>Length</Label>
                   <Slider
-                    value={[parseFloat(customizedAttributes.x2 as string || '80') - parseFloat(customizedAttributes.x1 as string || '20')]}
+                    value={[
+                      parseFloat((customizedAttributes.x2 as string) || '80') -
+                        parseFloat((customizedAttributes.x1 as string) || '20'),
+                    ]}
                     min={10}
                     max={80}
                     step={1}
-                    onValueChange={(value) => {
-                      const center = (parseFloat(customizedAttributes.x1 as string || '20') + parseFloat(customizedAttributes.x2 as string || '80')) / 2;
+                    onValueChange={value => {
+                      const center =
+                        (parseFloat((customizedAttributes.x1 as string) || '20') +
+                          parseFloat((customizedAttributes.x2 as string) || '80')) /
+                        2;
                       const halfLength = (value[0] || 100) / 2;
                       handleAttributeChange('x1', center - halfLength);
                       handleAttributeChange('x2', center + halfLength);
@@ -505,7 +522,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                 </div>
               </>
             )}
-            
+
             {/* Position for all shapes */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -515,13 +532,13 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                   min="0"
                   max="100"
                   value={
-                    selectedTemplate.type === 'circle' || selectedTemplate.type === 'ellipse' 
+                    selectedTemplate.type === 'circle' || selectedTemplate.type === 'ellipse'
                       ? customizedAttributes.cx || 50
                       : selectedTemplate.type === 'rect'
-                      ? customizedAttributes.x || 20
-                      : 50
+                        ? customizedAttributes.x || 20
+                        : 50
                   }
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = parseFloat(e.target.value);
                     if (selectedTemplate.type === 'circle' || selectedTemplate.type === 'ellipse') {
                       handleAttributeChange('cx', value);
@@ -541,10 +558,10 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                     selectedTemplate.type === 'circle' || selectedTemplate.type === 'ellipse'
                       ? customizedAttributes.cy || 50
                       : selectedTemplate.type === 'rect'
-                      ? customizedAttributes.y || 20
-                      : 50
+                        ? customizedAttributes.y || 20
+                        : 50
                   }
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = parseFloat(e.target.value);
                     if (selectedTemplate.type === 'circle' || selectedTemplate.type === 'ellipse') {
                       handleAttributeChange('cy', value);
@@ -555,7 +572,7 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                 />
               </div>
             </div>
-            
+
             {/* Rotation control */}
             <div className="space-y-2 mt-3">
               <Label>Rotation (degrees)</Label>
@@ -565,21 +582,24 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                   min="0"
                   max="360"
                   value={customizedAttributes.rotate || 0}
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = parseFloat(e.target.value);
                     handleAttributeChange('rotate', value);
-                    
+
                     // Update transform attribute to include rotation
                     const currentTransform = customizedAttributes.transform || '';
                     const hasRotate = currentTransform.includes('rotate');
-                    
+
                     if (hasRotate) {
                       // Replace existing rotation
-                      const newTransform = currentTransform.replace(/rotate\([^)]+\)/, `rotate(${value})`);
+                      const newTransform = currentTransform.replace(
+                        /rotate\([^)]+\)/,
+                        `rotate(${value})`
+                      );
                       handleAttributeChange('transform', newTransform);
                     } else {
                       // Add rotation to existing transform or create new transform
-                      const newTransform = currentTransform 
+                      const newTransform = currentTransform
                         ? `${currentTransform} rotate(${value})`
                         : `rotate(${value})`;
                       handleAttributeChange('transform', newTransform);
@@ -588,24 +608,27 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                   className="w-20"
                 />
                 <Slider
-                  value={[parseFloat(customizedAttributes.rotate as string || '0')]}
+                  value={[parseFloat((customizedAttributes.rotate as string) || '0')]}
                   min={0}
                   max={360}
                   step={5}
-                  onValueChange={(value) => {
+                  onValueChange={value => {
                     handleAttributeChange('rotate', value[0] || 0);
-                    
+
                     // Update transform attribute to include rotation
                     const currentTransform = customizedAttributes.transform || '';
                     const hasRotate = currentTransform.includes('rotate');
-                    
+
                     if (hasRotate) {
                       // Replace existing rotation
-                      const newTransform = currentTransform.replace(/rotate\([^)]+\)/, `rotate(${value[0]})`);
+                      const newTransform = currentTransform.replace(
+                        /rotate\([^)]+\)/,
+                        `rotate(${value[0]})`
+                      );
                       handleAttributeChange('transform', newTransform);
                     } else {
                       // Add rotation to existing transform or create new transform
-                      const newTransform = currentTransform 
+                      const newTransform = currentTransform
                         ? `${currentTransform} rotate(${value[0]})`
                         : `rotate(${value[0]})`;
                       handleAttributeChange('transform', newTransform);
@@ -615,12 +638,9 @@ const ShapeLibrary: React.FC<ShapeLibraryProps> = ({
                 />
               </div>
             </div>
-            
+
             {/* Add button */}
-            <Button 
-              className="w-full mt-2"
-              onClick={handleAddShape}
-            >
+            <Button className="w-full mt-2" onClick={handleAddShape}>
               <PlusCircle className="w-4 h-4 mr-2" />
               Add to Logo
             </Button>

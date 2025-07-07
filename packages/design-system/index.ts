@@ -1,7 +1,7 @@
 /**
  * @file index.ts
  * @description Design system package entry point
- * 
+ *
  * This file exports all components, tokens, and utilities from the design system.
  */
 

@@ -1,10 +1,10 @@
 /**
  * CSS Animation Provider
- * 
+ *
  * This provider implements animations using CSS transitions and keyframes.
  * CSS animations are widely supported across browsers and provide good
  * performance for most common animation types.
- * 
+ *
  * Key features:
  * - Generates CSS keyframes for various animation types
  * - Applies CSS classes to SVG elements for animation
@@ -12,18 +12,22 @@
  * - Supports sequential animations with staggered delays
  */
 
-import { 
-  AnimationProvider, 
-  AnimationType, 
-  AnimationOptions, 
+import {
+  AnimationProvider,
+  AnimationType,
+  AnimationOptions,
   AnimatedSVGLogo,
-  AnimationEasing
+  AnimationEasing,
 } from '../types';
-import { sanitizeSVG, optimizeSVGFromOptimizer as optimizeSVG, extractAnimatableElements } from '../utils';
+import {
+  sanitizeSVG,
+  optimizeSVGFromOptimizer as optimizeSVG,
+  extractAnimatableElements,
+} from '../utils';
 
 /**
  * CSS Animation Provider
- * 
+ *
  * Implements the AnimationProvider interface using CSS animations.
  */
 export class CSSAnimationProvider implements AnimationProvider {
@@ -45,22 +49,22 @@ export class CSSAnimationProvider implements AnimationProvider {
     AnimationType.SHIMMER,
     AnimationType.SEQUENTIAL,
     AnimationType.DRAW,
-    AnimationType.CUSTOM
+    AnimationType.CUSTOM,
   ];
-  
+
   /**
    * Check if this provider supports the given animation type
-   * 
+   *
    * @param type - The animation type to check
    * @returns Boolean indicating if the animation type is supported
    */
   supportsAnimationType(type: AnimationType): boolean {
     return this.supportedAnimationTypes.includes(type);
   }
-  
+
   /**
    * Apply CSS animation to an SVG
-   * 
+   *
    * @param svg - The SVG content to animate
    * @param options - Animation options
    * @returns Promise resolving to an AnimatedSVGLogo with the animated SVG and CSS
@@ -69,13 +73,13 @@ export class CSSAnimationProvider implements AnimationProvider {
     // Sanitize and optimize SVG first
     const cleanSvg = sanitizeSVG(svg);
     const optimizedSvg = optimizeSVG(cleanSvg);
-    
+
     // Generate unique animation ID to avoid conflicts
     const animationId = `anim_${Math.random().toString(36).slice(2, 11)}`;
-    
+
     // Determine which elements to animate
     let elementsToAnimate: string[] = [];
-    
+
     if (options.elements && options.elements.length > 0) {
       // Use specified elements
       elementsToAnimate = options.elements;
@@ -86,24 +90,24 @@ export class CSSAnimationProvider implements AnimationProvider {
       // Default to animating the root SVG element
       elementsToAnimate = ['svg'];
     }
-    
+
     // Apply animation classes to SVG
     const animatedSvg = this.applyAnimationClasses(optimizedSvg, elementsToAnimate, animationId);
-    
+
     // Generate CSS for the animation
     const cssCode = this.generateCSSForAnimation(options, animationId, elementsToAnimate);
-    
+
     return {
       originalSvg: svg,
       animatedSvg,
       cssCode,
-      animationOptions: options
+      animationOptions: options,
     };
   }
-  
+
   /**
    * Apply CSS animation classes to SVG elements
-   * 
+   *
    * @param svg - The SVG content
    * @param elements - Array of element selectors to animate
    * @param animationId - Unique ID for the animation
@@ -113,23 +117,23 @@ export class CSSAnimationProvider implements AnimationProvider {
     // If targeting the root SVG element
     if (elements.includes('svg') || elements.length === 0) {
       // Add class to the root SVG element
-      return svg.replace(
-        /(<svg[^>]*)>/,
-        `$1 class="${animationId}">`
-      );
+      return svg.replace(/(<svg[^>]*)>/, `$1 class="${animationId}">`);
     }
-    
+
     // For server-side animation class application, we need to use regex
     // This is limited but works for simple cases
     let result = svg;
-    
+
     // Apply animation classes to specified elements
     elements.forEach((selector, index) => {
       // For simple ID selectors
       if (selector.startsWith('#')) {
         const id = selector.substring(1);
-        const regex = new RegExp(`(<[^>]*\\sid\\s*=\\s*["']${id}["'][^>]*)(\\s*class\\s*=\\s*["']([^"']*)["'])?([^>]*>)`, 'g');
-        
+        const regex = new RegExp(
+          `(<[^>]*\\sid\\s*=\\s*["']${id}["'][^>]*)(\\s*class\\s*=\\s*["']([^"']*)["'])?([^>]*>)`,
+          'g'
+        );
+
         result = result.replace(regex, (match, before, classAttr, existingClasses, after) => {
           if (classAttr) {
             // Element already has a class attribute
@@ -144,8 +148,11 @@ export class CSSAnimationProvider implements AnimationProvider {
       else if (/^[a-z]+$/i.test(selector)) {
         const tag = selector;
         // This is simplistic and might affect unintended elements
-        const regex = new RegExp(`(<${tag}[^>]*)(\\s*class\\s*=\\s*["']([^"']*)["'])?([^>]*>)`, 'g');
-        
+        const regex = new RegExp(
+          `(<${tag}[^>]*)(\\s*class\\s*=\\s*["']([^"']*)["'])?([^>]*>)`,
+          'g'
+        );
+
         result = result.replace(regex, (match, before, classAttr, existingClasses, after) => {
           if (classAttr) {
             return `${before} class="${existingClasses} ${animationId}_${index}"${after}`;
@@ -155,20 +162,20 @@ export class CSSAnimationProvider implements AnimationProvider {
         });
       }
     });
-    
+
     return result;
   }
-  
+
   /**
    * Generate CSS for the animation
-   * 
+   *
    * @param options - Animation options
    * @param animationId - Unique ID for the animation
    * @param elements - Array of element selectors to animate
    * @returns CSS code for the animation
    */
   private generateCSSForAnimation(
-    options: AnimationOptions, 
+    options: AnimationOptions,
     animationId: string,
     elements: string[]
   ): string {
@@ -179,9 +186,9 @@ export class CSSAnimationProvider implements AnimationProvider {
     const iterations = timing.iterations || 1;
     const iterationCount = iterations === Infinity ? 'infinite' : iterations;
     const direction = timing.direction || 'normal';
-    
+
     let css = '';
-    
+
     // Common animation properties
     const commonProps = `
     animation-duration: ${duration}ms;
@@ -191,7 +198,7 @@ export class CSSAnimationProvider implements AnimationProvider {
     animation-iteration-count: ${iterationCount};
     animation-direction: ${direction};
     `;
-    
+
     // Generate keyframes and animation styles based on animation type
     switch (type) {
       case AnimationType.FADE_IN:
@@ -223,7 +230,7 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.FADE_IN_UP:
         css += `
 @keyframes ${animationId}_fade_in_up {
@@ -257,7 +264,7 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.ZOOM_IN:
         css += `
 @keyframes ${animationId}_zoom_in {
@@ -293,7 +300,7 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.SPIN:
         css += `
 @keyframes ${animationId}_spin {
@@ -321,7 +328,7 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.PULSE:
         css += `
 @keyframes ${animationId}_pulse {
@@ -350,7 +357,7 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.DRAW:
         // Path drawing animation using stroke-dasharray/dashoffset
         css += `
@@ -383,21 +390,21 @@ export class CSSAnimationProvider implements AnimationProvider {
           });
         }
         break;
-        
+
       case AnimationType.SEQUENTIAL:
         // Sequential animation (elements appear one after another)
         const staggerDelay = options.stagger || 100; // Default 100ms between elements
-        
+
         css += `
 @keyframes ${animationId}_sequential {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 `;
-        
+
         // Apply staggered delays to elements
         elements.forEach((_, index) => {
-          const elementDelay = delay + (index * staggerDelay);
+          const elementDelay = delay + index * staggerDelay;
           css += `
 .${animationId}_${index} {
   opacity: 0;
@@ -412,7 +419,7 @@ export class CSSAnimationProvider implements AnimationProvider {
 `;
         });
         break;
-        
+
       case AnimationType.CUSTOM:
         // Custom animation with user-provided keyframes
         if (options.customKeyframes) {
@@ -421,7 +428,7 @@ export class CSSAnimationProvider implements AnimationProvider {
   ${options.customKeyframes}
 }
 `;
-          
+
           if (elements.includes('svg') || elements.length === 0) {
             css += `
 .${animationId} {
@@ -440,13 +447,13 @@ export class CSSAnimationProvider implements AnimationProvider {
             });
           }
         }
-        
+
         // Add any custom CSS if provided
         if (options.customCSS) {
           css += options.customCSS;
         }
         break;
-        
+
       default:
         // Default fade-in animation for unsupported types
         css += `
@@ -455,7 +462,7 @@ export class CSSAnimationProvider implements AnimationProvider {
   to { opacity: 1; }
 }
 `;
-        
+
         if (elements.includes('svg') || elements.length === 0) {
           css += `
 .${animationId} {
@@ -477,7 +484,7 @@ export class CSSAnimationProvider implements AnimationProvider {
         }
         break;
     }
-    
+
     return css;
   }
 }

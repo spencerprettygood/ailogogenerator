@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -8,23 +8,75 @@ import { FileUpload as FileUploadUnified } from './file-upload-unified';
 
 // Common logo design terms for autocomplete
 const LOGO_DESIGN_TERMS = [
-  'modern', 'minimalist', 'bold', 'colorful', 'geometric',
-  'elegant', 'vintage', 'abstract', 'professional', 'playful',
-  'tech', 'organic', 'luxury', 'creative', 'corporate',
-  'clean', 'simple', 'sophisticated', 'rustic', 'futuristic',
-  'hand-drawn', 'retro', 'dynamic', 'flat', '3D',
-  'monogram', 'wordmark', 'icon', 'emblem', 'mascot',
-  'blue', 'green', 'red', 'purple', 'orange',
-  'black', 'white', 'yellow', 'teal', 'pink',
-  'gradient', 'monochrome', 'pastel', 'neon', 'earthy'
+  'modern',
+  'minimalist',
+  'bold',
+  'colorful',
+  'geometric',
+  'elegant',
+  'vintage',
+  'abstract',
+  'professional',
+  'playful',
+  'tech',
+  'organic',
+  'luxury',
+  'creative',
+  'corporate',
+  'clean',
+  'simple',
+  'sophisticated',
+  'rustic',
+  'futuristic',
+  'hand-drawn',
+  'retro',
+  'dynamic',
+  'flat',
+  '3D',
+  'monogram',
+  'wordmark',
+  'icon',
+  'emblem',
+  'mascot',
+  'blue',
+  'green',
+  'red',
+  'purple',
+  'orange',
+  'black',
+  'white',
+  'yellow',
+  'teal',
+  'pink',
+  'gradient',
+  'monochrome',
+  'pastel',
+  'neon',
+  'earthy',
 ];
 
 // Industry categories
 const INDUSTRIES = [
-  'tech startup', 'restaurant', 'coffee shop', 'fitness', 'healthcare',
-  'education', 'real estate', 'finance', 'e-commerce', 'travel',
-  'beauty', 'fashion', 'gaming', 'sports', 'entertainment',
-  'consulting', 'legal', 'art', 'music', 'photography'
+  'tech startup',
+  'restaurant',
+  'coffee shop',
+  'fitness',
+  'healthcare',
+  'education',
+  'real estate',
+  'finance',
+  'e-commerce',
+  'travel',
+  'beauty',
+  'fashion',
+  'gaming',
+  'sports',
+  'entertainment',
+  'consulting',
+  'legal',
+  'art',
+  'music',
+  'photography',
 ];
 
 interface SearchInterfaceProps {
@@ -38,7 +90,7 @@ export function SearchInterfaceEnhanced({
   onSubmit,
   isGenerating,
   className = '',
-  placeholder = 'Describe your perfect logo...'
+  placeholder = 'Describe your perfect logo...',
 }: SearchInterfaceProps) {
   const [prompt, setPrompt] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -58,8 +110,12 @@ export function SearchInterfaceEnhanced({
   // Close suggestions when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) && 
-          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     }
@@ -107,25 +163,27 @@ export function SearchInterfaceEnhanced({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPrompt(value);
-    
+
     // Generate suggestions based on input
     if (value.trim().length > 2) {
       const words = value.toLowerCase().split(' ');
       const lastWord = words[words.length - 1];
-      
+
       // If the last word has at least 2 characters, show suggestions
       if (lastWord && lastWord.length >= 2) {
-        const termSuggestions = LOGO_DESIGN_TERMS.filter(term => 
-          term.toLowerCase().startsWith(lastWord) && term.toLowerCase() !== lastWord
+        const termSuggestions = LOGO_DESIGN_TERMS.filter(
+          term => term.toLowerCase().startsWith(lastWord) && term.toLowerCase() !== lastWord
         );
-        
-        const industrySuggestions = INDUSTRIES.filter(industry => 
-          industry.toLowerCase().includes(lastWord) && !value.toLowerCase().includes(industry.toLowerCase())
+
+        const industrySuggestions = INDUSTRIES.filter(
+          industry =>
+            industry.toLowerCase().includes(lastWord) &&
+            !value.toLowerCase().includes(industry.toLowerCase())
         );
-        
+
         // Combine and limit suggestions
         const combinedSuggestions = [...termSuggestions, ...industrySuggestions].slice(0, 5);
-        
+
         if (combinedSuggestions.length > 0) {
           setSuggestions(combinedSuggestions);
           setShowSuggestions(true);
@@ -143,7 +201,7 @@ export function SearchInterfaceEnhanced({
   const applySuggestion = (suggestion: string) => {
     const words = prompt.split(' ');
     words.pop(); // Remove the last word
-    
+
     // If the suggestion is a full industry, add it as a new term
     if (INDUSTRIES.includes(suggestion)) {
       setPrompt(`${words.join(' ')}${words.length > 0 ? ' ' : ''}${suggestion}`);
@@ -151,7 +209,7 @@ export function SearchInterfaceEnhanced({
       // Otherwise complete the last word
       setPrompt(`${words.join(' ')}${words.length > 0 ? ' ' : ''}${suggestion}`);
     }
-    
+
     setShowSuggestions(false);
     inputRef.current?.focus();
   };
@@ -178,7 +236,7 @@ export function SearchInterfaceEnhanced({
                 }
               }}
             />
-            
+
             {prompt && !isGenerating && (
               <Button
                 type="button"
@@ -193,7 +251,7 @@ export function SearchInterfaceEnhanced({
                 <X className="h-4 w-4" />
               </Button>
             )}
-            
+
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex space-x-1">
               <Button
                 type="button"
@@ -205,7 +263,7 @@ export function SearchInterfaceEnhanced({
               >
                 <FileImage className="h-4 w-4" />
               </Button>
-              
+
               <Button
                 type="submit"
                 size="icon"
@@ -219,16 +277,16 @@ export function SearchInterfaceEnhanced({
                 )}
               </Button>
             </div>
-            
+
             {/* Autocomplete suggestions */}
             {showSuggestions && suggestions.length > 0 && (
-              <div 
+              <div
                 ref={suggestionsRef}
                 className="absolute left-0 right-0 top-full mt-1 z-10 bg-card border rounded-lg shadow-lg overflow-hidden"
               >
                 <ul className="py-1">
                   {suggestions.map((suggestion, index) => (
-                    <li 
+                    <li
                       key={index}
                       className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
                       onClick={() => applySuggestion(suggestion)}
@@ -240,7 +298,7 @@ export function SearchInterfaceEnhanced({
               </div>
             )}
           </div>
-          
+
           {showFileUpload && (
             <div className="px-4 pb-3">
               <FileUploadUnified
@@ -251,7 +309,7 @@ export function SearchInterfaceEnhanced({
               />
             </div>
           )}
-          
+
           {files.length > 0 && (
             <div className="px-4 pb-3 text-sm text-muted-foreground">
               {files.length} image{files.length !== 1 ? 's' : ''} selected
@@ -262,9 +320,10 @@ export function SearchInterfaceEnhanced({
           {!isGenerating && prompt.length > 0 && (
             <div className="px-4 pb-3">
               <p className="text-xs text-muted-foreground">
-                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to generate • 
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Tab</kbd> to auto-complete • 
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Esc</kbd> to close suggestions
+                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to generate
+                •<kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Tab</kbd> to
+                auto-complete •<kbd className="px-1 py-0.5 bg-muted rounded text-xs ml-1">Esc</kbd>{' '}
+                to close suggestions
               </p>
             </div>
           )}

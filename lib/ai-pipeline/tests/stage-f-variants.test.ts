@@ -33,10 +33,10 @@ vi.mock('@anthropic-ai/sdk', () => {
       messages = {
         create: vi.fn().mockResolvedValue({
           content: [{ type: 'text', text: mockTextContent }],
-          usage: { input_tokens: 100, output_tokens: 300 }
-        })
+          usage: { input_tokens: 100, output_tokens: 300 },
+        }),
       };
-    }
+    },
   };
 });
 
@@ -47,8 +47,8 @@ vi.mock('sharp', () => {
       resize: vi.fn().mockReturnThis(),
       flatten: vi.fn().mockReturnThis(),
       png: vi.fn().mockReturnThis(),
-      toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-png-data'))
-    }))
+      toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-png-data')),
+    })),
   };
 });
 
@@ -65,7 +65,7 @@ const mockDesignSpec: DesignSpec = {
   color_palette: 'Red, black, white',
   imagery: 'Geometric shapes',
   target_audience: 'Developers',
-  additional_requests: 'None'
+  additional_requests: 'None',
 };
 
 describe('Stage F: Variant Generation', () => {
@@ -78,7 +78,7 @@ describe('Stage F: Variant Generation', () => {
     const result = await generateVariants({
       svg: mockSvg,
       designSpec: mockDesignSpec,
-      brandName: 'Test Brand'
+      brandName: 'Test Brand',
     });
 
     // Check success and timing
@@ -127,7 +127,7 @@ describe('Stage F: Variant Generation', () => {
     const result = await generateVariants({
       svg: '<not-valid-svg>',
       designSpec: mockDesignSpec,
-      brandName: 'Test Brand'
+      brandName: 'Test Brand',
     });
 
     expect(result.success).toBe(false);
@@ -140,7 +140,7 @@ describe('Stage F: Variant Generation', () => {
     const result = await generateVariants({
       svg: mockSvg,
       designSpec: mockDesignSpec,
-      brandName: 'Test Brand'
+      brandName: 'Test Brand',
     });
 
     expect(result.success).toBe(true);

@@ -102,7 +102,7 @@ class StageBValidator {
       'style_preferences',
       'color_palette',
       'imagery',
-      'target_audience'
+      'target_audience',
     ];
 
     for (const field of requiredFields) {
@@ -118,7 +118,7 @@ class StageBValidator {
 
   static validateMoodboardOutput(jsonString: string): MoodboardOutput {
     let parsed: unknown;
-    
+
     try {
       // Handle potential code blocks
       const match = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
@@ -133,29 +133,39 @@ class StageBValidator {
     }
 
     const obj = parsed as Record<string, unknown>;
-    
+
     if (!obj.concepts || !Array.isArray(obj.concepts)) {
       throw new Error('AI response missing concepts array');
     }
 
     if (obj.concepts.length !== STAGE_B_CONFIG.required_concepts) {
-      throw new Error(`Expected ${STAGE_B_CONFIG.required_concepts} concepts, got ${obj.concepts.length}`);
+      throw new Error(
+        `Expected ${STAGE_B_CONFIG.required_concepts} concepts, got ${obj.concepts.length}`
+      );
     }
 
     const validatedConcepts: MoodboardConcept[] = [];
 
     for (let i = 0; i < obj.concepts.length; i++) {
       const concept = obj.concepts[i];
-      
+
       if (!concept || typeof concept !== 'object') {
         throw new Error(`Concept ${i + 1} is not a valid object`);
       }
 
       const c = concept as Record<string, unknown>;
-      
+
       // Validate required fields
-      const requiredFields = ['name', 'description', 'style_approach', 'primary_colors', 'typography_style', 'imagery_elements', 'rationale'];
-      
+      const requiredFields = [
+        'name',
+        'description',
+        'style_approach',
+        'primary_colors',
+        'typography_style',
+        'imagery_elements',
+        'rationale',
+      ];
+
       for (const field of requiredFields) {
         if (!(field in c) || !c[field]) {
           throw new Error(`Concept ${i + 1} missing required field: ${field}`);
@@ -217,7 +227,7 @@ class StageBValidator {
 class ConceptAnalyzer {
   static checkConceptDiversity(concepts: MoodboardConcept[]): string[] {
     const issues: string[] = [];
-    
+
     // Check for duplicate names
     const names = concepts.map(c => c.name.toLowerCase());
     const uniqueNames = new Set(names);
@@ -251,7 +261,7 @@ class ConceptAnalyzer {
 
   static checkOriginality(concepts: MoodboardConcept[]): string[] {
     const issues: string[] = [];
-    
+
     // Common cliché patterns to avoid
     const cliches = [
       /swoosh/gi,
@@ -265,13 +275,13 @@ class ConceptAnalyzer {
     for (let i = 0; i < concepts.length; i++) {
       const concept = concepts[i];
       const fullText = `${concept.description} ${concept.imagery_elements}`.toLowerCase();
-      
+
       for (const cliche of cliches) {
         if (cliche.test(fullText)) {
           issues.push(`Concept ${i + 1} (${concept.name}) may contain clichéd elements`);
         }
       }
-      
+
       // Check for overly generic descriptions
       if (concept.description.split(' ').length < 20) {
         issues.push(`Concept ${i + 1} (${concept.name}) description is too brief`);
@@ -283,25 +293,28 @@ class ConceptAnalyzer {
 
   static scoreConceptQuality(concept: MoodboardConcept): number {
     let score = 100;
-    
+
     // Deduct for short descriptions
     if (concept.description.length < 100) score -= 20;
     if (concept.description.length < 50) score -= 30;
-    
+
     // Deduct for generic names
-    if (concept.name.toLowerCase().includes('logo') || concept.name.toLowerCase().includes('design')) {
+    if (
+      concept.name.toLowerCase().includes('logo') ||
+      concept.name.toLowerCase().includes('design')
+    ) {
       score -= 10;
     }
-    
+
     // Deduct for insufficient colors
     if (concept.primary_colors.length < 2) score -= 15;
-    
+
     // Deduct for vague imagery
     if (concept.imagery_elements.length < 20) score -= 20;
-    
+
     // Deduct for short rationale
     if (concept.rationale.length < 30) score -= 15;
-    
+
     return Math.max(0, score);
   }
 }
@@ -320,7 +333,7 @@ class StageBRetryHandler {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry validation errors from design spec
         if (error instanceof Error && error.message.includes('Design specification')) {
           throw error;
@@ -338,11 +351,9 @@ class StageBRetryHandler {
 }
 
 // Main moodboard generation function
-export async function generateMoodboard(
-  designSpec: DesignSpec
-): Promise<StageBOutput> {
+export async function generateMoodboard(designSpec: DesignSpec): Promise<StageBOutput> {
   const startTime = Date.now();
-  
+
   try {
     // Validate input
     StageBValidator.validateDesignSpec(designSpec);
@@ -403,7 +414,7 @@ Generate 3 distinct visual concepts for this brand's logo based on these require
     // Quality checks
     const diversityIssues = ConceptAnalyzer.checkConceptDiversity(moodboard.concepts);
     const originalityIssues = ConceptAnalyzer.checkOriginality(moodboard.concepts);
-    
+
     // Log quality issues in development
     if (process.env.NODE_ENV === 'development') {
       if (diversityIssues.length > 0) {
@@ -430,7 +441,6 @@ Generate 3 distinct visual concepts for this brand's logo based on these require
       tokensUsed: (completion.usage.input_tokens || 0) + (completion.usage.output_tokens || 0),
       processingTime,
     };
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     let errorType: 'validation_error' | 'ai_error' | 'system_error' = 'system_error';
@@ -443,14 +453,18 @@ Generate 3 distinct visual concepts for this brand's logo based on these require
         errorDetails = error.stack;
       }
 
-      if (error.message.includes('Design specification') || 
-          error.message.includes('Invalid design spec')) {
+      if (
+        error.message.includes('Design specification') ||
+        error.message.includes('Invalid design spec')
+      ) {
         errorType = 'validation_error';
-      } else if (error.message.includes('AI model') || 
-                 error.message.includes('AI response') ||
-                 error.message.includes('JSON response') ||
-                 error.message.includes('Expected') ||
-                 error.message.includes('Concept')) {
+      } else if (
+        error.message.includes('AI model') ||
+        error.message.includes('AI response') ||
+        error.message.includes('JSON response') ||
+        error.message.includes('Expected') ||
+        error.message.includes('Concept')
+      ) {
         errorType = 'ai_error';
       } else if (error.message.includes('ANTHROPIC_API_KEY')) {
         errorType = 'system_error';
@@ -487,13 +501,13 @@ export function selectBestConcept(concepts: MoodboardConcept[]): MoodboardConcep
 }
 
 export function validateStageBOutput(output: StageBOutput): string {
-  if (!output) return "Output is undefined or null";
-  
+  if (!output) return 'Output is undefined or null';
+
   if (output.success) {
-    if (!output.moodboard) return "Successful output missing moodboard";
-    if (!output.moodboard.concepts) return "Moodboard missing concepts array";
-    if (output.moodboard.concepts.length !== 3) return "Moodboard should have exactly 3 concepts";
-    
+    if (!output.moodboard) return 'Successful output missing moodboard';
+    if (!output.moodboard.concepts) return 'Moodboard missing concepts array';
+    if (output.moodboard.concepts.length !== 3) return 'Moodboard should have exactly 3 concepts';
+
     for (let i = 0; i < output.moodboard.concepts.length; i++) {
       const concept = output.moodboard.concepts[i];
       if (!concept.name || !concept.description || !concept.style_approach) {
@@ -503,17 +517,19 @@ export function validateStageBOutput(output: StageBOutput): string {
         return `Concept ${i + 1} missing primary colors`;
       }
     }
-    
-    if (!output.tokensUsed || output.tokensUsed <= 0) return "Missing or invalid tokensUsed";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime";
-    
-    return "valid";
+
+    if (!output.tokensUsed || output.tokensUsed <= 0) return 'Missing or invalid tokensUsed';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime';
+
+    return 'valid';
   } else {
-    if (!output.error) return "Failed output missing error object";
-    if (!output.error.type || !output.error.message) return "Error object missing type or message";
-    if (!output.processingTime || output.processingTime < 0) return "Missing or invalid processingTime on error";
-    
-    return "valid_error";
+    if (!output.error) return 'Failed output missing error object';
+    if (!output.error.type || !output.error.message) return 'Error object missing type or message';
+    if (!output.processingTime || output.processingTime < 0)
+      return 'Missing or invalid processingTime on error';
+
+    return 'valid_error';
   }
 }
 

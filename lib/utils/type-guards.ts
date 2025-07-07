@@ -44,7 +44,7 @@ export function isArray<T>(value: unknown, itemGuard?: (item: unknown) => item i
  * Type guard to check if a value has a specific property
  */
 export function hasProperty<K extends string>(
-  value: unknown, 
+  value: unknown,
   prop: K
 ): value is { [key in K]: unknown } {
   return isObject(value) && prop in value;
@@ -54,7 +54,7 @@ export function hasProperty<K extends string>(
  * Type guard to check if a value has a string property
  */
 export function hasStringProperty<K extends string>(
-  value: unknown, 
+  value: unknown,
   prop: K
 ): value is { [key in K]: string } {
   return isObject(value) && prop in value && typeof value[prop] === 'string';
@@ -64,7 +64,7 @@ export function hasStringProperty<K extends string>(
  * Type guard to check if a value is a Record with string keys and values of type T
  */
 export function isRecordOfType<T>(
-  value: unknown, 
+  value: unknown,
   valueGuard: (val: unknown) => val is T
 ): value is Record<string, T> {
   if (!isObject(value)) return false;
@@ -96,10 +96,10 @@ export function isStageId(value: unknown): boolean {
  */
 export function isStageItem(value: unknown): boolean {
   if (!isObject(value)) return false;
-  
+
   // Check for required properties
   if (!hasStringProperty(value, 'id')) return false;
-  
+
   // Check status property if present
   if ('status' in value) {
     const status = value.status;
@@ -107,25 +107,27 @@ export function isStageItem(value: unknown): boolean {
     const validStatuses = ['pending', 'in-progress', 'in_progress', 'completed', 'error'];
     if (!validStatuses.includes(status as string)) return false;
   }
-  
+
   // Check progress property if present
   if ('progress' in value && !isNumber(value.progress)) return false;
-  
+
   return true;
 }
 
 /**
  * Helper function to normalize stage status values
  */
-export function normalizeStageStatus(status: unknown): 'pending' | 'in-progress' | 'completed' | 'error' {
+export function normalizeStageStatus(
+  status: unknown
+): 'pending' | 'in-progress' | 'completed' | 'error' {
   if (typeof status !== 'string') return 'pending';
-  
+
   if (status === 'in_progress') return 'in-progress';
-  
+
   if (['pending', 'in-progress', 'completed', 'error'].includes(status)) {
     return status as 'pending' | 'in-progress' | 'completed' | 'error';
   }
-  
+
   return 'pending';
 }
 
@@ -134,9 +136,9 @@ export function normalizeStageStatus(status: unknown): 'pending' | 'in-progress'
  */
 export function safeStringify(value: unknown): string {
   if (typeof value === 'string') return value;
-  
+
   if (value === null || value === undefined) return '';
-  
+
   if (isObject(value) || Array.isArray(value)) {
     try {
       return JSON.stringify(value);
@@ -144,7 +146,7 @@ export function safeStringify(value: unknown): string {
       return '[Object cannot be displayed]';
     }
   }
-  
+
   return String(value);
 }
 
@@ -161,8 +163,8 @@ export function assert(condition: boolean, message: string): asserts condition {
  * Type assertion with type guard - throws if type guard fails
  */
 export function assertType<T>(
-  value: unknown, 
-  guard: (val: unknown) => val is T, 
+  value: unknown,
+  guard: (val: unknown) => val is T,
   message: string
 ): asserts value is T {
   if (!guard(value)) {

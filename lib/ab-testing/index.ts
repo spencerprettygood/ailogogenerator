@@ -31,12 +31,12 @@ export function initializeTestManager(
     return testManager;
   }
 
-  const storageAdapter = persistentStorage 
+  const storageAdapter = persistentStorage
     ? new PersistentStorageAdapter()
     : new MemoryStorageAdapter();
-    
+
   const analyticsAdapter = new ConsoleAnalyticsAdapter(debugMode);
-  
+
   testManager = new TestManager(storageAdapter, analyticsAdapter);
   return testManager;
 }
@@ -73,6 +73,6 @@ export function createTestConfig(
     trafficAllocation: trafficSplit,
     startDate: new Date(),
     minimumSampleSize: 30,
-    isActive: true
+    isActive: true,
   };
 }

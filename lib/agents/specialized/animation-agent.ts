@@ -1,5 +1,10 @@
 import { BaseAgent } from '../base/base-agent';
-import { AgentInput, AnimationAgentOutput, AnimationAgentInput, AgentConfig } from '../../types-agents';
+import {
+  AgentInput,
+  AnimationAgentOutput,
+  AnimationAgentInput,
+  AgentConfig,
+} from '../../types-agents';
 import { SVGAnimationService } from '../../animation/animation-service';
 import { AnimationOptions, AnimationType, AnimationEasing } from '../../animation/types';
 import { safeJsonParse } from '../../utils/json-utils';
@@ -43,7 +48,7 @@ export class AnimationAgent extends BaseAgent {
       '}',
       '',
       `Available Animation Types: ${Object.values(AnimationType).join(', ')}`,
-      `Available Easing Functions: ${Object.values(AnimationEasing).join(', ')}`
+      `Available Easing Functions: ${Object.values(AnimationEasing).join(', ')}`,
     ].join('\n');
   }
 
@@ -81,16 +86,16 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
    */
   protected async processResponse(
     responseContent: string,
-    originalInput: AgentInput,
+    originalInput: AgentInput
   ): Promise<AnimationAgentOutput> {
     const input = originalInput as AnimationAgentInput;
-    
+
     // Extract JSON from the response - more robust parsing
     let parsedOptions: any;
     try {
       // First try standard JSON parse with the entire content
       parsedOptions = safeJsonParse(responseContent);
-      
+
       // If that fails, try to extract JSON from markdown blocks
       if (!parsedOptions || typeof parsedOptions !== 'object') {
         const jsonMatch = responseContent.match(/```(?:json)?\s*({[\s\S]*?})\s*```/);
@@ -98,7 +103,7 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
           parsedOptions = safeJsonParse(jsonMatch[1]);
         }
       }
-      
+
       // If still not valid, try to find any JSON-like structure
       if (!parsedOptions || typeof parsedOptions !== 'object') {
         const possibleJson = responseContent.match(/{[\s\S]*?}/);
@@ -114,7 +119,10 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
           message: 'Failed to parse JSON from AI response',
           category: ErrorCategory.API,
           code: 'json_parse_error',
-          context: { responseContent, error: error instanceof Error ? error.message : String(error) },
+          context: {
+            responseContent,
+            error: error instanceof Error ? error.message : String(error),
+          },
           isRetryable: true,
         }),
       };
@@ -150,10 +158,7 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
     const animationOptions = parsedOptions as AnimationOptions;
     this.log(`Applying ${animationOptions.type} animation as recommended by AI.`);
 
-    const animationResponse = await this.animationService.animateSVG(
-      input.svg,
-      animationOptions,
-    );
+    const animationResponse = await this.animationService.animateSVG(input.svg, animationOptions);
 
     if (!animationResponse.success || !animationResponse.result) {
       return {
@@ -162,7 +167,9 @@ Return your answer as a single JSON object conforming to the AnimationOptions in
           message: 'Failed to apply animation using SVGAnimationService.',
           category: ErrorCategory.EXTERNAL,
           code: 'animation_service_error',
-          context: { animationError: animationResponse.error?.message || 'Unknown animation service error' },
+          context: {
+            animationError: animationResponse.error?.message || 'Unknown animation service error',
+          },
           isRetryable: false,
         }),
       };

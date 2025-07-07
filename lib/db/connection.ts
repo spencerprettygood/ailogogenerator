@@ -6,16 +6,16 @@ import { env } from '../utils/env';
  */
 export class DatabaseConnection {
   private static instance: DatabaseConnection;
-  
+
   private constructor() {}
-  
+
   static getInstance(): DatabaseConnection {
     if (!DatabaseConnection.instance) {
       DatabaseConnection.instance = new DatabaseConnection();
     }
     return DatabaseConnection.instance;
   }
-  
+
   /**
    * Execute a SQL query with parameters
    */
@@ -28,7 +28,7 @@ export class DatabaseConnection {
       throw error;
     }
   }
-  
+
   /**
    * Execute a SQL query and return the first row
    */
@@ -36,14 +36,16 @@ export class DatabaseConnection {
     const rows = await this.query<T>(text, params);
     return rows[0] || null;
   }
-  
+
   /**
    * Execute multiple queries in a transaction
    */
-  async transaction<T>(callback: (sql: typeof import('@vercel/postgres').sql) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (sql: typeof import('@vercel/postgres').sql) => Promise<T>
+  ): Promise<T> {
     return await callback(sql);
   }
-  
+
   /**
    * Test database connection
    */

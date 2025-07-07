@@ -1,16 +1,16 @@
 /**
  * Animation system for SVG logos
- * 
+ *
  * This module defines the core types, interfaces, and enums used throughout
  * the animation system. It provides a consistent type system for all animation
  * functionality, ensuring type safety and proper documentation.
- * 
+ *
  * @module AnimationTypes
  */
 
 /**
  * Available animation types for SVG logos
- * 
+ *
  * This enum defines all supported animation types in the system.
  * Each animation type represents a distinct visual effect that can be
  * applied to SVG elements.
@@ -53,12 +53,12 @@ export enum AnimationType {
   /** Elements appear in sequence */
   SEQUENTIAL = 'sequential',
   /** Custom animation with provided keyframes */
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**
  * Easing functions for controlling animation acceleration/deceleration
- * 
+ *
  * These easing functions define how animations accelerate and decelerate
  * over time, creating different motion characteristics.
  */
@@ -76,12 +76,12 @@ export enum AnimationEasing {
   /** Overshoots target and bounces back (elastic effect) */
   ELASTIC = 'cubic-bezier(.5,2.5,.7,.7)',
   /** Bouncy motion that settles at the target */
-  BOUNCE = 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'
+  BOUNCE = 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
 }
 
 /**
  * Defines when animations should be triggered
- * 
+ *
  * These triggers determine what event or action causes the animation to start.
  */
 export enum AnimationTrigger {
@@ -92,7 +92,7 @@ export enum AnimationTrigger {
   /** Animation starts when user hovers over element */
   HOVER = 'hover',
   /** Animation starts when user clicks on element */
-  CLICK = 'click'
+  CLICK = 'click',
 }
 
 /**
@@ -107,7 +107,7 @@ export enum AnimationDirection {
 
 /**
  * Configuration for animation timing parameters
- * 
+ *
  * Controls how long animations last, when they start, and how they repeat.
  */
 export interface AnimationTiming {
@@ -125,7 +125,7 @@ export interface AnimationTiming {
 
 /**
  * Complete configuration options for applying animations to SVGs
- * 
+ *
  * This is the main configuration interface used when applying animations
  * to SVG elements. It combines animation type, timing, and various
  * customization options.
@@ -155,7 +155,7 @@ export interface AnimationOptions {
 
 /**
  * Result object containing the animated SVG and associated resources
- * 
+ *
  * This interface represents the complete output of the animation process,
  * including the original and animated SVGs along with any additional
  * resources needed to render the animation.
@@ -177,7 +177,7 @@ export interface AnimatedSVGLogo {
 
 /**
  * Pre-configured animation template for easy application
- * 
+ *
  * Animation templates provide ready-to-use animation configurations
  * with sensible defaults, making it easier for users to apply common
  * animations without having to configure all options manually.
@@ -203,7 +203,7 @@ export interface AnimationTemplate {
 
 /**
  * Response object returned by animation operations
- * 
+ *
  * This standardized response format includes the animation result
  * along with metadata about the operation's success, errors, and performance.
  */
@@ -231,7 +231,7 @@ export interface AnimationResponse {
 
 /**
  * Animation provider interface for different animation implementations
- * 
+ *
  * The provider interface defines the contract that all animation technology
  * implementations must follow. This enables a plugin architecture where
  * different animation technologies (SMIL, CSS, JS) can be used interchangeably.
@@ -245,25 +245,25 @@ export interface AnimationProvider {
   description: string;
   /** List of animation types this provider can handle */
   supportedAnimationTypes: AnimationType[];
-  
+
   /**
    * Apply animation to an SVG
-   * 
+   *
    * This is the main method that applies the animation to the SVG content
    * using the provider's specific animation technology.
-   * 
+   *
    * @param svg - The SVG content to animate
    * @param options - Animation configuration options
    * @returns Promise resolving to an AnimatedSVGLogo containing the animated SVG
    */
   animate(svg: string, options: AnimationOptions): Promise<AnimatedSVGLogo>;
-  
+
   /**
    * Check if this provider supports the given animation type
-   * 
+   *
    * Used to determine if a provider can handle a specific animation type
    * before attempting to use it.
-   * 
+   *
    * @param type - Animation type to check
    * @returns Boolean indicating if the animation type is supported
    */

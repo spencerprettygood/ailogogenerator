@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { MockupType } from '@/lib/mockups/mockup-types';
-import { 
+import {
   BackgroundImage,
   getAllBackgroundImages,
   getBackgroundsByType,
-  getBackgroundsByTags
+  getBackgroundsByTags,
 } from '@/lib/mockups/background-image-registry';
 
 interface EnhancedBackgroundSelectorProps {
@@ -27,19 +27,21 @@ export function EnhancedBackgroundSelector({
   initialBackgroundId,
   mockupType,
   onSelectBackground,
-  className = ''
+  className = '',
 }: EnhancedBackgroundSelectorProps) {
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState<string | undefined>(initialBackgroundId);
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState<string | undefined>(
+    initialBackgroundId
+  );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredBackgrounds, setFilteredBackgrounds] = useState<BackgroundImage[]>([]);
   const [availableBackgrounds, setAvailableBackgrounds] = useState<BackgroundImage[]>([]);
-  
+
   // Load available backgrounds
   useEffect(() => {
     // Get backgrounds for this mockup type
     const backgroundsForType = getBackgroundsByType(mockupType);
     setAvailableBackgrounds(backgroundsForType);
-    
+
     // Apply initial filtering
     if (searchQuery) {
       handleSearch(searchQuery);
@@ -47,44 +49,48 @@ export function EnhancedBackgroundSelector({
       setFilteredBackgrounds(backgroundsForType);
     }
   }, [mockupType, searchQuery]);
-  
+
   // Handle background selection
   const handleSelectBackground = (backgroundId: string) => {
     setSelectedBackgroundId(backgroundId);
     onSelectBackground(backgroundId);
   };
-  
+
   // Handle search
   const handleSearch = (query: string) => {
     if (!query.trim()) {
       setFilteredBackgrounds(availableBackgrounds);
       return;
     }
-    
+
     // Search by name, description, and tags
     const lowerQuery = query.toLowerCase();
-    const searchResults = availableBackgrounds.filter(bg => 
-      bg.name.toLowerCase().includes(lowerQuery) ||
-      bg.description.toLowerCase().includes(lowerQuery) ||
-      bg.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+    const searchResults = availableBackgrounds.filter(
+      bg =>
+        bg.name.toLowerCase().includes(lowerQuery) ||
+        bg.description.toLowerCase().includes(lowerQuery) ||
+        bg.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
     );
-    
+
     setFilteredBackgrounds(searchResults);
   };
-  
+
   // Group backgrounds by their primary tag
-  const groupedBackgrounds = filteredBackgrounds.reduce((acc, background) => {
-    // Use the first tag as the primary category
-    const primaryTag = background.tags[0] || 'other';
-    
-    if (!acc[primaryTag]) {
-      acc[primaryTag] = [];
-    }
-    
-    acc[primaryTag].push(background);
-    return acc;
-  }, {} as Record<string, BackgroundImage[]>);
-  
+  const groupedBackgrounds = filteredBackgrounds.reduce(
+    (acc, background) => {
+      // Use the first tag as the primary category
+      const primaryTag = background.tags[0] || 'other';
+
+      if (!acc[primaryTag]) {
+        acc[primaryTag] = [];
+      }
+
+      acc[primaryTag].push(background);
+      return acc;
+    },
+    {} as Record<string, BackgroundImage[]>
+  );
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -98,13 +104,13 @@ export function EnhancedBackgroundSelector({
             placeholder="Search backgrounds..."
             className="pl-8"
             value={searchQuery}
-            onChange={(e) => {
+            onChange={e => {
               setSearchQuery(e.target.value);
               handleSearch(e.target.value);
             }}
           />
         </div>
-        
+
         {/* Background grid */}
         {Object.keys(groupedBackgrounds).length > 0 ? (
           <Tabs defaultValue="all" className="w-full">
@@ -116,14 +122,16 @@ export function EnhancedBackgroundSelector({
                 </TabsTrigger>
               ))}
             </TabsList>
-            
+
             <TabsContent value="all" className="mt-0">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
                 {filteredBackgrounds.map(background => (
                   <div
                     key={background.id}
                     className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all aspect-square ${
-                      selectedBackgroundId === background.id ? 'border-primary' : 'border-transparent hover:border-muted'
+                      selectedBackgroundId === background.id
+                        ? 'border-primary'
+                        : 'border-transparent hover:border-muted'
                     }`}
                     onClick={() => handleSelectBackground(background.id)}
                     title={background.name}
@@ -138,7 +146,7 @@ export function EnhancedBackgroundSelector({
                 ))}
               </div>
             </TabsContent>
-            
+
             {Object.entries(groupedBackgrounds).map(([tag, backgrounds]) => (
               <TabsContent key={tag} value={tag} className="mt-0">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
@@ -146,7 +154,9 @@ export function EnhancedBackgroundSelector({
                     <div
                       key={background.id}
                       className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all aspect-square ${
-                        selectedBackgroundId === background.id ? 'border-primary' : 'border-transparent hover:border-muted'
+                        selectedBackgroundId === background.id
+                          ? 'border-primary'
+                          : 'border-transparent hover:border-muted'
                       }`}
                       onClick={() => handleSelectBackground(background.id)}
                       title={background.name}

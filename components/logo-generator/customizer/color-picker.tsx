@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { ColorPickerProps } from '@/lib/types-customization';
@@ -63,14 +63,17 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             className="w-full h-full rounded"
             style={{
               backgroundColor: color === 'none' ? 'transparent' : color,
-              backgroundImage: color === 'none' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : 'none',
+              backgroundImage:
+                color === 'none'
+                  ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)'
+                  : 'none',
               backgroundSize: '8px 8px',
               backgroundPosition: '0 0, 4px 4px',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
+              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
             }}
           />
         </Button>
-        
+
         <Input
           type="text"
           value={inputValue}
@@ -81,11 +84,11 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           className="flex-1"
         />
       </div>
-      
+
       {isOpen && (
         <div className="absolute z-10 mt-2 p-3 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 w-64">
           <div className="grid grid-cols-4 gap-2 mb-2">
-            {presetColors.map((presetColor) => (
+            {presetColors.map(presetColor => (
               <Button
                 key={presetColor}
                 type="button"
@@ -97,30 +100,33 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                 <div
                   className="w-full h-full rounded"
                   style={{
-                    backgroundColor: presetColor === 'transparent' || presetColor === 'none' ? 'transparent' : presetColor,
-                    backgroundImage: presetColor === 'transparent' || presetColor === 'none' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : 'none',
+                    backgroundColor:
+                      presetColor === 'transparent' || presetColor === 'none'
+                        ? 'transparent'
+                        : presetColor,
+                    backgroundImage:
+                      presetColor === 'transparent' || presetColor === 'none'
+                        ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)'
+                        : 'none',
                     backgroundSize: '8px 8px',
                     backgroundPosition: '0 0, 4px 4px',
-                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
                   }}
                 />
                 {color === presetColor && (
-                  <Check className={`absolute inset-0 m-auto h-4 w-4 ${presetColor === '#FFFFFF' || presetColor === 'transparent' || presetColor === 'none' ? 'text-black' : 'text-white'}`} />
+                  <Check
+                    className={`absolute inset-0 m-auto h-4 w-4 ${presetColor === '#FFFFFF' || presetColor === 'transparent' || presetColor === 'none' ? 'text-black' : 'text-white'}`}
+                  />
                 )}
               </Button>
             ))}
           </div>
-          
+
           <div className="flex justify-between mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(false)}
-              className="text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="text-xs">
               <X className="h-3 w-3 mr-1" /> Cancel
             </Button>
-            
+
             <Button
               variant="default"
               size="sm"

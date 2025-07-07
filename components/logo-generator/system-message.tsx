@@ -13,18 +13,19 @@ export function SystemMessage({ message }: SystemMessageProps) {
     if (typeof message.content === 'string') {
       return message.content;
     }
-    
+
     // Handle array content
     if (Array.isArray(message.content)) {
       return message.content
         .map(item => {
           if (typeof item === 'string') return item;
-          if (item && typeof item === 'object' && 'text' in item && typeof item.text === 'string') return item.text;
+          if (item && typeof item === 'object' && 'text' in item && typeof item.text === 'string')
+            return item.text;
           return JSON.stringify(item);
         })
         .join(' ');
     }
-    
+
     // Handle object content
     if (message.content && typeof message.content === 'object') {
       if ('message' in message.content && typeof message.content.message === 'string') {
@@ -36,10 +37,10 @@ export function SystemMessage({ message }: SystemMessageProps) {
       try {
         return JSON.stringify(message.content);
       } catch {
-        return "System message";
+        return 'System message';
       }
     }
-    
+
     // Fallback
     return String(message.content || 'System message');
   };

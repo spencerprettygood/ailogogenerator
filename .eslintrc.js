@@ -10,37 +10,46 @@ module.exports = {
   rules: {
     // Disable no-unused-vars and use TypeScript's version instead
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', {
-      argsIgnorePattern: '^_',
-      varsIgnorePattern: '^_',
-      caughtErrorsIgnorePattern: '^_',
-    }],
-    
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      },
+    ],
+
     // Allows for gradual adoption of no-explicit-any
     '@typescript-eslint/no-explicit-any': 'warn',
-    
+
     // Allow require in non-TypeScript files
-    '@typescript-eslint/no-require-imports': ['error', {
-      allow: ['*.js'],
-    }],
-    
+    '@typescript-eslint/no-require-imports': [
+      'error',
+      {
+        allow: ['*.js'],
+      },
+    ],
+
     // Ensure proper ts-comment usage
-    '@typescript-eslint/ban-ts-comment': ['error', {
-      'ts-expect-error': 'allow-with-description',
-      'ts-ignore': 'never',
-      'ts-nocheck': 'never',
-      'ts-check': 'allow',
-      minimumDescriptionLength: 3,
-    }],
-    
+    '@typescript-eslint/ban-ts-comment': [
+      'error',
+      {
+        'ts-expect-error': 'allow-with-description',
+        'ts-ignore': 'never',
+        'ts-nocheck': 'never',
+        'ts-check': 'allow',
+        minimumDescriptionLength: 3,
+      },
+    ],
+
     // Enforce hooks rules
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
-    
+
     // Nextjs specific rules
     '@next/next/no-html-link-for-pages': 'error',
     '@next/next/no-img-element': 'warn',
-    
+
     // Other common rules
     'react/prop-types': 'off', // Not needed with TypeScript
     'react/react-in-jsx-scope': 'off', // Not needed with Next.js

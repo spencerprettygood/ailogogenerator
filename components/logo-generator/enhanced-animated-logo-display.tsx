@@ -40,7 +40,7 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
   // Create HTML content for the iframe
   const generateIframeContent = () => {
     const { animatedSvg, cssCode, jsCode } = animatedLogo;
-    
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -125,17 +125,17 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
   // Set up the iframe content and message handlers
   useEffect(() => {
     if (!iframeRef.current) return;
-    
+
     // Write content to iframe
     const iframe = iframeRef.current;
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    
+
     if (iframeDoc) {
       iframeDoc.open();
       iframeDoc.write(generateIframeContent());
       iframeDoc.close();
     }
-    
+
     // Set up message listener for animation events
     const handleMessage = (event: MessageEvent) => {
       if (event.data === 'animationEnd' && onAnimationEnd) {
@@ -150,9 +150,9 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
         }
       }
     };
-    
+
     window.addEventListener('message', handleMessage);
-    
+
     return () => {
       window.removeEventListener('message', handleMessage);
     };
@@ -161,21 +161,21 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
   // Control functions
   const play = () => {
     if (!iframeRef.current || !isReady) return;
-    
+
     iframeRef.current.contentWindow?.postMessage('play', '*');
     setIsPlaying(true);
   };
-  
+
   const pause = () => {
     if (!iframeRef.current || !isReady) return;
-    
+
     iframeRef.current.contentWindow?.postMessage('pause', '*');
     setIsPlaying(false);
   };
-  
+
   const restart = () => {
     if (!iframeRef.current || !isReady) return;
-    
+
     iframeRef.current.contentWindow?.postMessage('restart', '*');
     setIsPlaying(true);
   };
@@ -201,7 +201,7 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
             }}
             sandbox="allow-scripts"
           />
-          
+
           {showControls && isReady && (
             <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/20 backdrop-blur-sm">
               <div className="flex justify-center space-x-2">
@@ -213,22 +213,12 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
                 >
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-                
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={restart}
-                  className="text-xs"
-                >
+
+                <Button size="sm" variant="secondary" onClick={restart} className="text-xs">
                   Restart
                 </Button>
-                
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={toggleLoop}
-                  className="text-xs"
-                >
+
+                <Button size="sm" variant="secondary" onClick={toggleLoop} className="text-xs">
                   {isLooping ? 'Loop: On' : 'Loop: Off'}
                 </Button>
               </div>
@@ -236,12 +226,12 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
           )}
         </div>
       </Card>
-      
+
       <div className="mt-2 flex justify-between items-center">
         <Badge variant="outline" className="text-xs">
           Animated SVG
         </Badge>
-        
+
         <div className="text-xs text-gray-500">
           {animatedLogo.animationOptions.type.replace('_', ' ')}
         </div>
@@ -251,7 +241,9 @@ const EnhancedAnimatedLogoDisplay: React.FC<EnhancedAnimatedLogoDisplayProps> = 
 };
 
 // Preview component for small animated logo displays
-export const AnimatedLogoPreview: React.FC<Omit<EnhancedAnimatedLogoDisplayProps, 'showControls' | 'autoPlay' | 'loop' | 'onAnimationEnd'>> = (props) => {
+export const AnimatedLogoPreview: React.FC<
+  Omit<EnhancedAnimatedLogoDisplayProps, 'showControls' | 'autoPlay' | 'loop' | 'onAnimationEnd'>
+> = props => {
   return (
     <EnhancedAnimatedLogoDisplay
       {...props}

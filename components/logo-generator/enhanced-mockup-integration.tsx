@@ -17,7 +17,7 @@ interface EnhancedMockupIntegrationProps {
 export function EnhancedMockupIntegration({
   logo,
   brandName = 'Brand Name',
-  className = ''
+  className = '',
 }: EnhancedMockupIntegrationProps) {
   const [initialEffectsConfig, setInitialEffectsConfig] = useState<EnhancedEffectsConfig>({
     applyLighting: true,
@@ -26,7 +26,7 @@ export function EnhancedMockupIntegration({
     applyPerspective: false,
     applyShadow: true,
     shadowBlur: 8,
-    shadowOpacity: 0.3
+    shadowOpacity: 0.3,
   });
 
   // Handle download
@@ -71,7 +71,7 @@ export function EnhancedMockupIntegration({
 export function EnhancedMockupIntegrationCompact({
   logo,
   brandName = 'Brand Name',
-  className = ''
+  className = '',
 }: EnhancedMockupIntegrationProps) {
   return (
     <div className={className}>
@@ -96,7 +96,7 @@ export function EnhancedMockupIntegrationCompact({
                 applyPerspective: false,
                 applyShadow: true,
                 shadowBlur: 8,
-                shadowOpacity: 0.3
+                shadowOpacity: 0.3,
               },
               brandName
             );

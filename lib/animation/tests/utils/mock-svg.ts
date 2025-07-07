@@ -135,12 +135,20 @@ export const missingViewBoxSvg = `
  */
 export const complexSvg = `
 <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  ${Array(50).fill(0).map((_, i) => 
-    `<circle cx="${Math.random() * 100}" cy="${Math.random() * 100}" r="${Math.random() * 10}" fill="rgba(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255},${Math.random()})" />`
-  ).join('\n')}
-  ${Array(50).fill(0).map((_, i) => 
-    `<rect x="${Math.random() * 90}" y="${Math.random() * 90}" width="${Math.random() * 10}" height="${Math.random() * 10}" fill="rgba(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255},${Math.random()})" />`
-  ).join('\n')}
+  ${Array(50)
+    .fill(0)
+    .map(
+      (_, i) =>
+        `<circle cx="${Math.random() * 100}" cy="${Math.random() * 100}" r="${Math.random() * 10}" fill="rgba(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255},${Math.random()})" />`
+    )
+    .join('\n')}
+  ${Array(50)
+    .fill(0)
+    .map(
+      (_, i) =>
+        `<rect x="${Math.random() * 90}" y="${Math.random() * 90}" width="${Math.random() * 10}" height="${Math.random() * 10}" fill="rgba(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255},${Math.random()})" />`
+    )
+    .join('\n')}
 </svg>
 `;
 
@@ -161,7 +169,7 @@ export function createMockSVGDocument(svgString: string): Document {
           },
           setAttribute: () => {},
           hasAttribute: (name: string) => name === 'viewBox',
-          querySelectorAll: () => []
+          querySelectorAll: () => [],
         };
       }
       return null;
@@ -170,15 +178,15 @@ export function createMockSVGDocument(svgString: string): Document {
       if (selector === 'path') {
         return [
           { setAttribute: () => {}, getAttribute: () => null },
-          { setAttribute: () => {}, getAttribute: () => null }
+          { setAttribute: () => {}, getAttribute: () => null },
         ];
       }
       return [];
     },
     createElementNS: () => ({
       setAttribute: () => {},
-      appendChild: () => {}
-    })
+      appendChild: () => {},
+    }),
   } as unknown as Document;
 }
 

@@ -68,9 +68,7 @@ The SVG code must be a complete, valid SVG string.`;
   /**
    * Generate the prompt for SVG generation.
    */
-  protected async generatePrompt(
-    input: SVGGenerationAgentInput,
-  ): Promise<string> {
+  protected async generatePrompt(input: SVGGenerationAgentInput): Promise<string> {
     const { designSpec, selectedConcept } = input;
 
     const prompt = `
@@ -101,7 +99,7 @@ Please generate a professional SVG logo based on the following design specificat
    */
   protected async processResponse(
     responseContent: string,
-    originalInput: AgentInput,
+    originalInput: AgentInput
   ): Promise<SVGGenerationAgentOutput> {
     const parsed = safeJsonParse(responseContent);
 
@@ -148,15 +146,17 @@ Please generate a professional SVG logo based on the following design specificat
     const validationResult: SVGValidationResult = SVGValidator.validate(svg);
 
     if (!validationResult.isValid) {
-      this.log(`SVG validation failed. Issues: ${validationResult.issues?.map(i => i.message).join(', ')}`);
+      this.log(
+        `SVG validation failed. Issues: ${validationResult.issues?.map(i => i.message).join(', ')}`
+      );
       return {
         success: false,
         error: handleError({
           error: 'Generated SVG failed validation.',
           category: ErrorCategory.SVG,
-          details: { 
+          details: {
             validationIssues: validationResult.issues,
-            originalSvg: svg.substring(0, 200) + '...'
+            originalSvg: svg.substring(0, 200) + '...',
           },
           retryable: true,
         }),
@@ -167,7 +167,10 @@ Please generate a professional SVG logo based on the following design specificat
     const repairResult: SVGRepairResult = SVGValidator.repair(svg);
 
     if (repairResult.issuesRemaining && repairResult.issuesRemaining.length > 0) {
-        this.log(`SVG repair left remaining issues: ${repairResult.issuesRemaining.map(i => i.message).join(', ')}`, 'warn');
+      this.log(
+        `SVG repair left remaining issues: ${repairResult.issuesRemaining.map(i => i.message).join(', ')}`,
+        'warn'
+      );
     }
 
     return {

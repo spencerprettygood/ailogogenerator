@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { Message } from '@/lib/types';
@@ -29,7 +29,7 @@ export function MessageList({ messages }: MessageListProps) {
 
   return (
     <>
-      {messages.map((message) => {
+      {messages.map(message => {
         switch (message.role) {
           case 'user':
             return <UserMessage key={message.id} message={message} />;

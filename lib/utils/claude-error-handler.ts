@@ -1,18 +1,18 @@
 /**
  * @file claude-error-handler.ts
  * @description Specialized error handling for Claude API errors
- * 
+ *
  * This module provides utilities for handling and diagnosing Claude API errors,
  * with specific handling for common error scenarios, integrated with the
  * application's standardized error handling system.
  */
 
-import { 
-  createAppError, 
-  ErrorCategory, 
-  ErrorCode, 
+import {
+  createAppError,
+  ErrorCategory,
+  ErrorCode,
   ErrorSeverity,
-  HttpStatusCode
+  HttpStatusCode,
 } from './error-handler';
 
 /**
@@ -27,7 +27,7 @@ export enum ClaudeErrorType {
   CONTENT_POLICY = 'content_policy',
   SERVER_ERROR = 'server_error',
   TIMEOUT = 'timeout',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -57,7 +57,7 @@ const claudeErrorTypeToCategory: Record<ClaudeErrorType, ErrorCategory> = {
   [ClaudeErrorType.CONTENT_POLICY]: ErrorCategory.VALIDATION,
   [ClaudeErrorType.SERVER_ERROR]: ErrorCategory.CLAUDE_API,
   [ClaudeErrorType.TIMEOUT]: ErrorCategory.TIMEOUT,
-  [ClaudeErrorType.UNKNOWN]: ErrorCategory.UNKNOWN
+  [ClaudeErrorType.UNKNOWN]: ErrorCategory.UNKNOWN,
 };
 
 /**
@@ -72,7 +72,7 @@ const claudeErrorTypeToCode: Record<ClaudeErrorType, ErrorCode> = {
   [ClaudeErrorType.CONTENT_POLICY]: ErrorCode.VALIDATION_FAILED,
   [ClaudeErrorType.SERVER_ERROR]: ErrorCode.CLAUDE_API_ERROR,
   [ClaudeErrorType.TIMEOUT]: ErrorCode.TIMEOUT,
-  [ClaudeErrorType.UNKNOWN]: ErrorCode.CLAUDE_API_ERROR
+  [ClaudeErrorType.UNKNOWN]: ErrorCode.CLAUDE_API_ERROR,
 };
 
 /**
@@ -87,7 +87,7 @@ const claudeErrorTypeToStatusCode: Record<ClaudeErrorType, HttpStatusCode> = {
   [ClaudeErrorType.CONTENT_POLICY]: HttpStatusCode.BAD_REQUEST,
   [ClaudeErrorType.SERVER_ERROR]: HttpStatusCode.BAD_GATEWAY,
   [ClaudeErrorType.TIMEOUT]: HttpStatusCode.GATEWAY_TIMEOUT,
-  [ClaudeErrorType.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR
+  [ClaudeErrorType.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR,
 };
 
 /**
@@ -102,7 +102,7 @@ const claudeErrorTypeToSeverity: Record<ClaudeErrorType, ErrorSeverity> = {
   [ClaudeErrorType.CONTENT_POLICY]: ErrorSeverity.WARNING,
   [ClaudeErrorType.SERVER_ERROR]: ErrorSeverity.ERROR,
   [ClaudeErrorType.TIMEOUT]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.UNKNOWN]: ErrorSeverity.ERROR
+  [ClaudeErrorType.UNKNOWN]: ErrorSeverity.ERROR,
 };
 
 /**
@@ -111,21 +111,21 @@ const claudeErrorTypeToSeverity: Record<ClaudeErrorType, ErrorSeverity> = {
 const retryableClaudeErrors = new Set([
   ClaudeErrorType.RATE_LIMIT,
   ClaudeErrorType.SERVER_ERROR,
-  ClaudeErrorType.TIMEOUT
+  ClaudeErrorType.TIMEOUT,
 ]);
 
 /**
  * Analyzes an error from the Claude API and categorizes it
- * 
+ *
  * @param error - The error thrown by the Claude API
  * @returns Categorized error information with handling suggestions
  */
 export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  
+
   // Determine Claude error type based on message patterns
   let errorType = ClaudeErrorType.UNKNOWN;
-  
+
   // Authentication errors
   if (
     errorMessage.includes('unauthorized') ||
@@ -147,28 +147,28 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
   }
   // Model not found errors
   else if (
-    errorMessage.includes('model') && 
-    (errorMessage.includes('not found') || 
-     errorMessage.includes('does not exist') ||
-     errorMessage.includes('unavailable'))
+    errorMessage.includes('model') &&
+    (errorMessage.includes('not found') ||
+      errorMessage.includes('does not exist') ||
+      errorMessage.includes('unavailable'))
   ) {
     errorType = ClaudeErrorType.MODEL_NOT_FOUND;
   }
   // Context window errors
   else if (
-    errorMessage.includes('context') && 
-    (errorMessage.includes('length') || 
-     errorMessage.includes('window') ||
-     errorMessage.includes('too long'))
+    errorMessage.includes('context') &&
+    (errorMessage.includes('length') ||
+      errorMessage.includes('window') ||
+      errorMessage.includes('too long'))
   ) {
     errorType = ClaudeErrorType.CONTEXT_WINDOW;
   }
   // Content policy violations
   else if (
-    errorMessage.includes('content') && 
-    (errorMessage.includes('policy') || 
-     errorMessage.includes('violation') ||
-     errorMessage.includes('prohibited'))
+    errorMessage.includes('content') &&
+    (errorMessage.includes('policy') ||
+      errorMessage.includes('violation') ||
+      errorMessage.includes('prohibited'))
   ) {
     errorType = ClaudeErrorType.CONTENT_POLICY;
   }
@@ -198,20 +198,20 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
   ) {
     errorType = ClaudeErrorType.INVALID_REQUEST;
   }
-  
+
   // Determine if the error is retryable
   const isRetryable = retryableClaudeErrors.has(errorType);
-  
+
   // Map to our application's error categories
   const errorCategory = claudeErrorTypeToCategory[errorType];
   const errorCode = claudeErrorTypeToCode[errorType];
   const statusCode = claudeErrorTypeToStatusCode[errorType];
   const severity = claudeErrorTypeToSeverity[errorType];
-  
+
   // Create appropriate error message based on type
   let message: string;
   let suggestedAction: string | undefined;
-  
+
   switch (errorType) {
     case ClaudeErrorType.AUTHENTICATION:
       message = 'Authentication failed. Check your API key and permissions.';
@@ -226,16 +226,19 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
       suggestedAction = 'Try using a different model version that is currently available.';
       break;
     case ClaudeErrorType.CONTEXT_WINDOW:
-      message = 'Input exceeds the Claude model\'s context window.';
-      suggestedAction = 'Reduce the size of your input or use a model with a larger context window.';
+      message = "Input exceeds the Claude model's context window.";
+      suggestedAction =
+        'Reduce the size of your input or use a model with a larger context window.';
       break;
     case ClaudeErrorType.CONTENT_POLICY:
       message = 'Content policy violation detected in Claude request.';
-      suggestedAction = 'Review your content to ensure it complies with Anthropic\'s content policies.';
+      suggestedAction =
+        "Review your content to ensure it complies with Anthropic's content policies.";
       break;
     case ClaudeErrorType.SERVER_ERROR:
       message = 'Claude API server error or service temporarily unavailable.';
-      suggestedAction = 'Retry after a short delay. If the problem persists, check Anthropic status page.';
+      suggestedAction =
+        'Retry after a short delay. If the problem persists, check Anthropic status page.';
       break;
     case ClaudeErrorType.TIMEOUT:
       message = 'Claude API request timed out.';
@@ -247,9 +250,10 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
       break;
     default:
       message = `Claude API error: ${errorMessage}`;
-      suggestedAction = 'Check logs for more details or contact Anthropic support if the issue persists.';
+      suggestedAction =
+        'Check logs for more details or contact Anthropic support if the issue persists.';
   }
-  
+
   return {
     type: errorType,
     message,
@@ -259,13 +263,13 @@ export function analyzeClaudeError(error: unknown): ClaudeErrorInfo {
     errorCategory,
     errorCode,
     statusCode,
-    severity
+    severity,
   };
 }
 
 /**
  * Creates a standardized AppError from a Claude API error
- * 
+ *
  * @param error - The error from the Claude API
  * @param context - Additional context about the request
  * @returns A standardized AppError for consistent handling
@@ -286,13 +290,13 @@ export function createClaudeError(error: unknown, context: Record<string, unknow
 
 /**
  * Logs detailed error information for Claude API errors
- * 
+ *
  * @param error - The error from the Claude API
  * @param context - Additional context about the request
  */
 export function logClaudeError(error: unknown, context: Record<string, unknown> = {}): void {
   const errorInfo = analyzeClaudeError(error);
-  
+
   console.error(`Claude API Error [${errorInfo.type}]:`, {
     message: errorInfo.message,
     suggestedAction: errorInfo.suggestedAction,
@@ -302,17 +306,20 @@ export function logClaudeError(error: unknown, context: Record<string, unknown> 
     statusCode: errorInfo.statusCode,
     severity: errorInfo.severity,
     context,
-    originalError: error instanceof Error ? {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    } : String(error)
+    originalError:
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : String(error),
   });
 }
 
 /**
  * Determines if an error from Claude API is retryable
- * 
+ *
  * @param error - The error from the Claude API
  * @returns Whether the error is retryable
  */

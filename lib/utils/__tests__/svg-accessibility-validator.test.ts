@@ -40,10 +40,10 @@ describe('SVGAccessibilityValidator', () => {
     it('should assess color contrast correctly', () => {
       const goodContrastSVG = goodAccessibilitySVG;
       const poorContrastSVG = poorAccessibilitySVG;
-      
+
       const goodResult = SVGAccessibilityValidator.validateAccessibility(goodContrastSVG);
       const poorResult = SVGAccessibilityValidator.validateAccessibility(poorContrastSVG);
-      
+
       expect(goodResult.accessibilityAssessment?.colorContrast).toBeGreaterThan(
         poorResult.accessibilityAssessment?.colorContrast || 0
       );
@@ -52,25 +52,31 @@ describe('SVGAccessibilityValidator', () => {
     it('should assess interactive elements correctly', () => {
       const result = SVGAccessibilityValidator.validateAccessibility(interactiveSVG);
       expect(result.accessibilityAssessment?.interactiveElements).toBeLessThan(70);
-      expect(result.accessibilityAssessment?.accessibilitySuggestions.some(s => 
-        s.includes('interactive') || s.includes('aria-label')
-      )).toBe(true);
+      expect(
+        result.accessibilityAssessment?.accessibilitySuggestions.some(
+          s => s.includes('interactive') || s.includes('aria-label')
+        )
+      ).toBe(true);
     });
   });
 
   describe('processWithAccessibilityAssessment', () => {
     it('should process and assess SVG correctly', () => {
-      const result = SVGAccessibilityValidator.processWithAccessibilityAssessment(poorAccessibilitySVG);
+      const result =
+        SVGAccessibilityValidator.processWithAccessibilityAssessment(poorAccessibilitySVG);
       expect(result.success).toBe(true);
       expect(result.accessibilityAssessment).toBeDefined();
       expect(result.svg).toBeDefined();
     });
 
     it('should apply repairs when requested', () => {
-      const result = SVGAccessibilityValidator.processWithAccessibilityAssessment(poorAccessibilitySVG, {
-        repair: true,
-        optimize: true
-      });
+      const result = SVGAccessibilityValidator.processWithAccessibilityAssessment(
+        poorAccessibilitySVG,
+        {
+          repair: true,
+          optimize: true,
+        }
+      );
       expect(result.success).toBe(true);
       expect(result.repair).toBeDefined();
     });
@@ -78,16 +84,20 @@ describe('SVGAccessibilityValidator', () => {
 
   describe('processWithDesignAndAccessibility', () => {
     it('should process both design quality and accessibility', () => {
-      const result = SVGAccessibilityValidator.processWithDesignAndAccessibility(goodAccessibilitySVG);
+      const result =
+        SVGAccessibilityValidator.processWithDesignAndAccessibility(goodAccessibilitySVG);
       expect(result.success).toBe(true);
       expect(result.designQuality).toBeDefined();
       expect(result.accessibilityAssessment).toBeDefined();
     });
 
     it('should skip accessibility assessment when not requested', () => {
-      const result = SVGAccessibilityValidator.processWithDesignAndAccessibility(goodAccessibilitySVG, {
-        assessAccessibility: false
-      });
+      const result = SVGAccessibilityValidator.processWithDesignAndAccessibility(
+        goodAccessibilitySVG,
+        {
+          assessAccessibility: false,
+        }
+      );
       expect(result.success).toBe(true);
       expect(result.designQuality).toBeDefined();
       expect(result.accessibilityAssessment).toBeUndefined();

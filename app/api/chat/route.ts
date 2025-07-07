@@ -25,9 +25,10 @@ export async function POST(req: Request) {
       if (msg.role === 'user') {
         return {
           ...msg,
-          content: typeof msg.content === 'string' 
-            ? InputSanitizer.sanitizeBrief(msg.content)
-            : msg.content,
+          content:
+            typeof msg.content === 'string'
+              ? InputSanitizer.sanitizeBrief(msg.content)
+              : msg.content,
         };
       }
       return msg;
@@ -35,9 +36,8 @@ export async function POST(req: Request) {
 
     // Check if this is a request to generate a logo
     const lastMessage = sanitizedMessages[sanitizedMessages.length - 1];
-    const isLogoGenerationRequest = 
-      typeof lastMessage?.content === 'string' && 
-      lastMessage.content.includes('[GENERATE_LOGO]');
+    const isLogoGenerationRequest =
+      typeof lastMessage?.content === 'string' && lastMessage.content.includes('[GENERATE_LOGO]');
 
     // If this is a logo generation request, redirect to the logo generation endpoint
     if (isLogoGenerationRequest) {
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         role: 'assistant',
         content: 'Redirecting to logo generation...',
         redirectToLogoGeneration: true,
-        prompt: lastMessage.content.replace('[GENERATE_LOGO]', '').trim()
+        prompt: lastMessage.content.replace('[GENERATE_LOGO]', '').trim(),
       });
     }
 
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
         error: error instanceof Error ? error.message : 'An error occurred',
       },
       {
-        status: 500
+        status: 500,
       }
     );
   }

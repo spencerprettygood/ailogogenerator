@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useCallback, useMemo, createContext, useContext } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 // import { Separator } from '@/components/ui/separator';
 import { Toaster } from '@/components/ui/toaster';
-import { useToast } from "@/lib/hooks/use-toast";
-import { useLogoGeneration } from "@/lib/hooks/use-logo-generation";
+import { useToast } from '@/lib/hooks/use-toast';
+import { useLogoGeneration } from '@/lib/hooks/use-logo-generation';
 import { generateId } from '@/lib/ai-utils';
 import { Header } from './header';
 import ErrorBoundary from './error-boundary';
@@ -28,27 +28,27 @@ import { LogoFeedback as LogoFeedbackType, LiveFeedback } from '@/lib/types-feed
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
-import { 
-  Message, 
-  GenerationProgress, 
-  GeneratedAssets, 
-  MessageRole, 
+import {
+  Message,
+  GenerationProgress,
+  GeneratedAssets,
+  MessageRole,
   ProgressStage,
   AnimationOptions,
   AnimationExportOptions,
   AnimationEasing,
-  AnimationDirection
-} from '@/lib/types'; 
-import { 
-  RefreshCw, 
-  Sparkles, 
-  PlayCircle, 
-  Search, 
-  Package, 
+  AnimationDirection,
+} from '@/lib/types';
+import {
+  RefreshCw,
+  Sparkles,
+  PlayCircle,
+  Search,
+  Package,
   Crown,
   Settings,
   Download,
-  Info
+  Info,
 } from 'lucide-react';
 import { H1, H2, Paragraph, LargeText } from '@/components/ui/typography';
 
@@ -88,12 +88,15 @@ interface LogoGeneratorContextType {
   setIncludeUniquenessAnalysis: (include: boolean) => void;
   includeMockups: boolean;
   setIncludeMockups: (include: boolean) => void;
-  progressForTracker: {
-    stages: ProgressStage[];
-    currentStageId: string | null;
-    overallProgress: number;
-    estimatedTimeRemaining: number | null;
-  } | null | undefined;
+  progressForTracker:
+    | {
+        stages: ProgressStage[];
+        currentStageId: string | null;
+        overallProgress: number;
+        estimatedTimeRemaining: number | null;
+      }
+    | null
+    | undefined;
   showFeedback: boolean;
   setShowFeedback: (show: boolean) => void;
   submitFeedback: (feedback: LogoFeedbackType) => Promise<void>;
@@ -113,12 +116,13 @@ export const useLogoGeneratorContext = () => {
 export function LogoGeneratorApp() {
   const [messages, setMessages] = useState<AppMessage[]>([]);
   const [includeAnimations, setIncludeAnimations] = useState<boolean>(false);
-  const [selectedAnimationOptions, setSelectedAnimationOptions] = useState<GetAnimationsOptions | null>(null);
+  const [selectedAnimationOptions, setSelectedAnimationOptions] =
+    useState<GetAnimationsOptions | null>(null);
   const [includeUniquenessAnalysis, setIncludeUniquenessAnalysis] = useState<boolean>(false);
   const [includeMockups, setIncludeMockups] = useState<boolean>(false);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
-  
+
   const { toast } = useToast();
   const {
     generateLogo,
@@ -128,61 +132,75 @@ export function LogoGeneratorApp() {
     assets: hookAssets,
     sessionId,
     error,
-    reset
+    reset,
   } = useLogoGeneration();
 
-  const handleSubmit = useCallback(async (content: string, files?: File[]) => {
-    const userMessage: AppMessage = {
-      role: MessageRole.USER,
-      content,
-      timestamp: new Date(),
-      files,
-      id: generateId()
-    };
-    setMessages(prev => [...prev, userMessage]);
+  const handleSubmit = useCallback(
+    async (content: string, files?: File[]) => {
+      const userMessage: AppMessage = {
+        role: MessageRole.USER,
+        content,
+        timestamp: new Date(),
+        files,
+        id: generateId(),
+      };
+      setMessages(prev => [...prev, userMessage]);
 
-    const systemMessage: AppMessage = {
-      role: MessageRole.SYSTEM,
-      content: 'Starting logo generation...',
-      timestamp: new Date(),
-      id: generateId()
-    };
-    setMessages(prev => [...prev, systemMessage]);
+      const systemMessage: AppMessage = {
+        role: MessageRole.SYSTEM,
+        content: 'Starting logo generation...',
+        timestamp: new Date(),
+        id: generateId(),
+      };
+      setMessages(prev => [...prev, systemMessage]);
 
-    try {
-      let animationOptionsForApi: AnimationOptions | undefined;
-      if (includeAnimations && selectedAnimationOptions) {
-        const { duration, easing, delay, iterations, direction, ...rest } = selectedAnimationOptions;
-        animationOptionsForApi = {
-          ...rest,
-          timing: {
-            duration,
-            easing: easing as AnimationEasing,
-            delay,
-            iterations: iterations === 'infinite' ? Infinity : iterations,
-            direction: direction as AnimationDirection,
-          }
-        };
+      try {
+        let animationOptionsForApi: AnimationOptions | undefined;
+        if (includeAnimations && selectedAnimationOptions) {
+          const { duration, easing, delay, iterations, direction, ...rest } =
+            selectedAnimationOptions;
+          animationOptionsForApi = {
+            ...rest,
+            timing: {
+              duration,
+              easing: easing as AnimationEasing,
+              delay,
+              iterations: iterations === 'infinite' ? Infinity : iterations,
+              direction: direction as AnimationDirection,
+            },
+          };
+        }
+
+        await generateLogo(content, files, {
+          includeAnimations,
+          animationOptions: animationOptionsForApi,
+          includeUniquenessAnalysis,
+          // Note: includeMockups would be added when backend supports it
+        });
+      } catch (err) {
+        toast({
+          title: 'Generation Failed',
+          description: err instanceof Error ? err.message : 'An unexpected error occurred',
+          variant: 'destructive',
+        });
       }
+    },
+    [
+      generateLogo,
+      toast,
+      includeAnimations,
+      selectedAnimationOptions,
+      includeUniquenessAnalysis,
+      includeMockups,
+    ]
+  );
 
-      await generateLogo(content, files, {
-        includeAnimations,
-        animationOptions: animationOptionsForApi,
-        includeUniquenessAnalysis
-        // Note: includeMockups would be added when backend supports it
-      });
-    } catch (err) {
-      toast({
-        title: "Generation Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
-        variant: "destructive"
-      });
-    }
-  }, [generateLogo, toast, includeAnimations, selectedAnimationOptions, includeUniquenessAnalysis, includeMockups]);
-
-  const handleSuggestionSelect = useCallback((prompt: string, files?: File[]) => {
-    handleSubmit(prompt, files);
-  }, [handleSubmit]);
+  const handleSuggestionSelect = useCallback(
+    (prompt: string, files?: File[]) => {
+      handleSubmit(prompt, files);
+    },
+    [handleSubmit]
+  );
 
   React.useEffect(() => {
     if (hookProgress) {
@@ -191,19 +209,27 @@ export function LogoGeneratorApp() {
       setMessages(prev => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage && lastMessage.role === MessageRole.ASSISTANT && lastMessage.progress) {
-          return prev.map((msg, index) => 
-            index === prev.length - 1 
-              ? { ...msg, progress: currentProgressData, content: currentProgressData.message || '', role: MessageRole.ASSISTANT }
+          return prev.map((msg, index) =>
+            index === prev.length - 1
+              ? {
+                  ...msg,
+                  progress: currentProgressData,
+                  content: currentProgressData.message || '',
+                  role: MessageRole.ASSISTANT,
+                }
               : msg
           );
         } else {
-          return [...prev, {
-            id: generateId(),
-            role: MessageRole.ASSISTANT,
-            content: currentProgressData.message || '',
-            timestamp: new Date(),
-            progress: currentProgressData
-          }];
+          return [
+            ...prev,
+            {
+              id: generateId(),
+              role: MessageRole.ASSISTANT,
+              content: currentProgressData.message || '',
+              timestamp: new Date(),
+              progress: currentProgressData,
+            },
+          ];
         }
       });
     }
@@ -214,27 +240,28 @@ export function LogoGeneratorApp() {
       const completionMessage: AppMessage = {
         id: generateId(),
         role: MessageRole.ASSISTANT,
-        content: '🎉 Your logo package is ready! You can preview it above and download all files below.',
+        content:
+          '🎉 Your logo package is ready! You can preview it above and download all files below.',
         timestamp: new Date(),
-        assets: hookAssets
+        assets: hookAssets,
       };
       setMessages(prev => [...prev, completionMessage]);
 
       toast({
-        title: "Generation Complete!",
-        description: "Your logo package is ready for download.",
+        title: 'Generation Complete!',
+        description: 'Your logo package is ready for download.',
       });
     }
   }, [hookAssets, sessionId, toast]);
 
   React.useEffect(() => {
     if (error) {
-      const errorMessageContent = error.message || "An unknown error occurred.";
+      const errorMessageContent = error.message || 'An unknown error occurred.';
       const errorMessage: AppMessage = {
         id: generateId(),
         role: MessageRole.SYSTEM,
         content: `Error: ${errorMessageContent}`,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
     }
@@ -244,61 +271,62 @@ export function LogoGeneratorApp() {
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === MessageRole.USER);
     if (lastUserMessage && typeof lastUserMessage.content === 'string') {
       reset();
-      setMessages([lastUserMessage]); 
-      handleSubmit(
-        lastUserMessage.content,
-        lastUserMessage.files
-      );
+      setMessages([lastUserMessage]);
+      handleSubmit(lastUserMessage.content, lastUserMessage.files);
     }
   }, [messages, reset, handleSubmit]);
-  
-  const handleExportAnimation = useCallback(async (format: string, options?: AnimationExportOptions) => {
-    if (!hookAssets?.animatedSvg) {
-      toast({
-        title: "Animation Export Failed",
-        description: "No animated logo available for export.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      const response = await fetch('/api/export-animated-logo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          svg: hookAssets.animatedSvg,
-          css: hookAssets.animationCss,
-          js: hookAssets.animationJs,
-          format,
-          options
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to export animation');
-      }
-      
-      if (data.fileUrl) {
-        window.location.href = data.fileUrl;
-        
+
+  const handleExportAnimation = useCallback(
+    async (format: string, options?: AnimationExportOptions) => {
+      if (!hookAssets?.animatedSvg) {
         toast({
-          title: "Export Successful",
-          description: `Your animated logo has been exported in ${format.toUpperCase()} format.`
+          title: 'Animation Export Failed',
+          description: 'No animated logo available for export.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/export-animated-logo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            svg: hookAssets.animatedSvg,
+            css: hookAssets.animationCss,
+            js: hookAssets.animationJs,
+            format,
+            options,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to export animation');
+        }
+
+        if (data.fileUrl) {
+          window.location.href = data.fileUrl;
+
+          toast({
+            title: 'Export Successful',
+            description: `Your animated logo has been exported in ${format.toUpperCase()} format.`,
+          });
+        }
+      } catch (err) {
+        toast({
+          title: 'Export Failed',
+          description:
+            err instanceof Error ? err.message : 'An unexpected error occurred during export',
+          variant: 'destructive',
         });
       }
-    } catch (err) {
-      toast({
-        title: "Export Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred during export",
-        variant: "destructive"
-      });
-    }
-  }, [hookAssets, toast]);
+    },
+    [hookAssets, toast]
+  );
 
   const handleReset = useCallback(() => {
     reset();
@@ -311,62 +339,78 @@ export function LogoGeneratorApp() {
     if ('stages' in hookProgress && Array.isArray(hookProgress.stages)) {
       return {
         stages: hookProgress.stages as ProgressStage[],
-        currentStageId: ('currentStageId' in hookProgress && typeof hookProgress.currentStageId === 'string') 
-          ? hookProgress.currentStageId 
-          : null,
+        currentStageId:
+          'currentStageId' in hookProgress && typeof hookProgress.currentStageId === 'string'
+            ? hookProgress.currentStageId
+            : null,
         overallProgress: hookProgress.progress ?? 0,
-        estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number'
-          ? hookProgress.estimatedTimeRemaining
-          : null
+        estimatedTimeRemaining:
+          typeof hookProgress.estimatedTimeRemaining === 'number'
+            ? hookProgress.estimatedTimeRemaining
+            : null,
       };
     }
 
     return {
-      stages: [{
-        id: hookProgress.stage ?? 'A',
-        label: hookProgress.message ?? 'Working...',
-        status: hookProgress.progress === 100 ? 'completed' : (hookProgress.progress > 0 ? 'in_progress' : 'pending'),
-        progress: hookProgress.progress ?? 0,
-      }] as ProgressStage[],
-      currentStageId: (typeof hookProgress.stage === 'string') ? hookProgress.stage : 'A',
+      stages: [
+        {
+          id: hookProgress.stage ?? 'A',
+          label: hookProgress.message ?? 'Working...',
+          status:
+            hookProgress.progress === 100
+              ? 'completed'
+              : hookProgress.progress > 0
+                ? 'in_progress'
+                : 'pending',
+          progress: hookProgress.progress ?? 0,
+        },
+      ] as ProgressStage[],
+      currentStageId: typeof hookProgress.stage === 'string' ? hookProgress.stage : 'A',
       overallProgress: hookProgress.progress ?? 0,
-      estimatedTimeRemaining: typeof hookProgress.estimatedTimeRemaining === 'number'
-        ? hookProgress.estimatedTimeRemaining
-        : null
+      estimatedTimeRemaining:
+        typeof hookProgress.estimatedTimeRemaining === 'number'
+          ? hookProgress.estimatedTimeRemaining
+          : null,
     };
   }, [hookProgress]);
 
-  const submitFeedback = useCallback(async (feedback: LogoFeedbackType) => {
-    try {
-      await FeedbackService.submitLogoFeedback(feedback);
-      toast({
-        title: "Feedback Submitted",
-        description: "Thank you for your feedback!"
-      });
-    } catch (error) {
-      toast({
-        title: "Feedback Submission Failed",
-        description: "There was an error submitting your feedback. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }, [toast]);
+  const submitFeedback = useCallback(
+    async (feedback: LogoFeedbackType) => {
+      try {
+        await FeedbackService.submitLogoFeedback(feedback);
+        toast({
+          title: 'Feedback Submitted',
+          description: 'Thank you for your feedback!',
+        });
+      } catch (error) {
+        toast({
+          title: 'Feedback Submission Failed',
+          description: 'There was an error submitting your feedback. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    },
+    [toast]
+  );
 
-  const submitIssueFeedback = useCallback(async (feedback: LiveFeedback) => {
-    try {
-      await FeedbackService.submitIssueFeedback(feedback);
-      toast({
-        title: "Issue Reported",
-        description: "Thank you for reporting this issue!"
-      });
-    } catch (error) {
-      toast({
-        title: "Issue Report Failed",
-        description: "There was an error submitting your report. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }, [toast]);
+  const submitIssueFeedback = useCallback(
+    async (feedback: LiveFeedback) => {
+      try {
+        await FeedbackService.submitIssueFeedback(feedback);
+        toast({
+          title: 'Issue Reported',
+          description: 'Thank you for reporting this issue!',
+        });
+      } catch (error) {
+        toast({
+          title: 'Issue Report Failed',
+          description: 'There was an error submitting your report. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    },
+    [toast]
+  );
 
   const contextValue: LogoGeneratorContextType = {
     messages,
@@ -392,7 +436,7 @@ export function LogoGeneratorApp() {
     showFeedback,
     setShowFeedback,
     submitFeedback,
-    submitIssueFeedback
+    submitIssueFeedback,
   };
 
   // Calculate available tabs based on generated assets
@@ -409,7 +453,7 @@ export function LogoGeneratorApp() {
       <LogoGeneratorContext.Provider value={contextValue}>
         <div className="min-h-screen bg-background flex flex-col">
           <Header />
-          
+
           <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 space-y-8">
             {/* Welcome Section */}
             {messages.length === 0 && (
@@ -419,12 +463,10 @@ export function LogoGeneratorApp() {
                     <Sparkles className="h-4 w-4" />
                     <span>AI-Powered Logo Generation</span>
                   </div>
-                  <H1 className="text-4xl lg:text-5xl font-bold">
-                    Create Your Perfect Logo
-                  </H1>
+                  <H1 className="text-4xl lg:text-5xl font-bold">Create Your Perfect Logo</H1>
                   <LargeText className="text-muted-foreground max-w-2xl mx-auto">
-                    Describe your brand and get a professionally designed logo in seconds. 
-                    Choose what you need and we'll generate exactly that.
+                    Describe your brand and get a professionally designed logo in seconds. Choose
+                    what you need and we'll generate exactly that.
                   </LargeText>
                 </div>
 
@@ -465,14 +507,14 @@ export function LogoGeneratorApp() {
                       {includeAnimations && (
                         <div className="ml-8 pl-4 border-l-2 border-muted">
                           <AnimationSelector
-                            onSelectAnimation={(options) => {
+                            onSelectAnimation={options => {
                               const flatOptions: GetAnimationsOptions = {
                                 type: options.type,
                                 duration: options.timing.duration,
                                 easing: String(options.timing.easing || 'ease'),
                                 delay: options.timing.delay || 0,
                                 iterations: options.timing.iterations || 1,
-                                direction: String(options.timing.direction || 'normal')
+                                direction: String(options.timing.direction || 'normal'),
                               };
                               setSelectedAnimationOptions(flatOptions);
                             }}
@@ -517,10 +559,7 @@ export function LogoGeneratorApp() {
                                 </div>
                               </div>
                             </div>
-                            <Switch
-                              checked={includeMockups}
-                              onCheckedChange={setIncludeMockups}
-                            />
+                            <Switch checked={includeMockups} onCheckedChange={setIncludeMockups} />
                           </div>
                         </div>
                       </>
@@ -530,26 +569,29 @@ export function LogoGeneratorApp() {
                       <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="font-medium">Smart Generation</p>
-                        <p>We only generate the assets you select, saving time and resources. 
-                        You can always add more features after generation.</p>
+                        <p>
+                          We only generate the assets you select, saving time and resources. You can
+                          always add more features after generation.
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             )}
-          
+
             {/* Search Interface */}
-            <SearchInterfaceEnhanced 
+            <SearchInterfaceEnhanced
               onSubmit={handleSubmit}
               isGenerating={isGenerating}
-              placeholder={messages.length === 0 
-                ? "Describe your perfect logo (e.g., 'Modern tech startup logo with blue colors')" 
-                : "Refine your logo or try a new design..."
+              placeholder={
+                messages.length === 0
+                  ? "Describe your perfect logo (e.g., 'Modern tech startup logo with blue colors')"
+                  : 'Refine your logo or try a new design...'
               }
               className="mb-6"
             />
-          
+
             {/* Suggestion chips - shown only when no messages */}
             {messages.length === 0 && (
               <SuggestionChips
@@ -558,21 +600,21 @@ export function LogoGeneratorApp() {
                 className="mt-6"
               />
             )}
-          
+
             {/* Response area */}
             {messages.length > 0 && (
               <div className="space-y-8">
-                <StreamingResponse 
+                <StreamingResponse
                   messages={messages.map(m => ({
                     ...m,
                     role: m.role,
-                    content: m.content
+                    content: m.content,
                   }))}
                   isGenerating={isGenerating}
                   previewSvg={preview}
                   progressData={progressForTracker}
                 />
-              
+
                 {/* Results area */}
                 {hookAssets && sessionId && (
                   <Card className="bg-card border rounded-xl p-6 max-w-5xl mx-auto space-y-6">
@@ -587,7 +629,7 @@ export function LogoGeneratorApp() {
                         />
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between">
                       <div>
                         <H2>Your Logo Package</H2>
@@ -596,16 +638,12 @@ export function LogoGeneratorApp() {
                         </p>
                       </div>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setShowFeedback(true)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => setShowFeedback(true)}>
                           Rate Logo
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="text-muted-foreground"
                           onClick={handleReset}
                         >
@@ -614,31 +652,53 @@ export function LogoGeneratorApp() {
                         </Button>
                       </div>
                     </div>
-                  
+
                     <Tabs defaultValue="logo" className="w-full">
-                      <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
-                        {availableTabs.includes('logo') && <TabsTrigger value="logo">Logo</TabsTrigger>}
-                        {availableTabs.includes('animation') && <TabsTrigger value="animation">Animation</TabsTrigger>}
-                        {availableTabs.includes('mockups') && <TabsTrigger value="mockups">Mockups</TabsTrigger>}
-                        {availableTabs.includes('uniqueness') && <TabsTrigger value="uniqueness">Uniqueness</TabsTrigger>}
-                        {availableTabs.includes('download') && <TabsTrigger value="download"><Download className="h-4 w-4 mr-2" />Download</TabsTrigger>}
+                      <TabsList
+                        className="grid w-full"
+                        style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}
+                      >
+                        {availableTabs.includes('logo') && (
+                          <TabsTrigger value="logo">Logo</TabsTrigger>
+                        )}
+                        {availableTabs.includes('animation') && (
+                          <TabsTrigger value="animation">Animation</TabsTrigger>
+                        )}
+                        {availableTabs.includes('mockups') && (
+                          <TabsTrigger value="mockups">Mockups</TabsTrigger>
+                        )}
+                        {availableTabs.includes('uniqueness') && (
+                          <TabsTrigger value="uniqueness">Uniqueness</TabsTrigger>
+                        )}
+                        {availableTabs.includes('download') && (
+                          <TabsTrigger value="download">
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </TabsTrigger>
+                        )}
                       </TabsList>
-                      
+
                       <TabsContent value="logo" className="space-y-4">
                         <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center min-h-[300px]">
                           <LogoDisplay
                             svgCode={hookAssets.primaryLogoSVG?.svgCode || undefined}
-                            variants={hookAssets.primaryLogoSVG ? [{ 
-                              id: 'primary', 
-                              name: 'Primary', 
-                              svgCode: hookAssets.primaryLogoSVG.svgCode, 
-                              type: 'color' 
-                            }] : []}
+                            variants={
+                              hookAssets.primaryLogoSVG
+                                ? [
+                                    {
+                                      id: 'primary',
+                                      name: 'Primary',
+                                      svgCode: hookAssets.primaryLogoSVG.svgCode,
+                                      type: 'color',
+                                    },
+                                  ]
+                                : []
+                            }
                             className="max-w-full"
                           />
                         </div>
                       </TabsContent>
-                      
+
                       {hookAssets?.animatedSvg && (
                         <TabsContent value="animation" className="space-y-4">
                           <AnimatedLogoDisplay
@@ -657,55 +717,53 @@ export function LogoGeneratorApp() {
                               animationCss={hookAssets.animationCss}
                               animationJs={hookAssets.animationJs}
                               animationOptions={hookAssets.animationOptions}
-                              brandName={hookAssets.brandName || "Your Brand"}
+                              brandName={hookAssets.brandName || 'Your Brand'}
                               onExport={handleExportAnimation}
                             />
                           </div>
                         </TabsContent>
                       )}
-                      
+
                       {hookAssets?.mockups && hookAssets.mockups.length > 0 && (
                         <TabsContent value="mockups" className="space-y-4">
-                          <MockupPreviewSystem 
+                          <MockupPreviewSystem
                             logo={hookAssets.primaryLogoSVG?.svgCode || ''}
                             brandName={hookAssets.brandName || 'Your Brand'}
                             onDownload={(mockupId, format) => {
                               console.log(`Download mockup ${mockupId} in ${format} format`);
                               toast({
-                                title: "Mockup Downloaded",
+                                title: 'Mockup Downloaded',
                                 description: `${mockupId} mockup downloaded in ${format} format`,
                               });
                             }}
                           />
                         </TabsContent>
                       )}
-                      
+
                       {hookAssets?.uniquenessAnalysis && (
                         <TabsContent value="uniqueness" className="space-y-4">
-                          <UniquenessAnalysis 
-                            analysis={hookAssets.uniquenessAnalysis} 
-                          />
+                          <UniquenessAnalysis analysis={hookAssets.uniquenessAnalysis} />
                         </TabsContent>
                       )}
-                      
+
                       <TabsContent value="download" className="space-y-4">
                         <DownloadManager
-                          files={hookAssets.individualFiles || []} 
+                          files={hookAssets.individualFiles || []}
                           packageUrl={hookAssets.zipPackageUrl}
-                          brandName={hookAssets.brandName || "Your Brand"}
-                          onDownloadFileAction={(fileId) => {
+                          brandName={hookAssets.brandName || 'Your Brand'}
+                          onDownloadFileAction={fileId => {
                             const file = hookAssets.individualFiles?.find(f => f.id === fileId);
                             console.log('Downloading file:', fileId);
                             toast({
-                              title: "Download Started",
+                              title: 'Download Started',
                               description: `Downloading ${file?.name || fileId}`,
                             });
                           }}
                           onDownloadAllAction={() => {
                             console.log('Downloading all files');
                             toast({
-                              title: "Package Download Started",
-                              description: "Downloading complete logo package",
+                              title: 'Package Download Started',
+                              description: 'Downloading complete logo package',
                             });
                           }}
                         />
@@ -713,7 +771,7 @@ export function LogoGeneratorApp() {
                     </Tabs>
                   </Card>
                 )}
-              
+
                 {/* Error retry */}
                 {error && !isGenerating && (
                   <div className="flex justify-center">
@@ -726,7 +784,7 @@ export function LogoGeneratorApp() {
               </div>
             )}
           </main>
-        
+
           {/* Live Feedback Button */}
           {sessionId && (
             <LiveFeedbackButton
@@ -735,7 +793,7 @@ export function LogoGeneratorApp() {
               onSubmit={submitIssueFeedback}
             />
           )}
-        
+
           <Toaster />
         </div>
       </LogoGeneratorContext.Provider>

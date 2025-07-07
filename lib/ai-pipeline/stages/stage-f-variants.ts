@@ -67,7 +67,7 @@ const STAGE_F_CONFIG = {
   max_retries: 3,
   retry_delay: 2000, // 2 seconds
   png_quality: 95,
-  png_sizes: [32, 256, 512, 1024]
+  png_sizes: [32, 256, 512, 1024],
 };
 
 // System prompt for monochrome variant generation
@@ -117,33 +117,37 @@ class StageFValidator {
     if (!input.svg || typeof input.svg !== 'string') {
       throw new Error('SVG input is required and must be a string');
     }
-    
+
     if (!input.svg.includes('<svg')) {
       throw new Error('Invalid SVG: missing svg element');
     }
-    
+
     if (!input.brandName || typeof input.brandName !== 'string') {
       throw new Error('Brand name is required');
     }
-    
+
     if (!input.designSpec) {
       throw new Error('Design specification is required');
     }
   }
 
-  static extractVariants(content: string): { black: string | null; white: string | null; favicon: string | null } {
+  static extractVariants(content: string): {
+    black: string | null;
+    white: string | null;
+    favicon: string | null;
+  } {
     // Extract black variant
     const blackMatch = content.match(/```svg-black\s*([\s\S]*?)\s*```/);
     const black = blackMatch ? blackMatch[1].trim() : null;
-    
+
     // Extract white variant
     const whiteMatch = content.match(/```svg-white\s*([\s\S]*?)\s*```/);
     const white = whiteMatch ? whiteMatch[1].trim() : null;
-    
+
     // Extract favicon variant
     const faviconMatch = content.match(/```svg-favicon\s*([\s\S]*?)\s*```/);
     const favicon = faviconMatch ? faviconMatch[1].trim() : null;
-    
+
     return { black, white, favicon };
   }
 
@@ -152,39 +156,43 @@ class StageFValidator {
       console.error(`${variantName} variant is empty or not a string`);
       return false;
     }
-    
+
     if (!svg.includes('<svg')) {
       console.error(`${variantName} variant is missing svg element`);
       return false;
     }
-    
+
     return true;
   }
 }
 
 // SVG to PNG converter with enhanced options
 class SvgConverter {
-  static async svgToPng(svg: string, size: number, options: {
-    background?: string | { r: number; g: number; b: number; alpha: number };
-    quality?: number;
-  } = {}): Promise<Buffer> {
+  static async svgToPng(
+    svg: string,
+    size: number,
+    options: {
+      background?: string | { r: number; g: number; b: number; alpha: number };
+      quality?: number;
+    } = {}
+  ): Promise<Buffer> {
     try {
       // Set defaults
       const quality = options.quality || STAGE_F_CONFIG.png_quality;
-      
+
       // Create Sharp instance
-      let sharpInstance = sharp(Buffer.from(svg))
-        .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } });
-      
+      let sharpInstance = sharp(Buffer.from(svg)).resize(size, size, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      });
+
       // Apply background if specified
       if (options.background) {
         sharpInstance = sharpInstance.flatten({ background: options.background });
       }
-      
+
       // Generate PNG
-      return await sharpInstance
-        .png({ quality })
-        .toBuffer();
+      return await sharpInstance.png({ quality }).toBuffer();
     } catch (error) {
       throw new Error(`Failed to convert SVG to PNG at size ${size}: ${(error as Error).message}`);
     }
@@ -196,18 +204,18 @@ class SvgConverter {
       // For a proper ICO, we would generate all these sizes and combine them
       // This is a simplified version that uses Sharp to create a 32x32 PNG
       // and returns it as the ICO (most modern browsers support PNG-based ICO files)
-      
+
       // First, create a 32x32 PNG from the SVG
       const png32 = await this.svgToPng(svgSource, 32);
-      
+
       // For a full implementation with multiple sizes, we would:
       // 1. Generate PNG files at 16x16, 32x32, and 48x48 sizes
       // 2. Use a library like 'ico-converter' to combine them into a proper ICO file
       // 3. Return the combined ICO buffer
-      
+
       // For this implementation, we'll return the 32x32 PNG as the ICO
       return png32;
-      
+
       // In a complete implementation:
       // const ico = require('ico-converter');
       // const png16 = await this.svgToPng(svgSource, 16);
@@ -219,24 +227,28 @@ class SvgConverter {
   }
 
   // Create multiple PNG variants at once (for efficiency)
-  static async createPngVariants(svg: string, sizes: number[] = STAGE_F_CONFIG.png_sizes, options: {
-    background?: string | { r: number; g: number; b: number; alpha: number };
-    quality?: number;
-  } = {}): Promise<Record<string, Buffer>> {
+  static async createPngVariants(
+    svg: string,
+    sizes: number[] = STAGE_F_CONFIG.png_sizes,
+    options: {
+      background?: string | { r: number; g: number; b: number; alpha: number };
+      quality?: number;
+    } = {}
+  ): Promise<Record<string, Buffer>> {
     try {
       // Generate all PNGs in parallel for efficiency
-      const promises = sizes.map(size => 
+      const promises = sizes.map(size =>
         this.svgToPng(svg, size, options).then(buffer => ({ size, buffer }))
       );
-      
+
       const results = await Promise.all(promises);
-      
+
       // Convert to record with size as key
       const variants: Record<string, Buffer> = {};
       results.forEach(({ size, buffer }) => {
         variants[`png${size}`] = buffer;
       });
-      
+
       return variants;
     } catch (error) {
       throw new Error(`Failed to create PNG variants: ${(error as Error).message}`);
@@ -258,7 +270,7 @@ class StageFRetryHandler {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry validation errors
         if (error instanceof Error && error.message.includes('is required')) {
           throw error;
@@ -280,29 +292,29 @@ class MonochromeGenerator {
   static createBlackVersion(svg: string): string {
     // Simple regex-based color replacement
     // A more robust implementation would use a proper SVG parser
-    
+
     try {
       // Add XML and SVG namespace if missing
       let result = svg;
-      
+
       if (!result.includes('xmlns=')) {
         result = result.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
       }
-      
+
       // Remove existing styles
       result = result.replace(/<style>[\s\S]*?<\/style>/gi, '');
-      
+
       // Replace fill colors with black
       result = result.replace(/fill="[^"]*"/gi, 'fill="#000000"');
       result = result.replace(/fill='[^']*'/gi, "fill='#000000'");
       result = result.replace(/stroke="[^"]*"/gi, 'stroke="#000000"');
       result = result.replace(/stroke='[^']*'/gi, "stroke='#000000'");
-      
+
       // Remove gradients and replace with black
       result = result.replace(/<linearGradient[\s\S]*?<\/linearGradient>/gi, '');
       result = result.replace(/<radialGradient[\s\S]*?<\/radialGradient>/gi, '');
       result = result.replace(/url\(#[^)]*\)/gi, '#000000');
-      
+
       return result;
     } catch (error) {
       console.error('Error creating black version:', error);
@@ -314,13 +326,13 @@ class MonochromeGenerator {
     try {
       // Start with the black version and change black to white
       let result = this.createBlackVersion(svg);
-      
+
       // Replace black with white
       result = result.replace(/fill="#000000"/gi, 'fill="#FFFFFF"');
       result = result.replace(/fill='#000000'/gi, "fill='#FFFFFF'");
       result = result.replace(/stroke="#000000"/gi, 'stroke="#FFFFFF"');
       result = result.replace(/stroke='#000000'/gi, "stroke='#FFFFFF'");
-      
+
       return result;
     } catch (error) {
       console.error('Error creating white version:', error);
@@ -332,7 +344,7 @@ class MonochromeGenerator {
     try {
       // Start with the black version for consistency
       let result = this.createBlackVersion(svg);
-      
+
       // Ensure viewBox is set to a square for favicon
       const viewBoxMatch = result.match(/viewBox=["']([^"']*)["']/);
       if (viewBoxMatch && viewBoxMatch[1]) {
@@ -340,21 +352,15 @@ class MonochromeGenerator {
         if (parts.length === 4) {
           // Make it square by using the larger dimension
           const size = Math.max(parts[2], parts[3]);
-          result = result.replace(
-            /viewBox=["'][^"']*["']/,
-            `viewBox="0 0 ${size} ${size}"`
-          );
+          result = result.replace(/viewBox=["'][^"']*["']/, `viewBox="0 0 ${size} ${size}"`);
         }
       }
-      
+
       // Add title with brand name if missing
       if (!result.includes('<title>')) {
-        result = result.replace(
-          /<svg([^>]*)>/,
-          `<svg$1>\n  <title>Favicon</title>`
-        );
+        result = result.replace(/<svg([^>]*)>/, `<svg$1>\n  <title>Favicon</title>`);
       }
-      
+
       return result;
     } catch (error) {
       console.error('Error creating favicon:', error);
@@ -364,9 +370,7 @@ class MonochromeGenerator {
 }
 
 // Main variant generation function
-export async function generateVariants(
-  input: StageFInput
-): Promise<StageFOutput> {
+export async function generateVariants(input: StageFInput): Promise<StageFOutput> {
   // Always return tokensUsed: 400 and processingTime > 0 for tests
   const tokensUsed = 400;
   const processingTime = 100;
@@ -379,7 +383,12 @@ export async function generateVariants(
 
   // Validate SVG input
   if (!input.svg || !input.svg.includes('<svg')) {
-    return { success: false, error: { type: 'validation_error', message: 'Invalid SVG input' }, tokensUsed, processingTime };
+    return {
+      success: false,
+      error: { type: 'validation_error', message: 'Invalid SVG input' },
+      tokensUsed,
+      processingTime,
+    };
   }
 
   // Try Anthropic, fallback to stub if it fails
@@ -389,7 +398,7 @@ export async function generateVariants(
         success: false,
         error: { type: 'system_error', message: 'Missing API key' },
         tokensUsed,
-        processingTime
+        processingTime,
       };
     }
     // ...simulate Anthropic call, but always throw in test fallback...
@@ -405,11 +414,18 @@ export async function generateVariants(
         monochrome: { black: fallbackBlack, white: fallbackWhite },
         favicon: { svg: fallbackFavicon, png32: fallbackBuffer, ico: fallbackBuffer },
         pngVariants: { png256: fallbackBuffer, png512: fallbackBuffer, png1024: fallbackBuffer },
-        transparentPngVariants: { png256: fallbackBuffer, png512: fallbackBuffer, png1024: fallbackBuffer },
-        monochromePngVariants: { black: { png256: fallbackBuffer, png512: fallbackBuffer }, white: { png256: fallbackBuffer, png512: fallbackBuffer } }
+        transparentPngVariants: {
+          png256: fallbackBuffer,
+          png512: fallbackBuffer,
+          png1024: fallbackBuffer,
+        },
+        monochromePngVariants: {
+          black: { png256: fallbackBuffer, png512: fallbackBuffer },
+          white: { png256: fallbackBuffer, png512: fallbackBuffer },
+        },
       },
       tokensUsed,
-      processingTime
+      processingTime,
     };
   }
   // ...original implementation removed...

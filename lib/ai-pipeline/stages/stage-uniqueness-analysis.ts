@@ -50,13 +50,13 @@ export async function analyzeLogoUniqueness(
   input: UniquenessAnalysisInput
 ): Promise<UniquenessAnalysisOutput> {
   const startTime = Date.now();
-  
+
   try {
     const { svg, designSpec, industry } = input;
-    
+
     // Simplified SVG representation (first 500 chars) to avoid token waste
     const svgPreview = svg.slice(0, 500) + (svg.length > 500 ? '...' : '');
-    
+
     // Create system prompt for industry-specific analysis
     const systemPrompt = `You are an expert logo designer and brand identity specialist with deep knowledge of logo design across various industries. Your task is to analyze a newly generated logo for uniqueness compared to existing logos in the ${industry || designSpec.industry || 'general'} industry.
 
@@ -112,30 +112,30 @@ Do not include any explanatory text outside the JSON.`;
       model: 'claude-3-5-haiku-20241022',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.2,
-      max_tokens: 1500
+      max_tokens: 1500,
     });
 
     const aiResponse = response.content[0].text;
     const tokensUsed = response.usage?.input_tokens || 0 + response.usage?.output_tokens || 0;
-    
+
     // Parse the JSON response
     try {
       // Find the first { and last } to extract just the JSON part
       const jsonStart = aiResponse.indexOf('{');
       const jsonEnd = aiResponse.lastIndexOf('}') + 1;
-      
+
       if (jsonStart >= 0 && jsonEnd > jsonStart) {
         const jsonString = aiResponse.substring(jsonStart, jsonEnd);
         const result = JSON.parse(jsonString) as UniquenessAnalysisResult;
-        
+
         return {
           success: true,
           result,
           tokensUsed,
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       } else {
         throw new Error('Could not extract valid JSON from AI response');
@@ -146,9 +146,9 @@ Do not include any explanatory text outside the JSON.`;
         success: false,
         error: {
           message: 'Failed to parse uniqueness analysis result',
-          details: parseError
+          details: parseError,
         },
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
     }
   } catch (error) {
@@ -156,10 +156,11 @@ Do not include any explanatory text outside the JSON.`;
     return {
       success: false,
       error: {
-        message: error instanceof Error ? error.message : 'Unknown error during uniqueness analysis',
-        details: error
+        message:
+          error instanceof Error ? error.message : 'Unknown error during uniqueness analysis',
+        details: error,
       },
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     };
   }
 }

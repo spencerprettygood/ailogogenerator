@@ -1,23 +1,16 @@
 import { SVGLogo } from '@/lib/types';
-import { 
-  MockupTemplate, 
-  MockupType
-} from './mockup-types';
-import { 
-  generateRealisticMockupSvg, 
-  svgToRealisticDataUrl, 
-  convertRealisticMockupToPng 
+import { MockupTemplate, MockupType } from './mockup-types';
+import {
+  generateRealisticMockupSvg,
+  svgToRealisticDataUrl,
+  convertRealisticMockupToPng,
 } from './enhanced-mockup-generator';
-import { 
-  DEFAULT_MOCKUP_TEMPLATES, 
-  getTemplateById, 
-  getTemplatesByType 
-} from './template-data';
+import { DEFAULT_MOCKUP_TEMPLATES, getTemplateById, getTemplatesByType } from './template-data';
 import {
   getBackgroundById,
   getBackgroundsByType,
   getRandomBackground,
-  getPlaceholderBackground
+  getPlaceholderBackground,
 } from './background-image-registry';
 
 /**
@@ -29,16 +22,13 @@ export class EnhancedMockupService {
   /**
    * Get a background image for a mockup template
    */
-  static getBackgroundForTemplate(
-    templateId: string,
-    backgroundId?: string
-  ): string {
+  static getBackgroundForTemplate(templateId: string, backgroundId?: string): string {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       throw new Error(`Template with ID "${templateId}" not found`);
     }
-    
+
     // If a specific background ID is provided, use that
     if (backgroundId) {
       const background = getBackgroundById(backgroundId);
@@ -46,17 +36,17 @@ export class EnhancedMockupService {
         return background.url;
       }
     }
-    
+
     // Otherwise, get a random background for this template type
     const randomBackground = getRandomBackground(template.type);
     if (randomBackground) {
       return randomBackground.url;
     }
-    
+
     // Fallback to placeholder if no background is available
     return getPlaceholderBackground(template.type);
   }
-  
+
   /**
    * Get all available mockup templates
    */
@@ -105,22 +95,22 @@ export class EnhancedMockupService {
       lightDirection: 'top',
       lightIntensity: 0.3,
       applyPerspective: false,
-      applyShadow: true
+      applyShadow: true,
     },
     brandName: string = 'Brand Name'
   ): string {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       throw new Error(`Template with ID "${templateId}" not found`);
     }
-    
+
     // Get background image
     const backgroundImage = this.getBackgroundForTemplate(templateId, backgroundId);
-    
+
     // Extract SVG code if SVGLogo object is provided
     const svgCode = typeof logo === 'string' ? logo : logo.svgCode;
-    
+
     // Generate mockup with realistic effects
     return generateRealisticMockupSvg(
       svgCode,
@@ -159,7 +149,7 @@ export class EnhancedMockupService {
       lightDirection: 'top',
       lightIntensity: 0.3,
       applyPerspective: false,
-      applyShadow: true
+      applyShadow: true,
     },
     brandName: string = 'Brand Name'
   ): string {
@@ -171,7 +161,7 @@ export class EnhancedMockupService {
       effectsConfig,
       brandName
     );
-    
+
     return svgToRealisticDataUrl(svg);
   }
 
@@ -203,7 +193,7 @@ export class EnhancedMockupService {
       lightDirection: 'top',
       lightIntensity: 0.3,
       applyPerspective: false,
-      applyShadow: true
+      applyShadow: true,
     },
     brandName: string = 'Brand Name'
   ): Promise<string> {
@@ -215,7 +205,7 @@ export class EnhancedMockupService {
       effectsConfig,
       brandName
     );
-    
+
     return convertRealisticMockupToPng(svg, width);
   }
 
@@ -249,19 +239,19 @@ export class EnhancedMockupService {
       lightDirection: 'top',
       lightIntensity: 0.3,
       applyPerspective: false,
-      applyShadow: true
+      applyShadow: true,
     },
     brandName: string = 'Brand Name'
   ): Promise<void> {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       throw new Error(`Template with ID "${templateId}" not found`);
     }
-    
+
     const defaultFilename = `${brandName.replace(/\s+/g, '-').toLowerCase()}-${template.type.toLowerCase()}-enhanced.${format}`;
     const outputFilename = filename || defaultFilename;
-    
+
     if (format === 'svg') {
       const svg = this.generateEnhancedMockup(
         logo,
@@ -271,7 +261,7 @@ export class EnhancedMockupService {
         effectsConfig,
         brandName
       );
-      
+
       const dataUrl = svgToRealisticDataUrl(svg);
       this.triggerDownload(dataUrl, outputFilename);
     } else {
@@ -284,7 +274,7 @@ export class EnhancedMockupService {
         effectsConfig,
         brandName
       );
-      
+
       this.triggerDownload(pngDataUrl, outputFilename);
     }
   }
@@ -300,7 +290,7 @@ export class EnhancedMockupService {
     link.click();
     document.body.removeChild(link);
   }
-  
+
   /**
    * Get available effects for a template
    * Returns appropriate effects configuration based on template type
@@ -321,7 +311,7 @@ export class EnhancedMockupService {
     shadowOpacity: number;
   } {
     const template = this.getTemplateById(templateId);
-    
+
     if (!template) {
       // Default effects if template not found
       return {
@@ -331,10 +321,10 @@ export class EnhancedMockupService {
         applyPerspective: false,
         applyShadow: true,
         shadowBlur: 8,
-        shadowOpacity: 0.3
+        shadowOpacity: 0.3,
       };
     }
-    
+
     // Customize effects based on template type
     switch (template.type) {
       case MockupType.BUSINESS_CARD:
@@ -347,13 +337,13 @@ export class EnhancedMockupService {
             rotateX: 10,
             rotateY: 5,
             rotateZ: 0,
-            translateZ: 0
+            translateZ: 0,
           },
           applyShadow: true,
           shadowBlur: 5,
-          shadowOpacity: 0.3
+          shadowOpacity: 0.3,
         };
-        
+
       case MockupType.WEBSITE:
         return {
           applyLighting: true,
@@ -362,9 +352,9 @@ export class EnhancedMockupService {
           applyPerspective: false,
           applyShadow: false,
           shadowBlur: 0,
-          shadowOpacity: 0
+          shadowOpacity: 0,
         };
-        
+
       case MockupType.TSHIRT:
         return {
           applyLighting: true,
@@ -375,13 +365,13 @@ export class EnhancedMockupService {
             rotateX: 0,
             rotateY: 0,
             rotateZ: 0,
-            translateZ: 0
+            translateZ: 0,
           },
           applyShadow: false,
           shadowBlur: 0,
-          shadowOpacity: 0
+          shadowOpacity: 0,
         };
-        
+
       case MockupType.STOREFRONT:
         return {
           applyLighting: true,
@@ -392,13 +382,13 @@ export class EnhancedMockupService {
             rotateX: 0,
             rotateY: 20,
             rotateZ: 0,
-            translateZ: 0
+            translateZ: 0,
           },
           applyShadow: true,
           shadowBlur: 10,
-          shadowOpacity: 0.4
+          shadowOpacity: 0.4,
         };
-        
+
       case MockupType.PACKAGING:
         return {
           applyLighting: true,
@@ -409,13 +399,13 @@ export class EnhancedMockupService {
             rotateX: 5,
             rotateY: 10,
             rotateZ: 0,
-            translateZ: 0
+            translateZ: 0,
           },
           applyShadow: true,
           shadowBlur: 8,
-          shadowOpacity: 0.4
+          shadowOpacity: 0.4,
         };
-        
+
       default:
         // Default effects for other template types
         return {
@@ -425,7 +415,7 @@ export class EnhancedMockupService {
           applyPerspective: false,
           applyShadow: true,
           shadowBlur: 8,
-          shadowOpacity: 0.3
+          shadowOpacity: 0.3,
         };
     }
   }

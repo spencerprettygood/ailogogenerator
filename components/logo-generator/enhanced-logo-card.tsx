@@ -5,18 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Download, 
-  Copy, 
-  Maximize, 
-  Minimize, 
-  Palette, 
-  Code, 
-  Check, 
-  Eye, 
-  EyeOff, 
+import {
+  Download,
+  Copy,
+  Maximize,
+  Minimize,
+  Palette,
+  Code,
+  Check,
+  Eye,
+  EyeOff,
   Share2,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 import { SVGLogo } from '@/lib/types';
 import LogoDisplay from './logo-display';
@@ -46,7 +46,7 @@ export function EnhancedLogoCard({
   className = '',
   onDownload,
   onShare,
-  showControls = true
+  showControls = true,
 }: EnhancedLogoCardProps) {
   // State for interactions
   const [isExpanded, setIsExpanded] = useState(false);
@@ -55,11 +55,11 @@ export function EnhancedLogoCard({
   const [showColors, setShowColors] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  
+
   // Refs
   const cardRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLPreElement>(null);
-  
+
   // Reset copied state after 2 seconds
   useEffect(() => {
     if (copied) {
@@ -67,30 +67,31 @@ export function EnhancedLogoCard({
       return () => clearTimeout(timeout);
     }
   }, [copied]);
-  
+
   // Handle copy SVG to clipboard
   const handleCopy = () => {
-    const svgCode = ('elements' in logo) ? (logo.svg || logo.svgCode) : logo.svgCode;
+    const svgCode = 'elements' in logo ? logo.svg || logo.svgCode : logo.svgCode;
     if (svgCode) {
-      navigator.clipboard.writeText(svgCode)
+      navigator.clipboard
+        .writeText(svgCode)
         .then(() => {
           setCopied(true);
           toast({
-            title: "SVG Copied",
-            description: "SVG code copied to clipboard",
+            title: 'SVG Copied',
+            description: 'SVG code copied to clipboard',
           });
         })
         .catch(err => {
           console.error('Failed to copy SVG:', err);
           toast({
-            title: "Copy Failed",
-            description: "Failed to copy SVG code",
-            variant: "destructive"
+            title: 'Copy Failed',
+            description: 'Failed to copy SVG code',
+            variant: 'destructive',
           });
         });
     }
   };
-  
+
   // Handle code view toggle
   const toggleCodeView = () => {
     setShowCode(!showCode);
@@ -99,7 +100,7 @@ export function EnhancedLogoCard({
       setShowColors(false);
     }
   };
-  
+
   // Handle color palette toggle
   const toggleColorPalette = () => {
     setShowColors(!showColors);
@@ -108,20 +109,20 @@ export function EnhancedLogoCard({
       setShowCode(false);
     }
   };
-  
+
   // Handle animation toggle
   const toggleAnimation = () => {
     if (animatedSvg) {
       setIsAnimated(!isAnimated);
     } else {
       toast({
-        title: "Animation Not Available",
+        title: 'Animation Not Available',
         description: "This logo doesn't have an animated version",
-        variant: "destructive"
+        variant: 'destructive',
       });
     }
   };
-  
+
   // Format SVG code for display
   const formatSvgForDisplay = (svg: string) => {
     return svg
@@ -129,10 +130,10 @@ export function EnhancedLogoCard({
       .replace(/<svg/g, '\n<svg')
       .replace(/<\/svg>/g, '\n</svg>');
   };
-  
+
   // Get SVG code with type safety
-  const svgCode = ('elements' in logo) ? (logo.svg || logo.svgCode) : logo.svgCode;
-  
+  const svgCode = 'elements' in logo ? logo.svg || logo.svgCode : logo.svgCode;
+
   // Framer Motion variants
   const cardVariants: import('framer-motion').Variants = {
     normal: {
@@ -140,22 +141,22 @@ export function EnhancedLogoCard({
       maxHeight: '400px',
       scale: 1,
       zIndex: 1,
-      transition: { duration: 0.3, ease: 'easeInOut' }
+      transition: { duration: 0.3, ease: 'easeInOut' },
     },
     expanded: {
-      maxWidth: '90vw', 
+      maxWidth: '90vw',
       maxHeight: '80vh',
       scale: 1,
       zIndex: 50,
-      transition: { duration: 0.3, ease: 'easeInOut' }
+      transition: { duration: 0.3, ease: 'easeInOut' },
     },
     hover: {
       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       y: -4,
-      transition: { duration: 0.2 }
-    }
+      transition: { duration: 0.2 },
+    },
   };
-  
+
   // Color palette item animation
   const colorItemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -164,33 +165,37 @@ export function EnhancedLogoCard({
       y: 0,
       transition: {
         delay: i * 0.05,
-        duration: 0.3
-      }
-    })
+        duration: 0.3,
+      },
+    }),
   };
-  
+
   return (
     <motion.div
       className={`relative ${className}`}
       initial="normal"
-      animate={isExpanded ? "expanded" : isHovering ? "hover" : "normal"}
+      animate={isExpanded ? 'expanded' : isHovering ? 'hover' : 'normal'}
       variants={cardVariants}
       onHoverStart={() => setIsHovering(true)}
       onHoverEnd={() => setIsHovering(false)}
       ref={cardRef}
-      style={{ 
+      style={{
         borderRadius: '0.75rem',
         transformOrigin: 'center',
-        overflow: 'hidden'
+        overflow: 'hidden',
       }}
     >
-      <Card className={`relative overflow-hidden transition-shadow duration-300 h-full ${isExpanded ? 'fixed inset-4 z-50 m-auto' : ''}`}>
+      <Card
+        className={`relative overflow-hidden transition-shadow duration-300 h-full ${isExpanded ? 'fixed inset-4 z-50 m-auto' : ''}`}
+      >
         {/* Logo display */}
-        <div className={`p-6 flex items-center justify-center ${isExpanded ? 'h-5/6 overflow-auto' : 'h-[280px]'}`}>
+        <div
+          className={`p-6 flex items-center justify-center ${isExpanded ? 'h-5/6 overflow-auto' : 'h-[280px]'}`}
+        >
           <div className="relative w-full h-full flex items-center justify-center">
             <AnimatePresence mode="wait">
               {isAnimated && animatedSvg ? (
-                <motion.div 
+                <motion.div
                   key="animated"
                   className="w-full h-full flex items-center justify-center"
                   initial={{ opacity: 0 }}
@@ -208,7 +213,7 @@ export function EnhancedLogoCard({
                   />
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   key="static"
                   className="w-full h-full flex items-center justify-center"
                   initial={{ opacity: 0 }}
@@ -216,19 +221,15 @@ export function EnhancedLogoCard({
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <LogoDisplay
-                    svgCode={svgCode}
-                    variants={[]}
-                    className="max-w-full max-h-full"
-                  />
+                  <LogoDisplay svgCode={svgCode} variants={[]} className="max-w-full max-h-full" />
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Sparkle effect on hover */}
             <AnimatePresence>
               {isHovering && !isExpanded && (
-                <motion.div 
+                <motion.div
                   className="absolute top-0 right-0 m-2"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -241,7 +242,7 @@ export function EnhancedLogoCard({
             </AnimatePresence>
           </div>
         </div>
-        
+
         {/* Controls and info */}
         {showControls && (
           <div className="border-t bg-muted/20 p-3">
@@ -252,97 +253,103 @@ export function EnhancedLogoCard({
                 </h3>
                 <div className="flex mt-1">
                   {animatedSvg && (
-                    <Badge 
-                      variant={isAnimated ? "default" : "outline"} 
+                    <Badge
+                      variant={isAnimated ? 'default' : 'outline'}
                       className="mr-2 cursor-pointer transition-colors"
                       onClick={toggleAnimation}
                     >
-                      {isAnimated ? "Animated" : "Static"}
+                      {isAnimated ? 'Animated' : 'Static'}
                     </Badge>
                   )}
-                  <Badge variant="secondary" className="text-xs">SVG</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    SVG
+                  </Badge>
                 </div>
               </div>
-              
+
               <div className="flex space-x-1">
                 {animatedSvg && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={toggleAnimation}
-                    title={isAnimated ? "Show static version" : "Show animated version"}
+                    title={isAnimated ? 'Show static version' : 'Show animated version'}
                   >
                     {isAnimated ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 )}
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={toggleColorPalette}
                   title="Show color palette"
                 >
                   <Palette className="h-4 w-4" />
                 </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={toggleCodeView}
                   title="View SVG code"
                 >
                   <Code className="h-4 w-4" />
                 </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={handleCopy}
                   title="Copy SVG code"
                 >
-                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
-                
+
                 {onDownload && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={onDownload}
                     title="Download logo"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
                 )}
-                
+
                 {onShare && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={onShare}
                     title="Share logo"
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
                 )}
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={() => setIsExpanded(!isExpanded)}
-                  title={isExpanded ? "Minimize" : "Expand"}
+                  title={isExpanded ? 'Minimize' : 'Expand'}
                 >
                   {isExpanded ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-            
+
             {/* Color palette panel */}
             <AnimatePresence>
               {showColors && (
@@ -365,13 +372,13 @@ export function EnhancedLogoCard({
                           animate="visible"
                           variants={colorItemVariants}
                         >
-                          <div 
+                          <div
                             className="h-8 w-8 rounded-full cursor-pointer hover:scale-110 transition-transform border"
                             style={{ backgroundColor: color }}
                             onClick={() => {
                               navigator.clipboard.writeText(color);
                               toast({
-                                title: "Color Copied",
+                                title: 'Color Copied',
                                 description: `${color} copied to clipboard`,
                               });
                             }}
@@ -385,7 +392,7 @@ export function EnhancedLogoCard({
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Code view panel */}
             <AnimatePresence>
               {showCode && (
@@ -399,16 +406,16 @@ export function EnhancedLogoCard({
                   <div className="p-2 bg-card rounded-md border">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-xs font-medium">SVG Code</h4>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-6 py-1 px-2 text-xs"
                         onClick={handleCopy}
                       >
                         {copied ? 'Copied!' : 'Copy'}
                       </Button>
                     </div>
-                    <pre 
+                    <pre
                       ref={codeRef}
                       className="text-xs bg-muted p-2 rounded max-h-[150px] overflow-auto"
                     >
@@ -421,7 +428,7 @@ export function EnhancedLogoCard({
           </div>
         )}
       </Card>
-      
+
       {/* Background overlay when expanded */}
       <AnimatePresence>
         {isExpanded && (

@@ -7,23 +7,17 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const fileId = searchParams.get('file');
-    
+
     if (!fileId) {
-      return NextResponse.json(
-        { error: 'File ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'File ID is required' }, { status: 400 });
     }
-    
+
     const file = getFile(fileId);
-    
+
     if (!file) {
-      return NextResponse.json(
-        { error: 'File not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'File not found or expired' }, { status: 404 });
     }
-    
+
     // Ensure the filename is generic for the package
     const downloadFilename = 'logo-package.zip';
 
@@ -35,11 +29,10 @@ export async function GET(request: NextRequest) {
         'Content-Disposition': `attachment; filename="${downloadFilename}"`,
         'Content-Length': file.buffer.length.toString(),
         'Cache-Control': 'private, no-cache, no-store, must-revalidate',
-        'Expires': '0',
-        'Pragma': 'no-cache'
-      }
+        Expires: '0',
+        Pragma: 'no-cache',
+      },
     });
-    
   } catch (error) {
     console.error('Download error:', error);
     // In a production app, you might want to log this error to a monitoring service

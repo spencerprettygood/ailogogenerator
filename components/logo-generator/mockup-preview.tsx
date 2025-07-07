@@ -15,7 +15,7 @@ export function MockupPreview({
   selectedColorVariant,
   brandName = 'Brand Name',
   className = '',
-  onDownload
+  onDownload,
 }: MockupPreviewProps) {
   const [mockupSvg, setMockupSvg] = useState<string>('');
   const [dataUrl, setDataUrl] = useState<string>('');
@@ -34,9 +34,9 @@ export function MockupPreview({
         selectedColorVariant,
         brandName
       );
-      
+
       setMockupSvg(generatedMockup);
-      
+
       // Convert to data URL
       const url = MockupService.generateMockupDataUrl(
         svgCode,
@@ -45,7 +45,7 @@ export function MockupPreview({
         selectedColorVariant,
         brandName
       );
-      
+
       setDataUrl(url);
       setIsLoading(false);
     } catch (error) {
@@ -96,8 +96,8 @@ export function MockupPreview({
               />
             </div>
             <div className="absolute bottom-4 right-4">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={handleDownload}
                 variant="secondary"
                 className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
@@ -109,9 +109,7 @@ export function MockupPreview({
           </>
         ) : (
           <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-800">
-            <p className="text-sm text-muted-foreground">
-              Unable to generate mockup preview
-            </p>
+            <p className="text-sm text-muted-foreground">Unable to generate mockup preview</p>
           </div>
         )}
       </CardContent>

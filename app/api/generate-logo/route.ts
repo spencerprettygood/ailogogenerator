@@ -130,7 +130,6 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
         });
 
         await orchestrator.start();
-
       } catch (error: any) {
         let errorResponse;
         if (error instanceof z.ZodError) {
@@ -144,7 +143,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             },
           };
         } else {
-           errorResponse = {
+          errorResponse = {
             success: false,
             message: 'An unexpected error occurred.',
             error: {
@@ -170,51 +169,57 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
 
 // Also handle OPTIONS for CORS preflight
 export const OPTIONS = withPerformanceMonitoring(async function OPTIONS() {
-  return NextResponse.json({}, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  return NextResponse.json(
+    {},
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
     }
-  });
-})
+  );
+});
 
 // Cache status endpoint
 export const GET = withPerformanceMonitoring(async function GET(req: NextRequest) {
   // Only allow in development mode
   if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({
-      error: 'Endpoint only available in development mode'
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: 'Endpoint only available in development mode',
+      },
+      { status: 403 }
+    );
   }
-  
+
   const cacheManager = CacheManager.getInstance();
   const cacheStats = cacheManager.getStats();
-  
+
   // Get performance metrics if requested
   const includeMetrics = req.nextUrl.searchParams.get('metrics') === 'true';
   let performanceStats = null;
-  
+
   if (includeMetrics) {
     const category = req.nextUrl.searchParams.get('category') || undefined;
     const sinceMsStr = req.nextUrl.searchParams.get('since');
     const since = sinceMsStr ? parseInt(sinceMsStr, 10) : undefined;
     const limitStr = req.nextUrl.searchParams.get('limit');
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-    
+
     const metrics = performanceMonitor.getMetrics({ category, since, limit });
     const summary = performanceMonitor.getSummary();
-    
+
     performanceStats = {
       metrics: metrics.slice(0, 100), // Limit to 100 metrics max in the response
       summary,
       totalMetrics: metrics.length,
-      isEnabled: performanceMonitor.isEnabled()
+      isEnabled: performanceMonitor.isEnabled(),
     };
   }
-  
+
   return NextResponse.json({
     cache: cacheStats,
-    performance: performanceStats
+    performance: performanceStats,
   });
-})
+});

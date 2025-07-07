@@ -1,7 +1,7 @@
 /**
  * @file index.ts
  * @description Design tokens entry point
- * 
+ *
  * This file exports all design tokens from a single entry point
  * for easy imports throughout the application.
  */

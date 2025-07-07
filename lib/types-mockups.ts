@@ -1,30 +1,30 @@
 /**
  * Mockup system types
- * 
+ *
  * This file re-exports the types from mockup-types.ts to support existing imports
  * and provides additional interface definitions for the mockup components.
  */
 
-import { SVGLogo } from "./types";
-import { 
-  MockupTemplate, 
-  MockupType, 
-  TextPlaceholder, 
+import { SVGLogo } from './types';
+import {
+  MockupTemplate,
+  MockupType,
+  TextPlaceholder,
   LogoPlacement,
   EnhancedEffectsConfig,
   LightingEffects,
-  ShadowEffects
-} from "./mockups/mockup-types";
+  ShadowEffects,
+} from './mockups/mockup-types';
 
 // Re-export from mockup-types.ts
 export { MockupType };
-export type { 
-  MockupTemplate, 
-  TextPlaceholder, 
+export type {
+  MockupTemplate,
+  TextPlaceholder,
   LogoPlacement,
   EnhancedEffectsConfig,
   LightingEffects,
-  ShadowEffects
+  ShadowEffects,
 };
 
 /**

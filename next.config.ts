@@ -8,32 +8,32 @@ import { Configuration as WebpackConfig } from 'webpack';
  */
 const nextConfig = (phase: string): NextConfig => {
   const isDev = phase === PHASE_DEVELOPMENT_SERVER;
-  
+
   return {
     reactStrictMode: true,
-    
+
     // Specify asset handling for images and other static files
     images: {
       domains: [],
       unoptimized: isDev,
     },
-    
+
     // Output standalone to help with deployment
     output: 'standalone',
-    
+
     // Re-enable type checking during build
     typescript: {
       ignoreBuildErrors: false,
     },
-    
+
     // Re-enable ESLint during build
     eslint: {
       ignoreDuringBuilds: false,
     },
-    
+
     // Handle trailing slashes consistently
     trailingSlash: false,
-    
+
     // Add security headers
     async headers() {
       return [
@@ -47,15 +47,11 @@ const nextConfig = (phase: string): NextConfig => {
         },
         {
           source: '/api/:path*',
-          headers: [
-            { key: 'Cache-Control', value: 'no-store' },
-          ],
+          headers: [{ key: 'Cache-Control', value: 'no-store' }],
         },
         {
           source: '/_next/static/:path*',
-          headers: [
-            { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-          ],
+          headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
         },
       ];
     },
@@ -64,13 +60,13 @@ const nextConfig = (phase: string): NextConfig => {
       // Ensure module and rules are defined
       config.module = config.module || {};
       config.module.rules = config.module.rules || [];
-      
+
       // Add SVG support
       config.module.rules.push({
         test: /\.svg$/,
         use: ['@svgr/webpack'],
       });
-      
+
       // Only apply Node.js polyfills in browser environments
       if (!isServer) {
         // Properly handle Node.js modules in browser
@@ -89,15 +85,12 @@ const nextConfig = (phase: string): NextConfig => {
           tls: false,
         };
       }
-      
+
       return config;
     },
-    
+
     // Explicitly list externals that should not be bundled in server components
-    serverExternalPackages: [
-      '@anthropic-ai/sdk',
-      'async_hooks'
-    ],
+    serverExternalPackages: ['@anthropic-ai/sdk', 'async_hooks'],
   };
 };
 

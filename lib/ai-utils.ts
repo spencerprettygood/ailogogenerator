@@ -8,7 +8,7 @@ import {
   streamText as aiStreamText,
   generateText as aiGenerateText,
   convertToModelMessages,
-  type ModelMessage
+  type ModelMessage,
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
@@ -73,7 +73,7 @@ function convertMessages(messages: Message[]): any[] {
     if (typeof msg.content === 'string') {
       return {
         role: msg.role as any,
-        content: msg.content
+        content: msg.content,
       };
     } else {
       return {
@@ -82,36 +82,36 @@ function convertMessages(messages: Message[]): any[] {
           if (part.type === 'text') {
             return {
               type: 'text',
-              text: part.text || ''
+              text: part.text || '',
             };
           } else if (part.type === 'image') {
             return {
               type: 'image',
-              image: part.image || ''
+              image: part.image || '',
             };
           } else if (part.type === 'file') {
             return {
               type: 'file',
               mediaType: part.mediaType || 'application/octet-stream',
-              data: part.data
+              data: part.data,
             };
           } else if (part.type === 'tool-call') {
             return {
               type: 'tool-call',
               toolCallId: part.toolCallId || '',
               toolName: part.toolName || '',
-              args: part.args || {}
+              args: part.args || {},
             };
           } else if (part.type === 'tool-result') {
             return {
               type: 'tool-result',
               toolCallId: part.toolCallId || '',
               toolName: part.toolName || '',
-              result: part.result || {}
+              result: part.result || {},
             };
           }
           return { type: 'text', text: '' };
-        })
+        }),
       };
     }
   });
@@ -124,17 +124,17 @@ function convertMessages(messages: Message[]): any[] {
  */
 export async function streamText(options: StreamOptions) {
   const { model, provider, messages, system, maxTokens, temperature, tools } = options;
-  
+
   // Start telemetry timing
   const endTimer = telemetry.startTimer('ai_stream_text');
-  
+
   try {
     // Get the appropriate model provider
     const modelProvider = getModelProvider(provider, model);
-    
+
     // Convert messages to AI SDK format
     const convertedMessages = convertMessages(messages);
-    
+
     // Use AI SDK's streamText function
     const result = await aiStreamText({
       model: modelProvider as any,
@@ -144,10 +144,10 @@ export async function streamText(options: StreamOptions) {
       temperature,
       tools,
     });
-    
+
     // End telemetry timing on success
     endTimer();
-    
+
     return result;
   } catch (error) {
     // Record telemetry on error
@@ -164,17 +164,17 @@ export async function streamText(options: StreamOptions) {
  */
 export async function generateText(options: StreamOptions) {
   const { model, provider, messages, system, maxTokens, temperature, tools } = options;
-  
+
   // Start telemetry timing
   const endTimer = telemetry.startTimer('ai_generate_text');
-  
+
   try {
     // Get the appropriate model provider
     const modelProvider = getModelProvider(provider, model);
-    
+
     // Convert messages to AI SDK format
     const convertedMessages = convertMessages(messages);
-    
+
     // Use AI SDK's generateText function
     const { text } = await aiGenerateText({
       model: modelProvider as any,
@@ -184,10 +184,10 @@ export async function generateText(options: StreamOptions) {
       temperature,
       tools,
     });
-    
+
     // End telemetry timing on success
     endTimer();
-    
+
     return text;
   } catch (error) {
     // Record telemetry on error

@@ -1,7 +1,7 @@
 /**
  * @file error-reporter.ts
  * @description Error reporting service for production
- * 
+ *
  * This service handles structured error reporting to help diagnose
  * issues in production without exposing sensitive information.
  */
@@ -26,7 +26,7 @@ export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info';
 export class ErrorReporter {
   private static instance: ErrorReporter;
   private isInitialized = false;
-  
+
   /**
    * Get singleton instance
    */
@@ -36,7 +36,7 @@ export class ErrorReporter {
     }
     return ErrorReporter.instance;
   }
-  
+
   /**
    * Initialize error reporting service
    */
@@ -44,7 +44,7 @@ export class ErrorReporter {
     if (this.isInitialized) {
       return;
     }
-    
+
     if (env.isProduction) {
       // In a real implementation, this would initialize an error
       // reporting service like Sentry, LogRocket, etc.
@@ -53,37 +53,37 @@ export class ErrorReporter {
     } else {
       console.log('Error reporting service initialized in development mode (local only)');
     }
-    
+
     this.isInitialized = true;
   }
-  
+
   /**
    * Set up global error handlers
    */
   private setupErrorHandlers(): void {
     if (typeof window !== 'undefined') {
       // Browser-only error handlers
-      window.addEventListener('error', (event) => {
+      window.addEventListener('error', event => {
         this.reportError(event.error || new Error(event.message), {
           url: window.location.href,
         });
-        
+
         // Don't prevent default to allow browser's default error handling
         return false;
       });
-      
-      window.addEventListener('unhandledrejection', (event) => {
+
+      window.addEventListener('unhandledrejection', event => {
         this.reportError(
           event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
           { url: window.location.href }
         );
-        
+
         // Don't prevent default
         return false;
       });
     }
   }
-  
+
   /**
    * Report an error to the error service
    * @param error The error object
@@ -98,7 +98,7 @@ export class ErrorReporter {
     if (!this.isInitialized) {
       this.init();
     }
-    
+
     // Sanitize error data to avoid sensitive information
     const sanitizedError = {
       name: error.name,
@@ -108,18 +108,18 @@ export class ErrorReporter {
       severity,
       ...metadata,
     };
-    
+
     if (env.isProduction) {
       // In production, would send to error reporting service
       // Example: sendToErrorService(sanitizedError);
-      
+
       // For now, just log to console in production
       console.error('[ErrorReporter]', sanitizedError);
-      
+
       // In a real implementation, this would be:
-      // Sentry.captureException(error, { 
+      // Sentry.captureException(error, {
       //   extra: metadata,
-      //   level: severity 
+      //   level: severity
       // });
     } else {
       // In development, just log to console with more details
@@ -130,32 +130,29 @@ export class ErrorReporter {
       console.groupEnd();
     }
   }
-  
+
   /**
    * Submit user feedback along with the last error
    * @param feedback User feedback text
    * @param metadata Additional context
    */
-  public submitFeedback(
-    feedback: string,
-    metadata: ErrorMetadata = {}
-  ): void {
+  public submitFeedback(feedback: string, metadata: ErrorMetadata = {}): void {
     if (!this.isInitialized) {
       this.init();
     }
-    
+
     const feedbackData = {
       feedback,
       timestamp: new Date().toISOString(),
       ...metadata,
     };
-    
+
     if (env.isProduction) {
       // In production, would send to feedback service
       // Example: sendToFeedbackService(feedbackData);
-      
+
       console.log('[ErrorReporter] User feedback:', feedbackData);
-      
+
       // In a real implementation, this would be:
       // Sentry.captureMessage(`User Feedback: ${feedback}`, {
       //   extra: metadata,
@@ -165,7 +162,7 @@ export class ErrorReporter {
       console.log('[ErrorReporter] User feedback:', feedbackData);
     }
   }
-  
+
   /**
    * Remove sensitive information from stack traces
    * @param stack The error stack trace

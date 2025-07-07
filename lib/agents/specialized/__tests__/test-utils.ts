@@ -16,13 +16,13 @@ export function mockAnthropicResponse(content: string) {
     content: [
       {
         type: 'text',
-        text: content
-      }
+        text: content,
+      },
     ],
     usage: {
       input_tokens: 100,
-      output_tokens: 200
-    }
+      output_tokens: 200,
+    },
   };
 }
 
@@ -35,7 +35,7 @@ export function mockAnthropicResponse(content: string) {
 export function createAgentInput(id: string, additionalFields: Record<string, any> = {}) {
   return {
     id,
-    ...additionalFields
+    ...additionalFields,
   };
 }
 
@@ -46,15 +46,15 @@ export function createAgentInput(id: string, additionalFields: Record<string, an
  */
 export function createMockDesignSpec(overrides: Partial<Record<string, string>> = {}) {
   return {
-    brand_name: "TestBrand",
-    brand_description: "A test company description",
-    style_preferences: "Modern, professional",
-    color_palette: "Blue and gray",
-    imagery: "Abstract shapes or icons",
-    target_audience: "General consumers",
-    additional_requests: "None specified",
-    industry: "Technology",
-    ...overrides
+    brand_name: 'TestBrand',
+    brand_description: 'A test company description',
+    style_preferences: 'Modern, professional',
+    color_palette: 'Blue and gray',
+    imagery: 'Abstract shapes or icons',
+    target_audience: 'General consumers',
+    additional_requests: 'None specified',
+    industry: 'Technology',
+    ...overrides,
   };
 }
 
@@ -68,10 +68,10 @@ export function createMockAgentContext(sessionId: string, overrides: Record<stri
   return {
     sessionId,
     brief: {
-      prompt: "Create a logo for TestBrand, a technology company",
+      prompt: 'Create a logo for TestBrand, a technology company',
     },
     sharedMemory: new Map(),
     debugMode: true,
-    ...overrides
+    ...overrides,
   };
 }
