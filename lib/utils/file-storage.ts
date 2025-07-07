@@ -64,38 +64,3 @@ function cleanupExpiredFiles(): void {
     }
   }
 }
-
-// Simple in-memory rate limiter (per IP)
-interface RateLimitResult {
-  allowed: boolean;
-  retryAfter?: number;
-}
-
-class RateLimiter {
-  private static requests = new Map<string, { count: number; resetTime: number }>();
-  private static readonly windowMs = 15 * 60 * 1000; // 15 minutes
-  private static readonly maxRequests = 10;
-
-  static check(identifier: string): RateLimitResult {
-    const now = Date.now();
-    const requestInfo = this.requests.get(identifier) || {
-      count: 0,
-      resetTime: now + this.windowMs,
-    };
-    if (now > requestInfo.resetTime) {
-      requestInfo.count = 1;
-      requestInfo.resetTime = now + this.windowMs;
-    } else if (requestInfo.count >= this.maxRequests) {
-      return {
-        allowed: false,
-        retryAfter: requestInfo.resetTime - now,
-      };
-    } else {
-      requestInfo.count++;
-    }
-    this.requests.set(identifier, requestInfo);
-    return { allowed: true };
-  }
-}
-
-export { RateLimiter };

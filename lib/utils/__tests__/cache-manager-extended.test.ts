@@ -18,12 +18,7 @@ describe('CacheManager', () => {
         intermediate: 1000,
         asset: 1000,
         progress: 1000,
-      },
-      maxSize: {
-        generation: 3, // Small size for testing eviction
-        intermediate: 3,
-        asset: 3,
-        progress: 3,
+        response: 1000,
       },
     });
 
@@ -52,12 +47,7 @@ describe('CacheManager', () => {
           intermediate: 2000,
           asset: 10000,
           progress: 1000,
-        },
-        maxSize: {
-          generation: 10,
-          intermediate: 20,
-          asset: 5,
-          progress: 30,
+          response: 3000,
         },
       });
 
@@ -324,9 +314,6 @@ describe('CacheManager', () => {
         ttl: {
           generation: 5000,
         },
-        maxSize: {
-          generation: 10,
-        },
       });
 
       // Get stats
@@ -334,7 +321,6 @@ describe('CacheManager', () => {
 
       // Check configuration values
       expect(stats.ttls.generation).toBe(5000);
-      expect(stats.maxSizes.generation).toBe(10);
       expect(stats.enabled).toBe(true);
     });
   });

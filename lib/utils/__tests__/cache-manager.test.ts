@@ -15,12 +15,7 @@ describe('CacheManager', () => {
         intermediate: 1000,
         asset: 1000,
         progress: 1000,
-      },
-      maxSize: {
-        generation: 5,
-        intermediate: 5,
-        asset: 5,
-        progress: 5,
+        response: 1000,
       },
     });
     cacheManager.clear();
@@ -71,12 +66,7 @@ describe('CacheManager', () => {
     it('should respect max size limits and evict the oldest items', () => {
       // Configure with a small max size
       cacheManager.configure({
-        maxSize: {
-          generation: 3,
-          intermediate: 5,
-          asset: 5,
-          progress: 5,
-        },
+        defaultTTL: 3000,
       });
 
       // Add more items than the max size

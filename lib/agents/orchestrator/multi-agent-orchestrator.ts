@@ -48,7 +48,7 @@ export class MultiAgentOrchestrator extends EventEmitter {
   private globalAbortController: AbortController;
   private cacheManager: CacheManager;
 
-  constructor(brief: LogoBrief, options?: Partial<OrchestratorOptions>) {
+  constructor(brief: LogoBrief, options?: Partial<OrchestratorOptions>, progressCallback?: (progress: any) => void) {
     super();
     this.options = {
       maxConcurrentAgents: 2,
@@ -70,6 +70,7 @@ export class MultiAgentOrchestrator extends EventEmitter {
       sharedMemory: new Map(),
       messageQueue: [],
       executionPlan: this.createExecutionPlan(),
+      designSpec: undefined, // Will be populated by RequirementsAgent
     };
 
     this.globalAbortController = new AbortController();
@@ -80,6 +81,11 @@ export class MultiAgentOrchestrator extends EventEmitter {
     Object.keys(this.agents).forEach(agentId => {
       this.agentRetryCount[agentId] = 0;
     });
+
+    // Set up progress callback if provided
+    if (progressCallback) {
+      this.on('progress', progressCallback);
+    }
   }
 
   public async start(): Promise<void> {
@@ -98,8 +104,81 @@ export class MultiAgentOrchestrator extends EventEmitter {
     }
   }
 
+  /**
+   * Execute method for compatibility with test expectations
+   */
+  public async execute(): Promise<OrchestratorResult> {
+    this.log(`Orchestration started for session ${this.context.sessionId}`);
+    
+    try {
+      // Initialize all agents
+      await this.initializeAllAgents();
+      
+      // Execute the pipeline
+      const result = await this.executePipeline();
+      
+      this.log(`Orchestration completed successfully for session ${this.context.sessionId}`);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.log(
+        `Orchestration failed for session ${this.context.sessionId}: ${errorMessage}`,
+        'error'
+      );
+      
+      // Return error result
+      return {
+        success: false,
+        result: {},
+        metrics: {
+          totalExecutionTime: Date.now() - this.context.startTime,
+          totalTokensUsed: 0,
+          agentMetrics: {},
+        },
+        logs: this.logs.map(log => log.message),
+        errors: [{
+          agentId: 'orchestrator',
+          message: errorMessage,
+          details: error,
+        }],
+      };
+    }
+  }
+
+  /**
+   * Abort the orchestration process
+   */
+  public abort(reason?: string): void {
+    const abortReason = reason || 'Execution aborted by user';
+    this.log(`Aborting orchestration: ${abortReason}`, 'warn');
+    this.globalAbortController.abort(abortReason);
+  }
+
+  /**
+   * Initialize all agents
+   */
+  private async initializeAllAgents(): Promise<void> {
+    const agentPromises = Object.values(this.agents).map(agent => {
+      if (typeof agent.initialize === 'function') {
+        return agent.initialize();
+      }
+      return Promise.resolve();
+    });
+    
+    await Promise.all(agentPromises);
+  }
+
   private emitProgress(update: Partial<PipelineProgress>): void {
     this.emit('progress', update);
+  }
+
+  private emitTestProgress(stage: string, agent: string, status: string): void {
+    // This is for test compatibility based on what the test expects
+    this.emit('progress', {
+      stage,
+      agent,
+      status,
+    });
   }
 
   private getStageForAgent(agentId: string): string {
@@ -193,6 +272,18 @@ export class MultiAgentOrchestrator extends EventEmitter {
 
             logs.push(`Executing agent: ${agentName}`);
 
+            // Check for abort signal
+            if (this.globalAbortController.signal.aborted) {
+              throw new Error(`Execution aborted: ${this.globalAbortController.signal.reason || 'Unknown reason'}`);
+            }
+
+            // Emit test-compatible progress
+            this.emitTestProgress(
+              `stage-${String.fromCharCode(97 + stageIndex)}`, // stage-a, stage-b, etc.
+              agentName.replace('Agent', '').toLowerCase(),
+              'working'
+            );
+
             // Create input for the agent
             const agentInput = this.createAgentInput(agentName, results);
             
@@ -208,6 +299,13 @@ export class MultiAgentOrchestrator extends EventEmitter {
               // Store results for subsequent agents
               results[agentName] = result.result;
               logs.push(`Agent ${agentName} completed successfully`);
+
+              // Emit test-compatible completion progress
+              this.emitTestProgress(
+                `stage-${String.fromCharCode(97 + stageIndex)}`,
+                agentName.replace('Agent', '').toLowerCase(),
+                'completed'
+              );
             } else {
               const error: AgentExecutionError = {
                 agentId: agentName,

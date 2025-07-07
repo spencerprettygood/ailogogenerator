@@ -140,7 +140,9 @@ const nextConfig = {
 
   // Explicitly provide environment variables
   env: {
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    // ANTHROPIC_API_KEY is intentionally removed from here to prevent leaking
+    // the secret key to the browser. Server-side code can access it directly
+    // via process.env.ANTHROPIC_API_KEY.
     NODE_ENV: process.env.NODE_ENV || 'development',
     ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES || 'true',
     ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS || 'true',

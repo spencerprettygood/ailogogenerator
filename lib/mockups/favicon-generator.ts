@@ -51,9 +51,9 @@ function prepareSvgForFavicon(svgString: string): string {
   const viewBox = viewBoxMatch?.[1] ? viewBoxMatch[1].split(/\s+/).map(Number) : [0, 0, 100, 100];
 
   // Make sure the SVG is square for favicon use
-  if (viewBox[2] !== viewBox[3]) {
-    const size = Math.max(viewBox[2] || 0, viewBox[3] || 0);
-    const newViewBox = `${viewBox[0] || 0} ${viewBox[1] || 0} ${size} ${size}`;
+  if ((viewBox[2] ?? 0) !== (viewBox[3] ?? 0)) {
+    const size = Math.max(viewBox[2] ?? 0, viewBox[3] ?? 0);
+    const newViewBox = `${viewBox[0] ?? 0} ${viewBox[1] ?? 0} ${size} ${size}`;
     svgString = svgString.replace(/viewBox=["'][^"']*["']/, `viewBox="${newViewBox}"`);
   }
 
@@ -134,11 +134,11 @@ export async function generateFavicons(
     }
 
     // Add HTML snippet for easy integration
-    const htmlSnippet = generateHtmlSnippet(packageConfig, brandColor || '#000000');
+    const htmlSnippet = generateHtmlSnippet(packageConfig, brandColor ?? '#000000');
     zip.file('favicon-snippet.html', htmlSnippet);
 
     // Add README
-    const readme = generateReadme(packageConfig, brandName || 'Brand Name');
+    const readme = generateReadme(packageConfig, brandName ?? 'Brand Name');
     zip.file('README.txt', readme);
 
     // Generate the ZIP file
@@ -269,7 +269,7 @@ export async function downloadFavicons(
     const blob = await generateFavicons(logo, packageId, brandName, brandColor);
 
     // Format filename
-    const safeFileName = brandName.replace(/\s+/g, '-').toLowerCase();
+    const safeFileName = (brandName ?? 'brand').replace(/\s+/g, '-').toLowerCase();
     const filename = `${safeFileName}-favicons.zip`;
 
     // Create and trigger download link

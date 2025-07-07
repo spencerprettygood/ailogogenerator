@@ -151,7 +151,7 @@ export function ChatInterface({
           </div>
         )}
         {/* Optionally show a typing indicator if status is streaming */}
-        {status === 'streaming' && <TypingIndicator />}
+        {status === 'streaming' && <TypingIndicator message="AI Designer is thinking..." />}
         <div ref={messagesEndRef} />
       </div>
 
