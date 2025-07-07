@@ -668,7 +668,7 @@ const cacheKey = crypto
 ### 11.1. Local Development
 
 - Node.js 18+
-- pnpm package manager
+- npm package manager
 - Next.js development server
 - Local environment variables
 

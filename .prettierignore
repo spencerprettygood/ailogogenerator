@@ -20,7 +20,6 @@ docs/
 # Package files
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
 
 # Generated types
 *.d.ts

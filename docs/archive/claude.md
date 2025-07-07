@@ -228,7 +228,7 @@ The LLM's response is accessed through the message parts array. Each message con
 Running Your Application
 With that, you have built everything you need for your chatbot! To start your application, use the command:
 
-pnpm run dev
+npm run dev
 Head to your browser and open http://localhost:3000. You should see an input field. Test it out by entering a message and see the AI chatbot respond in real-time! The AI SDK makes it fast and easy to build AI chat interfaces with Next.js.
 
 Enhance Your Chatbot with Tools
