@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { UserMessage } from './user-message';
 import { AssistantMessage } from './assistant-message';
 import { SystemMessage } from './system-message';
-import { EnhancedTypingIndicator } from './enhanced-typing-indicator';
+import { EnhancedTypingIndicator } from './typing-indicator';
 import { EnhancedLogoCard } from './enhanced-logo-card';
 import { ProgressTimeline } from './progress-timeline';
 import { StageTransition } from './stage-transition';

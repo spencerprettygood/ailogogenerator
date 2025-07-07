@@ -10,10 +10,10 @@ import { generateId } from '@/lib/ai-utils';
 import { Header } from './header';
 // Using a simplified error boundary with no environment dependencies
 import { SimpleErrorBoundary } from './simple-error-boundary';
-import { SearchInterfaceEnhanced } from './search-interface-enhanced';
+import { SearchInterfaceEnhanced } from './search-interface';
 import { SuggestionChips, DEFAULT_LOGO_SUGGESTIONS } from './suggestion-chips';
 import { StreamingResponse } from './streaming-response';
-import { EnhancedTypingIndicator } from './enhanced-typing-indicator';
+import { EnhancedTypingIndicator } from './typing-indicator';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
 import AnimationDownloadManager from './animation-download-manager';

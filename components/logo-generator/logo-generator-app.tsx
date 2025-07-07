@@ -12,7 +12,7 @@ import { useLogoGeneration } from '@/lib/hooks/use-logo-generation';
 import { generateId } from '@/lib/ai-utils';
 import { Header } from './header';
 import ErrorBoundary from './error-boundary';
-import { SearchInterfaceEnhanced } from './search-interface-enhanced';
+import { SearchInterfaceEnhanced } from './search-interface';
 import { SuggestionChips, DEFAULT_LOGO_SUGGESTIONS } from './suggestion-chips';
 import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
