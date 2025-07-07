@@ -92,7 +92,7 @@
   "overrides": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@types/react": "^19"
+    "@types/react": "^19.1.8"
   },
   "resolutions": {
     "sharp": "^0.34.2"

@@ -291,12 +291,8 @@ export class RedisCacheAdapter implements CacheAdapter {
  */
 export function createCacheAdapter(): CacheAdapter {
   // Use Redis in production, memory in development
-  if (env.isProduction) {
-    const redisUrl = process.env.REDIS_URL;
-    if (!redisUrl) {
-      throw new Error('REDIS_URL environment variable is required in production');
-    }
-    return new RedisCacheAdapter(redisUrl);
+  if (env.isProduction && process.env.REDIS_URL) {
+    return new RedisCacheAdapter(process.env.REDIS_URL);
   }
 
   return new MemoryCacheAdapter();
