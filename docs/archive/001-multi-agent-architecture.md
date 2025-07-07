@@ -18,11 +18,13 @@ The AI Logo Generator application needs to transform plain-language briefs into 
 8. Packaging all assets for delivery
 
 Each of these steps requires different specialized capabilities:
+
 - Some steps need creative generation (concept design, SVG creation)
 - Others need analytical processing (requirement extraction, concept selection)
 - Others focus on technical tasks (validation, optimization, packaging)
 
 Furthermore, different AI models are optimal for different tasks:
+
 - Creative tasks benefit from more powerful models (Claude 3.5 Sonnet)
 - Analytical tasks can use faster, more efficient models (Claude 3.5 Haiku)
 
@@ -47,6 +49,7 @@ We will implement a Multi-Agent Architecture pattern where:
    - Implement retry and error recovery strategies
 
 This pattern follows the principles of:
+
 - Single Responsibility Principle (each agent does one thing well)
 - Interface Segregation (standardized interfaces between agents)
 - Dependency Inversion (agents depend on abstractions, not concrete implementations)
@@ -270,7 +273,7 @@ interface AgentMessage {
 
 ## Implementation Notes
 
-1. **Model Selection**: 
+1. **Model Selection**:
    - Use Claude 3.5 Haiku for analytical tasks (requirements, selection)
    - Use Claude 3.5 Sonnet for creative tasks (moodboard, SVG generation)
 

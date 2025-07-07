@@ -75,7 +75,7 @@ const nextConfig = {
   },
 
   // Webpack configuration optimized based on Next.js 15 documentation
-  webpack: (config, { isServer, dev }) => {
+  webpack: async (config, { isServer, dev }) => {
     // Add proper path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -100,7 +100,9 @@ const nextConfig = {
 
       // Production optimizations
       if (!dev) {
-        const webpack = require('webpack');
+        // Dynamically import webpack in ESM context
+        const webpackModule = await import('webpack');
+        const webpack = webpackModule.default || webpackModule;
 
         // Ignore certain modules in the browser
         config.plugins.push(
