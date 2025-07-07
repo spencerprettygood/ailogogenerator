@@ -56,7 +56,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     }
 
     // Perform accessibility assessment
-    const accessibilityScore = this.assessAccessibility(svgContent);
+    const accessibilityScore = SVGAccessibilityValidator.assessAccessibility(svgContent);
 
     return {
       ...baseValidation,
@@ -89,12 +89,12 @@ export class SVGAccessibilityValidator extends SVGValidator {
     const { repair = true, optimize = true, assessAccessibility = true } = options;
 
     // Process SVG with standard validation, repair, and optimization
-    const processResult = this.process(svgContent, { repair, optimize });
+    const processResult = SVGAccessibilityValidator.process(svgContent, { repair, optimize });
 
     // If accessibility assessment is requested, add it to the result
     if (assessAccessibility) {
-      const accessibilityScore = this.assessAccessibility(
-        processResult.svg ?? processResult.processed ?? ''
+      const accessibilityScore = SVGAccessibilityValidator.assessAccessibility(
+        processResult.processed ?? ''
       );
       return {
         svg: processResult.processed ?? '',
@@ -158,7 +158,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     }
 
     // Add accessibility assessment
-    const accessibilityScore = this.assessAccessibility(designResult.svg);
+    const accessibilityScore = SVGAccessibilityValidator.assessAccessibility(designResult.svg);
 
     return {
       ...designResult,
@@ -174,14 +174,14 @@ export class SVGAccessibilityValidator extends SVGValidator {
    */
   private static assessAccessibility(svgContent: string): SVGAccessibilityScore {
     // Calculate scores for each accessibility aspect
-    const colorContrastScore = this.assessColorContrast(svgContent);
-    const textAlternativesScore = this.assessTextAlternatives(svgContent);
-    const semanticStructureScore = this.assessSemanticStructure(svgContent);
-    const scalabilityScore = this.assessScalability(svgContent);
-    const interactiveElementsScore = this.assessInteractiveElements(svgContent);
+    const colorContrastScore = SVGAccessibilityValidator.assessColorContrast(svgContent);
+    const textAlternativesScore = SVGAccessibilityValidator.assessTextAlternatives(svgContent);
+    const semanticStructureScore = SVGAccessibilityValidator.assessSemanticStructure(svgContent);
+    const scalabilityScore = SVGAccessibilityValidator.assessScalability(svgContent);
+    const interactiveElementsScore = SVGAccessibilityValidator.assessInteractiveElements(svgContent);
 
     // Generate accessibility improvement suggestions
-    const accessibilitySuggestions = this.generateAccessibilitySuggestions(
+    const accessibilitySuggestions = SVGAccessibilityValidator.generateAccessibilitySuggestions(
       colorContrastScore,
       textAlternativesScore,
       semanticStructureScore,
@@ -228,7 +228,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     let score = 60; // Start with a moderate score
 
     // Extract colors from the SVG
-    const colors = this.extractColors(svgContent);
+    const colors = SVGAccessibilityValidator.extractColors(svgContent);
 
     // If there's only one color or no colors, it's likely monochrome or doesn't have enough elements to assess
     if (colors.length <= 1) {
@@ -277,8 +277,8 @@ export class SVGAccessibilityValidator extends SVGValidator {
       let maxContrastRatio = 0;
       for (const textColor of textColors) {
         for (const bgColor of backgroundColors) {
-          const textLuminance = this.calculateLuminance(textColor);
-          const bgLuminance = this.calculateLuminance(bgColor);
+          const textLuminance = SVGAccessibilityValidator.calculateLuminance(textColor);
+          const bgLuminance = SVGAccessibilityValidator.calculateLuminance(bgColor);
 
           // WCAG contrast formula
           const contrastRatio =
@@ -305,7 +305,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
       // This is a simplified approach - a more accurate one would analyze the SVG structure
 
       // Sort colors by luminance
-      const luminances = colors.map(color => this.calculateLuminance(color));
+      const luminances = colors.map(color => SVGAccessibilityValidator.calculateLuminance(color));
       luminances.sort((a, b) => a - b);
 
       // Check contrast between adjacent colors in sorted array
@@ -313,16 +313,22 @@ export class SVGAccessibilityValidator extends SVGValidator {
       for (let i = 0; i < luminances.length - 1; i++) {
         // For contrastRatio and highestContrastRatio calculations
         let contrastRatio = 0;
-        if (luminances && luminances[i + 1] !== undefined && luminances[i] !== undefined) {
-          contrastRatio = (luminances[i + 1] + 0.05) / (luminances[i] + 0.05);
+        const currentLuminance = luminances[i];
+        const nextLuminance = luminances[i + 1];
+        if (currentLuminance !== undefined && nextLuminance !== undefined) {
+          contrastRatio = (nextLuminance + 0.05) / (currentLuminance + 0.05);
         }
         lowestContrastRatio = Math.min(lowestContrastRatio, contrastRatio);
       }
 
       // Check contrast between lightest and darkest colors
       let highestContrastRatio = 0;
-      if (luminances && luminances.length > 0) {
-        highestContrastRatio = (luminances[luminances.length - 1] + 0.05) / (luminances[0] + 0.05);
+      if (luminances.length > 0) {
+        const darkestLuminance = luminances[0];
+        const lightestLuminance = luminances[luminances.length - 1];
+        if (darkestLuminance !== undefined && lightestLuminance !== undefined) {
+          highestContrastRatio = (lightestLuminance + 0.05) / (darkestLuminance + 0.05);
+        }
       }
 
       // Score based on highest contrast available
@@ -571,7 +577,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     }
 
     // Penalize for excessive nesting which can make screen reader output confusing
-    const maxNestingLevel = this.getMaxNestingLevel(svgContent);
+    const maxNestingLevel = SVGValidator['getMaxNestingLevel'](svgContent);
     if (maxNestingLevel > 10) {
       score -= 20; // Severe penalty for excessive nesting
     } else if (maxNestingLevel > 7) {
@@ -584,30 +590,6 @@ export class SVGAccessibilityValidator extends SVGValidator {
     return Math.max(0, Math.min(100, score));
   }
 
-  /**
-   * Get the maximum nesting level in an SVG
-   *
-   * @param svgContent - The SVG content to analyze
-   * @returns Maximum nesting level
-   */
-  private static getMaxNestingLevel(svgContent: string): number {
-    let maxLevel = 0;
-    let currentLevel = 0;
-
-    // Simple tokenizer
-    for (let i = 0; i < svgContent.length; i++) {
-      if (svgContent[i] === '<' && svgContent[i + 1] !== '/' && svgContent[i + 1] !== '!') {
-        // Opening tag
-        currentLevel++;
-        maxLevel = Math.max(maxLevel, currentLevel);
-      } else if (svgContent[i] === '<' && svgContent[i + 1] === '/') {
-        // Closing tag
-        currentLevel--;
-      }
-    }
-
-    return maxLevel;
-  }
 
   /**
    * Assess scalability and readability at small sizes
@@ -692,7 +674,7 @@ export class SVGAccessibilityValidator extends SVGValidator {
     }
 
     // Check for complexity that may render poorly at small sizes
-    const complexity = this.assessComplexity(svgContent);
+    const complexity = SVGAccessibilityValidator.assessComplexity(svgContent);
     if (complexity === 'high') {
       score -= 20; // Penalty for high complexity
     } else if (complexity === 'medium') {
