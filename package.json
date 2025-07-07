@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint:fix": "next lint --fix"
+    "lint:fix": "next lint --fix",
+    "postinstall": "npm install --save-dev @types/react@18"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0-alpha.15",
