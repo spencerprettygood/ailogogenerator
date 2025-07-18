@@ -18,16 +18,16 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
   const stream = new ReadableStream({
     async start(controller) {
       let controllerClosed = false;
+      let streamCompleted = false;
 
       const safeEnqueue = (data: any) => {
-        if (!controllerClosed) {
+        if (!controllerClosed && !streamCompleted) {
           try {
             const validatedData = GenerateLogoResponseSchema.parse(data);
             controller.enqueue(encoder.encode(JSON.stringify(validatedData)));
           } catch (error) {
             if (error instanceof z.ZodError) {
               console.error('Zod validation error enqueuing data:', error.errors);
-              // Decide if you want to send a specific error message to the client
               const errorResponse = {
                 success: false,
                 message: 'Internal data validation error',
@@ -41,14 +41,14 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
             } else {
               console.error('Error enqueuing to controller:', error);
             }
-            // Do not close the controller here, allow the stream to potentially recover or finish.
           }
         }
       };
 
       const safeClose = () => {
-        if (!controllerClosed) {
+        if (!controllerClosed && !streamCompleted) {
           try {
+            streamCompleted = true;
             controller.close();
             controllerClosed = true;
           } catch (error) {
@@ -57,6 +57,8 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
           }
         }
       };
+
+      let hasCompleted = false;
 
       try {
         const json = await req.json();
@@ -90,71 +92,91 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
         const orchestrator = new MultiAgentOrchestrator(brief);
 
         orchestrator.on('progress', (progress: PipelineProgress) => {
-          safeEnqueue({
-            success: true,
-            message: `Processing stage: ${progress.currentStage}`,
-            data: {
-              requestId: sessionId,
-              prompt: brief.prompt,
-              status: 'pending',
-              timestamp: new Date().toISOString(),
-              logo: { ...progress }, // This needs to be mapped to the SVGLogoSchema shape
-            },
-          });
+          if (!hasCompleted) {
+            safeEnqueue({
+              success: true,
+              message: `Processing stage: ${progress.currentStage}`,
+              data: {
+                type: 'progress',
+                requestId: sessionId,
+                status: 'pending',
+                timestamp: new Date().toISOString(),
+                progress: progress.progress || 0,
+                currentStage: progress.currentStage || 'processing',
+                message: progress.message || `Processing stage: ${progress.currentStage}`,
+              },
+            });
+          }
         });
 
         orchestrator.on('error', (error: any) => {
-          safeEnqueue({
-            success: false,
-            message: 'An error occurred during logo generation.',
-            error: {
-              code: 'ORCHESTRATOR_ERROR',
-              message: error.message || 'Unknown orchestrator error',
-            },
-          });
+          if (!hasCompleted) {
+            hasCompleted = true;
+            safeEnqueue({
+              success: false,
+              message: 'An error occurred during logo generation.',
+              error: {
+                code: 'ORCHESTRATOR_ERROR',
+                message: error.message || 'Unknown orchestrator error',
+              },
+            });
+            safeClose();
+          }
         });
 
         orchestrator.on('complete', (result: any) => {
-          safeEnqueue({
-            success: true,
-            message: 'Logo generation complete.',
-            data: {
-              requestId: sessionId,
-              prompt: brief.prompt,
-              status: 'success',
-              timestamp: new Date().toISOString(),
-              logo: { ...result }, // This needs to be mapped to the SVGLogoSchema shape
-            },
-          });
-          safeClose();
+          if (!hasCompleted) {
+            hasCompleted = true;
+            safeEnqueue({
+              success: true,
+              message: 'Logo generation complete.',
+              data: {
+                type: 'result',
+                requestId: sessionId,
+                prompt: brief.prompt,
+                status: 'success',
+                timestamp: new Date().toISOString(),
+                logo: {
+                  id: result.id || sessionId,
+                  prompt: brief.prompt,
+                  svg_code: result.svg || result.svg_code || '',
+                  width: result.width,
+                  height: result.height,
+                },
+              },
+            });
+            safeClose();
+          }
         });
 
         await orchestrator.start();
       } catch (error: any) {
-        let errorResponse;
-        if (error instanceof z.ZodError) {
-          errorResponse = {
-            success: false,
-            message: 'Invalid request format',
-            error: {
-              code: 'ZOD_REQUEST_VALIDATION_ERROR',
-              message: 'The request structure is invalid.',
-              details: error.flatten(),
-            },
-          };
-        } else {
-          errorResponse = {
-            success: false,
-            message: 'An unexpected error occurred.',
-            error: {
-              code: 'INTERNAL_SERVER_ERROR',
-              message: error.message || 'An unknown error occurred.',
-            },
-          };
+        if (!hasCompleted) {
+          hasCompleted = true;
+          let errorResponse;
+          if (error instanceof z.ZodError) {
+            errorResponse = {
+              success: false,
+              message: 'Invalid request format',
+              error: {
+                code: 'ZOD_REQUEST_VALIDATION_ERROR',
+                message: 'The request structure is invalid.',
+                details: error.flatten(),
+              },
+            };
+          } else {
+            errorResponse = {
+              success: false,
+              message: 'An unexpected error occurred.',
+              error: {
+                code: 'INTERNAL_SERVER_ERROR',
+                message: error.message || 'An unknown error occurred.',
+              },
+            };
+          }
+          safeEnqueue(errorResponse);
+          safeClose();
         }
-        // Use safeEnqueue to send the final error message
-        safeEnqueue(errorResponse);
-        safeClose();
       }
     },
   });

@@ -39,7 +39,9 @@
       "Bash(rg:*)",
       "Bash(npx next build:*)",
       "Bash(npm test:*)",
-      "Bash(npx vitest run:*)"
+      "Bash(npx vitest run:*)",
+      "Bash(true)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   },

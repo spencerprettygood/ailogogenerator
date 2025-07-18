@@ -32,7 +32,7 @@ import { ErrorCategory, ErrorSeverity, createAppError, handleError } from './err
  * @property {string} key - The unique identifier for this cache item
  * @property {CacheType} type - The type of cached data (generation, asset, etc.)
  */
-interface LocalCacheItem<T = unknown> {
+export interface CacheItem<T = unknown> {
   data: T;
   expiresAt: number;
   createdAt: number;
@@ -88,7 +88,7 @@ export interface CacheConfig {
  */
 export class CacheManager {
   private static instance: CacheManager;
-  protected cache: Map<string, LocalCacheItem>;
+  protected cache: Map<string, CacheItem>;
   private cleanupTimer: NodeJS.Timeout | null = null;
   protected config: CacheConfig;
   protected logger: Logger;
@@ -101,7 +101,7 @@ export class CacheManager {
    */
   protected constructor() {
     // Initialize the cache
-    this.cache = new Map<string, LocalCacheItem>();
+    this.cache = new Map<string, CacheItem>();
 
     // Set up cache counts by type
     this.counts = {
@@ -320,7 +320,7 @@ export class CacheManager {
     const now = Date.now();
     const expiresAt = now + (ttl || this.config.ttl[type] || this.config.defaultTTL);
 
-    const newItem: LocalCacheItem<T> = {
+    const newItem: CacheItem<T> = {
       data: value,
       expiresAt,
       createdAt: now,
@@ -377,7 +377,7 @@ export class CacheManager {
    * Evict the least recently used item from the cache
    */
   private evict(): void {
-    let oldestItem: LocalCacheItem | null = null;
+    let oldestItem: CacheItem | null = null;
     let oldestKey: string | null = null;
 
     for (const [key, item] of Array.from(this.cache.entries())) {

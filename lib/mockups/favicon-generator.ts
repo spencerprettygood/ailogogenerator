@@ -89,6 +89,10 @@ export async function generateFavicons(
 
     // Get package configuration
     const packageConfig = FAVICON_PACKAGES.find(p => p.id === packageId) || FAVICON_PACKAGES[1]; // Default to standard
+    
+    if (!packageConfig) {
+      throw new Error(`No favicon package configuration found for package ID: ${packageId}`);
+    }
 
     // Prepare SVG for favicon use
     const preparedSvg = prepareSvgForFavicon(svgCode);

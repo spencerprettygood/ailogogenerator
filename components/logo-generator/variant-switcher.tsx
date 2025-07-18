@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const VariantSwitcher: React.FC<VariantSwitcherProps> = ({
   variants,
   selectedVariantId,
-  onSelectVariantAction,
+  onVariantChange,
 }) => {
   if (!variants || variants.length <= 1) {
     return null; // Don't show switcher if no variants or only one
@@ -24,7 +24,7 @@ const VariantSwitcher: React.FC<VariantSwitcherProps> = ({
           key={variant.id}
           variant={selectedVariantId === variant.id ? 'default' : 'outline'}
           size="sm"
-          onClick={() => onSelectVariantAction(variant.id)}
+          onClick={() => onVariantChange?.(variant.id)}
           className={cn(
             'transition-all duration-150 ease-in-out text-xs px-3 py-1 h-auto',
             selectedVariantId === variant.id

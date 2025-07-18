@@ -16,7 +16,7 @@ import { StreamingResponse } from './streaming-response';
 import LogoDisplay from './logo-display';
 import DownloadManager from './download-manager';
 import ProgressTracker from './progress-tracker';
-import { Message } from '@/lib/types';
+import { Message, MessageRole } from '@/lib/types';
 import { H1, H2, H3, Paragraph, LargeText } from '@/components/ui/typography';
 
 interface PerplexityLogoAppState {
@@ -52,7 +52,7 @@ export function PerplexityLogoApp() {
     async (prompt: string, files?: File[]) => {
       const userMessage: Message = {
         id: Date.now().toString(),
-        role: 'user',
+        role: MessageRole.USER,
         content: prompt,
         timestamp: new Date(),
       };
@@ -164,7 +164,7 @@ export function PerplexityLogoApp() {
                   className="w-full max-w-2xl"
                 >
                   <PerplexitySearch
-                    onSearch={handleSearch}
+                    onSubmitAction={handleSearch}
                     isGenerating={isGenerating}
                     placeholder="Describe your brand, industry, and style preferences..."
                     className="shadow-lg border-2 border-primary/20 focus-within:border-primary/40 transition-colors"
@@ -283,7 +283,7 @@ export function PerplexityLogoApp() {
             >
               <Card className="p-3 shadow-lg border-2 border-primary/20">
                 <PerplexitySearch
-                  onSearch={handleSearch}
+                  onSubmitAction={handleSearch}
                   isGenerating={isGenerating}
                   placeholder="Try another logo..."
                   className="min-w-[400px]"

@@ -75,7 +75,7 @@ const nextConfig = {
   },
 
   // Webpack configuration optimized based on Next.js 15 documentation
-  webpack: async (config, { isServer, dev }) => {
+  webpack: (config, { isServer, dev }) => {
     // Add proper path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -98,18 +98,14 @@ const nextConfig = {
         async_hooks: false,
       };
 
-      // Production optimizations
+      // Production optimizations - simplified approach
       if (!dev) {
-        // Dynamically import webpack in ESM context
-        const webpackModule = await import('webpack');
-        const webpack = webpackModule.default || webpackModule;
-
-        // Ignore certain modules in the browser
-        config.plugins.push(
-          new webpack.IgnorePlugin({
-            resourceRegExp: /^(node-fetch|encoding)$/,
-          })
-        );
+        // Simply exclude problematic modules from client bundle
+        config.externals = config.externals || {};
+        if (typeof config.externals === 'object' && !Array.isArray(config.externals)) {
+          config.externals['node-fetch'] = 'node-fetch';
+          config.externals['encoding'] = 'encoding';
+        }
       }
     }
 
@@ -133,20 +129,14 @@ const nextConfig = {
   },
 
   // External packages that should be transpiled
-  experimental: {
-    // Use serverComponentsExternalPackages instead of transpilePackages
-    serverComponentsExternalPackages: ['next-themes', '@anthropic-ai/sdk'],
-  },
+  serverExternalPackages: ['next-themes', '@anthropic-ai/sdk'],
 
-  // Explicitly provide environment variables
+  // Explicitly provide environment variables (only non-sensitive, client-side vars)
   env: {
-    // ANTHROPIC_API_KEY is intentionally removed from here to prevent leaking
-    // the secret key to the browser. Server-side code can access it directly
-    // via process.env.ANTHROPIC_API_KEY.
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES || 'true',
-    ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS || 'true',
-    CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS || '3600',
+    // NODE_ENV is handled automatically by Next.js - removed to prevent conflicts
+    NEXT_PUBLIC_ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES || 'true',
+    NEXT_PUBLIC_ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS || 'true',
+    NEXT_PUBLIC_CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS || '3600',
   },
 };
 

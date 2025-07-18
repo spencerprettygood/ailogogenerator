@@ -30,7 +30,7 @@ function getMessageText(message: UIMessage): string {
 }
 
 export function AsymmetricalLogoChat() {
-  const { messages, sendMessage, setMessages, status } = useChat({});
+  const { messages, append, setMessages, status } = useChat({});
   const [input, setInput] = useState('');
 
   const { preview, assets, reset: resetLogoGeneration } = useLogoGeneration();
@@ -51,8 +51,8 @@ export function AsymmetricalLogoChat() {
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim()) {
-      // Use sendMessage with the 'parts' structure
-      sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] });
+      // Use append with the correct structure
+      append({ role: 'user', content: input } as any);
       setInput('');
     }
   };

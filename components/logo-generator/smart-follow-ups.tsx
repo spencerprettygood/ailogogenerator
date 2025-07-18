@@ -135,7 +135,7 @@ export function SmartFollowUps({
         <div>
           <h3 className="text-sm font-medium mb-2">Analysis</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.analysis.map(suggestion => (
+            {groupedSuggestions.analysis?.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant={showIndustryAnalysis ? 'default' : 'outline'}
@@ -170,7 +170,7 @@ export function SmartFollowUps({
         <div>
           <h3 className="text-sm font-medium mb-2">Style</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.style.map(suggestion => (
+            {groupedSuggestions.style?.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -189,7 +189,7 @@ export function SmartFollowUps({
         <div>
           <h3 className="text-sm font-medium mb-2">Colors</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.colors.map(suggestion => (
+            {groupedSuggestions.colors?.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -208,7 +208,7 @@ export function SmartFollowUps({
         <div>
           <h3 className="text-sm font-medium mb-2">Layout</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.layout.map(suggestion => (
+            {groupedSuggestions.layout?.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"
@@ -227,7 +227,7 @@ export function SmartFollowUps({
         <div>
           <h3 className="text-sm font-medium mb-2">Typography</h3>
           <div className="flex flex-wrap gap-2">
-            {groupedSuggestions.typography.map(suggestion => (
+            {groupedSuggestions.typography?.map(suggestion => (
               <Button
                 key={suggestion.id}
                 variant="outline"

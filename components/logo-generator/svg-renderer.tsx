@@ -150,10 +150,14 @@ export function SVGRenderer({
         // Check if a title element already exists
         let titleElement = svgElement.querySelector('title');
         if (!titleElement) {
-          titleElement = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'title');
-          svgElement.insertBefore(titleElement, svgElement.firstChild);
+          titleElement = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'title') as Element;
+          if (titleElement) {
+            svgElement.insertBefore(titleElement, svgElement.firstChild);
+          }
         }
-        titleElement.textContent = title;
+        if (titleElement) {
+          titleElement.textContent = title;
+        }
       }
 
       if (description) {
@@ -249,7 +253,7 @@ export function SVGRenderer({
           const viewBoxParts = viewBox.split(/[\s,]+/).map(Number);
           if (viewBoxParts.length >= 4) {
             const [, , width, height] = viewBoxParts;
-            if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+            if (width != null && height != null && !isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
               setSvgDimensions({ width, height });
               return;
             }

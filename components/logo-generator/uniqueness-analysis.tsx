@@ -44,11 +44,19 @@ export function UniquenessAnalysis({
   const { score, potential_issues, verification_details } = analysis;
 
   const renderScoreBadge = () => {
-    if (score >= 90) return { color: 'bg-green-500', label: 'Excellent' };
-    if (score >= 80) return { color: 'bg-green-400', label: 'Very Good' };
-    if (score >= 70) return { color: 'bg-yellow-400', label: 'Good' };
-    if (score >= 50) return { color: 'bg-orange-400', label: 'Fair' };
-    return { color: 'bg-red-500', label: 'Poor' };
+    const badge = (() => {
+      if (score >= 90) return { color: 'bg-green-500', label: 'Excellent' };
+      if (score >= 80) return { color: 'bg-green-400', label: 'Very Good' };
+      if (score >= 70) return { color: 'bg-yellow-400', label: 'Good' };
+      if (score >= 50) return { color: 'bg-orange-400', label: 'Fair' };
+      return { color: 'bg-red-500', label: 'Poor' };
+    })();
+    
+    return (
+      <div className={`inline-flex items-center px-2 py-1 rounded-full text-white text-sm font-medium ${badge.color}`}>
+        {badge.label}
+      </div>
+    );
   };
 
   // Handle clicking on a recommendation

@@ -75,17 +75,17 @@ Here are the final SVG assets. Embed these directly into the HTML document you c
 
 ### Main Logo (for general use)
 \`\`\`xml
-${variants.monochrome.black}
+${variants?.monochrome?.black || variants?.primary?.svg || 'Logo SVG not available'}
 \`\`\`
 
 ### White Variant (for dark backgrounds)
 \`\`\`xml
-${variants.monochrome.white}
+${variants?.monochrome?.white || variants?.white?.svg || 'White variant not available'}
 \`\`\`
 
 ### Favicon
 \`\`\`xml
-${variants.favicon.svg}
+${variants?.favicon?.svg || 'Favicon not available'}
 \`\`\`
 
 ## Your Task

@@ -126,9 +126,12 @@ export class CSSAnimationProvider implements AnimationProvider {
 
     // Apply animation classes to specified elements
     elements.forEach((selector, index) => {
+      // Ensure selector is a string
+      const selectorStr = typeof selector === 'string' ? selector : String(selector);
+      
       // For simple ID selectors
-      if (selector.startsWith('#')) {
-        const id = selector.substring(1);
+      if (selectorStr.startsWith('#')) {
+        const id = selectorStr.substring(1);
         const regex = new RegExp(
           `(<[^>]*\\sid\\s*=\\s*["']${id}["'][^>]*)(\\s*class\\s*=\\s*["']([^"']*)["'])?([^>]*>)`,
           'g'

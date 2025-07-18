@@ -1,1 +1,0 @@
-Deleted lib/opentelemetry-blocker.js as it is obsolete and not needed in a modern Next.js 15+ project.

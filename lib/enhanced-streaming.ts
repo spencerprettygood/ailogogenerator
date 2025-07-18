@@ -661,7 +661,7 @@ export class EnhancedStreamProcessor {
 
     // Track preview count for this stage
     if (this.stageHistory[preview.stageId]) {
-      this.stageHistory[preview.stageId].previews++;
+      this.stageHistory[preview.stageId]!.previews++;
     }
 
     // Convert to StagePreview format
@@ -695,7 +695,7 @@ export class EnhancedStreamProcessor {
 
     // Update stage history
     if (this.stageHistory[stage.id]) {
-      this.stageHistory[stage.id].endTime = Date.now();
+      this.stageHistory[stage.id]!.endTime = Date.now();
     }
 
     // Prepare for next stage if available
