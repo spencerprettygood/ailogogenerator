@@ -11,8 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config({ path: path.join(__dirname, '.env.local') });
 
-console.log('Loading environment variables in next.config.mjs');
-console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
+console.info('Loading environment variables in next.config.mjs');
+console.info('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
 
 /**
  * @type {import('next').NextConfig}

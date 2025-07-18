@@ -37,7 +37,7 @@ export function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize the chat with the standard useChat hook
-  const { messages, sendMessage, setMessages, error, status } = useChat({});
+  const { messages, append, setMessages, error, status } = useChat({});
 
   // Scroll to bottom of messages when new messages are added
   useEffect(() => {
@@ -100,7 +100,7 @@ export function ChatInterface({
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (input.trim() || selectedFiles.length > 0) {
-      sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] });
+      append({ role: 'user', parts: [{ type: 'text', text: input }] });
       setInput('');
       setGenerationRequested(false);
     }
