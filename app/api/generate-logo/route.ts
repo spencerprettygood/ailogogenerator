@@ -127,6 +127,11 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
         orchestrator.on('complete', (result: any) => {
           if (!hasCompleted) {
             hasCompleted = true;
+            
+            // Extract SVG from the correct location in the result structure
+            const svgResult = result.result?.SVGGenerationAgent;
+            const svgCode = svgResult?.svg || '';
+            
             safeEnqueue({
               success: true,
               message: 'Logo generation complete.',
@@ -139,7 +144,7 @@ export const POST = withPerformanceMonitoring(async function POST(req: NextReque
                 logo: {
                   id: result.id || sessionId,
                   prompt: brief.prompt,
-                  svg_code: result.svg || result.svg_code || '',
+                  svg_code: svgCode,
                   width: result.width,
                   height: result.height,
                 },
