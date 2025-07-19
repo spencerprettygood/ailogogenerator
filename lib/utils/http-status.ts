@@ -23,3 +23,6 @@ export const HTTP_STATUS = {
 } as const;
 
 export type HttpStatusCode = typeof HTTP_STATUS[keyof typeof HTTP_STATUS];
+
+// Re-export for convenience
+export type { HttpStatusCode as HttpStatus };

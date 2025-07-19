@@ -38,7 +38,7 @@ const envSchema = z.object({
 
   // API Keys (sensitive)
   // Anthropic API Key: optional in development and test with dummy default, required in production
-  ANTHROPIC_API_KEY: z.string().min(20).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).default(''),
   CLAUDE_API_KEY: z.string().min(20).optional(),
   OPENAI_API_KEY: z.string().min(20).optional(),
 
@@ -131,7 +131,7 @@ export function validateEnv(): Env {
           );
           const mockEnv = {
             ...process.env,
-            ANTHROPIC_API_KEY: 'dummy-key-for-development-only',
+            ANTHROPIC_API_KEY: '',
             NODE_ENV: 'development',
             ENABLE_ANIMATION_FEATURES: 'true',
             ENABLE_MOCKUPS: 'true',
@@ -149,7 +149,7 @@ export function validateEnv(): Env {
       console.warn('Using mock environment in development');
       return envSchema.parse({
         NODE_ENV: 'development',
-        ANTHROPIC_API_KEY: 'dummy-key-for-development-only',
+        ANTHROPIC_API_KEY: '',
         ENABLE_ANIMATION_FEATURES: 'true',
         ENABLE_MOCKUPS: 'true',
         CACHE_TTL_SECONDS: '3600',
@@ -282,7 +282,7 @@ let validatedEnv: {
 };
 
 // Check runtime environment to determine validation strategy
-const isEdgeRuntime = typeof EdgeRuntime !== 'undefined';
+const isEdgeRuntime = typeof globalThis !== 'undefined' && 'EdgeRuntime' in globalThis;
 const isBrowser = typeof window !== 'undefined';
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -325,7 +325,7 @@ if (isEdgeRuntime) {
     validatedEnv = {
       // Provide minimal mock values that are needed for client rendering
       NODE_ENV: 'development',
-      ANTHROPIC_API_KEY: 'dummy-key-for-development-only',
+      ANTHROPIC_API_KEY: '',
       ANTHROPIC_API_URL: 'https://api.anthropic.com',
       RATE_LIMIT_MAX: 100,
       RATE_LIMIT_WINDOW_SECONDS: 3600,
