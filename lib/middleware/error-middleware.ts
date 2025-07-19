@@ -3,10 +3,10 @@ import {
   AppError,
   ErrorCategory,
   ErrorCode,
-  HttpStatusCode,
   createAppError,
   handleError,
 } from '@/lib/utils/error-handler';
+import { HTTP_STATUS } from '@/lib/utils/http-status';
 import { env } from '@/lib/utils/env';
 
 /**
@@ -78,7 +78,7 @@ export function createErrorResponse(
   } = {}
 ) {
   const {
-    statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR,
+    statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR,
     errorCode = ErrorCode.INTERNAL_ERROR,
     requestId = crypto.randomUUID().slice(0, 8),
     additionalData = {},
