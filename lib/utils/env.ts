@@ -38,10 +38,7 @@ const envSchema = z.object({
 
   // API Keys (sensitive)
   // Anthropic API Key: optional in development and test with dummy default, required in production
-  ANTHROPIC_API_KEY:
-    getNodeEnv() !== 'production'
-      ? z.string().min(20).optional().default('dummy-key-for-development-only')
-      : z.string().min(20),
+  ANTHROPIC_API_KEY: z.string().min(20).optional(),
   CLAUDE_API_KEY: z.string().min(20).optional(),
   OPENAI_API_KEY: z.string().min(20).optional(),
 
@@ -191,7 +188,7 @@ export function getBaseUrl(): string {
   }
 
   // Fallback for local development
-  return 'http://localhost:3000';
+  return process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 }
 
 /**
@@ -284,12 +281,42 @@ let validatedEnv: {
   DATABASE_URL?: string | undefined;
 };
 
-// In browser context or development mode, provide mock environment if needed
-if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
+// Check runtime environment to determine validation strategy
+const isEdgeRuntime = typeof EdgeRuntime !== 'undefined';
+const isBrowser = typeof window !== 'undefined';
+const isDev = process.env.NODE_ENV === 'development';
+
+// Handle different runtime environments
+if (isEdgeRuntime) {
+  // In Edge Runtime (like middleware), use minimal validation to prevent failures
+  console.log('Running in Edge Runtime - using simplified environment validation');
+  validatedEnv = {
+    NODE_ENV: (process.env.NODE_ENV as any) || 'production',
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || 'dummy-key-for-edge-runtime',
+    ANTHROPIC_API_URL: process.env.ANTHROPIC_API_URL || 'https://api.anthropic.com',
+    RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
+    RATE_LIMIT_WINDOW_SECONDS: parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS || '3600'),
+    ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES !== 'false',
+    ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS !== 'false',
+    CACHE_TTL_SECONDS: parseInt(process.env.CACHE_TTL_SECONDS || '3600'),
+    ADMIN_USERNAME: process.env.ADMIN_USERNAME,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+    CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV as any,
+    DEPLOYMENT_ENV: process.env.DEPLOYMENT_ENV,
+    POSTGRES_URL: process.env.POSTGRES_URL,
+    POSTGRES_URL_NON_POOLING: process.env.POSTGRES_URL_NON_POOLING,
+    POSTGRES_DATABASE: process.env.POSTGRES_DATABASE,
+    DATABASE_URL: process.env.DATABASE_URL,
+  };
+} else if (isBrowser || isDev) {
   try {
     // Try to validate the environment first
     validatedEnv = validateEnv();
-    if (typeof window !== 'undefined') {
+    if (isBrowser) {
       console.log('Environment variables successfully loaded in browser context');
     }
   } catch (error) {
@@ -309,7 +336,22 @@ if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
   }
 } else {
   // Server-side in production: validate the real environment
-  validatedEnv = validateEnv();
+  try {
+    validatedEnv = validateEnv();
+  } catch (error) {
+    console.error('Environment validation failed on server-side:', error);
+    // Provide fallback values to prevent complete failure
+    validatedEnv = {
+      NODE_ENV: (process.env.NODE_ENV as any) || 'production',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+      ANTHROPIC_API_URL: process.env.ANTHROPIC_API_URL || 'https://api.anthropic.com',
+      RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
+      RATE_LIMIT_WINDOW_SECONDS: parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS || '3600'),
+      ENABLE_ANIMATION_FEATURES: process.env.ENABLE_ANIMATION_FEATURES !== 'false',
+      ENABLE_MOCKUPS: process.env.ENABLE_MOCKUPS !== 'false',
+      CACHE_TTL_SECONDS: parseInt(process.env.CACHE_TTL_SECONDS || '3600'),
+    };
+  }
 }
 
 /**

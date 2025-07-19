@@ -12,8 +12,10 @@ import {
   ErrorCategory,
   ErrorCode,
   ErrorSeverity,
-  HttpStatusCode,
 } from './error-handler';
+import { HTTP_STATUS } from './http-status';
+
+type HttpStatusCode = typeof HTTP_STATUS[keyof typeof HTTP_STATUS];
 
 /**
  * Common error types from the Claude API
@@ -79,30 +81,30 @@ const claudeErrorTypeToCode: Record<ClaudeErrorType, ErrorCode> = {
  * Maps Claude error types to HTTP status codes
  */
 const claudeErrorTypeToStatusCode: Record<ClaudeErrorType, HttpStatusCode> = {
-  [ClaudeErrorType.AUTHENTICATION]: HttpStatusCode.UNAUTHORIZED,
-  [ClaudeErrorType.RATE_LIMIT]: HttpStatusCode.TOO_MANY_REQUESTS,
-  [ClaudeErrorType.INVALID_REQUEST]: HttpStatusCode.BAD_REQUEST,
-  [ClaudeErrorType.MODEL_NOT_FOUND]: HttpStatusCode.BAD_REQUEST,
-  [ClaudeErrorType.CONTEXT_WINDOW]: HttpStatusCode.BAD_REQUEST,
-  [ClaudeErrorType.CONTENT_POLICY]: HttpStatusCode.BAD_REQUEST,
-  [ClaudeErrorType.SERVER_ERROR]: HttpStatusCode.BAD_GATEWAY,
-  [ClaudeErrorType.TIMEOUT]: HttpStatusCode.GATEWAY_TIMEOUT,
-  [ClaudeErrorType.UNKNOWN]: HttpStatusCode.INTERNAL_SERVER_ERROR,
+  [ClaudeErrorType.AUTHENTICATION]: HTTP_STATUS.UNAUTHORIZED,
+  [ClaudeErrorType.RATE_LIMIT]: HTTP_STATUS.TOO_MANY_REQUESTS,
+  [ClaudeErrorType.INVALID_REQUEST]: HTTP_STATUS.BAD_REQUEST,
+  [ClaudeErrorType.MODEL_NOT_FOUND]: HTTP_STATUS.BAD_REQUEST,
+  [ClaudeErrorType.CONTEXT_WINDOW]: HTTP_STATUS.BAD_REQUEST,
+  [ClaudeErrorType.CONTENT_POLICY]: HTTP_STATUS.BAD_REQUEST,
+  [ClaudeErrorType.SERVER_ERROR]: HTTP_STATUS.BAD_GATEWAY,
+  [ClaudeErrorType.TIMEOUT]: HTTP_STATUS.GATEWAY_TIMEOUT,
+  [ClaudeErrorType.UNKNOWN]: HTTP_STATUS.INTERNAL_SERVER_ERROR,
 };
 
 /**
  * Maps Claude error types to severity levels
  */
 const claudeErrorTypeToSeverity: Record<ClaudeErrorType, ErrorSeverity> = {
-  [ClaudeErrorType.AUTHENTICATION]: ErrorSeverity.ERROR,
-  [ClaudeErrorType.RATE_LIMIT]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.INVALID_REQUEST]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.MODEL_NOT_FOUND]: ErrorSeverity.ERROR,
-  [ClaudeErrorType.CONTEXT_WINDOW]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.CONTENT_POLICY]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.SERVER_ERROR]: ErrorSeverity.ERROR,
-  [ClaudeErrorType.TIMEOUT]: ErrorSeverity.WARNING,
-  [ClaudeErrorType.UNKNOWN]: ErrorSeverity.ERROR,
+  [ClaudeErrorType.AUTHENTICATION]: ErrorSeverity.CRITICAL,
+  [ClaudeErrorType.RATE_LIMIT]: ErrorSeverity.MEDIUM,
+  [ClaudeErrorType.INVALID_REQUEST]: ErrorSeverity.MEDIUM,
+  [ClaudeErrorType.MODEL_NOT_FOUND]: ErrorSeverity.HIGH,
+  [ClaudeErrorType.CONTEXT_WINDOW]: ErrorSeverity.MEDIUM,
+  [ClaudeErrorType.CONTENT_POLICY]: ErrorSeverity.MEDIUM,
+  [ClaudeErrorType.SERVER_ERROR]: ErrorSeverity.HIGH,
+  [ClaudeErrorType.TIMEOUT]: ErrorSeverity.MEDIUM,
+  [ClaudeErrorType.UNKNOWN]: ErrorSeverity.HIGH,
 };
 
 /**

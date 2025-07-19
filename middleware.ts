@@ -9,54 +9,59 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { env } from '@/lib/utils/env';
 
-// Use secure environment variables with validation
-// In development mode, provide default values if not configured
-const isDev = env.isDevelopment;
-const ADMIN_USERNAME = isDev ? env.get('ADMIN_USERNAME', 'admin_user') : env.get('ADMIN_USERNAME');
-const ADMIN_PASSWORD = isDev
-  ? env.get('ADMIN_PASSWORD', 'Admin_Password123!')
-  : env.get('ADMIN_PASSWORD');
+// Simplified environment access for Edge Runtime compatibility
+// Avoid complex validation in middleware to prevent Edge Runtime failures
+const isDev = process.env.NODE_ENV !== 'production';
+const ADMIN_USERNAME = isDev ? (process.env.ADMIN_USERNAME || 'admin_user') : process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = isDev 
+  ? (process.env.ADMIN_PASSWORD || 'Admin_Password123!')
+  : process.env.ADMIN_PASSWORD;
 
 /**
  * Middleware handler function using Next.js 15 patterns
  * @param request Incoming request
  */
 export async function middleware(request: NextRequest) {
-  // Get the pathname from the URL
-  const pathname = request.nextUrl.pathname;
+  try {
+    // Get the pathname from the URL
+    const pathname = request.nextUrl.pathname;
 
-  // Admin route protection
-  if (pathname.startsWith('/admin')) {
-    return handleAdminAuth(request);
-  }
-
-  // Add performance monitoring headers
-  const response = NextResponse.next();
-
-  // Add Server-Timing header for basic monitoring
-  const requestStartTime = request.headers.get('x-request-start-time');
-  const duration = requestStartTime ? Date.now() - parseInt(requestStartTime, 10) : 0;
-  response.headers.set('Server-Timing', `route;dur=${duration}`);
-
-  // Add CORS headers for API routes
-  if (pathname.startsWith('/api')) {
-    // Add CORS headers to all API responses
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    // Handle OPTIONS requests (preflight)
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, {
-        status: 204,
-        headers: response.headers,
-      });
+    // Admin route protection
+    if (pathname.startsWith('/admin')) {
+      return handleAdminAuth(request);
     }
-  }
 
-  return response;
+    // Add performance monitoring headers
+    const response = NextResponse.next();
+
+    // Add Server-Timing header for basic monitoring
+    const requestStartTime = request.headers.get('x-request-start-time');
+    const duration = requestStartTime ? Date.now() - parseInt(requestStartTime, 10) : 0;
+    response.headers.set('Server-Timing', `route;dur=${duration}`);
+
+    // Add CORS headers for API routes
+    if (pathname.startsWith('/api')) {
+      // Add CORS headers to all API responses
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+      // Handle OPTIONS requests (preflight)
+      if (request.method === 'OPTIONS') {
+        return new NextResponse(null, {
+          status: 204,
+          headers: response.headers,
+        });
+      }
+    }
+
+    return response;
+  } catch (error) {
+    // Prevent middleware failures from breaking the entire app
+    console.error('Middleware error:', error);
+    return NextResponse.next();
+  }
 }
 
 /**

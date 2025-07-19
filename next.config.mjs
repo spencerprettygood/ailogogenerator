@@ -23,6 +23,25 @@ const nextConfig = {
   // Output standalone for optimized deployment on Vercel
   output: 'standalone',
 
+  // Exclude test pages from production builds
+  ...(process.env.NODE_ENV === 'production' && {
+    experimental: {
+      typedRoutes: true,
+    },
+    async rewrites() {
+      return [
+        {
+          source: '/test/:path*',
+          destination: '/404',
+        },
+        {
+          source: '/test-:path*',
+          destination: '/404',
+        },
+      ];
+    },
+  }),
+
   // Type checking and linting settings
   typescript: {
     ignoreBuildErrors: process.env.NODE_ENV !== 'development',
